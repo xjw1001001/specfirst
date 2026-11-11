@@ -116,6 +116,15 @@ def test_a_time_zone_is_not_a_storage_type():
     assert same.equal and same.storage == [("T", "timestamp[s]", "timestamp[ms]")]
     other = compare_tables("X", plain, zoned)
     assert not other.equal and other.mismatched == 1 and other.storage == []
+    # The same instant in two zones (review of real-1, finding N6): two kinds, not storage.
+    tokyo = pa.table({"T": zoned.column("T").cast(pa.timestamp("s", tz="Asia/Tokyo"))})
+    assert tokyo.column("T")[0].value == zoned.column("T")[0].value  # one instant
+    zones = compare_tables("X", zoned, tokyo)
+    assert not zones.equal and zones.mismatched == 1 and zones.storage == []
+    finer_zoned = pa.table({"T": zoned.column("T").cast(pa.timestamp("ms", tz="UTC"))})
+    same_zone = compare_tables("X", zoned, finer_zoned)
+    assert same_zone.equal and same_zone.storage == [
+        ("T", "timestamp[s, tz=UTC]", "timestamp[ms, tz=UTC]")]
 
 
 def test_the_tolerance_is_absolute():

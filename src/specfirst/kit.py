@@ -22,7 +22,7 @@ from pathlib import Path
 import yaml
 
 from specfirst import sources as pinned
-from specfirst.machine.canonical import sha256_file
+from specfirst.machine.canonical import sha256_bytes, sha256_file
 from specfirst.paths import build_dir, cache_dir
 
 FORMAT = 0
@@ -308,6 +308,31 @@ DATA_SUFFIXES = frozenset({
 })
 
 
+# An XML document whose root element is ODM, with or without a namespace
+# prefix: after an optional declaration, comments, processing instructions and
+# a document type.
+_ODM_ROOT = re.compile(
+    r"\A\s*(?:(?:<\?.*?\?>|<!--.*?-->|<!DOCTYPE[^>\[]*(?:\[.*?\])?[^>]*>)\s*)*"
+    r"<(?:[A-Za-z_][\w.-]*:)?ODM[\s/>]",
+    re.DOTALL,
+)
+
+
+def is_odm(data: bytes) -> bool:
+    """Whether the bytes are a Define-XML or other ODM file, in UTF-8 or UTF-16.
+
+    Decided by the root element, not by the name of the file or by where in
+    the file the element starts.
+    """
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        encodings = ("utf-16",)
+    elif b"\x00" in data[:64]:
+        encodings = ("utf-16-le", "utf-16-be")
+    else:
+        encodings = ("utf-8-sig",)
+    return any(_ODM_ROOT.match(data.decode(encoding, errors="replace")) for encoding in encodings)
+
+
 def pinned_hashes(root: Path) -> dict[str, str]:
     """SHA-256 -> name, for every file a kit manifest or sources.yaml pins."""
     found: dict[str, str] = {}
@@ -333,9 +358,11 @@ def tracked_data_problems(root: Path, names: list[str]) -> list[str]:
     Three checks. A kit folder of tier B or C may hold kit.yaml and README.md
     only (a generated kit, tier A, may hold its small fixtures). Outside
     such a folder, no file may have the suffix of a data or document format,
-    be a Define-XML or other ODM file, or be byte for byte a file that a kit
-    of tier B or C or third_party/sources.yaml pins. A study document
-    retyped or converted to another format is beyond these checks.
+    be a Define-XML or other ODM file (an XML document with the root element
+    ODM, in UTF-8 or UTF-16, under any name), or be byte for byte a file that
+    a kit of tier B or C or third_party/sources.yaml pins. A study document
+    retyped or converted to another format is beyond these checks, and so is
+    an ODM file in another encoding or compressed.
     """
     problems = []
     tiers: dict[str, str] = {}
@@ -362,9 +389,10 @@ def tracked_data_problems(root: Path, names: list[str]) -> list[str]:
         if path.suffix.lower() in DATA_SUFFIXES:
             problems.append(f"{name}: study data or a study document in git")
         elif path.is_file():
-            if path.suffix.lower() == ".xml" and b"<ODM" in path.read_bytes()[:65536]:
+            data = path.read_bytes()
+            if is_odm(data):
                 problems.append(f"{name}: a Define-XML or other ODM file in git")
-            elif (same := pinned_files.get(sha256_file(path))) is not None:
+            elif (same := pinned_files.get(sha256_bytes(data))) is not None:
                 problems.append(f"{name}: byte for byte {same}, which stays in the fetch cache")
     return problems
 

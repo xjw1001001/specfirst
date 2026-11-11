@@ -70,8 +70,8 @@ def kind(data_type: pa.DataType) -> str:
     if types.is_date(data_type):
         return "date"
     if types.is_timestamp(data_type):
-        # A time zone is meaning, not storage: with and without one are two kinds.
-        return "timestamp with time zone" if data_type.tz else "timestamp"
+        # A time zone is meaning, not storage: no zone and each zone are kinds of their own.
+        return f"timestamp in zone {data_type.tz}" if data_type.tz else "timestamp"
     if types.is_time(data_type):
         return "time"
     if types.is_null(data_type):

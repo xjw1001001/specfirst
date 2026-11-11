@@ -215,6 +215,41 @@ def test_study_data_under_another_name_or_suffix_is_found(toy, root):
     assert kits.tracked_data_problems(real, ["docs/sap-retyped.txt"]) == []
 
 
+def test_an_odm_file_is_found_by_its_root_element(toy, root):
+    """Review of real-1, finding N5: another suffix, UTF-16, a long comment before the root."""
+    real = toy_kit.make(toy / "real", root, tier="C", engine_version="0.0.0")
+    define = (real / "third_party/cache/toy/define/define-sdtm.xml").read_text("ascii")
+    define = define.replace("AGE", "AGEX")  # edited, so that no hash matches
+    head, mark, rest = define.partition("<ODM>")
+    assert mark
+    docs = real / "docs"
+    docs.mkdir()
+    (docs / "define.txt").write_text(define, encoding="ascii")
+    (docs / "define-utf16.xml").write_bytes(define.encode("utf-16"))
+    (docs / "define-utf16-no-mark.dat").write_bytes(define.encode("utf-16-le"))
+    (docs / "define-utf8-mark.xml").write_bytes(define.encode("utf-8-sig"))
+    (docs / "define-late.xml").write_text(
+        f"{head}<!-- {'x' * 70000} -->\n<!DOCTYPE ODM>\n{mark}{rest}", encoding="ascii")
+    (docs / "define-prefixed.xml").write_text(
+        define.replace("<ODM>", '<odm:ODM xmlns:odm="http://www.cdisc.org/ns/odm/v1.3">')
+        .replace("</ODM>", "</odm:ODM>"), encoding="ascii")
+    found = ["docs/define.txt", "docs/define-utf16.xml", "docs/define-utf16-no-mark.dat",
+             "docs/define-utf8-mark.xml", "docs/define-late.xml", "docs/define-prefixed.xml"]
+    # Not ODM files: text about one, an XML file that names ODM in a comment, another root.
+    (docs / "about-odm.md").write_text("An ODM file starts like this:\n<ODM>\n", encoding="ascii")
+    (docs / "layout.xml").write_text(
+        '<?xml version="1.0"?>\n<!-- not <ODM> -->\n<svg></svg>\n', encoding="ascii")
+    (docs / "odmlike.xml").write_text("<ODMX></ODMX>\n", encoding="ascii")
+    others = ["docs/about-odm.md", "docs/layout.xml", "docs/odmlike.xml"]
+    assert kits.tracked_data_problems(real, [*found, *others]) == [
+        f"{name}: a Define-XML or other ODM file in git" for name in found]
+    # A known limit: a compressed copy is not seen.
+    import gzip
+
+    (docs / "define.xml.gz").write_bytes(gzip.compress(define.encode("ascii"), mtime=0))
+    assert kits.tracked_data_problems(real, ["docs/define.xml.gz"]) == []
+
+
 def test_the_repository_tracks_no_study_data(root):
     from specfirst import asciicheck
 

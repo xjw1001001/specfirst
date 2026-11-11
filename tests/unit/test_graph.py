@@ -195,6 +195,73 @@ def test_value_and_context_dependencies(tmp_path):
     assert edge(result, "adam:ADSL.USUBJID", "sdtm:DM.USUBJID")["source"]["line"] == 60
 
 
+def at(line: int) -> dict:
+    return {"declaring_source": "gold/spec/adsl.yaml", "line": line, "source_kind": "authored"}
+
+
+def test_the_filter_of_a_specification_is_not_part_of_a_rule(tmp_path, root):
+    """Review of real-1, finding N4: a literal column on rows that a top-level filter selects."""
+    filtered = plan(COLUMNS, OUTPUTS, {**ORIGINS, "/filter": at(5)})
+    filtered.specification["filter"] = "DM.ARM <> 'Screen Failure' AND DM.AGE > 17"
+    result = graph.build_graph(make_kit(tmp_path), tmp_path, [filtered])
+    coverage = {entry["column"]: entry for entry in result.coverage["columns"]}
+    # STUDYID is a literal: it reaches SDTM through the filter, not by its own rule.
+    assert coverage["adam:ADSL.STUDYID"] == {
+        "column": "adam:ADSL.STUDYID", "terminal": "sdtm", "sdtm": 2, "value": False,
+        "inputs": ["sdtm:DM"], "gaps": []}
+    assert edge(result, "adam:ADSL.STUDYID", "sdtm:DM.ARM")["source"]["line"] == 5
+    assert coverage["adam:ADSL.HT"]["value"] is True
+    assert edge(result, "adam:ADSL.HT", "sdtm:DM.ARM")["source"]["line"] == 5
+    # A rule is preferred to the filter as the place of an edge: AGEGR1 reads DM.AGE
+    # through its helper (line 40 of the parent), and the filter reads it too (line 5).
+    assert edge(result, "adam:ADSL.AGEGR1", "sdtm:DM.AGE")["source"] == {
+        "file": "gold/spec/parent.yaml", "line": 40}
+    graph.write_graph(tmp_path / "graph", result)
+    lines, problems = graph.check_graph(root, tmp_path / "graph", {"ADSL": OUTPUTS}, {})
+    assert problems == []
+    assert "ADSL            5       5       1       0     0" in lines  # STUDYID: by rows
+
+
+def test_a_lookup_over_the_dataset_itself_is_cited_at_the_rule(tmp_path):
+    """Review of real-1, finding N3: the column is an output column, taken through SELF."""
+    lookup = plan(
+        [
+            {"name": "USUBJID", "derivation": {"value": "DM.USUBJID"}},
+            {"name": "AGE", "derivation": {"value": "DM.AGE"}},
+            {"name": "FIRSTAGE", "derivation": {"value": "FIRST.AGE"}},
+        ],
+        ["USUBJID", "AGE", "FIRSTAGE"],
+        {"/intermediates/0": at(50), "/columns/2/derivation": at(70)},
+    )
+    lookup.specification["intermediates"] = [
+        {"id": "FIRST", "dataset": "SELF", "key": ["USUBJID"], "keep": "first"}]
+    result = graph.build_graph(make_kit(tmp_path), tmp_path, [lookup])
+    # The rule names FIRST.AGE at line 70; the lookup is declared at line 50.
+    assert edge(result, "adam:ADSL.FIRSTAGE", "adam:ADSL.AGE")["source"]["line"] == 70
+    # The key of the lookup is read at its declaration.
+    assert edge(result, "adam:ADSL.FIRSTAGE", "adam:ADSL.USUBJID")["source"]["line"] == 50
+
+
+def test_of_two_rules_at_the_same_distance_the_lowest_line_is_the_place(tmp_path):
+    """Review of real-1, finding N3: not the rule that happens to be walked first."""
+    twice = plan(
+        [
+            {"name": "USUBJID", "derivation": {"value": "DM.USUBJID"}},
+            {"name": "AB", "derivation": {"value": "BASE.VSSTRESN"}},
+            {"name": "ZA", "derivation": {"value": "BASE.VSSTRESN * 2"}},
+            {"name": "BOTH", "derivation": {"value": "AB + ZA"}},
+        ],
+        ["BOTH"],
+        {"/intermediates/0": at(50), "/columns/1/derivation": at(20),
+         "/columns/2/derivation": at(10), "/columns/3/derivation": at(30)},
+    )
+    twice.specification["intermediates"] = [
+        {"id": "BASE", "dataset": "VS", "key": ["USUBJID"], "keep": "first"}]
+    result = graph.build_graph(make_kit(tmp_path), tmp_path, [twice])
+    # AB (line 20) is walked before ZA (line 10); both name BASE.VSSTRESN.
+    assert edge(result, "adam:ADSL.BOTH", "sdtm:VS.VSSTRESN")["source"]["line"] == 10
+
+
 def test_a_gap_is_passed_on_to_the_columns_that_read_it(tmp_path, root):
     """Review of real-1, finding F2: AGEGR1N reads only AGEGR1, which has a gap."""
     kit = make_kit(tmp_path)

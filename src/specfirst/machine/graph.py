@@ -10,15 +10,17 @@ What an edge means, and what it does not (ADR-001, item 6):
 
 - It says what a column's rule reads, not which rows contributed. A value
   the rule computes with and a column that only selects or orders rows (the
-  filter of a row template, the key, filter and order of a lookup) both
-  give an edge, and the edge does not say which it is. coverage.json says
-  per column whether the rule itself reads a column (`value`).
+  filter of a row template or of the specification, the key, filter and
+  order of a lookup) both give an edge, and the edge does not say which it
+  is. coverage.json says per column whether the rule itself reads a column
+  (`value`); a filter on rows is not part of the rule.
 - There is one edge per pair of columns. Its file and line are those of one
-  place that reads the target: a rule before a row template or the
+  place that reads the target: a rule before a filter on rows or the
   declaration of a lookup, then the nearest on the way, then the lowest file
   and line. A column taken through a lookup is cited where the rule names
-  it. A join key is cited at the rule that causes the join; the key itself
-  is named in the specification's `input`.
+  it, whether the lookup reads an input or the dataset itself. A join key
+  is cited at the rule that causes the join; the key itself is named in the
+  specification's `input`.
 - The hash of an ADaM node covers the column's own rule and every helper
   column, lookup and row template the rule passes through.
 
@@ -37,7 +39,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections import Counter, deque
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import quote
@@ -51,6 +53,8 @@ from specfirst.machine.runner import SpecPlan
 _ITEM_DEF = re.compile(r'<ItemDef\b[^>]*?\bOID="([^"]+)"')
 _VARIABLE_LINE = re.compile(r'^\s*"variable"\s*:\s*("(?:[^"\\]|\\.)*")')
 _ANCHOR_SAFE = "!$&'()*+,;=:@/?.-_~"
+# Where lineage records what the top-level filter of a specification reads.
+_SPEC_FILTER = pointer("filter")
 
 
 class GraphError(RuntimeError):
@@ -133,12 +137,15 @@ def _node_content(spec: dict, name: str, through: set[str]) -> dict:
 
 @dataclass
 class _Trace:
-    # target ID -> (0 for a rule, 1 for a row template or a lookup declaration; depth; file; line)
+    # target ID -> (0 for a rule, 1 for a filter on rows or a lookup declaration; depth; file;
+    # line)
     targets: dict[str, tuple[int, int, str, int]] = field(default_factory=dict)
     inputs: set[str] = field(default_factory=set)
     gaps: set[str] = field(default_factory=set)
     through: set[str] = field(default_factory=set)
-    value: bool = False  # the rule itself reads a column, apart from its row templates
+    # The rule itself reads a column, apart from what only selects rows: its row
+    # templates and the filter of the specification.
+    value: bool = False
 
 
 def _trace_column(
@@ -170,6 +177,13 @@ def _trace_column(
             "intermediates", j)
 
     def walk(with_rows: bool) -> dict[str, tuple[int, int, str, int]]:
+        """The columns reached, each with its place: (context, depth, file, line).
+
+        with_rows False leaves out what only selects rows: the row templates
+        and the filter of the specification. The walk goes level by level,
+        so that of two places at the same distance the lowest file and line
+        wins, whichever element is visited first.
+        """
         targets: dict[str, tuple[int, int, str, int]] = {}
 
         def target(node: str, found: tuple[int, int, str, int]) -> None:
@@ -178,33 +192,44 @@ def _trace_column(
 
         start = f"spec.{name}"
         seen = {start}
-        queue: deque[tuple[str, int, tuple[str, int] | None]] = deque([(start, 0, None)])
-        while queue:
-            element, depth, named_at = queue.popleft()
-            if element.startswith("row."):
-                whole(rows.get(element[4:], ""))
-            context = 1 if element.startswith(("row.", "intermediate.")) else 0
-            for read in by_element.get(element, []):
-                site = _site(plan, read.pointer)
-                trace.gaps.update(f"unresolved reference {ref} at {site[0]}:{site[1]}"
-                                  for ref in read.unresolved)
-                trace.gaps.update(f"unknown name {ref} at {site[0]}:{site[1]}"
-                                  for ref in read.unknown)
-                for alias in read.whole:
-                    whole(alias)
-                taken = named_at if named_at and passes_on(element, read) else site
-                for ref in sorted(read.refs):
-                    head, _, tail = ref.partition(".")
-                    if head == "row" and not with_rows:
+        # element -> where it was named: (context, file, line), or None for the start
+        level: list[tuple[str, tuple[int, str, int] | None]] = [(start, None)]
+        depth = 0
+        while level:
+            found: dict[str, tuple[int, str, int]] = {}
+            for element, named_at in level:
+                if element.startswith("row."):
+                    whole(rows.get(element[4:], ""))
+                for read in by_element.get(element, []):
+                    on_rows = read.pointer == _SPEC_FILTER
+                    if on_rows and not with_rows:
                         continue
-                    if head == "spec" and tail in outputs and tail != name:
-                        target(adam_id(plan.name, tail), (context, depth, *site))
-                    elif head in datasets and head not in ("spec", "row", "intermediate"):
-                        layer, dataset = datasets[head]
-                        target(f"{layer}:{dataset}.{tail}", (context, depth, *taken))
-                    elif ref not in seen:
-                        seen.add(ref)
-                        queue.append((ref, depth + 1, site))
+                    site = _site(plan, read.pointer)
+                    trace.gaps.update(f"unresolved reference {ref} at {site[0]}:{site[1]}"
+                                      for ref in read.unresolved)
+                    trace.gaps.update(f"unknown name {ref} at {site[0]}:{site[1]}"
+                                      for ref in read.unknown)
+                    for alias in read.whole:
+                        whole(alias)
+                    if named_at and passes_on(element, read):
+                        place = named_at  # the rule that names the lookup's column
+                    else:
+                        declared = on_rows or element.startswith(("row.", "intermediate."))
+                        place = (1 if declared else 0, *site)
+                    for ref in sorted(read.refs):
+                        head, _, tail = ref.partition(".")
+                        if head == "row" and not with_rows:
+                            continue
+                        if head == "spec" and tail in outputs and tail != name:
+                            target(adam_id(plan.name, tail), (place[0], depth, *place[1:]))
+                        elif head in datasets and head not in ("spec", "row", "intermediate"):
+                            layer, dataset = datasets[head]
+                            target(f"{layer}:{dataset}.{tail}", (place[0], depth, *place[1:]))
+                        elif ref not in seen and (ref not in found or place < found[ref]):
+                            found[ref] = place
+            seen |= set(found)
+            level = sorted(found.items())
+            depth += 1
         trace.through |= seen - {start}
         return targets
 
@@ -511,7 +536,8 @@ def check_graph(
                  f"{totals['literal']:7d} {totals['gaps']:5d}")
     lines.append("to SDTM: reaches SDTM columns through derives_from. by rows: those of them "
                  "whose own rule reads no column")
-    lines.append("and that reach SDTM only through the filter of a row template.")
+    lines.append("and that reach SDTM only through a filter on rows (of a row template or of the "
+                 "specification).")
     for node in sorted(set(accepted_gaps) - with_gap):
         problems.append(f"{node}: listed as a gap in the kit, but it has none")
     by_layer = Counter(node["layer"] for node in nodes)

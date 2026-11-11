@@ -24,21 +24,9 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   ordering dependency; coverage.json has it per column (`value`). If the
   viewer of real-3 needs it per edge, it is a schema change (an ADR the
   owner approves).
-- Review of real-1, second pass, findings N1 to N7: none blocked, none is
-  fixed yet. Fix them with the first commit of real-2 and run the gate of
-  real-1 again with it. Details in docs/reports/real-1.review.md.
-  - N1: let test A4 also empty the constant SDTM columns (a roll does not
-    change them), or reword ADR-001 item 6, lesson 16 and the docstring.
-  - N2: P1 compares two folders of one checkout; say so in ADR-001 item 4.
-  - N3: the place of an edge for a lookup over SELF to an output column,
-    and for two rules at the same distance (`graph._trace_column`).
-  - N4: `value` must not count a top-level `filter` as part of the rule.
-  - N5: the search for ODM files in git sees `.xml` in ASCII or UTF-8 only;
-    widen it or narrow the sentence in kits/README.md.
-  - N6: two time zones at one instant are not "storage type only"
-    (`compare.kind`).
-  - N7: two sentences of ADR-001 item 5 (how the plan words the tolerance;
-    "every cell").
+- Review of real-1, second pass, findings N1 to N7: fixed with the first
+  commit of real-2, and the gate of real-1 passed again with it
+  (docs/reports/real-2.md, section "Findings N1 to N7 of real-1").
 - P1 is tested with yamaa's Python host only; its R host is not installed.
 - The kit manifest is checked by code, not by a schema in
   standard/schemas/ (ADR-001, item 3). gen-2 writes kits too: agree on the
