@@ -10,7 +10,7 @@ import yaml
 
 from specfirst import schemas
 from specfirst.compile import catalog as catalog_module
-from specfirst.compile import checks, predicate, tiny
+from specfirst.compile import checks, overview, predicate, tiny
 from specfirst.compile import house as house_module
 from specfirst.compile.compiler import CompileError, compile_decisions, relative_reference
 from specfirst.compile.template import (
@@ -258,3 +258,14 @@ def test_the_base_decisions_build_the_tiny_study(catalog, house, base, tmp_path)
     eot = advs[("S1", "SYSBP", 6, "LOV")]                    # last value up to 2024-04-20
     assert (eot["AVISIT"], eot["AVAL"], eot["ANL01FL"]) == ("End of Treatment", 122.0, "Y")
     assert ("S1", "SYSBP", 7, "LOV") not in advs             # 2024-04-25 is after the last dose
+
+
+def test_the_overview_names_every_entry_and_alternative(catalog, house):
+    text = overview.render(catalog, house)
+    assert text.isascii()
+    for entry in catalog.entries.values():
+        assert f"### `{entry.id}`: {entry.question}" in text
+        for alternative in entry.alternatives:
+            assert f"| `{alternative.id}` | " in text
+    for name in catalog.raw["deferred"]:
+        assert f"- `{name}`: " in text

@@ -49,6 +49,8 @@ def build_parser() -> argparse.ArgumentParser:
                            help="compile every alternative and build ADaM on the tiny study")
     p_catalog.add_argument("--tables", action="store_true",
                            help="compile every alternative and check ARS files and layouts")
+    p_catalog.add_argument("--overview", metavar="FILE",
+                           help="write one readable page of the whole catalog and stop")
 
     p_house = commands.add_parser("house", help="check the house standard")
     p_house.add_argument("--write", action="store_true",
@@ -88,8 +90,14 @@ def _read_jsonl(path: str) -> list[dict]:
 
 
 def _catalog(root: Path, args: argparse.Namespace) -> int:
-    from specfirst.compile import gate
+    from specfirst.compile import catalog, gate, house, overview
 
+    if args.overview:
+        text = overview.render(catalog.load(catalog.default_dir(root)),
+                               house.load(house.default_dir(root)))
+        Path(args.overview).write_text(text, encoding="ascii", newline="\n")
+        print(f"wrote {args.overview}")
+        return 0
     selected = [check for flag, check in (
         (args.sources, gate.sources_check), (args.roundtrip, gate.roundtrip_check),
         (args.yamaa, gate.yamaa_check), (args.run, gate.run_check),
