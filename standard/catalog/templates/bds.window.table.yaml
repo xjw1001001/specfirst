@@ -1,0 +1,92 @@
+entry: bds.window.table
+alternatives:
+  protocol_windows:
+    adam:
+      ADVS:
+        columns:
+          - name: _AVISITPB
+            type: str
+            label: "Working value: analysis visit of a post-baseline record"
+            derivation:
+              case:
+                $concat:
+                  - $for: w
+                    in: {$get: windows}
+                    do: {when: "ADY >= ${w.low} AND ADY <= ${w.high}", then: "${w.visit|q}"}
+                  - [{otherwise: null}]
+          - name: _AWTARGET
+            type: float
+            label: "Working value: target day of the analysis visit"
+            derivation:
+              case:
+                $concat:
+                  - $for: w
+                    in: {$get: windows}
+                    do: {when: "ADY >= ${w.low} AND ADY <= ${w.high}", then: {$get: w.target}}
+                  - [{otherwise: null}]
+          - name: _AVISITNPB
+            type: float
+            label: "Working value: number of the analysis visit of a post-baseline record"
+            derivation: _AWTARGET
+  midpoint_windows:
+    adam:
+      ADVS:
+        columns:
+          - name: _AVISITPB
+            type: str
+            label: "Working value: analysis visit of a post-baseline record"
+            derivation:
+              case:
+                $concat:
+                  - $for: w
+                    in: {$fn: midpoint_windows, args: [{$get: visits}]}
+                    do:
+                      when:
+                        $if: {get: w.high, eq: null}
+                        then: "ADY >= ${w.low}"
+                        else: "ADY >= ${w.low} AND ADY <= ${w.high}"
+                      then: "${w.visit|q}"
+                  - [{otherwise: null}]
+          - name: _AWTARGET
+            type: float
+            label: "Working value: target day of the analysis visit"
+            derivation:
+              case:
+                $concat:
+                  - $for: w
+                    in: {$fn: midpoint_windows, args: [{$get: visits}]}
+                    do:
+                      when:
+                        $if: {get: w.high, eq: null}
+                        then: "ADY >= ${w.low}"
+                        else: "ADY >= ${w.low} AND ADY <= ${w.high}"
+                      then: {$get: w.target}
+                  - [{otherwise: null}]
+          - name: _AVISITNPB
+            type: float
+            label: "Working value: number of the analysis visit of a post-baseline record"
+            derivation: _AWTARGET
+  nominal_visit:
+    adam:
+      ADVS:
+        columns:
+          - name: _AVISITPB
+            type: str
+            label: "Working value: analysis visit of a post-baseline record"
+            derivation:
+              case:
+                - when: "_SCHED = 'Y'"
+                  then: VISIT
+                - otherwise: null
+          - name: _AWTARGET
+            type: float
+            label: "Working value: target day of the analysis visit"
+            derivation: _VISITDY
+          - name: _AVISITNPB
+            type: float
+            label: "Working value: number of the analysis visit of a post-baseline record"
+            derivation:
+              case:
+                - when: "_SCHED = 'Y'"
+                  then: VISITNUM
+                - otherwise: null

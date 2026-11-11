@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.output.include
+alternatives:
+  included:
+    plain: "The list of planned outputs contains {output}."
+    formal: "The outputs planned for the study shall include {output}."
+    brief: "Planned output: {output}."
+  not_included:
+    plain: "The list of planned outputs does not contain {output}."
+    formal: "The outputs planned for the study shall not include {output}."
+    brief: "Not a planned output: {output}."

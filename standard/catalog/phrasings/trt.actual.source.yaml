@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: trt.actual.source
+alternatives:
+  dm_actarm:
+    plain: "The actual arm of the subject (DM.ACTARM) is used as actual treatment."
+    formal: "Actual treatment shall be taken as the actual arm of the subject (DM.ACTARM)."
+    brief: "Actual treatment: actual arm of the subject (DM.ACTARM)."
+  first_ex_treatment:
+    plain: "The treatment named on the subject's first exposure record (EX.EXTRT) is used as actual treatment."
+    formal: "Actual treatment shall be taken as the treatment named on the first exposure record of the subject (EX.EXTRT)."
+    brief: "Actual treatment: treatment named on the first exposure record of the subject (EX.EXTRT)."
+  same_as_planned:
+    plain: "Actual treatment is set equal to planned treatment."
+    formal: "Actual treatment shall be taken to be identical to planned treatment."
+    brief: "Actual treatment = planned treatment."

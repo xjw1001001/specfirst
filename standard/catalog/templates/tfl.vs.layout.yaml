@@ -1,0 +1,6 @@
+entry: tfl.vs.layout
+alternatives:
+  side_by_side:
+    params: {value_layout: side_by_side}
+  stacked:
+    params: {value_layout: stacked}

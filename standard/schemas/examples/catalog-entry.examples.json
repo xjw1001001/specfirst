@@ -1,0 +1,234 @@
+{
+  "schema": "catalog-entry",
+  "valid": [
+    {
+      "name": "a module entry with a slot and a default (after the example of PLAN.md section 5.1)",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.collects_adverse_events and design.has_exposure",
+        "question": "When does treatment emergence end?",
+        "alternatives": [
+          { "id": "no_end", "statement": "Treatment emergence has no end date." },
+          {
+            "id": "last_dose_plus_days",
+            "statement": "Treatment emergence ends {days} days after the treatment end date.",
+            "definition": "An event that starts on the last day of the window is still treatment-emergent.",
+            "slots": { "days": { "type": "int", "min": 0, "examples": [30, 7] } }
+          }
+        ],
+        "house_default": "no_end",
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [
+          { "ref": "admiral", "where": "derive_var_trtemfl(), end_window" },
+          {
+            "ref": "yamaa",
+            "path": "benchmarks/adam-adae-onset-emergence/spec.yaml",
+            "find": "TEENDDTM",
+            "where": "a window after last exposure"
+          }
+        ]
+      }
+    },
+    {
+      "name": "an entry answered once per table family, with a default per unit",
+      "instance": {
+        "id": "tfl.population",
+        "units": ["tfl-demographics", "tfl-ae-summary"],
+        "applies_when": "design.always",
+        "question": "Which analysis set does the output use?",
+        "alternatives": [
+          { "id": "safety", "statement": "The analysis set of {output} is the safety set." },
+          { "id": "randomized", "statement": "The analysis set of {output} is the randomized set." }
+        ],
+        "house_default": { "tfl-demographics": "randomized", "tfl-ae-summary": "safety" },
+        "compile": "templates/tfl.population.yaml",
+        "phrasings": "phrasings/tfl.population.yaml",
+        "reading": "knowledge/tfl.population.md",
+        "probes": ["randomized_never_dosed"],
+        "sources": [{ "ref": "ich-e3", "where": "section 11.1" }]
+      }
+    },
+    {
+      "name": "no default: the documents state it or a person is asked; a slot of records",
+      "instance": {
+        "id": "bds.window.table",
+        "unit": "mod-bds-visits",
+        "applies_when": "design.has_bds_parameters",
+        "question": "How are records assigned to analysis visits?",
+        "notes": "A record is post-baseline when its date is after the treatment start date.",
+        "alternatives": [
+          {
+            "id": "protocol_windows",
+            "statement": "Post-baseline records are assigned to analysis visits by these study day windows: {windows}.",
+            "slots": {
+              "windows": {
+                "type": "records",
+                "fields": { "visit": "text", "low": "int", "high": "int" },
+                "item": "{visit} from day {low} to day {high}",
+                "examples": [
+                  [{ "visit": "Week 2", "low": 8, "high": 21 }],
+                  [{ "visit": "Week 4", "low": 22, "high": 42 }]
+                ]
+              }
+            }
+          }
+        ],
+        "house_default": null,
+        "compile": "templates/bds.window.table.yaml",
+        "phrasings": "phrasings/bds.window.table.yaml",
+        "reading": "knowledge/bds.window.table.md",
+        "probes": ["record_in_gap_between_protocol_windows"],
+        "sources": [{ "ref": "adamig", "where": "AVISIT, AWLO and AWHI" }]
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "no public source",
+      "why": "every entry cites at least one public source (PLAN.md section 2.1, rule 3)",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [{ "id": "no_end", "statement": "Treatment emergence has no end date." }],
+        "house_default": "no_end",
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": []
+      }
+    },
+    {
+      "name": "both unit and units",
+      "why": "an entry belongs to one unit, or is answered once per table family",
+      "instance": {
+        "id": "tfl.population",
+        "unit": "tfl-demographics",
+        "units": ["tfl-demographics", "tfl-ae-summary"],
+        "applies_when": "design.always",
+        "question": "Which analysis set does the output use?",
+        "alternatives": [{ "id": "safety", "statement": "The analysis set of {output} is the safety set." }],
+        "house_default": "safety",
+        "compile": "templates/tfl.population.yaml",
+        "phrasings": "phrasings/tfl.population.yaml",
+        "reading": "knowledge/tfl.population.md",
+        "probes": ["randomized_never_dosed"],
+        "sources": [{ "ref": "ich-e3", "where": "section 11.1" }]
+      }
+    },
+    {
+      "name": "no alternative",
+      "why": "a question without an alternative cannot be answered",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [],
+        "house_default": null,
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "statement that is not a sentence",
+      "why": "a statement starts with a capital letter and ends with a full stop",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [{ "id": "no_end", "statement": "treatment emergence has no end date" }],
+        "house_default": "no_end",
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "slot without examples",
+      "why": "the round trip and the compile check run on the examples of every slot",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [
+          {
+            "id": "last_dose_plus_days",
+            "statement": "Treatment emergence ends {days} days after the treatment end date.",
+            "slots": { "days": { "type": "int" } }
+          }
+        ],
+        "house_default": null,
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "no probe",
+      "why": "every alternative has a probe that separates it from each sibling (section 5.2, rule 5)",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [{ "id": "no_end", "statement": "Treatment emergence has no end date." }],
+        "house_default": "no_end",
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": [],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "a default per unit on an entry with one unit",
+      "why": "a default per unit belongs to an entry with units",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [{ "id": "no_end", "statement": "Treatment emergence has no end date." }],
+        "house_default": { "tfl-demographics": "no_end", "tfl-ae-summary": "no_end" },
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "a text to find without a file",
+      "why": "a text can only stand in a named file of a pinned source",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [{ "id": "no_end", "statement": "Treatment emergence has no end date." }],
+        "house_default": "no_end",
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [{ "ref": "yamaa", "where": "a benchmark", "find": "TEENDDTM" }]
+      }
+    }
+  ]
+}

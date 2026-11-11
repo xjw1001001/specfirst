@@ -1,0 +1,34 @@
+id: ae.teae.start
+unit: mod-ae-emergence
+applies_when: design.collects_adverse_events and design.has_exposure
+question: When does treatment emergence begin?
+alternatives:
+  - id: on_or_after_first_dose_date
+    statement: "An adverse event is treatment-emergent when it starts on or after the treatment start date."
+    definition: Dates are compared; times are ignored.
+  - id: at_or_after_first_dose_time
+    statement: "An adverse event is treatment-emergent when it starts at or after the date and time of the first dose."
+    definition: >-
+      A start or a first dose collected without a time counts from 00:00 of
+      its day.
+notes: >-
+  For every alternative: an event of a subject without a treatment start
+  date is not treatment-emergent; an event that ends before the treatment
+  start date is not treatment-emergent; an event without an analysis start
+  date is treatment-emergent.
+house_default: on_or_after_first_dose_date
+compile: templates/ae.teae.start.yaml
+phrasings: phrasings/ae.teae.start.yaml
+reading: knowledge/ae.teae.start.md
+probes: [ae_on_first_dose_date_without_time]
+sources:
+  - ref: admiral
+    where: "derive_var_trtemfl(): start on or after treatment start; a missing start date is flagged"
+  - ref: p7
+    path: spec/yamaa/pilot-program/adae_v1.yaml
+    find: "ASTDT >= TRTSDT"
+    where: "TRTEMFL of the pilot program template"
+  - ref: yamaa
+    path: benchmarks/adam-adae-onset-emergence/spec.yaml
+    find: "ASTDTM >= TRTSDTM"
+    where: "the benchmark of treatment emergence timing: comparison of date and time"

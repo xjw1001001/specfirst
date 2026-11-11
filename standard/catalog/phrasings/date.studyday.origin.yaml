@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: date.studyday.origin
+alternatives:
+  treatment_start:
+    plain: "The treatment start date counts as study day 1."
+    formal: "Study day 1 shall be defined as the treatment start date."
+    brief: "Study day 1 = treatment start date."
+  dm_rfstdtc:
+    plain: "The reference start date of the subject (DM.RFSTDTC) counts as study day 1."
+    formal: "Study day 1 shall be defined as the reference start date of the subject (DM.RFSTDTC)."
+    brief: "Study day 1 = reference start date of the subject (DM.RFSTDTC)."

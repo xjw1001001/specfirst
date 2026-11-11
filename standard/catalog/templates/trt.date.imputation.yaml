@@ -1,0 +1,50 @@
+entry: trt.date.imputation
+alternatives:
+  not_completed:
+    adam:
+      ADSL:
+        columns:
+          - name: TRTSDT
+            type: date
+            label: Date of First Exposure to Treatment
+            derivation:
+              impute: {type: date, source: _TRTSDTC, invalid: null}
+          - name: TRTSDTM
+            type: datetime
+            label: Datetime of First Exposure to Treatment
+            derivation:
+              impute: {type: datetime, source: _TRTSDTC, time: first, invalid: null}
+          - name: TRTSTMF
+            type: str
+            label: Time of First Exposure Imputation Flag
+            derivation:
+              imputation_flag: {source: TRTSDTM, part: time, seconds_collected: false}
+          - name: TRTEDT
+            type: date
+            label: Date of Last Exposure to Treatment
+            derivation:
+              impute: {type: date, source: _TRTEDTC, invalid: null}
+  first_day_of_month:
+    adam:
+      ADSL:
+        columns:
+          - name: TRTSDT
+            type: date
+            label: Date of First Exposure to Treatment
+            derivation:
+              impute: {type: date, source: _TRTSDTCM, day: first, invalid: null}
+          - name: TRTSDTM
+            type: datetime
+            label: Datetime of First Exposure to Treatment
+            derivation:
+              impute: {type: datetime, source: _TRTSDTCM, day: first, time: first, invalid: null}
+          - name: TRTSTMF
+            type: str
+            label: Time of First Exposure Imputation Flag
+            derivation:
+              imputation_flag: {source: TRTSDTM, part: time, seconds_collected: false}
+          - name: TRTEDT
+            type: date
+            label: Date of Last Exposure to Treatment
+            derivation:
+              impute: {type: date, source: _TRTEDTCM, day: first, invalid: null}

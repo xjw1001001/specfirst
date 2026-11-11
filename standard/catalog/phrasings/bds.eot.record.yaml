@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: bds.eot.record
+alternatives:
+  last_on_treatment_value:
+    plain: "The last non-missing post-baseline value on or before the treatment end date is repeated in an end-of-treatment record."
+    formal: "An end-of-treatment record shall be derived that repeats the last non-missing post-baseline value on or before the treatment end date."
+    brief: "End-of-treatment record: repeats the last non-missing post-baseline value on or before the treatment end date."
+  none:
+    plain: "No end-of-treatment record is created."
+    formal: "No end-of-treatment record shall be derived."
+    brief: "End-of-treatment record: none."

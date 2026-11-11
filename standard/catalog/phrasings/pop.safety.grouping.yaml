@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: pop.safety.grouping
+alternatives:
+  actual:
+    plain: "In safety analyses, subjects are grouped according to actual treatment."
+    formal: "For safety analyses, subjects shall be grouped by actual treatment."
+    brief: "Safety analyses: subjects grouped by actual treatment."
+  planned:
+    plain: "In safety analyses, subjects are grouped according to planned treatment."
+    formal: "For safety analyses, subjects shall be grouped by planned treatment."
+    brief: "Safety analyses: subjects grouped by planned treatment."

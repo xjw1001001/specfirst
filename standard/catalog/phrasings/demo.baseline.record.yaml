@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: demo.baseline.record
+alternatives:
+  last_on_or_before_first_dose:
+    plain: "For weight and for height, the baseline is the last non-missing value on or before the treatment start date."
+    formal: "Baseline weight and baseline height shall each be defined as the last non-missing value on or before the treatment start date."
+    brief: "Baseline weight and height: last non-missing values on or before the treatment start date."
+  at_visit:
+    plain: "For weight and for height, the baseline is the non-missing value at the visit {visit}."
+    formal: "Baseline weight and baseline height shall each be defined as the non-missing value at the visit {visit}."
+    brief: "Baseline weight and height: non-missing values at the visit {visit}."

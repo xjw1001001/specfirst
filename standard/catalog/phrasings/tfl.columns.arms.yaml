@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.columns.arms
+alternatives:
+  ascending_dose_placebo_first:
+    plain: "In {output}, the treatment columns run from the lowest dose to the highest, and placebo comes first."
+    formal: "The treatment columns of {output} shall be ordered by ascending dose, with placebo placed first."
+    brief: "Treatment columns of {output}: ascending dose, placebo first."
+  protocol_order:
+    plain: "In {output}, the treatment columns follow the order in which the arms are listed in the protocol."
+    formal: "The treatment columns of {output} shall be presented in the order in which the protocol lists the arms."
+    brief: "Treatment columns of {output}: in the order of the arms as listed in the protocol."

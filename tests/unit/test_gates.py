@@ -99,6 +99,58 @@ def test_real1_gate_has_the_checks_of_the_plan():
     assert gates.PILOT_P2 == "TOTAL cells=9119605 mismatched=0"  # E1
 
 
+def test_real2_gate_has_the_checks_of_the_plan(root, tmp_path):
+    """PLAN.md section 13.3: both engines, their agreement, P1, planted defects."""
+    names = [check.name for check in gates.GATES["real-2"]]
+    assert names[0] == "environment"
+    # Everything the gate of real-1 checks is checked again.
+    assert set(names) >= {check.name for check in gates.GATES["real-1"]}
+    for needed in ("registry", "method vectors", "results", "planted defects"):
+        assert needed in names
+    # The results are those of the first of the two builds that P1 made.
+    assert names.index("P1 determinism") < names.index("results") < names.index("planted defects")
+    assert names.index("planted defects") < names.index("cache untouched")
+    assert (gates.PILOT_EMBEDDED, gates.PILOT_REPRODUCED) == (3735, 3711)  # E2
+    assert set(gates.REAL2_DEFECTS) == {"D1-arms", "D2-set", "D3-quantile", "D4-subset",
+                                        "D5-engines"}
+
+    # The results check fails when an engine is missing or reproduces too few.
+    from specfirst.machine import build
+
+    def counts(python, r=None):
+        found = [{"set": "x", "engine": "Python", "total": 3735, "reproduced": python,
+                  "not_reproduced": 3735 - python, "explained": True}]
+        if r is not None:
+            found.append({**found[0], "engine": "R", "reproduced": r})
+        return found
+
+    said: list[str] = []
+    ctx = gates.Context(tmp_path, "demo", said.append)
+    try:
+        for given, expected in ((counts(3711, 3711), True), (counts(3711), False),
+                                (counts(3711, 3710), False), (counts(3735, 3735), True)):
+            build_checks = build.result_checks
+            build.result_checks = lambda *args, given=given, **kwargs: (True, given)
+            try:
+                assert gates._results(ctx) is expected, given
+            finally:
+                build.result_checks = build_checks
+    finally:
+        ctx.close()
+    assert any("expected the engines Python and R, found ['Python']" in line for line in said)
+    assert any("the R engine reproduces 3710 of 3735" in line for line in said)
+
+
+def test_std1_gate_has_the_checks_of_the_plan():
+    """PLAN.md section 13.4: round trip, yamaa check, ARS schema, public sources."""
+    names = [check.name for check in gates.GATES["std-1"]]
+    for needed in ("round trip", "yamaa check", "ARS schema", "public sources",
+                   "catalog", "house standard", "unit tests", "ASCII"):
+        assert needed in names
+    assert names[0] == "environment"  # drift is checked first (rule R3)
+    assert names.index("pins") < names.index("public sources")  # the cache is verified first
+
+
 def junit(tmp_path, body: str):
     path = tmp_path / "report.xml"
     path.write_text(

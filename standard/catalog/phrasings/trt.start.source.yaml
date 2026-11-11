@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: trt.start.source
+alternatives:
+  first_ex_with_dose:
+    plain: "The treatment start date is taken from the exposure records with a dose: it is the earliest of their start dates."
+    formal: "The treatment start date shall be defined as the earliest start date among exposure records with a dose."
+    brief: "Treatment start date: earliest start date of an exposure record with a dose."
+  first_ex_record:
+    plain: "The earliest start date found on any exposure record is the treatment start date."
+    formal: "The treatment start date shall be defined as the earliest start date among all exposure records."
+    brief: "Treatment start date: earliest start date of any exposure record."
+  dm_rfxstdtc:
+    plain: "The treatment start date is read from the demographics domain, where it is the date of first exposure (DM.RFXSTDTC)."
+    formal: "The treatment start date shall be taken as the date of first exposure in the demographics domain (DM.RFXSTDTC)."
+    brief: "Treatment start date: date of first exposure in the demographics domain (DM.RFXSTDTC)."

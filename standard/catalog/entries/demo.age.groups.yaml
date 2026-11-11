@@ -1,0 +1,34 @@
+id: demo.age.groups
+unit: mod-demographics
+applies_when: design.always
+question: Which age groups are used?
+alternatives:
+  - id: lt65_65to80_gt80
+    statement: "Age groups are below 65, 65 to 80, and above 80 years."
+    definition: "The groups are labelled <65, 65-80 and >80. An age of exactly 80 is in 65-80."
+  - id: lt65_ge65
+    statement: "Age groups are below 65 years, and 65 years and above."
+    definition: "The groups are labelled <65 and >=65."
+  - id: stated_cuts
+    statement: "Age groups start at the ages {cuts} years, with one more group below the first of them."
+    definition: >-
+      For the cuts 18 and 65 the groups are labelled <18, 18-<65 and >=65. An
+      age equal to a cut is in the group that starts there.
+    slots:
+      cuts: {type: "list[int]", min: 1, max: 120, ascending: true, examples: [[18, 65], [40], [18, 65, 75]]}
+house_default: lt65_65to80_gt80
+compile: templates/demo.age.groups.yaml
+phrasings: phrasings/demo.age.groups.yaml
+reading: knowledge/demo.age.groups.md
+probes: [age_at_cut_points]
+sources:
+  - ref: adamig
+    where: "ADSL subject-level grouping variables, AGEGRy"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "AGEGR1 = 1 if AGE <65"
+    where: "AGEGR1N of the pilot ADSL: <65, 65-80, >80"
+  - ref: yamaa
+    path: yaml/schema_expression_mapping.yaml
+    find: "Ascending interval boundaries"
+    where: "the cut verb: left-closed intervals from ascending breaks"

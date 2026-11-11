@@ -1,0 +1,7 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: ae.related.values
+alternatives:
+  stated_list:
+    plain: "An adverse event counts as related to study treatment when its causality is any of these values: {values}."
+    formal: "An adverse event shall be considered related to study treatment if its causality is one of the following: {values}."
+    brief: "Adverse event related to study treatment when causality is one of: {values}."

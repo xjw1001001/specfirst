@@ -1,0 +1,42 @@
+id: bds.baseline.rule
+unit: mod-bds-visits
+applies_when: design.has_bds_parameters
+question: Which record is the baseline of each parameter?
+alternatives:
+  - id: last_before_first_dose
+    statement: "Baseline is the last non-missing value before the first dose."
+    definition: >-
+      A value is before the first dose when its date is before the treatment
+      start date. A value on that date is before the first dose unless both
+      its time and the time of the first dose were collected and its time is
+      not earlier.
+  - id: last_on_or_before_first_dose_date
+    statement: "Baseline is the last non-missing value on or before the treatment start date."
+    definition: Dates are compared; times are ignored.
+  - id: scheduled_baseline_visit
+    statement: "Baseline is the last non-missing value at the scheduled visit {visit}."
+    slots:
+      visit: {type: text, examples: ["BASELINE", "Screening"]}
+notes: >-
+  The last value is the latest by the collected date and time; of the
+  values of one day, a value without a collected time comes before those
+  with a time, and the highest sequence number breaks a remaining tie.
+  Whether records of unscheduled visits may be baseline is decision
+  bds.unscheduled.use.
+house_default: last_before_first_dose
+compile: templates/bds.baseline.rule.yaml
+phrasings: phrasings/bds.baseline.rule.yaml
+reading: knowledge/bds.baseline.rule.md
+probes: [day_1_value_after_first_dose_time, only_unscheduled_predose_value]
+sources:
+  - ref: adamig
+    where: "BDS, baseline record flag ABLFL and baseline value BASE"
+  - ref: admiral
+    where: "derive_var_extreme_flag(), order and mode, for the last record before treatment"
+  - ref: yamaa
+    path: yaml/schema_expression_window.yaml
+    find: "baseline_flag"
+    where: "the baseline_flag verb: the last eligible row up to a reference date"
+  - ref: p6
+    path: documents/SAP.pdf
+    where: "baseline defined as the value of a named visit (PLAN.md, E26)"

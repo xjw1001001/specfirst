@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.denominator
+alternatives:
+  analysis_set_per_column:
+    plain: "In the demographics table, the denominator of a percentage is the number of subjects of the analysis set in the column."
+    formal: "Percentages in the demographics table shall be calculated with the number of subjects of the analysis set in the column as the denominator."
+    brief: "Demographics table, denominator of percentages: number of subjects of the analysis set in the column."
+  subjects_with_data:
+    plain: "In the demographics table, the denominator of a percentage is the number of subjects with a non-missing value in the column."
+    formal: "Percentages in the demographics table shall be calculated with the number of subjects with a non-missing value in the column as the denominator."
+    brief: "Demographics table, denominator of percentages: number of subjects with a non-missing value in the column."

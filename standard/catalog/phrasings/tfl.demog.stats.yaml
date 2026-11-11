@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.demog.stats
+alternatives:
+  n_mean_sd_median_min_max:
+    plain: "For continuous rows, the demographics table gives n, the mean, the standard deviation, the median, the minimum and the maximum."
+    formal: "Continuous rows of the demographics table shall present n, mean, standard deviation, median, minimum and maximum."
+    brief: "Demographics table, continuous rows: n, mean, standard deviation, median, minimum, maximum."
+  with_quartiles:
+    plain: "For continuous rows, the demographics table gives n, the mean, the standard deviation, the median, the first and the third quartile, the minimum and the maximum."
+    formal: "Continuous rows of the demographics table shall present n, mean, standard deviation, median, first and third quartile, minimum and maximum."
+    brief: "Demographics table, continuous rows: n, mean, standard deviation, median, first and third quartile, minimum, maximum."

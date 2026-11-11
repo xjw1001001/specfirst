@@ -1,0 +1,29 @@
+id: bds.eot.record
+unit: mod-bds-visits
+applies_when: design.has_bds_parameters and design.has_exposure
+question: Is there an end-of-treatment record?
+alternatives:
+  - id: last_on_treatment_value
+    statement: "An end-of-treatment record repeats the last non-missing post-baseline value on or before the treatment end date."
+    definition: >-
+      The record has the analysis visit End of Treatment and the derivation
+      type LOV. A subject without a treatment end date takes the last
+      post-baseline value.
+  - id: none
+    statement: "There is no end-of-treatment record."
+house_default: last_on_treatment_value
+compile: templates/bds.eot.record.yaml
+phrasings: phrasings/bds.eot.record.yaml
+reading: knowledge/bds.eot.record.md
+probes: [end_of_treatment_visit_shown]
+sources:
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/advs.yaml
+    find: "End of Treatment"
+    where: "the end-of-treatment records of the pilot ADVS"
+  - ref: yamaa
+    path: benchmarks/adam-adlb-end-of-treatment/README.md
+    find: "end-of-treatment record"
+    where: "the benchmark of the end-of-treatment record"
+  - ref: adamig
+    where: "BDS derivation type DTYPE for derived records"

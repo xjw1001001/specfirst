@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.columns.total
+alternatives:
+  all_arms:
+    plain: "In {output}, there is a total column that pools all treatment arms."
+    formal: "A total column pooling all treatment arms shall be presented in {output}."
+    brief: "Total column of {output}: all treatment arms pooled."
+  none:
+    plain: "A total column is not shown in {output}."
+    formal: "No total column shall be presented in {output}."
+    brief: "Total column of {output}: none."
+  active_arms:
+    plain: "In {output}, there is a total column that pools every treatment arm except {control}."
+    formal: "A total column pooling the treatment arms other than {control} shall be presented in {output}."
+    brief: "Total column of {output}: treatment arms other than {control}, pooled."

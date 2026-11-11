@@ -1,0 +1,31 @@
+id: tfl.decimals.rule
+units: [tfl-demographics, tfl-vitals-by-visit]
+applies_when: design.always
+question: How many decimals does each statistic have?
+alternatives:
+  - id: relative_to_data
+    statement: "In {output}, the mean and the median have one more decimal than the data, the standard deviation has two more, and the minimum and the maximum have as many as the data."
+    definition: >-
+      The decimals of the data are the largest number of decimals among the
+      values summarized in the row. Quartiles are shown as the median is.
+  - id: stated_decimals
+    statement: "In {output}, the mean has {mean} decimals, the standard deviation {sd}, the median {median}, and the minimum and the maximum {range}."
+    definition: Quartiles are shown as the median is.
+    slots:
+      mean: {type: int, min: 0, max: 6, examples: [1, 2]}
+      sd: {type: int, min: 0, max: 6, examples: [2, 3]}
+      median: {type: int, min: 0, max: 6, examples: [1, 2]}
+      range: {type: int, min: 0, max: 6, examples: [0, 1]}
+house_default: relative_to_data
+compile: templates/tfl.decimals.rule.yaml
+phrasings: phrasings/tfl.decimals.rule.yaml
+reading: knowledge/tfl.decimals.rule.md
+probes: [data_decimals_differ_from_stated]
+sources:
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-2.01: mean one more decimal than the data, standard deviation two more (PLAN.md, E24)"
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "resultPattern"
+    where: "result patterns fix the decimals of each operation"

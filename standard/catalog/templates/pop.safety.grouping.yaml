@@ -1,0 +1,6 @@
+entry: pop.safety.grouping
+alternatives:
+  actual:
+    params: {safety_treatment_variable: TRT01A}
+  planned:
+    params: {safety_treatment_variable: TRT01P}

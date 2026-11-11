@@ -16,6 +16,16 @@ Code adapted from a source, with its license:
 | `src/specfirst/machine/lineage.py` | https://github.com/RConsortium/submissions-pilot7-synthetic-data `.github/scripts/study_dashboard/references.py` and `.github/scripts/study_dashboard/lineage.py` | 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8 | MIT (Pilot 7 `LICENSE`: original Pilot 7 code). Copyright notice and license text: `third_party/licenses/PILOT7-MIT.txt` | The rules that decide what an expression reads are unchanged. Added: the place of every read as a JSON pointer, unknown bare names, datasets read as a whole. Removed: source spans computed from YAML text. ADR-001, item 7. |
 | `src/specfirst/machine/runner.py` | https://github.com/RConsortium/submissions-pilot7-synthetic-data `.github/scripts/resolved_specs.py`, the function `relocate` | 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8 | MIT. Copyright notice and license text: `third_party/licenses/PILOT7-MIT.txt` | The function `_relocate` walks the same fields of a resolution. One direction only (absolute to relative); each distinct file is resolved once. The rest of the file is ours. |
 
+Specifications and templates written for this repository that take over
+idioms of a source. No file and no passage was copied; the table records
+where a way of writing a rule comes from.
+
+| Files here | Idiom taken from | Commit | License |
+| --- | --- | --- | --- |
+| `standard/houses/open-default@1/adam/*.yaml`, `standard/catalog/templates/*.yaml` (yamaa parent specs and fragments) | Pilot 7 `spec/yamaa/pilot-program/adsl_v1.yaml` and `adae_v1.yaml` (first-occurrence flags by a filtered row number; the earliest exposure date as the minimum of the date text; lookups that keep the first or last record) and `cdiscpilot01/spec/yamaa/advs.yaml` (the end-of-treatment record as a second row template that repeats one collected record) | 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8 | MIT (Pilot 7 `LICENSE`); text in `third_party/licenses/PILOT7-MIT.txt` |
+| the same files | yamaa `benchmarks/adam-adae-partial-dates` (a completed date not before the treatment start), `adam-adae-onset-emergence` (a window after last exposure), `adam-adlb-closest-visit` (rank by distance from the target day), `adam-adae-post-dose-window` (a range lookup with `between`) | 93a6757594988fddc9b05d220d5f53deb5085d50 | MIT (yamaa `LICENSE`) |
+| `standard/houses/open-default@1/ars/*.yaml` (ARS templates) | CDISC ARS `workfiles/examples/ARS v1/Common Safety Displays.json`: the way analysis sets, groupings, data subsets, methods, analyses and the list of contents are laid out and named. IDs and texts are ours; no result value is taken | 2c9b4b68724386e8f91dc576724855af7fafac65 | MIT for code, CC BY 4.0 for content (as PLAN.md appendix A records it) |
+
 `tests/pilot` (A5-adapted) compares our Python files with the Python files
 of the cached sources line by line and fails when a file that is not in
 this table shares more than a few lines with one of them: a row that is
