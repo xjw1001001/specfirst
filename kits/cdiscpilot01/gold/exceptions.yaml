@@ -1,0 +1,263 @@
+# Differences between our results and the references of this kit (PLAN.md
+# section 4.8). `specfirst check cdiscpilot01` fails on a difference that is
+# not listed here, on an entry that is no difference, and on a proof that does
+# not hold.
+#
+# results: one list per result set of kit.yaml. An entry has
+#   result    the ID of the ARD row (analysis, operation, groups)
+#   embedded  the raw value the reference carries, as it prints it
+#   class     rule_choice, reference_error or data_difference
+#   proof     a kind the check knows, with what it needs:
+#               value_of_other_result  the embedded value is our value of `result`
+#               same_under_every       our value is the same under every value of
+#                                      the option `option` of the method `method`,
+#                                      and never the embedded one
+#               no_alternative         the other statistics of the same cell are
+#                                      reproduced, and under no value of `option`
+#                                      is our value the embedded one
+#               alternative            with `option` = `value` our value is the
+#                                      embedded one (the proof of a rule_choice)
+#               no_records             the reference embeds no value, we give no
+#                                      result, and the counts in `zero` are 0
+#   sources   what else supports the class, for a reader; not checked
+#
+# common-safety-displays: 25 results of CDISC's example "Common Safety
+# Displays" (ARS v1). The first is not in evidence E3: a first quartile that
+# agrees with ours as printed ("70" against 70.5) and not at the precision of
+# its display pattern. The other 24 are those of E3: 22 values exchanged
+# between the low dose and the high dose arm, one median of height, and one
+# p-value that is empty. The pilot ADSL and ADAE give our values in both
+# engines.
+exceptions: 0
+results:
+  common-safety-displays:
+    - result: "ard:An03_01_Age_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_5_Q1/AnlsGrouping_01_Trt_3"
+      embedded: "70"
+      class: reference_error
+      proof:
+        kind: no_alternative
+        method: summary.continuous
+        option: quantile_definition
+      sources:
+        - "The high dose arm has 84 subjects. By the SAS default the first quartile is the mean of the 21st and the 22nd age, which are 70 and 71: 70.5. By the R default it is 70.75. The embedded 70 is the 21st age alone."
+        - "The example's other quartiles follow the SAS default. In the same arm its third quartile of height, 172.85, is the mean of the 63rd and the 64th value, 172.7 and 173.0."
+        - "The example prints the raw value 70 and the formatted value 70.0. Evidence E3 counted this result as reproduced, because 70.5 is within half a unit of a value printed without decimals."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_1"
+      embedded: "3"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_2"
+      embedded: "81"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_2"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_1"
+      embedded: "6"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_2"
+      embedded: "78"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_2"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_1"
+      embedded: "3.5714285714285716"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_2"
+      embedded: "96.42857142857143"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_2"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_1"
+      embedded: "7.142857142857143"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_05_Ethnic_2"
+      embedded: "92.85714285714286"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_2"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints 3, 6 and 3 Hispanic or Latino subjects for placebo, low dose and high dose; evidence E24 reproduces that table from the same ADSL."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_1"
+      embedded: "1"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_3"
+      embedded: "9"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_3"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_5"
+      embedded: "74"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_5"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_1"
+      embedded: "0"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_3"
+      embedded: "6"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_3"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_5"
+      embedded: "78"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_5"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_1"
+      embedded: "1.1904761904761905"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_3"
+      embedded: "10.714285714285714"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_3"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_5"
+      embedded: "88.0952380952381"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_5"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_1"
+      embedded: "0"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_1"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_3"
+      embedded: "7.142857142857143"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_3"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_3/AnlsGrouping_04_Race_5"
+      embedded: "92.85714285714286"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_2/AnlsGrouping_04_Race_5"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "The CSR reports race as origin (E15), so its table is not comparable row by row."
+    - result: "ard:An03_06_Height_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_2"
+      embedded: "165.8202381"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_06_Height_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_3"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints the mean height 163.4 for low dose and 165.8 for high dose, and the median 162.6 for low dose (E24)."
+    - result: "ard:An03_06_Height_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_3"
+      embedded: "163.4333333"
+      class: reference_error
+      proof:
+        kind: value_of_other_result
+        result: "ard:An03_06_Height_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_2"
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints the mean height 163.4 for low dose and 165.8 for high dose, and the median 162.6 for low dose (E24)."
+    - result: "ard:An03_06_Height_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_4_Median/AnlsGrouping_01_Trt_2"
+      embedded: "162.2"
+      class: reference_error
+      proof:
+        kind: same_under_every
+        method: summary.continuous
+        option: quantile_definition
+      sources:
+        - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
+        - "CSR Table 14-2.01 prints the mean height 163.4 for low dose and 165.8 for high dose, and the median 162.6 for low dose (E24)."
+    - result: "ard:An07_10_SocPt_Comp_ByTrt_PlacLow/Mth03_CatVar_Comp_FishEx_1_pval/*/=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE"
+      embedded: ""
+      class: reference_error
+      proof:
+        kind: no_records
+        zero:
+          - "ard:An07_10_SocPt_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE"
+          - "ard:An07_10_SocPt_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE"
+      sources:
+        - "The analysis compares placebo with low dose. No subject of these two arms has a treatment-emergent event with this term, so the data-driven grouping has no such group and there is no table to test."
+        - "The example lists the result with an empty raw value and without a formatted value."

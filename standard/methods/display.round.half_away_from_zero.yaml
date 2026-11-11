@@ -1,0 +1,33 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: display.round.half_away_from_zero
+kind: display
+title: Round half away from zero
+takes: one number and the count of decimals to show, 0 to 15
+operations:
+  text:
+    result: text
+    ars_names: []
+semantics:
+  - >-
+    The number is first written as the shortest decimal that reads back as the
+    same double. That decimal is what is rounded, not the binary value behind
+    it. 2.675 is rounded as 2.675, although the nearest double is a little
+    below it.
+  - >-
+    The decimal is rounded to the asked count of decimals. A decimal exactly
+    halfway between two results goes to the one farther from zero.
+  - >-
+    The result is text with exactly that count of decimals, and without a
+    decimal point when the count is 0. It has no exponent and no thousands
+    separator.
+  - A result that is zero has no minus sign.
+  - A missing number gives a missing result. Infinity and not-a-number are refused.
+options: {}
+# Display rules are applied once, where the grid is built (PLAN.md section
+# 7.2). The grid builder is Python, so there is no second implementation.
+implementations: [python]
+vectors: tests/methods/display_round_half_away_from_zero.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

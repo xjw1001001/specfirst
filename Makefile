@@ -6,7 +6,7 @@ SHELL := /bin/bash
 ENV := . scripts/env.sh &&
 WP ?= base-0
 
-.PHONY: help install doctor fetch test evidence pilot lint ascii gate lock
+.PHONY: help install doctor fetch test evidence pilot methods defects lint ascii gate lock
 
 help:  ## list the targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -E 's/:.*## +/: /'
@@ -28,6 +28,12 @@ evidence:  ## rerun the evidence spikes (about 7 minutes, needs `make fetch`)
 
 pilot:  ## the tests behind ADR-001 on the pilot kit (about 1 minute, needs `make fetch`)
 	$(ENV) SPECFIRST_STRICT=1 python -m pytest tests/pilot -m evidence -s -q
+
+methods:  ## the method vectors in Python and in R, and registry.json (a few seconds, needs R)
+	$(ENV) specfirst methods && SPECFIRST_STRICT=1 python -m pytest tests/methods -s -q
+
+defects:  ## planted defects on the pilot kit, both engines (about 2 minutes, needs `make fetch` and R)
+	$(ENV) SPECFIRST_STRICT=1 python -m pytest tests/defects -s -q
 
 lint:  ## ruff
 	$(ENV) python -m ruff check .

@@ -1,0 +1,19 @@
+{
+  "method": "test.fisher.exact",
+  "cases": [
+    {"name": "2 x 2", "statements": [3, 4], "input": {"table": [[3, 1], [1, 3]]}, "expected": {"p_value": 0.4857142857142857}},
+    {"name": "2 x 2 with empty cells", "statements": [4], "input": {"table": [[4, 0], [0, 4]]}, "expected": {"p_value": 0.02857142857142857}},
+    {"name": "every table is as likely as the observed one or less", "statements": [4, 5, 7], "input": {"table": [[5, 5], [5, 5]]}, "expected": {"p_value": 1.0}},
+    {"name": "2 x 2 of the size of an adverse event comparison", "statements": [4, 6], "input": {"table": [[61, 25], [74, 10]]}, "expected": {"p_value": 0.007507483840609697}},
+    {"name": "2 x 2 with no event in one group", "statements": [4], "input": {"table": [[0, 86], [3, 81]]}, "expected": {"p_value": 0.1184476157326836}},
+    {"name": "2 x 3", "statements": [4, 6], "input": {"table": [[3, 1, 2], [0, 4, 2]]}, "expected": {"p_value": 0.1341991341991342}},
+    {"name": "3 x 3", "statements": [4, 6], "input": {"table": [[3, 1, 2], [4, 0, 5], [1, 2, 6]]}, "expected": {"p_value": 0.26717532030494745}},
+    {"name": "3 x 3 of the size of a laboratory shift table", "statements": [4, 6], "input": {"table": [[2, 35, 3], [4, 30, 6], [1, 36, 3]]}, "expected": {"p_value": 0.446449085857414}},
+    {"name": "3 x 3 with tables of equal probability", "statements": [5, 7], "input": {"table": [[2, 1, 1], [1, 2, 1], [1, 1, 2]]}, "expected": {"p_value": 1.0}},
+    {"name": "rows and columns of zeros are left out", "statements": [1], "input": {"table": [[3, 0, 1], [1, 0, 3], [0, 0, 0]]}, "expected": {"p_value": 0.4857142857142857}},
+    {"name": "one row is left", "statements": [1, 2], "input": {"table": [[0, 0], [3, 4]]}, "expected": {"p_value": null}},
+    {"name": "2 x 4", "statements": [4, 6], "input": {"table": [[1, 2, 3, 4], [4, 3, 2, 1]]}, "expected": {"p_value": 0.45874558877654853}},
+    {"name": "4 x 2: the same table turned", "statements": [4], "input": {"table": [[1, 4], [2, 3], [3, 2], [4, 1]]}, "expected": {"p_value": 0.45874558877654853}},
+    {"name": "4 x 3", "statements": [4, 6], "input": {"table": [[2, 1, 0], [1, 2, 1], [0, 1, 2], [1, 0, 3]]}, "expected": {"p_value": 0.44101612673041246}}
+  ]
+}

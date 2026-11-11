@@ -23,3 +23,15 @@ values of its one-page table are typed into the script.
 These are spikes, not product code. Work package base-0 turns them into
 tests. real-2 replaces `ars_spike.py` with the real engines, and real-4
 replaces the CSR parsers.
+
+Two things the real engines of real-2 found that `ars_spike.py` could not
+(ADR-002, decision 6): its comparison allows half a unit of a value the
+example prints without decimals, so one of its 3,711 matches is a
+difference ("70" against 70.5), and E4's 49 are 97 when the precision of
+the display pattern counts. The spike is kept as it was run.
+
+## Trials for decisions
+
+| File | Decision | What it shows |
+| --- | --- | --- |
+| `adr002_siera_trial.sh` | ADR-002 | siera 0.5.6 on CDISC's ARS example and on its own variant of it, with the pilot ADaM; and what cards and cardx give for the methods of the registry. Recorded output: `adr002_siera_trial.out`. Needs `. scripts/env.sh` and a build of the pilot kit. |

@@ -1,0 +1,29 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: percent.subjects
+kind: descriptive
+title: Percent of subjects, with a referenced denominator
+takes: two results that the analysis references, a numerator and a denominator
+operations:
+  pct:
+    result: number
+    ars_names: ["Percent of subjects"]
+semantics:
+  - The result is 100 times the numerator divided by the denominator.
+  - >-
+    The numerator is the result of the operation that the analysis references
+    with the role NUMERATOR, in the same cell.
+  - >-
+    The denominator is the result of the operation that the analysis references
+    with the role DENOMINATOR, in the analysis named there. It is the one result
+    of that analysis whose groups are all groups of the cell. No such result, or
+    more than one, is an error.
+  - When the denominator is 0 or missing, the result is missing. It is never infinite.
+  - When the numerator is missing, the result is missing.
+  - The result is not rounded and not capped at 100.
+options: {}
+implementations: [python, r]
+vectors: tests/methods/percent_subjects.json
+xref:
+  ars_example: [Mth01_CatVar_Summ_ByGrp_2_pct]
+  siera: [02_categorical_summary]
+  acdc: null

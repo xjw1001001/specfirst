@@ -19,6 +19,7 @@ pins:
     yamaa: "0.7.0"
   sources:
     p7: 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8
+    ars: 2c9b4b68724386e8f91dc576724855af7fafac65
 
 build:
   # The yamaa project that builds the ADaM datasets (ADR-001).
@@ -31,6 +32,33 @@ build:
   # Pilot 7's reviewed claims: <dataset>-claims.json, imported as candidate
   # cites edges.
   claims: gold/claims
+  # Our own file, in this folder: every difference between our results and a
+  # reference, with its class and its proof (PLAN.md section 4.8, ADR-002).
+  exceptions: gold/exceptions.yaml
+
+# The ARS reporting events whose analyses the result engines run on the ADaM
+# datasets of the build (ADR-002).
+results:
+  # CDISC's ARS v1 example "Common Safety Displays": 5 outputs, 31 analyses,
+  # as fetched. The 3,735 results it embeds are a reference (E2, E3).
+  - id: common-safety-displays
+    ars: gold/spec/ars/common-safety-displays.json
+    # The JSON Schema generated from the ARS model, from the same repository.
+    schema: gold/spec/ars/ars_ldm.schema.json
+    subject_key: USUBJID
+    # The example names its operations in words. Its three tests all call
+    # their operation "P-value", so they are bound here (binding rule B1).
+    # The others are found by their names (rule B3): "Count of subjects",
+    # "Percent of subjects", "Mean" and so on.
+    binding:
+      operations:
+        Mth03_CatVar_Comp_PChiSq_1_pval: {method: test.chisq, operation: p_value}
+        Mth04_ContVar_Comp_Anova_1_pval: {method: test.anova.oneway, operation: p_value}
+        Mth03_CatVar_Comp_FishEx_1_pval: {method: test.fisher.exact, operation: p_value}
+      # What the example leaves to code, stated: the SAS default for quantiles
+      # (E4: with the R default 49 more results differ).
+      options:
+        summary.continuous: {quantile_definition: sas5}
 
 # The documents of the kit. `cited_as` is how Pilot 7's claims name them.
 documents:
@@ -131,6 +159,14 @@ files:
     source: p7
     from: cdiscpilot01/data/adam/advs.parquet
     sha256: 5053968c04dd8b795f641c69f812f5e200664abbdfaf10a6e84280aeea4ba482
+  - path: gold/spec/ars/ars_ldm.schema.json
+    source: ars
+    from: project/jsonschema/ars_ldm.schema.json
+    sha256: bf8dd98f3cf0abc4e88624600e3cf1962db0fd76f461a1d7e5c841bd788102e4
+  - path: gold/spec/ars/common-safety-displays.json
+    source: ars
+    from: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    sha256: 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
   - path: gold/spec/cdiscpilot01/spec/yamaa/adae.yaml
     source: p7
     from: cdiscpilot01/spec/yamaa/adae.yaml

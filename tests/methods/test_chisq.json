@@ -1,0 +1,15 @@
+{
+  "method": "test.chisq",
+  "cases": [
+    {"name": "2 x 2", "statements": [3, 5], "input": {"table": [[10, 20], [20, 10]]}, "expected": {"p_value": 0.009823274507519245}},
+    {"name": "2 x 3", "statements": [3, 5], "input": {"table": [[10, 20, 30], [20, 20, 20]]}, "expected": {"p_value": 0.06948345122280154}},
+    {"name": "a column of zeros is left out", "statements": [1], "input": {"table": [[10, 0, 20], [20, 0, 10]]}, "expected": {"p_value": 0.009823274507519245}},
+    {"name": "a row of zeros is left out, then one row is left", "statements": [1, 2], "input": {"table": [[0, 0], [5, 7]]}, "expected": {"p_value": null}},
+    {"name": "one column", "statements": [2], "input": {"table": [[5], [7]]}, "expected": {"p_value": null}},
+    {"name": "only zeros", "statements": [1, 2], "input": {"table": [[0, 0], [0, 0]]}, "expected": {"p_value": null}},
+    {"name": "3 x 3", "statements": [3, 5], "input": {"table": [[12, 5, 7], [8, 9, 6], [4, 10, 14]]}, "expected": {"p_value": 0.05825759184009553}},
+    {"name": "small expected counts: no correction, no change", "statements": [4, 6], "input": {"table": [[1, 3], [4, 2]]}, "expected": {"p_value": 0.19670560245894686}},
+    {"name": "2 x 4: three degrees of freedom", "statements": [5], "input": {"table": [[3, 8, 12, 2], [9, 6, 4, 6]]}, "expected": {"p_value": 0.02572374095915453}},
+    {"name": "no difference at all", "statements": [3], "input": {"table": [[10, 20], [10, 20]]}, "expected": {"p_value": 1.0}}
+  ]
+}

@@ -1,0 +1,21 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: count.subjects
+kind: descriptive
+title: Count of subjects
+takes: the values of the analysis variable on the records of one cell
+operations:
+  n:
+    result: integer
+    ars_names: ["Count of subjects"]
+semantics:
+  - The result is the number of distinct values of the analysis variable on the records of the cell.
+  - A missing value is not counted. For text, the empty text is a missing value.
+  - A cell without records gives 0, not a missing result.
+  - Text values are compared exactly, as they are stored. Case and blanks count.
+options: {}
+implementations: [python, r]
+vectors: tests/methods/count_subjects.json
+xref:
+  ars_example: [Mth01_CatVar_Count_ByGrp_1_n, Mth01_CatVar_Summ_ByGrp_1_n]
+  siera: [01_total_n, 02_categorical_summary]
+  acdc: null

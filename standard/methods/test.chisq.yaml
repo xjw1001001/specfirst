@@ -1,0 +1,31 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: test.chisq
+kind: test
+title: Pearson chi-square test
+takes: a table of counts with r rows and c columns
+operations:
+  p_value:
+    result: number
+    ars_names: ["P-value"]
+semantics:
+  - Rows and columns whose total is 0 are left out.
+  - With fewer than 2 rows or fewer than 2 columns left, the result is missing.
+  - >-
+    The expected count of a cell is its row total times its column total,
+    divided by the total N. The statistic is the sum over the cells of
+    (count - expected)^2 / expected.
+  - No continuity correction is applied, whatever the size of the table.
+  - >-
+    p_value: the probability that a chi-square variable with (r - 1) * (c - 1)
+    degrees of freedom is at least the statistic.
+  - Small expected counts change nothing and give no warning.
+options:
+  correction:
+    values: [none]
+    default: none
+implementations: [python, r]
+vectors: tests/methods/test_chisq.json
+xref:
+  ars_example: [Mth03_CatVar_Comp_PChiSq_1_pval]
+  siera: [07_chisq, 12_chisq_per_predefined_group]
+  acdc: null

@@ -13,7 +13,7 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - `specfirst catalog [--roundtrip|--sources|--yamaa|--run|--tables]`, `specfirst house [--write]`: the checks of the catalog and of the house standard
 - `specfirst compile --decisions d.jsonl --defaults --out DIR`; `specfirst render`, `specfirst parse`: decisions to specs; decisions to a standard-form document and back
 - `scripts/clean_clone_gate.sh <wp>`: the same gate on a fresh clone with a fresh install and fetch
-- `specfirst kit assemble <kit>`, `specfirst build <kit>`, `specfirst check <kit> [--twice]`: copy a kit from the cache by pinned SHA-256; build resolved specs, ADaM and graph into build/kits/<kit>; P2 and the trace (P1 first with --twice)
+- `specfirst kit assemble <kit>`, `specfirst build <kit>`, `specfirst check <kit> [--twice]`: copy a kit from the cache by pinned SHA-256; build resolved specs, ADaM, graph and results (both engines; needs R) into build/kits/<kit>; P2, the trace, the results (P1 first with --twice). `specfirst methods [--write]`, `make methods`, `make defects`: the method registry, its vectors, the planted defects on the pilot
 - `make evidence`: rerun the evidence spikes (about 7 minutes)
 - `specfirst status`, `specfirst doctor`: all state files; the environment against the locks
 - `scripts/worktree.sh <track>`: worktree ../specfirst-<track> on branch track/<track>
@@ -46,10 +46,12 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - .gitattributes keeps every text file LF. A new script needs `git update-index --chmod=+x <file>`.
 - Git for Windows ships Xpdf's pdftotext. CSR text must come from poppler (24.02 in Ubuntu 24.04).
 - A yamaa project run with `save()` writes <dataset>-yamaa.parquet next to the reference data; `specfirst fetch --verify` fails on a cache with any changed, added or ignored file. Our runner hands inputs over in memory and never saves (ADR-001).
-- A kit folder of real data holds kit.yaml and README.md only. After a pin changes on purpose: `specfirst kit lock <kit>`.
+- A kit folder of real data holds kit.yaml, README.md and the gold/exceptions.yaml its manifest names, nothing else. After a pin changes on purpose: `specfirst kit lock <kit>`.
+- The R library is shared by all checkouts and `doctor` fails on any package outside the lock: never install one. It reads no Parquet and no YAML: the R engine gets JSON and is sourced from r/specfirstr/, not installed (ADR-002). standard/methods/registry.json is generated: after editing an entry run `specfirst methods --write`; add statements of semantics at the end.
+- A reference drops trailing zeros ("70", "1"): compare with specfirst.machine.results, not by half a unit of the printed text (lesson 23). Write a non-ASCII test character as chr(...): the editor turns an escape into the character (lesson 25).
 - A file-system call on /mnt/<drive> under WSL is slow: never resolve or stat a path once per element (lesson 10).
 - R and its recommended packages are pinned system packages (env/r-version.txt, env/system.lock); `specfirst doctor` fails on drift and is the first check of every gate.
-- scipy.stats.fisher_exact is exact for 2 x 2 tables only (E27).
+- scipy.stats.fisher_exact is exact for 2 x 2 tables only (E27); specfirst.machine.methods.fisher_exact_p is exact for any table.
 - Pilot 7 names: the spec is adqsnipx.yaml, the reference file is adqsnpix.parquet.
 - Searches started in D:\trial_work reach reference/. Always work from inside the checkout.
 - `yamaa check` reads no data: a spec can pass it and fail when run. Run a changed fragment (`specfirst catalog --run`).
