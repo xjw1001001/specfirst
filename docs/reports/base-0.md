@@ -18,8 +18,10 @@ fixes.
 The private GitHub repository exists and holds `main` and `track/base`. CI
 succeeded on both gated commits (section "GitHub and CI").
 
-The independent review (rule R7) is in `docs/reports/base-0.review.md`.
-`track/base` merges to `main` once that review is signed (section 2.4).
+The independent review (rule R7) is in `docs/reports/base-0.review.md`. Its
+verdict is PASS (section "Review, second pass"). With gate and review
+passed, `track/base` merges to `main` and both are pushed (section 2.4);
+the git history and `docs/state/base.md` record the merge.
 
 ## What base-0 asks for, and where it stands
 
@@ -247,7 +249,7 @@ on in commit `1b509d2`:
 | F1 | A track worktree made by Windows git cannot be opened by Linux git under WSL, so the ASCII check, two unit tests, the gate's commit line and the clean-clone script failed in a worktree | yes | `specfirst.paths.git_env` translates the worktree link for specfirst's own git calls; the clean-clone script uses it; `tests/unit/test_checkout_git.py`; section "A worktree under WSL" |
 | F2 | `specfirst fetch --verify` did not see files the source itself ignores, such as Pilot 7's `*-yamaa.parquet`; the planted-defect test used a source without that rule | yes | the status call lists ignored files; the test uses a source with the rule |
 | F3 | The graph schema rejected the `cites` edges real-1 and real-3 must write (from ADaM variables and analyses) | no | a `cites` edge may start at a decision, an ADaM variable or an analysis; ADR-000 names the tension in the plan |
-| F4 | The decision-record schema required a class for a record in conflict and a citation for a `gold_quirk` | no | relaxed as section 4.5 and 4.8 say; ADR-000 lists what stays open |
+| F4 | The decision-record schema required a class for a record in conflict and a citation for a `gold_quirk` | no | a record in conflict needs no class; a citation is required for a stated or default `document_rule` or `house_default` only (see N1 in the second pass); ADR-000 lists what stays open |
 | F5 | R's recommended packages came from apt unpinned; `doctor` only printed a note; the gate did not run `doctor`; `install_r.R` resolved by itself when the lock was missing | no | pinned in `env/system.lock` and installed at those versions; `doctor` fails on a difference and is gate check 1; `install_r.R` stops without a lock |
 | F6 | No planted-defect tests for the R load check, the lock comparisons, the R version and the poppler check | no | `tests/unit/test_doctor.py`; the gate's R check proves itself on a package that does not exist |
 | F7 | The shell deny rules matched only the absolute path of the reference folder | no | rules for the path relative to the checkout added, and tested |
@@ -261,6 +263,30 @@ has the 51 printed values of CSR Table 14-6.06 typed in (finding 11 of
 
 Lessons 8 and 9 in `docs/lessons.md` record F1 and F2. Both slipped through
 because the first tests planted a simpler case than the real one.
+
+## Review, second pass
+
+The same reviewer then checked the fixes, the gate log and this report at
+commit `9762296`, reran its own planted defects, and signed
+`docs/reports/base-0.review.md`:
+
+```text
+PASS: base-0 may merge to `main`. The verdict applies to commit
+`97622965d140daaec6287b86a97b250cd9667898` (`9762296`).
+```
+
+It found two more points, neither blocking:
+
+| # | Finding | What was done |
+| --- | --- | --- |
+| N1 | The citation rule of the decision record exempts `study_input` and `no_gold` as well as `gold_quirk`, and ADR-000 and this report described it as exempting `gold_quirk` only | the schema is unchanged; ADR-000 item 7 and the F4 row above now say what the schema does, and send the choice to std-1 and the owner at N1 |
+| N2 | `scripts/clean_clone_gate.sh` would take the checkout from `SPECFIRST_ROOT` if the caller had that variable set | not changed, so that the merged scripts are the gated ones; open in `docs/state/base.md`. Nothing in the project sets the variable, and the log prints the commit that was gated |
+
+Changes made after the signature, all in `docs/`: the review file itself,
+this section, the reworded F4 row and verdict lines of this report, the
+reworded paragraph of ADR-000 item 7, and `docs/state/base.md`. No code,
+schema, script or test changed after the gated commit `1b509d2`. CI runs
+on the merge.
 
 ## A worktree under WSL
 
@@ -432,8 +458,7 @@ changed.
 
 ## Open
 
-- Merge `track/base` to `main` after the review is signed, then push both
-  (section 2.4).
+- N1 and N2 of the second review pass (section "Review, second pass").
 - The container definition section 12 lists under `env/`: not written,
   because it could not be tested here; M2 needs it (ADR-000). The owner
   should accept or reject this gap.
