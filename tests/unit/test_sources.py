@@ -45,6 +45,29 @@ def test_sources_md_records_every_source(root, manifest):
         assert pin.sha256 in text, pin.path
 
 
+ADAPTED = re.compile(
+    r"^\| `([^`|]+)` \| (https://github\.com/\S+) .*?\| ([0-9a-f]{40}) \| "
+    r".*?`(third_party/licenses/[^`]+)`",
+    re.MULTILINE,
+)
+
+
+def test_adapted_code_names_its_source_and_carries_its_license(root, manifest):
+    """Rule 1 of PLAN.md section 2.1, and the notice an MIT license asks to keep."""
+    text = (root / "third_party" / "SOURCES.md").read_text(encoding="ascii")
+    rows = ADAPTED.findall(text)
+    # This test checks the rows that are there. tests/pilot (A5-adapted) looks for
+    # adapted code that nobody recorded.
+    assert [row[0] for row in rows] == [
+        "src/specfirst/machine/lineage.py", "src/specfirst/machine/runner.py"]
+    for file, url, commit, license_file in rows:
+        assert any(url == src.web_url and commit == src.commit for src in manifest.sources)
+        notice = (root / license_file).read_text(encoding="ascii")
+        assert "Copyright (c)" in notice and "Permission is hereby granted" in notice
+        code = (root / file).read_text(encoding="ascii")
+        assert commit in code and license_file in code and "Copyright (c)" in code
+
+
 def entry(**changes):
     base = {
         "name": "demo",

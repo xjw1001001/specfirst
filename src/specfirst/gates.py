@@ -23,6 +23,12 @@ from specfirst.paths import build_dir, git_env
 # The evidence tests the base-0 gate must see pass (PLAN.md section 13.2).
 BASE0_EVIDENCE = ("E1", "E2-E3", "E4", "E24", "E25-csr", "E25-single", "E26", "E27")
 
+# real-1 (PLAN.md section 13.3): the kit of the pilot study, the line P2 must
+# print for it (E1), and the tests behind ADR-001.
+PILOT = "cdiscpilot01"
+PILOT_P2 = "TOTAL cells=9119605 mismatched=0"
+REAL1_PILOT_TESTS = ("A1-resolve", "A2-runner", "A3-lineage", "A4-unread", "A5-adapted")
+
 
 class Context:
     def __init__(self, root: Path, wp: str, echo: Callable[[str], None] = print):
@@ -129,6 +135,67 @@ def _root_check(run: Callable[[Path, Callable[[str], None]], bool]) -> Callable[
     return lambda ctx: run(ctx.root, ctx.out)
 
 
+def _kit(ctx: Context) -> bool:
+    """The pilot kit assembles from the cache at its pinned hashes; git holds no study data."""
+    from specfirst import kit
+
+    names = asciicheck.maintained_files(ctx.root)
+    problems = kit.tracked_data_problems(ctx.root, names)
+    for problem in problems:
+        ctx.out(f"study data in git: {problem}")
+    ctx.out(f"study data in git (E20): {len(names)} maintained files checked, "
+            f"{len(problems)} problems")
+    return kit.run_assemble(ctx.root, PILOT, ctx.out) == 0 and not problems
+
+
+def _first_build(ctx: Context) -> Path:
+    return build_dir(ctx.root) / "p1" / PILOT / "first"
+
+
+def _p1(ctx: Context) -> bool:
+    from specfirst.machine import build
+
+    return build.determinism(ctx.root, PILOT, ctx.out)
+
+
+def _p2(ctx: Context) -> bool:
+    from specfirst.machine import build
+
+    lines: list[str] = []
+
+    def out(line: str) -> None:
+        lines.append(line)
+        ctx.out(line)
+
+    passed = build.reproduction(ctx.root, PILOT, _first_build(ctx), out)
+    if PILOT_P2 not in lines:
+        ctx.out(f"P2: expected the line '{PILOT_P2}' (E1)")
+        return False
+    return passed
+
+
+def _trace(ctx: Context) -> bool:
+    from specfirst.machine import build
+
+    return build.trace(ctx.root, PILOT, _first_build(ctx), ctx.out)
+
+
+def _pilot_tests(ctx: Context) -> bool:
+    report = ctx.log_dir / "pilot.xml"
+    report.unlink(missing_ok=True)
+    code = ctx.command(
+        [sys.executable, "-m", "pytest", "tests/pilot", "-m", "evidence", "-s", "-q",
+         f"--junitxml={report}"],
+        env={"SPECFIRST_STRICT": "1"},
+    )
+    problems = junit_problems(report, REAL1_PILOT_TESTS)
+    for problem in problems:
+        ctx.out(f"pilot tests: {problem}")
+    return code == 0 and not problems
+
+
+_REAL1_CHECK = f"specfirst check {PILOT} --build build/p1/{PILOT}/first"
+
 GATES: dict[str, tuple[Check, ...]] = {
     "base-0": (
         Check("environment", "specfirst doctor", _environment),
@@ -139,6 +206,21 @@ GATES: dict[str, tuple[Check, ...]] = {
               _evidence),
         Check("R packages", "Rscript --vanilla env/check_r.R $(cat env/r-packages.txt)",
               _r_packages),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    "real-1": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("P2 reproduction", f"{_REAL1_CHECK} (its first part)", _p2),
+        Check("trace", f"{_REAL1_CHECK} (its second part)", _trace),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -m evidence -s -q",
+              _pilot_tests),
+        # The checks above read the fetch cache; it must still be what was fetched.
+        Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
     # PLAN.md section 13.4: the round trip is exact for every alternative;

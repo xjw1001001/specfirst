@@ -37,7 +37,7 @@ testpaths = ["tests"]
 pythonpath = ["src", "tests"]
 addopts = "-ra"
 markers = [
-    "evidence: reruns an evidence spike on the fetch cache (slow; needs `specfirst fetch`)",
+    "evidence: needs the fetch cache (`specfirst fetch`): the evidence spikes and tests/pilot",
 ]
 
 [tool.ruff]
