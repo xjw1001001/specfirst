@@ -21,12 +21,13 @@ if [ -z "$wp" ]; then
 fi
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# git in this checkout. It also works in a worktree that the other operating
-# system's git made (see specfirst.paths.git_env).
+# git in this checkout, whatever SPECFIRST_ROOT the caller has set. It also
+# works in a worktree that the other operating system's git made (see
+# specfirst.paths.git_env).
 in_checkout() {
   (
     cd "$here" || exit 1
-    eval "$(PYTHONPATH="$here/src" python3 -m specfirst.paths)" || exit 1
+    eval "$(SPECFIRST_ROOT="$here" PYTHONPATH="$here/src" python3 -m specfirst.paths)" || exit 1
     git "$@"
   )
 }

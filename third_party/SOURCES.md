@@ -5,9 +5,15 @@ is recorded here with URL, commit and license.
 
 ## Imported files
 
-None. No third-party file is committed to this repository. The sources
-below are fetched by `specfirst fetch` into an ignored cache and are read
-there (rule 4, E20).
+No third-party study data or document is committed to this repository. The
+sources below are fetched by `specfirst fetch` into an ignored cache and are
+read there (rule 4, E20).
+
+Code adapted from a source, with its license:
+
+| File here | Adapted from | Commit | License | What changed |
+| --- | --- | --- | --- | --- |
+| `src/specfirst/machine/lineage.py` | https://github.com/RConsortium/submissions-pilot7-synthetic-data `.github/scripts/study_dashboard/references.py` and `.github/scripts/study_dashboard/lineage.py` | 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8 | MIT (Pilot 7 `LICENSE`: original Pilot 7 code). Copyright notice and license text: `third_party/licenses/PILOT7-MIT.txt` | The rules that decide what an expression reads are unchanged. Added: the place of every read as a JSON pointer, unknown bare names, datasets read as a whole. Removed: source spans computed from YAML text. ADR-001, item 7. |
 
 ## Pinned sources
 

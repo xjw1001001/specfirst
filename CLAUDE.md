@@ -11,6 +11,7 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - `specfirst fetch`: clone the pinned sources into the ignored cache; `--verify` downloads nothing
 - `specfirst gate <wp>`: the gate of a work package; its log is build/gates/<wp>/gate.log
 - `scripts/clean_clone_gate.sh <wp>`: the same gate on a fresh clone with a fresh install and fetch
+- `specfirst kit assemble <kit>`, `specfirst build <kit>`, `specfirst check <kit> [--twice]`: copy a kit from the cache by pinned SHA-256; build resolved specs, ADaM and graph into build/kits/<kit>; P2 and the trace (P1 first with --twice)
 - `make evidence`: rerun the evidence spikes (about 7 minutes)
 - `specfirst status`, `specfirst doctor`: all state files; the environment against the locks
 - `scripts/worktree.sh <track>`: worktree ../specfirst-<track> on branch track/<track>
@@ -42,7 +43,9 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - Under WSL the Python environment, R library and fetch cache are in ~/.local/share/specfirst, not in the checkout (scripts/env.sh). In a new worktree run `make install` once.
 - .gitattributes keeps every text file LF. A new script needs `git update-index --chmod=+x <file>`.
 - Git for Windows ships Xpdf's pdftotext. CSR text must come from poppler (24.02 in Ubuntu 24.04).
-- The yamaa run writes <dataset>-yamaa.parquet next to the reference data. Work on a copy: `specfirst fetch --verify` fails on a cache with any changed, added or ignored file.
+- A yamaa project run with `save()` writes <dataset>-yamaa.parquet next to the reference data; `specfirst fetch --verify` fails on a cache with any changed, added or ignored file. Our runner hands inputs over in memory and never saves (ADR-001).
+- A kit folder of real data holds kit.yaml and README.md only. After a pin changes on purpose: `specfirst kit lock <kit>`.
+- A file-system call on /mnt/<drive> under WSL is slow: never resolve or stat a path once per element (lesson 10).
 - R and its recommended packages are pinned system packages (env/r-version.txt, env/system.lock); `specfirst doctor` fails on drift and is the first check of every gate.
 - scipy.stats.fisher_exact is exact for 2 x 2 tables only (E27).
 - Pilot 7 names: the spec is adqsnipx.yaml, the reference file is adqsnpix.parquet.
