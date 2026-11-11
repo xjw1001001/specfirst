@@ -65,6 +65,10 @@ def test_deny_rules_cover_the_reference_folder(root):
         deny = json.load(handle)["permissions"]["deny"]
     for tool in ("Read", "Edit"):
         assert any(rule.startswith(f"{tool}(") and "reference/**" in rule for rule in deny), tool
+    # Shell commands: the absolute path and the path relative to the checkout.
+    for tool in ("Bash", "PowerShell"):
+        for spelling in ("trial_work/reference", "../reference", "..\\reference"):
+            assert f"{tool}(*{spelling}*)" in deny, (tool, spelling)
 
 
 def test_text_files_have_lf_endings(root):

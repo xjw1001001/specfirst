@@ -45,7 +45,11 @@ in_library <- function() {
 }
 
 lock_file <- file.path(env_dir, "r-packages.lock")
-write_lock <- "--write-lock" %in% args || !file.exists(lock_file)
+write_lock <- "--write-lock" %in% args
+if (!write_lock && !file.exists(lock_file)) {
+  stop("env/r-packages.lock is missing; an install never resolves versions by itself. ",
+       "Run env/lock.sh to write the lock on purpose.")
+}
 
 if (write_lock) {
   wanted <- read_lines("r-packages.txt")

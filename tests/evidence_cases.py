@@ -28,7 +28,11 @@ ARS_EXAMPLE = "workfiles/examples/ARS v1/Common Safety Displays.json"
 
 
 class EvidenceError(RuntimeError):
-    """A prerequisite is missing or a spike could not be run."""
+    """A spike could not be run. This is always a failure."""
+
+
+class MissingPrerequisite(EvidenceError):
+    """The fetch cache or a tool is not there. Outside a gate the test is skipped."""
 
 
 @dataclass
@@ -44,7 +48,7 @@ class Env:
         missing = [name for name in sources if not (self.cache / name / ".git").exists()]
         if missing:
             names = ", ".join(missing)
-            raise EvidenceError(f"not in the fetch cache: {names}; run `specfirst fetch`")
+            raise MissingPrerequisite(f"not in the fetch cache: {names}; run `specfirst fetch`")
 
     @property
     def adam(self) -> Path:
@@ -63,7 +67,7 @@ class Env:
         if self._csr_txt is None:
             self.need("p6")
             if shutil.which("pdftotext") is None:
-                raise EvidenceError("pdftotext (poppler-utils) is not installed")
+                raise MissingPrerequisite("pdftotext (poppler-utils) is not installed")
             target = self.work / "csr.txt"
             pdf = self.cache / "p6" / "documents" / "CSR.pdf"
             subprocess.run(["pdftotext", "-layout", str(pdf), str(target)], check=True)

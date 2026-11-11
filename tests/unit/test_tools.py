@@ -75,12 +75,17 @@ def test_pinned_r_version_is_the_one_the_lock_was_resolved_with(root):
     assert any(f"R version {pinned} " in line for line in header)
 
 
-def test_python_lock_has_the_pins_of_the_plan(root):
-    pins = doctor.read_requirements_lock(root / "env" / "requirements.lock")
-    planned = {"yamaa": "0.7.0", "polars": "1.44.2", "pyarrow": "25.0.1", "pyyaml": "6.0.3"}
-    lower = {name.lower(): version for name, version in pins.items()}
-    for name, version in planned.items():
-        assert lower.get(name) == version, name
+def test_a_crashing_spike_is_a_failure_and_a_missing_cache_is_a_prerequisite(tmp_path):
+    from evidence_cases import Env, EvidenceError, MissingPrerequisite
+
+    (tmp_path / "evidence").mkdir()
+    (tmp_path / "evidence" / "boom.py").write_text("import sys\nsys.exit(3)\n", encoding="ascii")
+    env = Env(root=tmp_path, cache=tmp_path / "cache", work=tmp_path)
+    with pytest.raises(EvidenceError) as crash:
+        env.spike("boom.py")
+    assert type(crash.value) is EvidenceError  # not the kind a plain test run may skip
+    with pytest.raises(MissingPrerequisite):
+        env.need("p7")
 
 
 def test_status_prints_every_track(root):

@@ -53,6 +53,29 @@
       }
     },
     {
+      "name": "conflict: the documents contradict each other, so there is no class yet",
+      "instance": {
+        "id": "bds.baseline.rule",
+        "unit": "mod-bds-visits",
+        "value": null,
+        "status": "conflict",
+        "citations": [
+          { "doc": "sap", "anchor": "8.1/s2", "quote": "Baseline is the value collected at Visit 1." },
+          { "doc": "protocol", "anchor": "6.3/s4", "quote": "the last value before the first dose" }
+        ]
+      }
+    },
+    {
+      "name": "gold_quirk: a rule the reference follows and no source supports, so nothing is cited",
+      "instance": {
+        "id": "custom:pvalue-double-rounding",
+        "unit": "tfl-ae-soc-pt",
+        "value": { "rule": "round_to_4_then_3" },
+        "status": "default",
+        "class": "gold_quirk"
+      }
+    },
+    {
       "name": "not applicable to this design",
       "instance": {
         "id": "bds.eot.record",
@@ -142,6 +165,16 @@
         "status": "asked",
         "class": "study_input",
         "binds": ["ADAE.TRTEMFL"]
+      }
+    },
+    {
+      "name": "no class on a record that is not in conflict",
+      "why": "only a conflict may wait for its class",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "asked"
       }
     },
     {

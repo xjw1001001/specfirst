@@ -8,10 +8,13 @@ Run it with `python -m specfirst.asciicheck` or `make ascii`.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from collections.abc import Callable
 from pathlib import Path
+
+from specfirst.paths import git_env, repo_root
 
 BINARY_SUFFIXES = frozenset(
     {".parquet", ".xpt", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".rds", ".woff", ".woff2"}
@@ -24,6 +27,7 @@ def maintained_files(root: Path) -> list[str]:
         ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
         cwd=root,
         capture_output=True,
+        env={**os.environ, **git_env(root)},
     )
     if done.returncode != 0:
         message = done.stderr.decode("utf-8", "replace").strip()
@@ -66,8 +70,6 @@ def check(root: Path, out: Callable[[str], None] = print) -> int:
 
 
 def main() -> int:
-    from specfirst.paths import repo_root
-
     return check(repo_root())
 
 

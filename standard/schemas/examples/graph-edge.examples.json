@@ -50,9 +50,28 @@
         "from": "decision:ae.teae.end",
         "to": "doc:sap#9.2/s3",
         "proof": "judged",
-        "origin": "imported",
         "quote_verified": true,
         "approved_by": null
+      }
+    },
+    {
+      "name": "cites: an imported claim for an ADaM variable (real-1 imports Pilot 7's claims)",
+      "instance": {
+        "type": "cites",
+        "from": "adam:ADSL.SITEGR1",
+        "to": "doc:sap#7.1/s2",
+        "proof": "judged",
+        "origin": "imported"
+      }
+    },
+    {
+      "name": "cites: an analysis to the SAP page of its ARS documentRef (real-3)",
+      "instance": {
+        "type": "cites",
+        "from": "ars:An07_01",
+        "to": "doc:sap#p12",
+        "proof": "judged",
+        "origin": "imported"
       }
     }
   ],
@@ -124,8 +143,18 @@
       }
     },
     {
+      "name": "a citation that starts at a cell",
+      "why": "cites starts at a decision, an ADaM variable or an analysis",
+      "instance": {
+        "type": "cites",
+        "from": "cell:Out14-3-1-1/r4/c2",
+        "to": "doc:sap#9.2/s3",
+        "proof": "judged"
+      }
+    },
+    {
       "name": "a citation of something that is not a document",
-      "why": "cites goes from a decision to a document span",
+      "why": "cites ends at a document span",
       "instance": {
         "type": "cites",
         "from": "decision:ae.teae.end",

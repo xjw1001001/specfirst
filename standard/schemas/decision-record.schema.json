@@ -4,7 +4,7 @@
   "title": "Decision record",
   "description": "One answered catalog question (PLAN.md section 4.3). One record per line in decisions.jsonl. Version 0; a change needs an ADR.",
   "type": "object",
-  "required": ["id", "unit", "value", "status", "class"],
+  "required": ["id", "unit", "value", "status"],
   "additionalProperties": false,
   "properties": {
     "id": {
@@ -59,17 +59,33 @@
   },
   "allOf": [
     {
-      "description": "A stated or default decision has a value and cites its document or house standard.",
+      "description": "Every record has a class, except one in conflict: documents that contradict each other need a person before any class is given (section 4.5).",
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "const": "conflict" } }
+      },
+      "else": { "required": ["class"] }
+    },
+    {
+      "description": "A stated or default decision has a value.",
       "if": {
         "required": ["status"],
         "properties": { "status": { "enum": ["stated", "default"] } }
       },
+      "then": { "properties": { "value": { "type": "object" } } }
+    },
+    {
+      "description": "A stated or default decision whose information lives in a document (document_rule) or in the house standard (house_default) cites it. A gold_quirk has no source to cite (section 4.8).",
+      "if": {
+        "required": ["status", "class"],
+        "properties": {
+          "status": { "enum": ["stated", "default"] },
+          "class": { "enum": ["document_rule", "house_default"] }
+        }
+      },
       "then": {
         "required": ["citations"],
-        "properties": {
-          "value": { "type": "object" },
-          "citations": { "minItems": 1 }
-        }
+        "properties": { "citations": { "minItems": 1 } }
       }
     }
   ],

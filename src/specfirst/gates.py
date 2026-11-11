@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from specfirst import asciicheck, doctor, fetch
-from specfirst.paths import build_dir
+from specfirst.paths import build_dir, git_env
 
 # The evidence tests the base-0 gate must see pass (PLAN.md section 13.2).
 BASE0_EVIDENCE = ("E1", "E2-E3", "E4", "E24", "E25-csr", "E25-single", "E26", "E27")
@@ -84,6 +84,11 @@ def junit_problems(xml_path: Path, required: tuple[str, ...]) -> list[str]:
     return problems
 
 
+def _environment(ctx: Context) -> bool:
+    """Drift first (rule R3): the environment is the one the lock files describe."""
+    return doctor.run(ctx.root, ctx.out) == 0
+
+
 def _pins(ctx: Context) -> bool:
     return fetch.run(ctx.root, verify_only=True, out=ctx.out) == 0
 
@@ -120,6 +125,7 @@ def _ascii(ctx: Context) -> bool:
 
 GATES: dict[str, tuple[Check, ...]] = {
     "base-0": (
+        Check("environment", "specfirst doctor", _environment),
         Check("pins", "specfirst fetch --verify", _pins),
         Check("lint", "ruff check .", _lint),
         Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
@@ -132,13 +138,17 @@ GATES: dict[str, tuple[Check, ...]] = {
 }
 
 
-def _head(root: Path) -> str:
-    def git(*args: str) -> str:
-        done = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
-        return done.stdout.strip() if done.returncode == 0 else "unknown"
+def head(root: Path) -> tuple[str, bool | None]:
+    """The commit of the checkout, and whether its tree is clean (None: git could not tell)."""
+    env = {**os.environ, **git_env(root)}
 
-    state = "clean" if git("status", "--porcelain") == "" else "with uncommitted changes"
-    return f"{git('rev-parse', 'HEAD')} ({state})"
+    def git(*args: str) -> str | None:
+        done = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, env=env)
+        return done.stdout.strip() if done.returncode == 0 else None
+
+    commit = git("rev-parse", "HEAD")
+    status = git("status", "--porcelain")
+    return commit or "unknown", None if status is None else status == ""
 
 
 def run_gate(
@@ -146,14 +156,22 @@ def run_gate(
     wp: str,
     checks: tuple[Check, ...] | None = None,
     echo: Callable[[str], None] = print,
+    require_clean: bool = False,
 ) -> int:
+    """Run the checks of a gate. With require_clean, uncommitted changes fail it."""
     checks = GATES.get(wp) if checks is None else checks
     if checks is None:
         echo(f"no gate is defined for '{wp}' yet; defined: {', '.join(sorted(GATES))}")
         return 2
+    commit, clean = head(root)  # before the log folder appears in the tree
+    state = {True: "clean", False: "with uncommitted changes", None: "state unknown"}[clean]
     ctx = Context(root, wp, echo)
     try:
-        ctx.out(f"gate {wp} at commit {_head(root)}")
+        ctx.out(f"gate {wp} at commit {commit} ({state})")
+        if require_clean and clean is not True:
+            ctx.out("--clean: the gate counts only on a tree without uncommitted changes")
+            ctx.out(f"GATE {wp}: FAIL")
+            return 1
         results: list[tuple[str, bool, float]] = []
         for number, check in enumerate(checks, start=1):
             ctx.out("")

@@ -10,9 +10,15 @@
       "Bash(*trial_work/reference*)",
       "Bash(*trial_work\\reference*)",
       "Bash(*trial_work\\\\reference*)",
+      "Bash(*../reference*)",
+      "Bash(*..\\reference*)",
+      "Bash(*..\\\\reference*)",
       "PowerShell(*trial_work/reference*)",
       "PowerShell(*trial_work\\reference*)",
-      "PowerShell(*trial_work\\\\reference*)"
+      "PowerShell(*trial_work\\\\reference*)",
+      "PowerShell(*../reference*)",
+      "PowerShell(*..\\reference*)",
+      "PowerShell(*..\\\\reference*)"
     ]
   }
 }

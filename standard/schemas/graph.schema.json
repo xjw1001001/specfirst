@@ -99,7 +99,11 @@
         { "if": { "properties": { "type": { "const": "maps_from" } } }, "then": { "properties": { "from": { "pattern": "^sdtm:" }, "to": { "pattern": "^odm:" } } } },
         { "if": { "properties": { "type": { "const": "collects" } } }, "then": { "properties": { "from": { "pattern": "^odm:" }, "to": { "pattern": "^usdm:" } } } },
         { "if": { "properties": { "type": { "const": "decides" } } }, "then": { "properties": { "from": { "pattern": "^decision:" }, "to": { "pattern": "^(adam|ars|cell):" } } } },
-        { "if": { "properties": { "type": { "const": "cites" } } }, "then": { "properties": { "from": { "pattern": "^decision:" }, "to": { "pattern": "^doc:" } } } }
+        {
+          "description": "A citation ends at a document span. It starts at a decision (section 4.2), or at an ADaM variable or an analysis when it is taken over from a source that cites documents directly: Pilot 7's claims, ARS documentRefs (section 13.3).",
+          "if": { "properties": { "type": { "const": "cites" } } },
+          "then": { "properties": { "from": { "pattern": "^(decision|adam|ars):" }, "to": { "pattern": "^doc:" } } }
+        }
       ]
     }
   }

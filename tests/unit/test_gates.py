@@ -54,6 +54,24 @@ def test_gate_names_the_commit(repo, git):
     assert git(repo, "rev-parse", "HEAD") in text.splitlines()[0]
 
 
+def test_clean_flag_fails_on_uncommitted_changes(repo):
+    checks = (Check("one", "cmd", passing),)
+    lines: list[str] = []
+    assert run_gate(repo, "demo", checks, echo=lines.append, require_clean=True) == 0
+    assert "(clean)" in lines[0]
+
+    (repo / "README.md").write_bytes(b"edited after the commit\n")
+    lines = []
+    assert run_gate(repo, "demo", checks, echo=lines.append, require_clean=True) == 1
+    assert "(with uncommitted changes)" in lines[0]
+    assert lines[-1] == "GATE demo: FAIL"
+    assert not any(line.startswith("== ") for line in lines)  # no check ran
+
+    lines = []
+    assert run_gate(repo, "demo", checks, echo=lines.append) == 0  # no flag: it only says so
+    assert "(with uncommitted changes)" in lines[0]
+
+
 def test_unknown_work_package(repo):
     lines: list[str] = []
     assert run_gate(repo, "no-such-wp", echo=lines.append) == 2
@@ -62,8 +80,9 @@ def test_unknown_work_package(repo):
 
 def test_base0_gate_has_the_checks_of_the_plan():
     names = [check.name for check in gates.GATES["base-0"]]
-    for needed in ("pins", "evidence tests", "R packages", "ASCII"):
+    for needed in ("environment", "pins", "evidence tests", "R packages", "ASCII"):
         assert needed in names
+    assert names[0] == "environment"  # drift is checked first (rule R3)
 
 
 def junit(tmp_path, body: str):

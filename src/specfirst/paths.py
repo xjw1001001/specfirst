@@ -1,9 +1,14 @@
-"""Where things live: the checkout root and the fetch cache."""
+"""Where things live: the checkout root, the fetch cache, and git in a checkout."""
 
 from __future__ import annotations
 
 import os
+import re
+import shlex
+import sys
 from pathlib import Path
+
+_WINDOWS_PATH = re.compile(r"^([A-Za-z]):[\\/](.*)$")
 
 
 def _is_root(path: Path) -> bool:
@@ -54,3 +59,64 @@ def cache_dir(root: Path) -> Path:
 def build_dir(root: Path) -> Path:
     """Ignored folder for logs and other products of a run."""
     return root / "build"
+
+
+def _other_system_path(target: str) -> Path | None:
+    """A path written by the other operating system's git, as this one names it.
+
+    Under Linux, `D:/a/b` is `/mnt/d/a/b` (WSL mounts the Windows drives
+    there; SPECFIRST_DRIVE_MOUNT names another mount point). Under Windows,
+    `/mnt/d/a/b` is `D:/a/b`.
+    """
+    mount = os.environ.get("SPECFIRST_DRIVE_MOUNT", "/mnt").rstrip("/")
+    if os.name == "posix":
+        match = _WINDOWS_PATH.match(target)
+        if match:
+            return Path(mount) / match.group(1).lower() / match.group(2).replace("\\", "/")
+        return None
+    match = re.match(rf"^{re.escape(mount)}/([A-Za-z])/(.*)$", target)
+    if match:
+        return Path(f"{match.group(1).upper()}:/{match.group(2)}")
+    return None
+
+
+def git_env(root: Path) -> dict[str, str]:
+    """Extra environment for running git in the checkout `root`.
+
+    A linked worktree names its git folder by an absolute path, written in
+    the form of the git that made it. A worktree made by Windows git is
+    therefore not a repository to Linux git under WSL, and the reverse. In
+    that case this returns GIT_DIR and GIT_WORK_TREE with the path as this
+    system names it, so that git works all the same. Otherwise it returns
+    nothing. GIT_OPTIONAL_LOCKS=0 is always set: reading the state of a
+    checkout must not rewrite its index.
+    """
+    env = {"GIT_OPTIONAL_LOCKS": "0"}
+    dotgit = root / ".git"
+    if not dotgit.is_file():
+        return env
+    text = dotgit.read_text(encoding="utf-8", errors="replace").strip()
+    if not text.startswith("gitdir:"):
+        return env
+    target = text[len("gitdir:"):].strip()
+    native = Path(target)
+    if not native.is_absolute():
+        native = root / native
+    if native.is_dir():
+        return env
+    translated = _other_system_path(target)
+    if translated is not None and translated.is_dir():
+        env["GIT_DIR"] = str(translated)
+        env["GIT_WORK_TREE"] = str(root)
+    return env
+
+
+def main() -> int:
+    """Print `export NAME=value` lines for git in the current checkout (for shell scripts)."""
+    for name, value in sorted(git_env(repo_root()).items()):
+        print(f"export {name}={shlex.quote(value)}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

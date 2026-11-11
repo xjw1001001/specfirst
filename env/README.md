@@ -8,7 +8,7 @@ pinned.
 | --- | --- | --- |
 | `apt-packages.txt` | the system packages: Python 3.12, poppler, git, compilers | hand |
 | `r-version.txt` | the exact R version, installed from CRAN's repository for Ubuntu | hand |
-| `system.lock` | versions of the system packages, R and its recommended packages when the locks were written (information) | `lock.sh` |
+| `system.lock` | versions of the system packages. R and its recommended packages (`r-*`) are pins: `system.sh` installs them, `specfirst doctor` fails on a difference. The rest is information | `lock.sh` |
 | `requirements.in` | the top-level Python requirements | hand |
 | `requirements.lock` | every Python package: exact version and hashes | `lock.sh` (uv) |
 | `r-packages.txt` | the R packages the project loads | hand |
@@ -45,6 +45,14 @@ by all checkouts and worktrees.
 Edit `requirements.in`, `r-packages.txt` or `r-repo.txt`, run `make lock`
 on the reference platform, run `make install` and the gate, and commit the
 new locks with the change that needs them.
+
+For another R version, or newer builds of R's recommended packages: edit
+`r-version.txt`, run `sudo SPECFIRST_RELOCK=1 bash env/system.sh`, then
+`make lock` as above. Without `SPECFIRST_RELOCK=1`, `system.sh` installs
+exactly the `r-cran-*` versions of `system.lock`.
+
+An install never resolves versions by itself: `install_r.R` stops when
+`r-packages.lock` is missing, and pip installs with `--require-hashes`.
 
 ## Not here yet
 

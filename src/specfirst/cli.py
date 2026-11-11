@@ -31,6 +31,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_gate = commands.add_parser("gate", help="run the gate of a work package")
     p_gate.add_argument("wp", help="work package, for example base-0")
+    p_gate.add_argument(
+        "--clean", action="store_true", help="fail when the tree has uncommitted changes"
+    )
     return parser
 
 
@@ -44,5 +47,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "status":
         return status.run(root)
     if args.command == "gate":
-        return gates.run_gate(root, args.wp)
+        return gates.run_gate(root, args.wp, require_clean=args.clean)
     raise AssertionError(args.command)

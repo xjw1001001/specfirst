@@ -2,9 +2,11 @@
 
 Hard failures (exit 1): Python older than 3.12, a Python package that
 differs from env/requirements.lock, R missing or not the version of
-env/r-version.txt, an R package that differs from env/r-packages.lock,
-pdftotext missing or not poppler. Differences in other system packages are
-printed as notes only.
+env/r-version.txt, an R package that differs from env/r-packages.lock, R or
+one of its recommended packages (system packages named r-*) that differs
+from env/system.lock, pdftotext missing or not poppler. Differences in other
+system packages are printed as notes only: the Ubuntu archive does not keep
+old versions, so they cannot be pinned.
 """
 
 from __future__ import annotations
@@ -18,6 +20,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 _PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)==([^\s\\;]+)")
+
+# A package name no repository has: the planted defect of the R load check.
+NO_SUCH_R_PACKAGE = "specfirst.no.such.package"
 
 
 def read_requirements_lock(path: Path) -> dict[str, str]:
@@ -63,19 +68,61 @@ def python_drift(pins: dict[str, str]) -> list[str]:
     return problems
 
 
-def _first_line(argv: list[str]) -> str | None:
-    """First output line of a command (some tools print their version on stderr)."""
+def table_drift(lock: dict[str, str], installed: dict[str, str], extra_is_drift: bool) -> list[str]:
+    """Differences between a lock and what is installed, as readable lines."""
+    problems = []
+    for name, version in sorted(lock.items()):
+        if name not in installed:
+            problems.append(f"{name}: not installed, lock has {version}")
+        elif installed[name] != version:
+            problems.append(f"{name}: installed {installed[name]}, lock has {version}")
+    if extra_is_drift:
+        problems += [f"{name}: installed {installed[name]}, not in the lock"
+                     for name in sorted(set(installed) - set(lock))]
+    return problems
+
+
+def r_version_problem(installed: str | None, pinned: str) -> str | None:
+    if installed is None:
+        return "R is not installed"
+    if installed != pinned:
+        return f"R is {installed}, env/r-version.txt pins {pinned}"
+    return None
+
+
+def pdftotext_problem(version_output: str | None) -> str | None:
+    """`version_output` is what `pdftotext -v` prints, or None when it is not installed."""
+    if version_output is None:
+        return "pdftotext (poppler-utils) is not installed"
+    if "poppler" not in version_output.lower():
+        return "pdftotext is not poppler's; the CSR parsers need poppler"
+    return None
+
+
+def is_r_system_package(name: str) -> bool:
+    """R itself and the recommended packages that come with it, as system packages."""
+    return name.startswith(("r-base", "r-recommended", "r-cran-"))
+
+
+def _output(argv: list[str]) -> str | None:
+    """Everything a command prints (some tools print their version on stderr)."""
     if shutil.which(argv[0]) is None:
         return None
     done = subprocess.run(argv, capture_output=True, text=True)
-    lines = (done.stdout + done.stderr).strip().splitlines()
+    return done.stdout + done.stderr
+
+
+def _first_line(argv: list[str]) -> str | None:
+    text = _output(argv)
+    if text is None:
+        return None
+    lines = text.strip().splitlines()
     return lines[0].strip() if lines else ""
 
 
 def r_version() -> str | None:
     """The installed R version, for example "4.6.2"."""
-    line = _first_line(["R", "--version"])
-    match = re.search(r"R version (\d+\.\d+\.\d+)", line or "")
+    match = re.search(r"R version (\d+\.\d+\.\d+)", _first_line(["R", "--version"]) or "")
     return match.group(1) if match else None
 
 
@@ -85,7 +132,7 @@ def pinned_r_version(root: Path) -> str:
 
 
 def r_library(root: Path) -> dict[str, str] | None:
-    """Packages in the project's R library, or None when R cannot be run."""
+    """Packages in the project's R library, or None when R cannot list it."""
     if shutil.which("Rscript") is None:
         return None
     done = subprocess.run(
@@ -99,31 +146,46 @@ def r_library(root: Path) -> dict[str, str] | None:
 
 
 def r_drift(root: Path) -> list[str]:
-    lock = read_table(root / "env" / "r-packages.lock")
     installed = r_library(root)
     if installed is None:
         return ["Rscript could not list the project library"]
-    problems = []
-    for name, version in sorted(lock.items()):
-        if name not in installed:
-            problems.append(f"{name}: not installed, lock has {version}")
-        elif installed[name] != version:
-            problems.append(f"{name}: installed {installed[name]}, lock has {version}")
-    problems += [f"{name}: installed {installed[name]}, not in the lock"
-                 for name in sorted(set(installed) - set(lock))]
-    return problems
+    return table_drift(read_table(root / "env" / "r-packages.lock"), installed, extra_is_drift=True)
+
+
+def system_packages(names: list[str]) -> dict[str, str]:
+    """Installed versions of Debian packages; a missing one is left out."""
+    found: dict[str, str] = {}
+    for name in names:
+        done = subprocess.run(
+            ["dpkg-query", "-W", "-f=${db:Status-Abbrev}${Version}", name],
+            capture_output=True,
+            text=True,
+        )
+        if done.returncode == 0 and done.stdout.startswith("ii "):
+            found[name] = done.stdout[3:].strip()
+    return found
 
 
 def load_r_packages(root: Path, out: Callable[[str], None] = print) -> bool:
-    """Load every package of env/r-packages.txt in R. This is a gate check."""
+    """Load every package of env/r-packages.txt in R. This is a gate check.
+
+    The check first proves itself on a planted defect (rule R5): it must
+    fail for a package that does not exist.
+    """
     packages = read_list(root / "env" / "r-packages.txt")
     if shutil.which("Rscript") is None:
         out("Rscript not found")
         return False
+    script = str(root / "env" / "check_r.R")
+    planted = subprocess.run(
+        ["Rscript", "--vanilla", script, NO_SUCH_R_PACKAGE], capture_output=True, text=True
+    )
+    if planted.returncode == 0:
+        out(f"the check did not fail for the planted package {NO_SUCH_R_PACKAGE}")
+        return False
+    out(f"planted defect: the check fails for {NO_SUCH_R_PACKAGE} (exit {planted.returncode})")
     done = subprocess.run(
-        ["Rscript", "--vanilla", str(root / "env" / "check_r.R"), *packages],
-        capture_output=True,
-        text=True,
+        ["Rscript", "--vanilla", script, *packages], capture_output=True, text=True
     )
     for line in (done.stdout + done.stderr).splitlines():
         out(line)
@@ -148,12 +210,10 @@ def run(root: Path, out: Callable[[str], None] = print) -> int:
 
     r = r_version()
     out(f"R          {_first_line(['R', '--version']) or 'not found'}")
-    if r is None:
-        failures.append("R is not installed")
-    else:
-        pinned = pinned_r_version(root)
-        if r != pinned:
-            failures.append(f"R is {r}, env/r-version.txt pins {pinned}")
+    problem = r_version_problem(r, pinned_r_version(root))
+    if problem:
+        failures.append(problem)
+    if r is not None:
         r_lock = root / "env" / "r-packages.lock"
         if not r_lock.is_file():
             failures.append("env/r-packages.lock is missing")
@@ -162,25 +222,23 @@ def run(root: Path, out: Callable[[str], None] = print) -> int:
             out(f"R lock: {len(read_table(r_lock))} packages pinned, {len(drift)} differ")
             failures += drift
 
-    pdftotext = _first_line(["pdftotext", "-v"])
-    out(f"pdftotext  {pdftotext or 'not found'}")
-    if pdftotext is None:
-        failures.append("pdftotext (poppler-utils) is not installed")
-    else:
-        done = subprocess.run(["pdftotext", "-v"], capture_output=True, text=True)
-        if "poppler" not in (done.stdout + done.stderr).lower():
-            failures.append("pdftotext is not poppler's; the CSR parsers need poppler")
+    pdftotext = _output(["pdftotext", "-v"])
+    out(f"pdftotext  {(pdftotext or 'not found').strip().splitlines()[0]}")
+    problem = pdftotext_problem(pdftotext)
+    if problem:
+        failures.append(problem)
     out(f"git        {_first_line(['git', '--version']) or 'not found'}")
 
     system_lock = root / "env" / "system.lock"
     if system_lock.is_file() and shutil.which("dpkg-query"):
-        for name, version in sorted(read_table(system_lock).items()):
-            done = subprocess.run(
-                ["dpkg-query", "-W", "-f=${Version}", name], capture_output=True, text=True
-            )
-            installed = done.stdout.strip() if done.returncode == 0 else "not installed"
-            if installed != version:
-                out(f"note: system package {name} is {installed}, env/system.lock has {version}")
+        pinned = read_table(system_lock)
+        drift = table_drift(pinned, system_packages(sorted(pinned)), extra_is_drift=False)
+        hard = [line for line in drift if is_r_system_package(line.split(":", 1)[0])]
+        out(f"system lock: {len(pinned)} packages recorded, {len(drift)} differ")
+        failures += hard
+        for line in drift:
+            if line not in hard:
+                out(f"note: system package {line}")
 
     for failure in failures:
         out(f"FAIL {failure}")

@@ -35,11 +35,25 @@ echo "deb [signed-by=$key] https://cloud.r-project.org/bin/linux/ubuntu noble-cr
 apt-get update
 
 r="$(grep -v '^#' "$here/r-version.txt" | head -n 1)"
-apt-get install -y --no-install-recommends --allow-downgrades \
-  "r-base-core=$r" "r-base=$r" "r-base-dev=$r" "r-recommended=$r"
-# The recommended R packages (r-cran-matrix and the like) must be the builds
-# for this R, also on a machine that had Ubuntu's older ones installed.
-# shellcheck disable=SC2046
-apt-get install -y --no-install-recommends \
-  $(dpkg-query -W -f='${db:Status-Abbrev}${Package}\n' 'r-cran-*' | sed -n 's/^ii //p')
+
+# The recommended R packages (r-cran-matrix and the like) are loaded by mmrm,
+# coin and car, so their versions are pinned too: env/system.lock lists
+# them, and specfirst doctor fails when one differs.
+pins=""
+if [ "${SPECFIRST_RELOCK:-0}" != 1 ] && [ -f "$here/system.lock" ]; then
+  pins="$(sed -n 's/^\(r-cran-[^ ]*\) \([^ ]*\)$/\1=\2/p' "$here/system.lock")"
+fi
+if [ -n "$pins" ]; then
+  # shellcheck disable=SC2086
+  apt-get install -y --no-install-recommends --allow-downgrades \
+    "r-base-core=$r" "r-base=$r" "r-base-dev=$r" "r-recommended=$r" $pins
+else
+  # First lock, or SPECFIRST_RELOCK=1: take the newest builds for this R, also
+  # on a machine that had Ubuntu's older ones installed. Run `make lock` next.
+  apt-get install -y --no-install-recommends --allow-downgrades \
+    "r-base-core=$r" "r-base=$r" "r-base-dev=$r" "r-recommended=$r"
+  # shellcheck disable=SC2046
+  apt-get install -y --no-install-recommends \
+    $(dpkg-query -W -f='${db:Status-Abbrev}${Package}\n' 'r-cran-*' | sed -n 's/^ii //p')
+fi
 R --version | head -n 1

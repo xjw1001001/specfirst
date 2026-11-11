@@ -38,11 +38,12 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 
 ## Gotchas
 
-- The checkout is on a Windows drive and Windows git owns it and its worktrees. Use Linux git only in the fetch cache and in clean clones; never both on one worktree.
-- Under WSL the Python environment, R library and fetch cache are in ~/.local/share/specfirst, not in the checkout (scripts/env.sh).
+- The checkout is on a Windows drive and Windows git owns it and its worktrees: commit, branch and merge with Windows git only. Under WSL plain `git` fails in a worktree (its link is a Windows path); specfirst's own git calls translate the link (`specfirst.paths.git_env`).
+- Under WSL the Python environment, R library and fetch cache are in ~/.local/share/specfirst, not in the checkout (scripts/env.sh). In a new worktree run `make install` once.
 - .gitattributes keeps every text file LF. A new script needs `git update-index --chmod=+x <file>`.
 - Git for Windows ships Xpdf's pdftotext. CSR text must come from poppler (24.02 in Ubuntu 24.04).
-- The yamaa run writes <dataset>-yamaa.parquet next to the reference data. Work on a copy: `specfirst fetch --verify` fails on a cache that is not clean.
+- The yamaa run writes <dataset>-yamaa.parquet next to the reference data. Work on a copy: `specfirst fetch --verify` fails on a cache with any changed, added or ignored file.
+- R and its recommended packages are pinned system packages (env/r-version.txt, env/system.lock); `specfirst doctor` fails on drift and is the first check of every gate.
 - scipy.stats.fisher_exact is exact for 2 x 2 tables only (E27).
 - Pilot 7 names: the spec is adqsnipx.yaml, the reference file is adqsnpix.parquet.
 - Searches started in D:\trial_work reach reference/. Always work from inside the checkout.

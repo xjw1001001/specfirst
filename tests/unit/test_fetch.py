@@ -21,6 +21,9 @@ def origin(tmp_path, git):
     path.mkdir()
     git(path, "init", "--quiet", "-b", "main")
     git(path, "config", "uploadpack.allowAnySHA1InWant", "true")
+    # Like Pilot 7, the source ignores the outputs a run leaves in its data folder.
+    (path / ".gitignore").write_bytes(b"*-yamaa.parquet\n")
+    git(path, "add", ".gitignore")
     commits = []
     for text in (b"first\n", b"second\n"):
         (path / "data.txt").write_bytes(text)
@@ -109,9 +112,23 @@ def test_added_file_in_the_cache_fails(tmp_path, origin):
     path, first, _ = origin
     cache = tmp_path / "cache"
     assert run(manifest(path, first), cache)[0]
-    (cache / "demo" / "adsl-yamaa.parquet").write_bytes(b"left behind by a run")
+    (cache / "demo" / "notes.txt").write_bytes(b"added by hand")
+    ok, text = run(manifest(path, first), cache, verify_only=True)
+    assert not ok and "notes.txt" in text
+
+
+def test_output_that_the_source_itself_ignores_fails(tmp_path, origin, git):
+    """The real case: Pilot 7 ignores the `*-yamaa.parquet` files a run writes."""
+    path, first, _ = origin
+    cache = tmp_path / "cache"
+    assert run(manifest(path, first), cache)[0]
+    leftover = cache / "demo" / "adsl-yamaa.parquet"
+    leftover.write_bytes(b"left behind by a run")
+    assert git(cache / "demo", "status", "--porcelain") == ""  # plain status does not see it
     ok, text = run(manifest(path, first), cache, verify_only=True)
     assert not ok and "adsl-yamaa.parquet" in text
+    leftover.unlink()
+    assert run(manifest(path, first), cache, verify_only=True)[0]
 
 
 def test_pinned_file_hash(tmp_path, origin):

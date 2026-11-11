@@ -2,8 +2,8 @@
 
 Each source is fetched at exactly its pinned commit (a shallow fetch of that
 one commit) and then checked: HEAD is the pinned commit, the working tree is
-clean, and every pinned file has its SHA-256. With verify_only nothing is
-downloaded.
+clean (no changed, added or ignored file), and every pinned file has its
+SHA-256. With verify_only nothing is downloaded.
 """
 
 from __future__ import annotations
@@ -50,8 +50,13 @@ def head_commit(dest: Path) -> str | None:
 
 
 def changed_paths(dest: Path) -> list[str]:
-    """Modified, deleted or untracked paths. An empty list means a clean tree."""
-    out = _git(["status", "--porcelain", "--untracked-files=all"], dest)
+    """Modified, deleted, untracked or ignored paths. An empty list means a clean tree.
+
+    Ignored files count: a source may ignore the very files a run leaves
+    behind (Pilot 7 ignores its `*-yamaa.parquet` outputs), and a fresh
+    fetch has none.
+    """
+    out = _git(["status", "--porcelain", "--untracked-files=all", "--ignored"], dest)
     return [line[3:] for line in out.splitlines() if line.strip()]
 
 
