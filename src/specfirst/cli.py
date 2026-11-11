@@ -1,8 +1,9 @@
 """The `specfirst` command.
 
 base-0 provides doctor, fetch, status and gate. real-1 adds kit, build and
-check. The other commands of PLAN.md section 12 (compile, preview, rebuild,
-gen, score, run, ask) arrive with the work packages that build them.
+check. real-2 adds methods, and the results to build and check. The other
+commands of PLAN.md section 12 (compile, preview, rebuild, gen, score, run,
+ask) arrive with the work packages that build them.
 """
 
 from __future__ import annotations
@@ -48,8 +49,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--into", type=Path, help="assemble and build here, not in build/kits/<kit>"
     )
 
+    p_methods = commands.add_parser(
+        "methods", help="list the method registry and check standard/methods/registry.json"
+    )
+    p_methods.add_argument(
+        "--write", action="store_true", help="rewrite registry.json from the YAML entries"
+    )
+
     p_check = commands.add_parser(
-        "check", help="compare a build with the reference (P2) and check its trace"
+        "check", help="compare a build with its references (P2), check its trace and its results"
     )
     p_check.add_argument("kit", help="kit ID")
     p_check.add_argument("--build", type=Path, help="the build to check; default build/kits/<kit>")
@@ -78,6 +86,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         changed = kit.lock(root, args.kit)
         print(f"kit {args.kit}: SHA-256 rewritten from the fetch cache; {len(changed)} changed")
         return 0
+    if args.command == "methods":
+        from specfirst.machine import registry
+
+        return registry.run(root, write=args.write)
     if args.command == "build":
         from specfirst.machine import build
 

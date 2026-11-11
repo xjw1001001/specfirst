@@ -261,3 +261,98 @@ def test_a_changed_cache_fails_the_build_before_anything_runs(make):
     (toy / "third_party/cache/toy/data/sdtm/dm.parquet").write_bytes(b"other data")
     code, text = run(build.build, toy, "toy")
     assert code == 1 and "does not have the pinned SHA-256" in text
+
+
+# ---- results (real-2): a kit with a reporting event ---------------------------------
+
+
+def need_r():
+    from specfirst.machine import rengine
+
+    if not rengine.available():
+        pytest.skip("Rscript is not installed")
+
+
+def test_results_are_built_by_both_engines_checked_and_part_of_p1(make):
+    need_r()
+    toy = make(results=True)
+    code, text = run(build.build, toy, "toy")
+    assert code == 0, text
+    assert "results event: Python engine, 3 analyses, 8 rows" in text
+    assert "results event: R engine" in text and "the same values of 6 columns" in text
+    folder = kits.assembled_dir(toy, "toy")
+    manifest = build.read_manifest(folder)
+    assert {"gold/ard/event.jsonl", "gold/ard/event.r.jsonl", "gold/ars/event.json"} <= set(
+        manifest["files"])
+    assert len(manifest["files"]) == 10 and "R" in manifest["engines"]
+    assert len(manifest["registry_sha256"]) == 64
+    rows = read_jsonl(folder / "gold/ard/event.jsonl")
+    assert [row["id"] for row in rows][:2] == ["ard:A_AGE/M_AGE_mean/Old",
+                                               "ard:A_AGE/M_AGE_mean/Young"]
+    assert [row["raw_value"] for row in rows][:2] == [70.0, 50.0]
+    # The exceptions file of the kit folder is kept next to the manifest.
+    assert (folder / "gold/exceptions.yaml").read_text("ascii") == toy_kit.EXCEPTIONS
+
+    (passed, counts), text = run(build.result_checks, toy, "toy")
+    assert passed, text
+    assert ("results event, Python engine: 8 embedded results, 6 reproduced as printed, 2 with "
+            "another value, 0 without a result of ours") in text
+    assert "  explained:   2 reference_error, proof value_of_other_result" in text
+    assert "results event, R engine: 0 unexplained" in text
+    assert "gold/ars/event.json carries the 8 results of the Python ARD as raw values" in text
+    assert "results event, engines: 8 results in both, 0 disagree" in text
+    assert counts == [
+        {"set": "event", "engine": engine, "total": 8, "reproduced": 6, "not_reproduced": 2,
+         "explained": True} for engine in ("Python", "R")]
+    assert run(build.check, toy, "toy")[0] == 0
+
+    passed, text = run(build.determinism, toy, "toy")
+    assert passed, text
+    assert "P1 determinism: 10 of 10 files have the same SHA-256 in both builds" in text
+
+
+def test_a_difference_without_a_class_fails_the_check(make):
+    need_r()
+    for exceptions in ("exceptions: 0\nresults:\n  event: []\n", None):
+        toy = make(results=True, exceptions=exceptions)
+        assert run(build.build, toy, "toy")[0] == 0
+        (passed, counts), text = run(build.result_checks, toy, "toy")
+        assert not passed and not counts[0]["explained"]
+        assert ("unexplained: ard:A_AGE/M_AGE_mean/Old: embedded 50, ours 70.0: a difference "
+                "with no class") in text
+        assert "2 of the 2 other values are our value of another group of AGEGR" in text
+        assert "results event, Python engine: 2 unexplained" in text and "results: FAIL" in text
+        assert run(build.check, toy, "toy")[0] == 1
+
+
+def test_an_entry_for_a_reproduced_result_and_an_unknown_result_set_fail(make):
+    need_r()
+    stale = toy_kit.EXCEPTIONS + (
+        '    - result: "ard:A_N/M_N_n/Old"\n      embedded: "1"\n      class: reference_error\n'
+        '      proof: {kind: value_of_other_result, result: "ard:A_N/M_N_n/Young"}\n')
+    toy = make(results=True, exceptions=stale)
+    assert run(build.build, toy, "toy")[0] == 0
+    (passed, _), text = run(build.result_checks, toy, "toy")
+    assert not passed
+    assert "ard:A_N/M_N_n/Old: listed as an exception, but it is reproduced" in text
+    other = toy_kit.EXCEPTIONS.replace("  event:", "  other-event:")
+    (toy / "kits/toy/gold/exceptions.yaml").write_text(other, encoding="ascii")
+    (passed, _), text = run(build.result_checks, toy, "toy")
+    assert not passed and "exceptions for other-event: no such result set" in text
+
+
+def test_a_stale_registry_json_fails_the_build(make):
+    toy = make(results=True)
+    (toy / "standard/methods/registry.json").write_text("{}\n", encoding="ascii")
+    code, text = run(build.build, toy, "toy")
+    assert code == 1 and "registry.json is stale" in text
+    assert not (kits.assembled_dir(toy, "toy") / "gold/build.json").exists()
+
+
+def test_an_event_that_does_not_hang_together_fails_the_build(make, monkeypatch):
+    event = toy_kit.reporting_event()
+    event["analyses"][0]["methodId"] = "M_NONE"
+    monkeypatch.setattr(toy_kit, "reporting_event", lambda: event)
+    toy = make(results=True)
+    code, text = run(build.build, toy, "toy")
+    assert code == 1 and "analysis 'A_N': method 'M_NONE' is not defined" in text

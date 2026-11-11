@@ -1,0 +1,13 @@
+{
+  "method": "percent.subjects",
+  "cases": [
+    {"name": "13 of 86", "statements": [1], "input": {"numerator": 13, "denominator": 86}, "expected": {"pct": 15.116279069767442}},
+    {"name": "none of 86", "statements": [1], "input": {"numerator": 0, "denominator": 86}, "expected": {"pct": 0.0}},
+    {"name": "all of 86", "statements": [1], "input": {"numerator": 86, "denominator": 86}, "expected": {"pct": 100.0}},
+    {"name": "1 of 3", "statements": [1], "input": {"numerator": 1, "denominator": 3}, "expected": {"pct": 33.333333333333336}},
+    {"name": "denominator 0", "statements": [4], "input": {"numerator": 0, "denominator": 0}, "expected": {"pct": null}},
+    {"name": "denominator missing", "statements": [4], "input": {"numerator": 5, "denominator": null}, "expected": {"pct": null}},
+    {"name": "numerator missing", "statements": [5], "input": {"numerator": null, "denominator": 86}, "expected": {"pct": null}},
+    {"name": "more than the denominator is not capped", "statements": [6], "input": {"numerator": 3, "denominator": 2}, "expected": {"pct": 150.0}}
+  ]
+}

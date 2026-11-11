@@ -3,15 +3,16 @@
 CDISCPILOT01, the CDISC SDTM/ADaM pilot study, as Pilot 7 stages it: the
 tier C kit of PLAN.md section 6.1, the reproduction anchor of D1 and D2.
 
-This folder holds `kit.yaml` and this file, and nothing else. The study data
-and documents are not ours to redistribute (rule 4 of PLAN.md section 2.1,
-E20). They are fetched at a pinned commit and assembled on demand:
+This folder holds `kit.yaml`, this file and `gold/exceptions.yaml`, and
+nothing else. The study data and documents are not ours to redistribute
+(rule 4 of PLAN.md section 2.1, E20). They are fetched at pinned commits and
+assembled on demand:
 
 ```bash
-specfirst fetch                      # Pilot 7 at the pinned commit, into the cache
-specfirst kit assemble cdiscpilot01  # copy 64 files, checking the SHA-256 of each
-specfirst build cdiscpilot01         # assemble, then resolved specs, ADaM datasets, graph
-specfirst check cdiscpilot01         # P2 against the reference ADaM, and the trace
+specfirst fetch                      # Pilot 7 and the ARS repository, into the cache
+specfirst kit assemble cdiscpilot01  # copy 66 files, checking the SHA-256 of each
+specfirst build cdiscpilot01         # resolved specs, ADaM, graph; then the results (needs R)
+specfirst check cdiscpilot01         # P2 for ADaM, the trace, P2 for results, the two engines
 specfirst check cdiscpilot01 --twice # first two fresh builds, each in its own folder (P1)
 ```
 
@@ -28,27 +29,45 @@ gold/                    never placed in an agent's workspace
   spec/                  Pilot 7's yamaa specifications, at their paths in Pilot 7:
     cdiscpilot01/spec/yamaa/   project.yaml, codelists.yaml and the 10 specifications
     spec/yamaa/pilot-program/  the parent specifications they inherit from
+  spec/ars/              CDISC's ARS v1 example "Common Safety Displays" (5 outputs, 31
+                         analyses, 3,735 embedded results) and the JSON Schema generated
+                         from the ARS model
   reference/adam/        the 10 reference ADaM datasets: what P2 compares with
   claims/                Pilot 7's reviewed claims, one file per dataset
+  exceptions.yaml        a copy of ours: the classified differences from the references
   resolved/              built: each specification as yamaa composes it, with the file
                          and line of every element
   data/adam/             built: the 10 ADaM datasets, as canonical Parquet
   graph/                 built: nodes.jsonl, edges.jsonl, coverage.json
+  ard/                   built: the results of the 31 analyses, one row per value;
+                         <id>.jsonl from the Python engine, <id>.r.jsonl from the R engine
+  ars/                   built: the example with our results in place of the embedded ones
   build.json             built: the SHA-256 of every built file
+work/                    what a build hands to the R engine; not part of what was built
 ```
 
 The specifications keep their paths because a child names its parent by a
 relative path. They are not edited. The runner hands every input over in
 memory (ADR-001), so the data paths written in them do not have to exist.
 
-`gold/reference/`, `gold/claims/`, `gold/resolved/` and `gold/build.json`
-are not in the layout of PLAN.md section 8. ADR-001 gives the reasons.
+`gold/reference/`, `gold/claims/`, `gold/resolved/`, `gold/build.json`,
+`gold/ars/` and the two files per reporting event in `gold/ard/` are not in
+the layout of PLAN.md section 8. ADR-001 and ADR-002 give the reasons.
+
+## Results (real-2)
+
+`kit.yaml` names one reporting event, `common-safety-displays`. The result
+engines read its analyses and the ADaM datasets of the build, never the
+reference ADaM and never the fetch cache. The results the example embeds
+are a reference: both engines reproduce 3,711 of 3,735 as printed, and
+`gold/exceptions.yaml` gives a class and a proof to the 25 that differ (the
+24 of evidence E3 and one first quartile; ADR-002).
 
 ## What is not here yet
 
 - The protocol. The pilot's protocol is in the CDISC 360i repository; no
   work package has needed it so far.
-- `gold/decisions.jsonl`, ARS, layouts, ARD, grids: real-2 to real-5 and
-  std-2.
+- `gold/decisions.jsonl`, layouts and grids, and the ARS files of the CSR
+  tables: real-3 to real-5 and std-2.
 - Two datasets the CSR tables need and the reference ADaM lacks (E28):
   real-4.

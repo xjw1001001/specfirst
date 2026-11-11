@@ -188,6 +188,64 @@ def _pilot_tests(ctx: Context) -> bool:
     return code == 0 and not problems
 
 
+# real-2 (PLAN.md section 13.3): the results the ARS example embeds, how many of
+# them both engines must reproduce (E2), and the tests the gate must see pass.
+PILOT_EMBEDDED, PILOT_REPRODUCED = 3735, 3711
+REAL2_PILOT_TESTS = (*REAL1_PILOT_TESTS, "A6-engine")
+REAL2_METHOD_TESTS = ("python-vectors", "r-vectors", "exact-arithmetic", "fisher-r")
+REAL2_DEFECTS = ("D1-arms", "D2-set", "D3-quantile", "D4-subset", "D5-engines")
+
+
+def _registry(ctx: Context) -> bool:
+    from specfirst.machine import registry
+
+    return registry.run(ctx.root, out=ctx.out) == 0
+
+
+def _pytest(ctx: Context, folder: str, report: str, required: tuple[str, ...]) -> bool:
+    """Run the tests of a folder strictly: none may fail, be skipped or be missing."""
+    xml = ctx.log_dir / report
+    xml.unlink(missing_ok=True)
+    code = ctx.command(
+        [sys.executable, "-m", "pytest", folder, "-s", "-q", f"--junitxml={xml}"],
+        env={"SPECFIRST_STRICT": "1"},
+    )
+    problems = junit_problems(xml, required)
+    for problem in problems:
+        ctx.out(f"{folder}: {problem}")
+    return code == 0 and not problems
+
+
+def _method_vectors(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/methods", "methods.xml", REAL2_METHOD_TESTS)
+
+
+def _pilot_tests_2(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/pilot", "pilot.xml", REAL2_PILOT_TESTS)
+
+
+def _defects(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/defects", "defects.xml", REAL2_DEFECTS)
+
+
+def _results(ctx: Context) -> bool:
+    """Both engines reproduce the embedded results, with nothing unexplained, and agree."""
+    from specfirst.machine import build
+
+    passed, counts = build.result_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
+    engines = {count["engine"] for count in counts}
+    if engines != {"Python", "R"}:
+        ctx.out(f"results: expected the engines Python and R, found {sorted(engines)}")
+        return False
+    for count in counts:
+        if count["total"] != PILOT_EMBEDDED or count["reproduced"] < PILOT_REPRODUCED:
+            ctx.out(f"results: the {count['engine']} engine reproduces {count['reproduced']} of "
+                    f"{count['total']}; the gate asks for at least {PILOT_REPRODUCED} of "
+                    f"{PILOT_EMBEDDED} (E2)")
+            passed = False
+    return passed
+
+
 _REAL1_CHECK = f"specfirst check {PILOT} --build build/p1/{PILOT}/first"
 
 GATES: dict[str, tuple[Check, ...]] = {
@@ -214,6 +272,23 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -m evidence -s -q",
               _pilot_tests),
         # The checks above read the fetch cache; it must still be what was fetched.
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    "real-2": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("registry", "specfirst methods", _registry),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q", _method_vectors),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("P2 reproduction", f"{_REAL1_CHECK} (its second part)", _p2),
+        Check("trace", f"{_REAL1_CHECK} (its third part)", _trace),
+        Check("results", f"{_REAL1_CHECK} (its last part)", _results),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
+        Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),

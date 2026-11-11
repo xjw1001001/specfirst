@@ -1,0 +1,38 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: test.fisher.exact
+kind: test
+title: Fisher exact test
+takes: a table of counts with r rows and c columns
+operations:
+  p_value:
+    result: number
+    ars_names: ["P-value"]
+semantics:
+  - Rows and columns whose total is 0 are left out.
+  - With fewer than 2 rows or fewer than 2 columns left, the result is missing.
+  - >-
+    The probability of a table with the row totals R[i], the column totals
+    C[j] and the total N is the product of the R[i]! and the C[j]!, divided by
+    N! and by the product of the factorials of its cells.
+  - >-
+    p_value: the sum of the probabilities of all tables with the row and column
+    totals of the observed table whose probability is not larger than that of
+    the observed table. The test is two-sided for every size of table.
+  - >-
+    "Not larger" allows a relative excess of 1e-7, as R's fisher.test does, so
+    that tables of the same probability count whatever the rounding.
+  - >-
+    The sum is over every such table: no sampling and no approximation, for a
+    2 x 2 table and for a larger one. A table with more than 10,000,000 tables
+    to sum is refused with an error.
+  - A sum above 1 by rounding gives 1.
+options:
+  alternative:
+    values: [two_sided]
+    default: two_sided
+implementations: [python, r]
+vectors: tests/methods/test_fisher_exact.json
+xref:
+  ars_example: [Mth03_CatVar_Comp_FishEx_1_pval]
+  siera: [06_fishers_exact]
+  acdc: null

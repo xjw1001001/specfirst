@@ -1,0 +1,73 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: summary.continuous
+kind: descriptive
+title: Summary of a continuous variable
+takes: the values of the analysis variable on the records of one cell
+operations:
+  n:
+    result: integer
+    ars_names: ["Count of non-missing values"]
+  mean:
+    result: number
+    ars_names: ["Mean"]
+  sd:
+    result: number
+    ars_names: ["Standard deviation"]
+  median:
+    result: number
+    ars_names: ["Median"]
+  q1:
+    result: number
+    ars_names: ["First quartile"]
+  q3:
+    result: number
+    ars_names: ["Third quartile"]
+  min:
+    result: number
+    ars_names: ["Minimum"]
+  max:
+    result: number
+    ars_names: ["Maximum"]
+semantics:
+  - The values are the non-missing values of the analysis variable on the records of the cell.
+  - "n: the number of values. A cell without values gives 0."
+  - "mean: the sum of the values divided by n. Missing when n is 0."
+  - >-
+    sd: the square root of the sum of squared differences from the mean, divided
+    by the denominator of the option sd_denominator. Missing when n is less than 2.
+  - "min and max: the smallest and the largest value. Missing when n is 0."
+  - >-
+    median, q1 and q3: the quantile at p = 1/2, 1/4 and 3/4 of the sorted values
+    x[1] <= ... <= x[n], by the definition of the option quantile_definition.
+    Missing when n is 0.
+  - >-
+    quantile_definition sas5 (SAS QNTLDEF=5, the default of SAS; R type 2): write
+    n * p = j + g with j an integer and 0 <= g < 1. The quantile is x[j + 1] when
+    g > 0, and (x[j] + x[j + 1]) / 2 when g = 0. For the three values of p here,
+    g = 0 exactly when n * 4 * p is divisible by 4, so no tolerance is involved.
+  - >-
+    quantile_definition r7 (R type 7, the default of R and of NumPy): write
+    (n - 1) * p = j + g with j an integer and 0 <= g < 1. The quantile is
+    x[j + 1] + g * (x[j + 2] - x[j + 1]), and x[j + 1] when g = 0.
+  - The median is the same number under both definitions.
+options:
+  quantile_definition:
+    values: [sas5, r7]
+    default: sas5
+  sd_denominator:
+    values: [n_minus_1]
+    default: n_minus_1
+implementations: [python, r]
+vectors: tests/methods/summary_continuous.json
+xref:
+  ars_example:
+    - Mth02_ContVar_Summ_ByGrp_1_n
+    - Mth02_ContVar_Summ_ByGrp_2_Mean
+    - Mth02_ContVar_Summ_ByGrp_3_SD
+    - Mth02_ContVar_Summ_ByGrp_4_Median
+    - Mth02_ContVar_Summ_ByGrp_5_Q1
+    - Mth02_ContVar_Summ_ByGrp_6_Q3
+    - Mth02_ContVar_Summ_ByGrp_7_Min
+    - Mth02_ContVar_Summ_ByGrp_8_Max
+  siera: [03_continuous_summary]
+  acdc: null

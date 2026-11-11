@@ -1,0 +1,34 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: test.anova.oneway
+kind: test
+title: One-way analysis of variance
+takes: the values of the analysis variable in each of k groups
+operations:
+  p_value:
+    result: number
+    ars_names: ["P-value"]
+semantics:
+  - Missing values are left out. A group without values is left out.
+  - >-
+    With k groups and N values in all, the result is missing when k is less
+    than 2 or N - k is less than 1.
+  - >-
+    SSB is the sum over the groups of n[i] * (mean[i] - grand mean)^2, and SSW
+    the sum over all values of (value - mean of its group)^2. The statistic is
+    F = (SSB / (k - 1)) / (SSW / (N - k)). The variances of the groups are
+    taken as equal: this is not the Welch test.
+  - >-
+    p_value: the probability that an F variable with k - 1 and N - k degrees of
+    freedom is at least F.
+  - >-
+    When no group holds two different values, SSW is 0 and F is not computed:
+    the result is 0 if the groups do not all hold the same value, and missing
+    if they do. This case is decided by comparing the values, not by a sum
+    that rounding could leave just above 0.
+options: {}
+implementations: [python, r]
+vectors: tests/methods/test_anova_oneway.json
+xref:
+  ars_example: [Mth04_ContVar_Comp_Anova_1_pval]
+  siera: [08_anova]
+  acdc: null

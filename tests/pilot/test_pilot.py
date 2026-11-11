@@ -14,6 +14,9 @@
     A5-adapted  no Python file of ours shares more than a few lines with a
                 Python file of a cached source, unless third_party/SOURCES.md
                 records it as adapted code
+    A6-engine   the Python result engine runs the 31 analyses of the ARS
+                example on the built ADaM in under 10 seconds and reproduces
+                3,711 of its 3,735 embedded results (real-2; E2)
 
 A4 is the check the trace check cannot make by itself: a reference that the
 dependency analysis misses leaves graph files that agree with each other.
@@ -87,8 +90,9 @@ def pilot(tmp_path_factory) -> Pilot:
 
 
 def assembled(pilot: Pilot) -> None:
-    if not (pilot.p7 / ".git").exists():
-        raise Missing("not in the fetch cache: p7; run `specfirst fetch`")
+    for source in sorted(pilot.kit.sources):
+        if not (pilot.cache / source / ".git").exists():
+            raise Missing(f"not in the fetch cache: {source}; run `specfirst fetch`")
     try:
         import yamaa  # noqa: F401
     except ImportError as error:
@@ -312,9 +316,48 @@ def a5_adapted(pilot: Pilot) -> list[str]:
     return problems
 
 
+def a6_engine(pilot: Pilot) -> list[str]:
+    """The Python result engine on the pilot: what it reproduces, and how long it takes.
+
+    PLAN.md section 13.3 (real-2): the spike took about 3 minutes; the
+    target is under 10 seconds. The time is from reading the ARS file to the
+    last row, on the ADaM tables of this build.
+    """
+    import time
+
+    from specfirst.machine import ard, ars, registry, results
+
+    spec = pilot.kit.results[0]
+    built = {plan.name: plan.table for plan in pilot.built()}
+    started = time.perf_counter()
+    event = ars.index(ars.read(pilot.dest / spec.ars))
+    known = registry.load(pilot.root)
+    binding = ars.bind(event, known, spec.binding)
+    tables = {
+        dataset: ard.table_from_arrow(dataset, built[dataset].select(names))
+        for dataset, names in ars.columns(event, spec.subject_key).items()
+    }
+    rows = ard.run(event, known, binding, tables, spec.subject_key)
+    seconds = time.perf_counter() - started
+    comparison = results.compare_reference(event, results.by_id(rows))
+    read = sum(len(names) for names in ars.columns(event, spec.subject_key).values())
+    print(f"Python engine: {len(event.analyses)} analyses on {read} columns of "
+          f"{', '.join(tables)}: {len(rows)} rows in {seconds:.2f} s (the spike: about 3 "
+          "minutes; the target: under 10 seconds)")
+    print(f"embedded results: {comparison.total}; reproduced as printed: "
+          f"{comparison.reproduced}")
+    problems = []
+    if seconds >= 10:
+        problems.append(f"the Python engine took {seconds:.1f} s; the target is under 10 s")
+    if (comparison.total, comparison.reproduced) != (3735, 3711):
+        problems.append(f"{comparison.reproduced} of {comparison.total} reproduced; E2 says "
+                        "3711 of 3735")
+    return problems
+
+
 CASES = {
     "A1-resolve": a1_resolve, "A2-runner": a2_runner, "A3-lineage": a3_lineage,
-    "A4-unread": a4_unread, "A5-adapted": a5_adapted,
+    "A4-unread": a4_unread, "A5-adapted": a5_adapted, "A6-engine": a6_engine,
 }
 
 

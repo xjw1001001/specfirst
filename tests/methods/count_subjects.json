@@ -1,0 +1,11 @@
+{
+  "method": "count.subjects",
+  "cases": [
+    {"name": "distinct values", "statements": [1], "input": {"values": ["S1", "S2", "S1", "S3"]}, "expected": {"n": 3}},
+    {"name": "a missing value and the empty text are not counted", "statements": [2], "input": {"values": ["S1", null, "", "S1"]}, "expected": {"n": 1}},
+    {"name": "no records", "statements": [3], "input": {"values": []}, "expected": {"n": 0}},
+    {"name": "only missing values", "statements": [2, 3], "input": {"values": [null, ""]}, "expected": {"n": 0}},
+    {"name": "case and blanks count", "statements": [4], "input": {"values": ["s1", "S1", "S1 "]}, "expected": {"n": 3}},
+    {"name": "numbers as values", "statements": [1, 2], "input": {"values": [1, 1.0, 2, null]}, "expected": {"n": 2}}
+  ]
+}

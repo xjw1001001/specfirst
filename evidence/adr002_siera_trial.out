@@ -1,0 +1,47 @@
+packages: siera 0.5.6 cards 0.9.0 cardx 0.3.4
+
+== T1 siera::readARS on CDISC's example (31 analyses)
+scripts written: 5 
+warnings: 62 
+analyses whose method has no code for siera (no code is generated for them): 31 
+analyses whose code template names a value source siera does not know: 6 
+other warnings: 0 
+lines that compute something in the generated scripts (cards::, cardx::, stats::): 0
+the generated script carries a time stamp: 1 line
+
+== T2 siera::readARS on siera's own variant of the example
+analyses: 23 of the 31 of CDISC's example; left out: 8
+   left out: An07_01_TEAE_Comp_ByTrt_PlacHigh, An07_01_TEAE_Comp_ByTrt_PlacLow, An07_09_Soc_Comp_ByTrt_PlacHigh, An07_09_Soc_Comp_ByTrt_PlacLow, An07_09_Soc_Summ_ByTrt, An07_10_SocPt_Comp_ByTrt_PlacHigh, An07_10_SocPt_Comp_ByTrt_PlacLow, An07_10_SocPt_Summ_ByTrt
+analyses given another method: 4
+methods with R code in the file: 6 of 6 ; a Fisher test with a p-value among them: False
+results embedded in the variant: 0
+scripts written: 4 
+warnings: 12 
+analyses whose method has no code for siera (no code is generated for them): 0 
+analyses whose code template names a value source siera does not know: 8 
+other warnings: 0 
+packages the generated scripts attach: library(broom) library(cards) library(cardx) library(dplyr) library(parameters) library(readr) library(readxl) library(tidyr) 
+of these, not among the locked R packages: parameters readr 
+
+== T3 the scripts of T2 on the pilot ADaM
+(for this trial only, the scripts are changed to read the CSV files with base R and not to
+ attach readr and parameters, which are not installed; nothing else is changed)
+ARD_Out14-1-1:
+  ERROR: The packages "broom.helpers" (>= 1.17.0) and "parameters" (>= 0.20.2) are required. 
+ARD_Out14-3-1-1:
+  ARD rows: 31 
+ARD_Out14-3-3-1a:
+  ARD rows: 2523 
+ARD_Out14-3-3-1b:
+  ARD rows: 2523 
+the 3735 results CDISC embeds: {'equal': 2029, 'not computed': 1693, 'other value': 13}
+other values that are a percent, and equal after multiplying ours by 100: 13 of 13
+
+== T4 cards and cardx for the methods of the registry
+cardx::ard_stats_aov               fails: The packages "broom.helpers" (>= 1.17.0) and "parameters" (>= 0.20.2) are required.
+cardx::ard_stats_oneway_test       runs
+cardx::ard_stats_chisq_test        runs
+cardx::ard_stats_fisher_test       runs
+cards::ard_summary quartiles equal quantile type 2 (the SAS default): TRUE ; type 7 (the R default): FALSE 
+cards::ard_tabulate gives p as a proportion, not a percent: TRUE 
+200 Fisher tests: cardx 2.4 s, stats::fisher.test 0.06 s

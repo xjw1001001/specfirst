@@ -59,11 +59,26 @@ confirm the terms with CDISC before that.
 | p6 | `documents/CSR.pdf` | 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d | the CSR of CDISCPILOT01 (492 pages); recorded in base-0 |
 | p6 | `documents/SAP.pdf` | 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7 | the SAP of CDISCPILOT01; recorded in base-0 |
 
+A kit manifest pins more files of these sources, each by SHA-256
+(`kits/<kit>/kit.yaml`). The kit `cdiscpilot01` pins 64 files of p7 and two
+of ars: the example above and `project/jsonschema/ars_ldm.schema.json`, the
+JSON Schema generated from the ARS model. They are assembled into the
+ignored `build/` folder and never committed. The ARS file with our own
+results in place of the embedded ones (`gold/ars/` of a build) is derived
+from the example and stays in `build/` as well.
+
 ## Engines and libraries
 
 Python and R packages are dependencies, not imported files. Their exact
 versions are in `env/requirements.lock` and `env/r-packages.lock`. The
 engine PLAN.md pins is yamaa 0.7.0 from PyPI (MIT).
+
+The R result engine in `r/specfirstr/` (ADR-002) uses base R and jsonlite
+(MIT). siera (MIT), cards and cardx (Apache-2.0) are in the lock and were
+tried for ADR-002 (`evidence/adr002_siera_trial.sh`); the engine does not
+load them, and no code or template of theirs is copied into this
+repository. The trial runs scripts that siera generates in a scratch
+folder; they are not kept.
 
 ## Other public documents
 

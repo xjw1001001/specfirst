@@ -13,9 +13,12 @@ its source data and the sentence that justified it.
 
 ## Status
 
-Work package base-0 (bootstrap): repository, environment, pinned sources,
-evidence tests and the shared formats, version 0. `specfirst status` prints
-the state of every track; the reports are in `docs/reports/`.
+Passed so far: base-0 (repository, environment, pinned sources, evidence
+tests, shared formats), real-1 (the pilot kit, its ADaM proof and the SDTM
+to ADaM part of the trace graph) and real-2 (method registry, the Python
+and the R result engine, classified differences from a reference).
+`specfirst status` prints the state of every track; the reports are in
+`docs/reports/`.
 
 ## Quick start (Ubuntu 24.04, also under WSL2)
 
