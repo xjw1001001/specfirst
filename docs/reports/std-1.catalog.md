@@ -68,7 +68,7 @@ Applies when: `design.has_exposure`. Default: `not_completed`.
 
 | Alternative | Statement | Meaning |
 | --- | --- | --- |
-| `not_completed` | A partial exposure date is not completed and is left out of the treatment dates. | The treatment start and end dates are taken from the exposure dates that have a year, a month and a day. |
+| `not_completed` | A partial exposure date is not completed and is left out of the treatment dates. | The treatment start and end dates are taken from the exposure dates that have a year, a month and a day. A date with a missing part in the middle (a year and a day without the month) is partial. |
 | `first_day_of_month` | A partial exposure date with a known month is completed with the first day of that month. | A date with an unknown month is left out of the treatment dates. |
 
 - Sources: admiral (pharmaverse), function reference and source (derive_vars_dt(), highest_imputation (default n: no imputation) and date_imputation (first)); yamaa, language documentation, rules and benchmarks (the impute verb: a source with no day gives missing unless a day is supplied).

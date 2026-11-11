@@ -28,6 +28,7 @@ _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 _ANCHORED = re.compile(r"^\[([0-9]+/s[0-9]+)\] (.*)$")
 _ANCHOR = re.compile(r"\[[0-9]+/s[0-9]+\]")
 _CATALOG = re.compile(r"^Catalog: (\S+) (\S+)$")
+_LEAD = re.compile(r"^[^A-Z]*")  # what may stand before the first capital letter of a line
 _SECTION = re.compile(r"^## ([0-9]+) (.+) \(([a-z0-9-]+)\)$")
 _DOCUMENT = re.compile(r"^Document: ([a-z][a-z0-9_-]*)$")
 # What may continue a token of a type; the text after a slot must not start with it.
@@ -366,6 +367,10 @@ class StandardForm:
                 # indented, bulleted or emphasized statement must not be lost.
                 if line.startswith("[") or _ANCHOR.search(line):
                     raise StandardFormError(f"line {number}: not an anchored statement: {line}")
+                bare = _LEAD.sub("", line).rstrip("*_` ")
+                if bare and not line.startswith(("#", "Meaning: ")) and self.matches(bare):
+                    raise StandardFormError(f"line {number}: a statement without its anchor: "
+                                            f"{line}")
                 continue
             anchor, statement = match.groups()
             try:

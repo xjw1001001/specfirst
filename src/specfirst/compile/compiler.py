@@ -36,6 +36,7 @@ import yaml
 
 from specfirst.compile.catalog import Catalog
 from specfirst.compile.house import House
+from specfirst.compile.slots import SlotError, check_value
 from specfirst.compile.standard_form import StandardForm, StandardFormError
 from specfirst.compile.template import TemplateError, evaluate
 
@@ -319,16 +320,41 @@ def family_templates(house: House, unit: str) -> tuple[dict, dict]:
 
 
 def other_values(catalog: Catalog, entry_id: str, value: dict) -> list[dict]:
-    """Every other value of an entry that its alternatives and their examples give."""
-    values = []
-    for alternative in catalog.entry(entry_id).alternatives:
+    """The other values of an entry that a bind is proven against.
+
+    Every alternative with every example of its slots; and, for the value
+    itself, each list or table with one item left out. A list that names
+    rows, visits or windows binds the elements of each item only when the
+    item can go: the examples alone may all hold it.
+    """
+    values: list[dict] = []
+
+    def add(other: dict) -> None:
+        if other != value and other not in values:
+            values.append(other)
+
+    entry = catalog.entry(entry_id)
+    for alternative in entry.alternatives:
         rows = max([len(slot.examples) for slot in alternative.slots] or [1])
         for row in range(rows):
             other = {"rule": alternative.id}
             for slot in alternative.slots:
                 other[slot.name] = slot.examples[row % len(slot.examples)]
-            if other != value and other not in values:
-                values.append(other)
+            add(other)
+    try:
+        current = entry.alternative(value["rule"])
+    except KeyError:
+        return values
+    for slot in current.slots:
+        items = value.get(slot.name)
+        if isinstance(items, list) and len(items) > 1:
+            for index in range(len(items)):
+                shorter = {**value, slot.name: items[:index] + items[index + 1:]}
+                try:
+                    check_value(slot, shorter[slot.name])
+                except SlotError:
+                    continue
+                add(shorter)
     return values
 
 
@@ -337,10 +363,13 @@ def bind_tables(catalog: Catalog, house: House, records: list[dict], compiled: C
     """Fill the binds of a compile for ARS elements and layout parts (the `decides` edge).
 
     A decision binds an element when changing the decision to another value
-    of its entry (another alternative, or another example of a slot) changes
-    the element or removes it, all other decisions kept. This is the compile
-    check of PLAN.md section 4.2: the edge is proven by mutation, not read off
-    a template. It costs one compile per other value.
+    of its entry changes the element or removes it, all other decisions
+    kept. The other values are those of `other_values`: every alternative
+    with its examples, and each list of the value with one item left out.
+    This is the compile check of PLAN.md section 4.2: the edge is proven by
+    mutation, not read off a template. It costs one compile per other value,
+    and it is complete for these values only: a value that no example and
+    no shorter list reaches is not tried.
 
     An ADaM bind is the column a fragment writes. It may be a working column
     (`adam:ADAE._TEEND`); the dataset variables it reaches follow from the

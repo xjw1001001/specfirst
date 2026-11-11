@@ -1,8 +1,13 @@
 entry: trt.start.source
 # Each alternative gives two candidates: the earliest date text among complete
 # dates (_TRTSDTC), and among dates with at least a known month (_TRTSDTCM).
-# The decision trt.date.imputation takes one of them. Among the texts of one
-# candidate set, the order of the texts is the order of the completed dates.
+# The decision trt.date.imputation takes one of them.
+# Which date texts take part. SDTM writes a missing part of a date as a
+# hyphen (2024---15, --03-05), so "two hyphens" does not make a date complete.
+# A text takes part as complete when it reads YYYY-MM-DD (with or without a
+# time), and as a date with a known month when it reads YYYY-MM; a text with
+# two hyphens in a row never takes part. Among the texts of one candidate
+# set, the order of the texts is the order of the completed dates.
 alternatives:
   first_ex_with_dose:
     adam:
@@ -13,14 +18,14 @@ alternatives:
             label: "Working value: earliest complete exposure start date text"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '____-__-__%' AND EX.EXSTDTC NOT LIKE '%--%'"
                 expr: "MIN(EX.EXSTDTC)"
           - name: _TRTSDTCM
             type: str
             label: "Working value: earliest exposure start date text with a known month"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '____-__%' AND EX.EXSTDTC NOT LIKE '%--%'"
                 expr: "MIN(EX.EXSTDTC)"
   first_ex_record:
     adam:
@@ -31,14 +36,14 @@ alternatives:
             label: "Working value: earliest complete exposure start date text"
             derivation:
               aggregate:
-                filter: "EX.EXSTDTC LIKE '%-%-%'"
+                filter: "EX.EXSTDTC LIKE '____-__-__%' AND EX.EXSTDTC NOT LIKE '%--%'"
                 expr: "MIN(EX.EXSTDTC)"
           - name: _TRTSDTCM
             type: str
             label: "Working value: earliest exposure start date text with a known month"
             derivation:
               aggregate:
-                filter: "EX.EXSTDTC LIKE '%-%'"
+                filter: "EX.EXSTDTC LIKE '____-__%' AND EX.EXSTDTC NOT LIKE '%--%'"
                 expr: "MIN(EX.EXSTDTC)"
   dm_rfxstdtc:
     adam:
@@ -49,7 +54,7 @@ alternatives:
             label: "Working value: complete first exposure date text"
             derivation:
               case:
-                - when: "DM.RFXSTDTC LIKE '%-%-%'"
+                - when: "DM.RFXSTDTC LIKE '____-__-__%' AND DM.RFXSTDTC NOT LIKE '%--%'"
                   then: DM.RFXSTDTC
                 - otherwise: null
           - name: _TRTSDTCM
@@ -57,6 +62,6 @@ alternatives:
             label: "Working value: first exposure date text with a known month"
             derivation:
               case:
-                - when: "DM.RFXSTDTC LIKE '%-%'"
+                - when: "DM.RFXSTDTC LIKE '____-__%' AND DM.RFXSTDTC NOT LIKE '%--%'"
                   then: DM.RFXSTDTC
                 - otherwise: null

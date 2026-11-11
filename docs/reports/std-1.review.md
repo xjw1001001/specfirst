@@ -523,3 +523,317 @@ and notes. The owner should see them before N1.
 - The gate report `docs/reports/std-1.md`: not in the commit (finding 1).
 
 Independent reviewer (fresh-context agent), 2026-11-11
+
+## Second pass (commit 4002fc1)
+
+Commit reviewed: `4002fc1fa67609d50a744bee6806be6cef66d9c0` on `track/std`
+("std-1: fixes from the first pass of the independent review"). Since
+9a4b09f the branch has three commits: 4c97d1c (catalog overview, 40 value
+cases, the first-pass review), 36f8cf1 (merge of main with real-1) and
+4002fc1 (the fixes). I read the diff `9a4b09f..4002fc1` of
+`src/specfirst/compile`, `standard`, the std-1 tests, ADR-004, the state
+file, the lessons, CLAUDE.md and `third_party/SOURCES.md`, and the new
+`tests/unit/test_alternatives_on_tiny.py`. The code of real-1 that came with
+the merge is not std-1's and I did not review it. The worktree was clean at
+4002fc1 during this pass. I ran the gate in the worktree and my experiments
+on a `git archive` export of 4002fc1 in my scratch folder. The text of the
+first pass above is unchanged.
+
+### What I ran
+
+In the worktree on `/mnt/d` (clean, HEAD 4002fc1):
+
+```text
+$ specfirst catalog
+catalog specfirst-m1 draft-1: 43 entries, 62 questions (entry and unit), 96 alternatives, 9 units, 50 probes
+schema and cross-references: 0 problems
+compile templates on their examples: 0 problems
+probes: every pair of alternatives, every slot: 0 problems
+structural probes separate for any data: 0 problems
+phrasings and reading notes: 0 problems
+parameters set and read: 0 problems
+$ specfirst catalog --sources
+43 entries, 0 without a public source
+104 citations: 59 to pinned sources, checked on the fetch cache (44 with a text that must stand in the file); 45 to published documents, judged and not checked by script
+public sources: 0 problems
+$ specfirst catalog --roundtrip
+243 statements rendered and parsed back, for 140 alternatives (entry, unit and alternative)
+round trip decisions to statements to decisions: 0 problems
+document round trip on 62 decisions: 0 problems
+$ specfirst house
+house standard open-default@1: 58 defaults, 4 decisions without a default, 3 parent specs, 4 table families
+house standard: 0 problems
+$ specfirst catalog --yamaa --run --tables
+compiled files and built datasets: /tmp/specfirst-std1-_pt3ufd1 (removed when the command ends)
+106 decision vectors (the base and one changed decision each), 106 compiled
+  note: tfl.pvalue.format/four_decimals #1: shows only beside another decision, for example tfl.tests.include/anova_chisq #1
+every alternative compiles and changes the compiled files: 0 problems
+47 distinct sets of ADaM specs, 141 entry specs checked by yamaa (each with its house parent and one fragment per decision)
+yamaa check: 0 problems
+47 distinct sets of ADaM specs, 141 datasets built by yamaa on the tiny study of specfirst.compile.tiny (3 subjects; this shows that the specs run, not that their values are right)
+yamaa run: 0 problems
+negative controls: 3 schema defects planted in the base ARS file, 3 reported
+59 distinct ARS files with their layouts checked: schema, references, and that layouts and ARS name the same analyses
+ARS schema and layouts: 0 problems
+$ python -m pytest tests/unit/test_standard_form.py tests/unit/test_compile.py tests/unit/test_alternatives_on_tiny.py tests/unit/test_gates.py tests/unit/test_schemas.py tests/defects -q
+281 passed in 251.28s (0:04:11)
+```
+
+Every command exited 0, and no folder `/tmp/specfirst-std1-*` was left.
+Then the whole gate, in the worktree on the Windows drive:
+
+```text
+$ specfirst gate std-1
+gate std-1 at commit 4002fc1fa67609d50a744bee6806be6cef66d9c0 (clean)
+PASS  environment          0.4 s
+PASS  pins                 0.3 s
+PASS  lint                 0.4 s
+PASS  unit tests         239.2 s
+PASS  catalog             10.4 s
+PASS  public sources       0.3 s
+PASS  round trip           0.7 s
+PASS  yamaa check        102.1 s
+PASS  yamaa run           30.1 s
+PASS  ARS schema           0.7 s
+PASS  house standard       0.9 s
+PASS  ASCII                3.2 s
+GATE std-1: PASS
+```
+
+On the export: the first-pass experiments again (the fuzz of 9317
+statements: 0 problems; the 66 value expectations: 64 met, and the two that
+differ follow the changed statement of `trt.end.source`), and the new ones
+named under each finding.
+
+### The findings of the first pass
+
+| # | First pass | Status at 4002fc1 |
+| --- | --- | --- |
+| 1 | state file names evidence the commit lacks | open, as announced: `docs/state/std.md` lines 8 to 11 are unchanged and `docs/reports/` has no `std-1.md` and no `std-1.gate.log`. The author will commit them with this review after the final gate. Nothing for me to verify yet |
+| 2 | "yamaa run" on a Windows drive | fixed |
+| 3 | partial exposure dates | partly fixed; the rest is finding 17 |
+| 4 | baseline order against its definition | fixed, by changing the definitions |
+| 5 | binds neither complete nor sound | partly fixed; the rest is finding 18 |
+| 6 | probe `output_shape` and `tfl.columns.arms` | fixed in the catalog; the new check is weaker than its name (finding 19) |
+| 7 | ARS reference check | fixed |
+| 8 | no value check of alternatives | partly fixed; the rest is finding 20 |
+| 9 | statement lines dropped by the parser | fixed for every line that holds an anchor; a rest in finding 21 |
+| 10 | result patterns in the ARS file | fixed |
+| 11 | citations | fixed; three alternatives are now listed as unsourced, for the owner |
+| 12 | missing `tfl.output.include` | fixed |
+| 13 | tables that contradict themselves | fixed |
+| 14 | `Catalog:` and `Document:` lines | fixed |
+| 15 | ADR-004 and notes | fixed |
+| 16 | defaults a statistician may not expect | listed for the owner, in part |
+
+Evidence, finding by finding:
+
+- 2. `gate._variants` builds in a new folder under the system's temporary
+  folder; the slow command and the whole gate above ran in the worktree on
+  `/mnt/d`, with 141 datasets and 0 problems. `checks.run_problems` with
+  its folder on `/mnt/c` now returns the problem `base: ADSL: run refused:
+  cannot save ADSL: ...` where it crashed before. Lesson 20 and a CLAUDE.md
+  gotcha say it. No test plants a refusal.
+- 4. `demo.baseline.record`, `bds.baseline.rule` and `bds.window.tiebreak`
+  now say: latest by the collected date and time, a value without a time
+  before the timed values of its day, then the sequence number. My case of
+  the first pass gives `WEIGHTBL = 71.0` (the timed value, VSSEQ 9), which
+  is what the new text says, and ADVS flags the same record. ADR-004 item 7
+  lists the changed default wording and that ADSL and ADVS follow two
+  baseline rules.
+- 6. `tfl.columns.arms` has the probe `arms_listed_out_of_dose_order` of
+  the new kind `design`; `bds.eot.record` and `tfl.pvalue.format` have
+  structural probes with `needs`. The state file tells gen-1 what a design
+  probe is.
+- 7. My two planted defects are found now: "analysis An_AESUM_ANY_Tot:
+  'An_AESUM_N' has other subject groupings" and "relationship
+  Mth_CatSumm_pct_DEN: the operation 'Mth_Count_x' is not defined". A third
+  one (the SOC and PT percentages divided by the count of subjects with any
+  event) is found too: "'An_AESOCPT_Any' has no operation 'Mth_Count_n'".
+  Four planted tests were added. No false problem on the 59 ARS files.
+- 9, 14. A statement line with a leading space, a tab, a list marker, a
+  quote marker or bold marks is refused ("not an anchored statement"), and
+  so is an anchor with a space or a capital S. A `Catalog:` line of another
+  catalog or version, a missing one, an indented one and a second
+  `Document:` line are refused.
+- 10. The compiled ARS file has no `resultPattern`. Under the default
+  statistics the methods are `Mth_Count` (1 operation), `Mth_CatSumm` (2)
+  and `Mth_ContSumm` (6); with quartiles the demographics summaries use
+  `Mth_ContSummQ` (8) and the vital signs table keeps `Mth_ContSumm`.
+  ADR-004 item 5 says the layout alone holds display formats.
+- 11. `pop.safety.rule` cites ICH E9 section 6.3; `pop.safety.grouping` no
+  longer cites E9; `pop.randomized.rule` names what 5.2.1 says;
+  `sources.yaml` records that E9 was read. This agrees with what I wrote
+  from memory. The CSR citation of `demo.race.pooling` is gone, and
+  `catalog.yaml` lists three `unsourced_alternatives`. Rule 5 of section
+  5.2 is thereby not met for these three, openly; the owner decides at N1.
+  No document was committed.
+- 12. A decision vector without `tfl.output.include` for one family is
+  refused: "tfl-ae-soc-pt: no value for tfl.output.include".
+- 13. Refused now, when rendered and when parsed: a window with `low` above
+  `high`, overlapping windows, windows out of order, a target outside its
+  window, two windows or visits with one name, a first midpoint target on
+  day 1, targets that do not ascend, an arm code decoded twice, cuts that
+  do not ascend.
+- 15. ADR-004 says which table families each display decision applies to;
+  the notes of `pop.safety.rule` say that the rule of the randomized set
+  does not enter.
+- 16. The state file ("Known limits") lists the record timed after the dose
+  on the first dose day, the parameters of ADVS, the occurrence flags and
+  the units of BMI, and the two baseline rules. The end date now reads
+  dosed records only, so my example of an end before the start is gone.
+  Not listed: `first_day_of_month` completes end dates with the first day
+  too; a partial start moved to the first dose date is not emergent under
+  the time rule when the dose has a time; the default age groups are the
+  pilot's.
+
+### New findings
+
+#### 17. major: a partial exposure date in the SDTM form with hyphens for the unknown part still removes the treatment date (rest of finding 3)
+
+The fix works for the forms `2024-03` and `2024`. With the two complete
+records of S1 and a third dosed record that starts `2024-03` and ends
+`2024-05`: `TRTSDT=2024-03-10`, `TRTEDT=2024-04-20`, `SAFFL=Y` under
+`not_completed`, and 2024-03-01 and 2024-05-01 under `first_day_of_month`.
+The templates decide what a complete date is by the text patterns
+`LIKE '%-%-%'` and `LIKE '%-%'` (`templates/trt.start.source.yaml`,
+`templates/trt.end.source.yaml`). SDTM writes an unknown middle part with
+hyphens, and those texts pass the patterns and sort first or last:
+
+```text
+third record starts 2024---15 (month unknown): TRTSDT=None       TRTEDT=2024-04-20 SAFFL=N  (both alternatives)
+third record starts --03-05 (year unknown)   : TRTSDT=None       TRTEDT=2024-04-20 SAFFL=N  (both alternatives)
+third record ends 2025---01 (month unknown)  : TRTSDT=2024-03-10 TRTEDT=None       SAFFL=Y  (both alternatives)
+third record ends 2024-05--T10:00            : TRTEDT=None under not_completed, 2024-05-01 under first_day_of_month
+```
+
+The definition says the dates are taken "from the exposure dates that have a
+year, a month and a day". It is the defect of finding 3 for rarer texts: a
+dosed subject with a complete first dose date leaves the safety set. Decide
+whether a text is a complete date by reading it as a date, not by counting
+hyphens.
+
+Two smaller points in the same templates, both minor. Under `not_completed`
+with `ds_date_when_ex_missing`, a subject whose only dosed record starts
+`2024-03` and has no end date gets `TRTSDT=None`, `SAFFL=N` and
+`TRTEDT=2024-05-02` from the disposition record; the definition says that
+date "is taken only for a subject with a treatment start" (the template
+asks for `_TRTSDTCM`, the candidate with a known month, not for the decided
+start). And of two dosed records on the first dose day, `2024-03-10` and
+`2024-03-10T08:00`, the text without a time is the minimum:
+`TRTSDTM=2024-03-10 00:00:00`, `TRTSTMF=H`, so the collected time of the
+first dose is not used.
+
+#### 18. major: the binds are complete only against the example values written in the catalog (rest of finding 5)
+
+`compiler.bind_tables` binds what another alternative or another example of
+the entry changes or removes. Against that measure it is exact: for all 62
+decisions of the base vector, 0 with a changed element that is not bound and
+0 with a bound element that never changes; the same binds for another order
+of the records; the compiled files untouched. But a list slot has more
+values than its examples:
+
+```text
+base vector, tfl.demog.rows changed to [RACEGR1] (not an example): changes 18 elements, 16 bound;
+  changed and not bound: An_DM_AGE_Summ, An_DM_AGE_Summ_Tot, An_DM_SEX_Summ, An_DM_SEX_Summ_Tot, Grp_SEX
+base vector, tfl.ae.summary.rows changed to [SERIOUS]: changed and not bound: An_AESUM_ANY, An_AESUM_ANY_Tot
+study with tfl.demog.rows = [AGE, SEX]:  ARS binds [], layout binds [layout:tfl-demographics/rows]
+study with tfl.ae.summary.rows = [ANY]:  ARS binds [], layout binds [layout:tfl-ae-summary/rows]
+```
+
+A decision that alone decides which analyses exist binds none of them when
+every example of the catalog holds the same rows, because a change to an
+example can then only add rows. The `decides` edge of section 4.2 misses
+the analyses, the path from a printed number to "the decisions behind it"
+(P3) lacks this decision, and an edit to a value outside the examples
+changes cells the graph does not predict (the gate of std-3). The binds of
+a kit also change when somebody edits an example in the catalog. For the
+alternatives themselves (P4) the binds are complete. This does not touch
+what the owner approves at N1; it should be settled before std-2 relies on
+it, for example by also removing each item of a list.
+
+A note on cost, not a finding: `specfirst compile` runs `bind_tables` each
+time; for the base vector it took 38 seconds on my export on a Windows
+drive.
+
+#### 19. minor: the new check of structural probes cannot fail on the defect of finding 6
+
+`checks.structural_probe_problems` asks that the two alternatives compile to
+different table files. Its label in the gate log is "structural probes
+separate for any data". I planted the defect of finding 6 again
+(`output_shape` separates `tfl.columns.arms: all`, the design probe
+removed): 0 problems, because the two column orders give different layout
+files and still the same table for the usual design. The check does find a
+structural claim on `bds.eot.record` (my plant) and on `tfl.pvalue.format`
+(the author's planted test). A `needs` text is not checked: with "Nothing
+at all." the claim passes. Name the check for what it shows (the compiled
+files differ), or keep rules that only reorder a layout out of structural
+probes.
+
+#### 20. minor: four of eight more planted template defects still pass every committed test (rest of finding 8)
+
+The 40 cases of `tests/unit/test_alternatives_on_tiny.py` find my planted
+`<` at the end of the emergence window (the case with a window of 35 days),
+and with `test_compile.py` four more plants: `>=` to `>` in the default
+start rule; race pooling `<` to `<=`; age 80 in the upper group; the first
+value as the end-of-treatment value. On a copy of the commit, these four
+pass both test files (61 passed): `ae.teae.end/end_of_study` with `<` in
+place of `<=`; `bds.window.tiebreak/closest_then_later` with the fragment
+of `closest_then_earlier`; `pop.safety.rule/randomized_and_dosed` without
+the randomization; `trt.end.source/ds_date_when_ex_missing` that never
+falls back. The tiny study has no event on the end-of-study date, no tie in
+a window, no dosed subject who is not randomized and no dosed subject
+without an end date. The state file says the cases cover "the alternatives
+that study can tell apart"; these are among the ones it cannot.
+
+#### 21. minor: a statement line that lost its anchor is still skipped (rest of finding 9)
+
+With the anchor removed (`Treatment emergence has no end date.` alone on its
+line) or written in round brackets (`(2/s3) ...`), the document of 10
+decisions parses without an error to 9. The parser could refuse any line
+that a template matches.
+
+### My planted defects, second pass
+
+| # | Planted | Result |
+| --- | --- | --- |
+| P2 | Total percentage with the per-arm denominator | found now |
+| P3 | relationship to an operation that does not exist | found now |
+| P4 | `<=` to `<` at the end of the emergence window | found now (value case) |
+| P8 | window tables that contradict themselves | refused now |
+| P9 | SOC and PT percentages divided by the count of subjects with any event | found |
+| P10 | `output_shape` claims `tfl.columns.arms` again | not found (finding 19) |
+| P11 | `output_shape` claims `bds.eot.record` again | found |
+| P12 | a `needs` text that says nothing | not found; it cannot be checked |
+| P13 | eight more boundary and rule defects in compile templates | 4 found, 4 not (finding 20) |
+
+### Also checked in this pass
+
+- No version 0 schema of base-0 changed between 9a4b09f and 4002fc1; the
+  catalog entry schema gained the four table rules (ADR-004 item 1). The
+  catalog is still `draft-1`, ADR-004 still "proposed", no std-2 code.
+- The statements changed by the fixes (`trt.date.imputation/not_completed`,
+  the three of `trt.end.source`) round-trip, the fifteen phrasings of the
+  two entries say what the statements say, and the old statements are
+  refused. STANDARD.md equals its rendering.
+- `docs/reports/std-1.catalog.md` equals `overview.render` at this commit
+  (637 lines).
+- The end date reads dosed records only, as the statements now say: a
+  zero-dose record that ends later does not move `TRTEDT`.
+- The 50 files of the std-1 part that changed have no non-ASCII byte and no
+  CR; the three commits added no data file and no document. CLAUDE.md has
+  57 lines.
+
+Not checked: the code of real-1 that the merge brought; the clean clone gate
+(the author's log `build/gates/std-1/clean-clone.log` shows "GATE std-1:
+PASS" at 4002fc1); the report and gate log that are still to be committed.
+
+Verdict after second pass: PASS
+
+No finding is blocking: the three claims of the gate text hold at 4002fc1,
+the gate passes in the worktree, and nothing is frozen or started that
+waits for the owner. Open: finding 1 (until the report and the gate log are
+committed), the major findings 17 and 18, and the minor findings 19 to 21.
+Finding 17 touches a default the owner approves at N1.
+
+Independent reviewer (fresh-context agent), second pass, 2026-11-11

@@ -25,7 +25,7 @@ section 13.4).
 - `yamaa check` is the gate; yamaa's lint is not run on compiled files (its
   findings are spacing and line width, and `unused_input_key`).
 - The compiled specs are proven to run on a tiny hand-made study. For the
-  alternatives that study can tell apart, 40 cases compare a built value
+  alternatives that study can tell apart, 50 cases compare a built value
   with the statement (`tests/unit/test_alternatives_on_tiny.py`). That is
   not a proof on real or generated data: std-2 checks by result on the
   pilot; gen-2 checks P4 on the twin.
@@ -36,6 +36,14 @@ section 13.4).
   on the first dose day timed after the dose is neither baseline nor
   post-baseline; the baseline weight of ADSL and the baseline of ADVS
   follow two rules (ADR-004, item 7).
+- Left open after the second pass of the review: when two dosed exposure
+  records start on the first dose day, one with a time and one without,
+  the one without gives the treatment start (00:00, time flag set);
+  `checks.structural_probe_problems` compares compiled files, so it cannot
+  see a structural claim that fails only because two layout rules give the
+  same table for a given design (the kind `design` exists for that); a
+  bind is complete for the values `compiler.other_values` tries, not for
+  every value a slot can take.
 - Three alternatives have no public source of their own
   (`unsourced_alternatives` in standard/catalog/catalog.yaml).
 

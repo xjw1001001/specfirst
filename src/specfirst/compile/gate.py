@@ -15,7 +15,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from specfirst.compile import catalog as catalog_module
-from specfirst.compile import checks
+from specfirst.compile import checks, tiny
 from specfirst.compile import house as house_module
 from specfirst.paths import cache_dir
 
@@ -141,7 +141,8 @@ def run_check(root: Path, out: Out) -> bool:
     problems, ran = checks.run_problems(found, work)
     out(f"{len(checks.distinct_adam(found, work))} distinct sets of ADaM specs, "
         f"{ran} datasets built by yamaa on the tiny study of specfirst.compile.tiny "
-        "(3 subjects; this shows that the specs run, not that their values are right)")
+        f"({len(tiny.DM)} subjects; this shows that the specs run, not that their values "
+        "are right)")
     out(f"yamaa run: {len(problems)} problems")
     return _report(out, problems)
 

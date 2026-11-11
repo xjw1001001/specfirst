@@ -233,3 +233,19 @@ def test_a_table_that_contradicts_itself_is_not_a_decision(catalog, form, entry_
     unit = catalog.entry(entry_id).units[0]
     with pytest.raises(StandardFormError, match=problem):
         form.render(entry_id, unit, value)
+
+
+@pytest.mark.parametrize("damaged", [
+    "Treatment emergence has no end date.",            # the anchor is gone
+    "(1/s2) Treatment emergence has no end date.",     # the anchor is in round brackets
+    "* Treatment emergence has no end date.",
+])
+def test_a_statement_without_its_anchor_is_an_error(form, damaged):
+    records = [{"id": "ae.teae.end", "unit": "mod-ae-emergence", "value": {"rule": "no_end"}},
+               {"id": "ae.teae.start", "unit": "mod-ae-emergence",
+                "value": {"rule": "on_or_after_first_dose_date"}}]
+    text = form.render_document("sap", "SAP", records)
+    line = "[1/s2] Treatment emergence has no end date."
+    assert line in text
+    with pytest.raises(StandardFormError, match="without its anchor"):
+        form.parse_document(text.replace(line, damaged))

@@ -25,7 +25,7 @@ Meaning: An exposure record has a dose when EXDOSE is above zero, or when EXDOSE
 
 [1/s5] A partial exposure date is not completed and is left out of the treatment dates.
 
-Meaning: The treatment start and end dates are taken from the exposure dates that have a year, a month and a day.
+Meaning: The treatment start and end dates are taken from the exposure dates that have a year, a month and a day. A date with a missing part in the middle (a year and a day without the month) is partial.
 
 [1/s6] Study day 1 is the treatment start date.
 

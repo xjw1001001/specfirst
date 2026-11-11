@@ -2,6 +2,12 @@ entry: trt.end.source
 # As for the start date: _TRTEDTC is the latest text among complete dates,
 # _TRTEDTCM among dates with at least a known month; trt.date.imputation
 # takes one of them. Only exposure records with a dose take part.
+# Which date texts take part. SDTM writes a missing part of a date as a
+# hyphen (2024---15, --03-05), so "two hyphens" does not make a date complete.
+# A text takes part as complete when it reads YYYY-MM-DD (with or without a
+# time), and as a date with a known month when it reads YYYY-MM; a text with
+# two hyphens in a row never takes part. Among the texts of one candidate
+# set, the order of the texts is the order of the completed dates.
 alternatives:
   last_ex_end_date:
     adam:
@@ -12,14 +18,14 @@ alternatives:
             label: "Working value: latest complete exposure date text"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '____-__-__%' AND EX.EXENDTC NOT LIKE '%--%'"
                 expr: "MAX(EX.EXENDTC)"
           - name: _TRTEDTCM
             type: str
             label: "Working value: latest exposure date text with a known month"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '____-__%' AND EX.EXENDTC NOT LIKE '%--%'"
                 expr: "MAX(EX.EXENDTC)"
   last_ex_start_date:
     adam:
@@ -30,14 +36,14 @@ alternatives:
             label: "Working value: latest complete exposure date text"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '____-__-__%' AND EX.EXSTDTC NOT LIKE '%--%'"
                 expr: "MAX(EX.EXSTDTC)"
           - name: _TRTEDTCM
             type: str
             label: "Working value: latest exposure date text with a known month"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '____-__%' AND EX.EXSTDTC NOT LIKE '%--%'"
                 expr: "MAX(EX.EXSTDTC)"
   ds_date_when_ex_missing:
     adam:
@@ -48,14 +54,14 @@ alternatives:
             label: "Working value: latest complete exposure date text"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '____-__-__%' AND EX.EXENDTC NOT LIKE '%--%'"
                 expr: "MAX(EX.EXENDTC)"
           - name: _EXENDMAXM
             type: str
             label: "Working value: latest exposure date text with a known month"
             derivation:
               aggregate:
-                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%'"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '____-__%' AND EX.EXENDTC NOT LIKE '%--%'"
                 expr: "MAX(EX.EXENDTC)"
           - name: _TRTEDTC
             type: str
@@ -64,7 +70,7 @@ alternatives:
               case:
                 - when: "_EXENDMAX IS NOT NULL"
                   then: _EXENDMAX
-                - when: "_TRTSDTCM IS NOT NULL"
+                - when: "_TRTSDTC IS NOT NULL"
                   then: _EOSDTC
                 - otherwise: null
           - name: _TRTEDTCM

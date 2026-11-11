@@ -1,4 +1,4 @@
-"""A tiny hand-made SDTM study for tests: three subjects, six domains.
+"""A tiny hand-made SDTM study for tests: four subjects, six domains.
 
 It is not generated data and has no clinical meaning. Each record is there
 to exercise one rule of the house parent specs or of a catalog decision.
@@ -7,6 +7,7 @@ to exercise one rule of the house parent specs or of a catalog decision.
         a third exposure record has partial dates (2024-03 to 2024-05)
     S2  randomized to Placebo and dosed from 2024-03-12; partial dates
     S3  randomized to Low Dose and never dosed
+    S4  dosed without being randomized; no exposure end date
 """
 
 from __future__ import annotations
@@ -26,6 +27,8 @@ DM = [
      "2024-03-12", "2024-03-12"),
     ("S3", 81.0, "M", "WHITE", "HISPANIC OR LATINO", "Low Dose", "LOW", "Low Dose",
      "2024-03-15", None),
+    ("S4", 50.0, "F", "WHITE", "NOT HISPANIC OR LATINO", "Not Assigned", "NOTASSGN", "Low Dose",
+     "2024-03-20", "2024-03-20"),
 ]
 
 EX = [
@@ -33,6 +36,8 @@ EX = [
     ("S1", 1, "Low Dose", 10.0, "2024-03-10T08:00", "2024-03-31"),
     ("S1", 2, "Low Dose", 10.0, "2024-04-01", "2024-04-20"),
     ("S1", 3, "Low Dose", 10.0, "2024-03", "2024-05"),  # partial dates
+    ("S1", 4, "Low Dose", 10.0, "2024---15", "--04-25"),  # a missing part in the middle
+    ("S4", 1, "Low Dose", 10.0, "2024-03-20", None),
     ("S2", 1, "PLACEBO", 0.0, "2024-03-12", "2024-04-30"),
 ]
 
@@ -41,6 +46,7 @@ DS = [
     ("S1", 1, "PROTOCOL MILESTONE", None, "RANDOMIZED", "2024-03-08"),
     ("S1", 2, "DISPOSITION EVENT", "STUDY PARTICIPATION", "COMPLETED", "2024-05-01"),
     ("S2", 1, "DISPOSITION EVENT", "STUDY PARTICIPATION", "ADVERSE EVENT", "2024-05-02"),
+    ("S4", 1, "DISPOSITION EVENT", "STUDY PARTICIPATION", "COMPLETED", "2024-04-15"),
 ]
 
 SV = [
@@ -65,6 +71,7 @@ VS = [
     ("S1", 8, "WEIGHT", "Weight", 70.0, "2024-03-01", "SCREENING", 1.0, -7.0),
     ("S1", 9, "WEIGHT", "Weight", 71.0, "2024-03-10", "BASELINE", 2.0, 1.0),
     ("S1", 10, "HEIGHT", "Height", 170.0, "2024-03-01", "SCREENING", 1.0, -7.0),
+    ("S1", 11, "SYSBP", "Systolic BP", 125.0, "2024-04-06", "UNSCHEDULED 3.2", 3.2, None),
     ("S2", 1, "SYSBP", "Systolic BP", 140.0, "2024-03-11", "UNSCHEDULED 1.1", 1.1, None),
     ("S2", 2, "SYSBP", "Systolic BP", 138.0, "2024-03-26", "WEEK 2", 3.0, 15.0),
     ("S2", 3, "WEIGHT", "Weight", 82.5, "2024-03-12", "BASELINE", 2.0, 1.0),
@@ -81,6 +88,10 @@ AE = [
      "2024-05-25", None),
     ("S2", 1, "RASH", "SKIN AND SUBCUTANEOUS TISSUE DISORDERS", "N", "NONE", "DOSE NOT CHANGED",
      "N", "2024-03", None),
+    ("S2", 2, "HEADACHE", "NERVOUS SYSTEM DISORDERS", "N", "NONE", "DOSE NOT CHANGED", "N",
+     "2024-05-02", None),
+    ("S2", 3, "NAUSEA", "GASTROINTESTINAL DISORDERS", "N", "NONE", "DOSE NOT CHANGED", "N",
+     "2024-05-03", None),
     ("S3", 1, "FATIGUE", "GENERAL DISORDERS", "N", "NONE", "NOT APPLICABLE", "N",
      "2024-03-20", None),
 ]

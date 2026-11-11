@@ -160,6 +160,10 @@ def test_binds_are_proven_by_mutation(root, catalog, house, base, tmp_path):
     include = binds[("tfl.output.include", "tfl-ae-soc-pt")]
     assert {"ars:Out_AESOCPT", "ars:An_AESOCPT_Pt", "ars:Grp_AEDECOD"} <= set(include)
     assert not any(bind.startswith(("ars:An_DM_", "ars:An_AESUM_")) for bind in include)
+    # A list of rows binds the analyses of each row: any row can be left out.
+    rows = binds[("tfl.demog.rows", "tfl-demographics")]
+    assert {"ars:An_DM_AGE_Summ", "ars:An_DM_SEX_Summ", "ars:Grp_SEX"} <= set(rows)
+    assert "ars:An_DM_N" not in rows
     # The analysis set of the demographics table: its analyses and the set only it uses.
     population = binds[("tfl.population", "tfl-demographics")]
     assert {"ars:An_DM_N", "ars:AnalysisSet_ITT"} <= set(population)
