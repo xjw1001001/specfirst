@@ -85,6 +85,20 @@ def test_base0_gate_has_the_checks_of_the_plan():
     assert names[0] == "environment"  # drift is checked first (rule R3)
 
 
+def test_real1_gate_has_the_checks_of_the_plan():
+    names = [check.name for check in gates.GATES["real-1"]]
+    assert names[0] == "environment"
+    for needed in ("pins", "unit tests", "kit", "P1 determinism", "P2 reproduction", "trace",
+                   "pilot tests", "ASCII"):
+        assert needed in names
+    # P2 and the trace check the first of the two builds that P1 made.
+    assert names.index("P1 determinism") < names.index("P2 reproduction") < names.index("trace")
+    # The cache is verified before it is used and again after everything that reads it.
+    assert names.index("pins") < names.index("kit") < names.index("pilot tests")
+    assert names.index("pilot tests") < names.index("cache untouched")
+    assert gates.PILOT_P2 == "TOTAL cells=9119605 mismatched=0"  # E1
+
+
 def junit(tmp_path, body: str):
     path = tmp_path / "report.xml"
     path.write_text(

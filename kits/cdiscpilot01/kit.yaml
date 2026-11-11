@@ -1,0 +1,309 @@
+# Kit manifest of CDISCPILOT01 (PLAN.md sections 6.1 and 8; tier C, real data).
+#
+# This folder holds no study data and no study document (rule 4 of section
+# 2.1, E20). Every file of the kit is named below by pinned source, path and
+# SHA-256. `specfirst kit assemble cdiscpilot01` copies them from the fetch
+# cache into build/kits/cdiscpilot01/ and refuses any file whose hash is not
+# the one written here. `specfirst kit lock cdiscpilot01` rewrites the hashes
+# after a pin has changed on purpose.
+#
+# Inputs are what an agent may read. Gold is never placed in an agent's
+# workspace. See README.md in this folder for the layout.
+kit: 0
+id: cdiscpilot01
+title: "CDISCPILOT01, the CDISC SDTM/ADaM pilot study, as staged by Pilot 7"
+tier: C
+
+pins:
+  engines:
+    yamaa: "0.7.0"
+  sources:
+    p7: 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8
+
+build:
+  # The yamaa project that builds the ADaM datasets (ADR-001).
+  project: gold/spec/cdiscpilot01/spec/yamaa/project.yaml
+  # A specification's input is the file of the same name in this folder,
+  # unless another specification of the project produces it.
+  sdtm: inputs/data/sdtm
+  # The reference ADaM: <dataset>.parquet, compared cell by cell (P2).
+  reference: gold/reference/adam
+  # Pilot 7's reviewed claims: <dataset>-claims.json, imported as candidate
+  # cites edges.
+  claims: gold/claims
+
+# The documents of the kit. `cited_as` is how Pilot 7's claims name them.
+documents:
+  - id: sap
+    file: inputs/docs/sap.pdf
+    cited_as: [spec/source/SAP.pdf]
+  - id: dataguide
+    file: inputs/docs/dataguide.pdf
+    cited_as: [spec/source/dataguide.pdf]
+  - id: define-adam
+    file: inputs/docs/define-adam.xml
+    cited_as: [spec/define/define-adam.xml]
+  - id: define-sdtm
+    file: inputs/data/sdtm/define.xml
+    cited_as: [spec/define/define-sdtm.xml]
+
+# ADaM output columns without a complete trace, each with its reason.
+trace_gaps: {}
+
+files:
+  - path: gold/claims/adae-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adae-claims.json
+    sha256: 9fbca53127aefbdfbe283d2d3f2efb75dcd992f14a5758266f9e61791c552f81
+  - path: gold/claims/adlbc-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adlbc-claims.json
+    sha256: 13a9671f29a752000de8c82ff884b04e2ca0108de08da4756a95f0cbbd0e53cc
+  - path: gold/claims/adlbh-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adlbh-claims.json
+    sha256: fbf92efe7aecd79f0f6c03bbce3da7c304b790e674f09f02065cb5b5950a5b78
+  - path: gold/claims/adlbhy-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adlbhy-claims.json
+    sha256: 7ebde8f02435e9cdf63be46c6c2acb08c7e3e47e54981bcd9e7d489cd795ef41
+  - path: gold/claims/adqsadas-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adqsadas-claims.json
+    sha256: da717714611bdd9c9575b1116415e4a150f7db1b7835ae9d83bb840e3d9ed5a7
+  - path: gold/claims/adqscibc-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adqscibc-claims.json
+    sha256: 8650a76b3d8a7e12c5970166be2e7aebcfaffe3d806275230cae95baf20cdcc8
+  - path: gold/claims/adqsnpix-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adqsnpix-claims.json
+    sha256: 5a9a2849ea78ee72cb9f13b9c5a603cb9a338d8b1fc4a80b94cf3452ffc824fa
+  - path: gold/claims/adsl-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adsl-claims.json
+    sha256: dbdeccf7f691e5cd2829ef5a011f5996a8ea8e40c9c200054f15205336023e5c
+  - path: gold/claims/adtte-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/adtte-claims.json
+    sha256: 5ec74bbbb229f409b10a861533688d970d15cd076420eed40e299d4845f4bb93
+  - path: gold/claims/advs-claims.json
+    source: p7
+    from: cdiscpilot01/spec/review/advs-claims.json
+    sha256: 7c677a1eca5aa8de6aa15d3a0062d1bb31864ee94659a163cf3270dfb9583bee
+  - path: gold/reference/adam/adae.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adae.parquet
+    sha256: 36dff4ead1908ce957d0933e1ba36215106e10e4b57706d79263cc004d4c5e85
+  - path: gold/reference/adam/adlbc.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adlbc.parquet
+    sha256: 677e4ded9d8c8b65d777fe8c19588515b856ff364befe3385cc9d52ea32e77ac
+  - path: gold/reference/adam/adlbh.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adlbh.parquet
+    sha256: 5d0137b88d01382a6e1e199ce2e4cedf490cb237ea5f19bad348b21ed8b3229c
+  - path: gold/reference/adam/adlbhy.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adlbhy.parquet
+    sha256: 1f77d8b03fc6bfe6d9d217e9a9052580e43ae39a27f1458d185a99ce679f5527
+  - path: gold/reference/adam/adqsadas.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adqsadas.parquet
+    sha256: b20ec102b8c89b21805c6d2981cea132a0182307c86854510b1d4df9faf82f69
+  - path: gold/reference/adam/adqscibc.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adqscibc.parquet
+    sha256: 0bdfd50a49fc57246bde82ef25b2ae286b285a4445948f2a734461629742f342
+  - path: gold/reference/adam/adqsnpix.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adqsnpix.parquet
+    sha256: f1bc98cc49d69686617aeb8ca0d85e07dcbf6d7994703d6885c7226b5788a6e6
+  - path: gold/reference/adam/adsl.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adsl.parquet
+    sha256: 75fb6f249b298ad407d5c52f6c7e9792b6b03f93a7b80c572d489162c545849e
+  - path: gold/reference/adam/adtte.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/adtte.parquet
+    sha256: ab2ba31808eb16587cda9c10615df5699f95b9ead265b41153178e985fca70dc
+  - path: gold/reference/adam/advs.parquet
+    source: p7
+    from: cdiscpilot01/data/adam/advs.parquet
+    sha256: 5053968c04dd8b795f641c69f812f5e200664abbdfaf10a6e84280aeea4ba482
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adae.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adae.yaml
+    sha256: 87aeb0aabd44e7fd48d000215d9fca1e45ba5412769a7aa47c36be436e9376b8
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adlbc.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adlbc.yaml
+    sha256: 3b92ec0cb71ff73b9614c86bd65fa9efff10fff100c56265dd63bf5b32829325
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adlbh.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adlbh.yaml
+    sha256: f80560941c1a0bf6ef7ca1bb8b6ae0c69d2b71b516111f554cfcc81bec98e8c4
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adlbhy.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adlbhy.yaml
+    sha256: ee96a4ca4ecd72cdd708dac6fbd2a208063826f7514ffc4142a5fddc39d5dc98
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adqsadas.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adqsadas.yaml
+    sha256: 8f3a1e6af1bbbee71ca41c6d0272ce6dc557226e7028a8e6a540bf26c8fc799e
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adqscibc.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adqscibc.yaml
+    sha256: 1dc16824e15754001abb58843119a101936c9499f05f48541ddff3c90afe051b
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adqsnipx.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adqsnipx.yaml
+    sha256: caef97e2804e64d2fdba4ec39f2fc21a677cc7ad61ced15327cbd2bbf4b1b357
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adsl.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adsl.yaml
+    sha256: 1875c736a4a4313de042d48a382d146746d038db80c8fa2b70dbf4c608cf76a4
+  - path: gold/spec/cdiscpilot01/spec/yamaa/adtte.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/adtte.yaml
+    sha256: 93c9fa7b744c6c1689504648aab0a8cb2479ff33163a83bc54c96021a6c46cda
+  - path: gold/spec/cdiscpilot01/spec/yamaa/advs.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/advs.yaml
+    sha256: 404523d928ade1f1d2f8e7d290aca5e079cf967a45d0ae494ce8f1340b9fbd3e
+  - path: gold/spec/cdiscpilot01/spec/yamaa/codelists.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/codelists.yaml
+    sha256: cec890bbd918a1710bf389564628e994f0e1f8a9c7de307307622d583bd33767
+  - path: gold/spec/cdiscpilot01/spec/yamaa/project.yaml
+    source: p7
+    from: cdiscpilot01/spec/yamaa/project.yaml
+    sha256: 2cf828cb6521c2468dcd3f6ed06c616351e6c1c20f8009874695f5eb8ee5318f
+  - path: gold/spec/spec/yamaa/pilot-program/adadas_v1.yaml
+    source: p7
+    from: spec/yamaa/pilot-program/adadas_v1.yaml
+    sha256: d2ac43a2ed034ac6cb5a55d5efd8c09975be7962065bda1618a49822574c5324
+  - path: gold/spec/spec/yamaa/pilot-program/adae_v1.yaml
+    source: p7
+    from: spec/yamaa/pilot-program/adae_v1.yaml
+    sha256: 338fafb2d7989414175980046bdca8e6873956f46218f685234df65a5f787dd1
+  - path: gold/spec/spec/yamaa/pilot-program/adlbc_v1.yaml
+    source: p7
+    from: spec/yamaa/pilot-program/adlbc_v1.yaml
+    sha256: fe7422f8e747a041ad4629adfbacf1f2590905b31de8612089b669fead79e1cd
+  - path: gold/spec/spec/yamaa/pilot-program/adlbc_v2.yaml
+    source: p7
+    from: spec/yamaa/pilot-program/adlbc_v2.yaml
+    sha256: d0fda18bbfd420bc7c369b6e457bd2d326ef48390043eec6847ed0b01a47b1aa
+  - path: gold/spec/spec/yamaa/pilot-program/adsl_v1.yaml
+    source: p7
+    from: spec/yamaa/pilot-program/adsl_v1.yaml
+    sha256: 7aa0a1961be7baae83dab1abc1a9a11a7314058a1beda71fd6bca7711da61bdd
+  - path: gold/spec/spec/yamaa/pilot-program/adtte_v1.yaml
+    source: p7
+    from: spec/yamaa/pilot-program/adtte_v1.yaml
+    sha256: ac71101c1c98fb58007cf2cec64eb76c0a0252dc3a4fa5a65025630146656ecd
+  - path: inputs/data/sdtm/ae.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/ae.parquet
+    sha256: d26f138e087e0ded074bdbe83edef9a51f7e1a8f5ca3db2b5809bd37a9d6f244
+  - path: inputs/data/sdtm/cm.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/cm.parquet
+    sha256: c94dc7ad26f9da4bb7a894dfc17bbde17fde6522d3860b09244974cebf2c3b09
+  - path: inputs/data/sdtm/define.xml
+    source: p7
+    from: cdiscpilot01/spec/define/define-sdtm.xml
+    sha256: fbb065b8bb72d609e1a12670940e0d2ef11e6757cbbcd56bf9d0ba55ce1fc76b
+  - path: inputs/data/sdtm/dm.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/dm.parquet
+    sha256: a613398b089d956a2d7955ade0e95a21dccbeabb6c486d7b6c20525e832ffd81
+  - path: inputs/data/sdtm/ds.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/ds.parquet
+    sha256: 09e149b9c8b2e4bd958b7b74857b1d3cdcc4947b881a2b7685fed1dd21a055d6
+  - path: inputs/data/sdtm/ex.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/ex.parquet
+    sha256: 686d7e6c70fe55e78d846a1a4335a9b822f84bc5474a1d0d93d2a9f7ae93953d
+  - path: inputs/data/sdtm/lb.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/lb.parquet
+    sha256: 65f1bab743890d0c98021b58cf51e8ce2b2eea584fd0d63a25983a4d88a5ee89
+  - path: inputs/data/sdtm/mh.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/mh.parquet
+    sha256: 194469f622460a487d03161d29e087a000009ede8bdd277d828cef7237436779
+  - path: inputs/data/sdtm/qs.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/qs.parquet
+    sha256: d9bb6ad502d7c25cafe02b3fc6cceb46c6ccd6d272802717c37f1b4e5c30e2ab
+  - path: inputs/data/sdtm/relrec.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/relrec.parquet
+    sha256: 3dd64e53d93fccaa964ca7ed697f5cae6504a8f510a50db7b4970d8113fecb1c
+  - path: inputs/data/sdtm/sc.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/sc.parquet
+    sha256: 09abb48ce2c35cd7f7b187e601b96727224ce98a4ccc8f4071d8dac81a3a361c
+  - path: inputs/data/sdtm/se.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/se.parquet
+    sha256: edb99bd66637b2dd85dce3b00ed94e727fd3c893c645c605121d6987b38a4e65
+  - path: inputs/data/sdtm/suppae.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/suppae.parquet
+    sha256: 39cd0885ad37d62c7eff3e5ba69bb7db5e1e5e951ce63e177b665090d6bb4364
+  - path: inputs/data/sdtm/suppdm.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/suppdm.parquet
+    sha256: 33028027527197349a9789157a4be67ba7495072d97a5f287fd8b11fa3a5c20e
+  - path: inputs/data/sdtm/suppds.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/suppds.parquet
+    sha256: dd956ee6c7af18bde8855b1c12b2ad30dac6db3796feaaf295732dd7e09a1737
+  - path: inputs/data/sdtm/supplb.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/supplb.parquet
+    sha256: 294377490219b9eefe064e725c0fba7f005202ece432de74d1f283e916eb265c
+  - path: inputs/data/sdtm/sv.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/sv.parquet
+    sha256: 5b0b70c4edf3fc2878a1faf5009c24ce81f87982ec434f473d29f9b135855269
+  - path: inputs/data/sdtm/ta.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/ta.parquet
+    sha256: 7d29d3931a7692effc4c6b0606583bb8148a71b9c6a705f51c8c26fad24f4e51
+  - path: inputs/data/sdtm/te.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/te.parquet
+    sha256: dbf335f5b2d6f51187ea34466f8d51c7d21dde3b779ac368ff414233bc72f6b2
+  - path: inputs/data/sdtm/ti.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/ti.parquet
+    sha256: 12667ac98b351a327b30810a6da398f104764f4c86e34c3f4b9064fd6e30c5b1
+  - path: inputs/data/sdtm/ts.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/ts.parquet
+    sha256: a0bb5e1e42d762707c678cc5772ce2940e5ce9ff2c5339968c91a8934561d625
+  - path: inputs/data/sdtm/tv.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/tv.parquet
+    sha256: fc00bf6d4ab4988a6439bb8d64fbf2bca89fe71b775fbfcd85bca3c07e58e342
+  - path: inputs/data/sdtm/vs.parquet
+    source: p7
+    from: cdiscpilot01/data/sdtm/vs.parquet
+    sha256: 7b517a2624c1a61455e79834b3d30da19fed2aa163638c20af740c066f753108
+  - path: inputs/docs/dataguide.pdf
+    source: p7
+    from: cdiscpilot01/spec/source/dataguide.pdf
+    sha256: 045d5c2cfd72d0fc147e84c1498aec7d6e52a7a6cf48e42ede77dc26d0122edc
+  - path: inputs/docs/define-adam.xml
+    source: p7
+    from: cdiscpilot01/spec/define/define-adam.xml
+    sha256: 7e6d580e0839564f6f119c4ba7e15963d3cf7cd0c88e9f3d7da5ad396221b1cd
+  - path: inputs/docs/sap.pdf
+    source: p7
+    from: cdiscpilot01/spec/source/SAP.pdf
+    sha256: 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
