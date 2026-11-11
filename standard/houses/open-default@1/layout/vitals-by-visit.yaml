@@ -1,0 +1,36 @@
+# House standard open-default@1: layout template of the table of vital
+# signs by visit. Layout draft 0; see layout/demographics.yaml for the
+# parts.
+output:
+  id: Out_VS
+  title: Vital Signs by Visit
+columns:
+  grouping: "Grp_${trt_var}"
+  order: {$get: column_order}
+  header_count: An_VS_N
+  total:
+    $if: {get: total.mode, eq: none}
+    then: null
+    else:
+      grouping: Grp_Total_VS
+      label: Total
+      header_count: An_VS_N_Tot
+      pools: {$get: total}
+rows:
+  nesting: [Grp_VS_PARAMCD, Grp_VS_AVISIT]
+  arrangement: {$get: value_layout}
+  statistics: [n, mean, sd, median, min, max]
+  measures:
+    $for: m
+    in: {$get: measures}
+    do:
+      label: "${m.label}"
+      analysis: "An_VS_${m.code}"
+      total_analysis:
+        $if: {get: total.mode, eq: none}
+        then: null
+        else: "An_VS_${m.code}_Tot"
+formats:
+  rounding: {$get: rounding}
+  decimals: {$get: decimals}
+  quantile_definition: {$get: quantile_definition}

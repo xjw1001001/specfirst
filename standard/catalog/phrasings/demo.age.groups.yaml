@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: demo.age.groups
+alternatives:
+  lt65_65to80_gt80:
+    plain: "Age is grouped as below 65 years, 65 to 80 years, and above 80 years."
+    formal: "Age shall be categorized into the groups below 65 years, 65 to 80 years, and above 80 years."
+    brief: "Age groups (years): <65, 65-80, >80."
+  lt65_ge65:
+    plain: "Age is grouped as below 65 years, and 65 years or above."
+    formal: "Age shall be categorized into the groups below 65 years, and 65 years and above."
+    brief: "Age groups (years): <65, >=65."
+  stated_cuts:
+    plain: "An age group starts at each of the following ages in years, and one more group lies below the first of them: {cuts}."
+    formal: "Age shall be categorized into groups starting at each of the following ages in years, with one additional group below the first of them: {cuts}."
+    brief: "Age groups: one group below the first of these ages, then one group starting at each of them (years): {cuts}."

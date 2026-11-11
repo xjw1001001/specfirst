@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.vs.layout
+alternatives:
+  side_by_side:
+    plain: "In the vital signs table by visit, the observed value and the change from baseline are placed next to each other."
+    formal: "The vital signs table by visit shall present the observed value and the change from baseline side by side."
+    brief: "Vital signs table by visit: observed value and change from baseline side by side."
+  stacked:
+    plain: "In the vital signs table by visit, the observed value and the change from baseline are placed in separate blocks."
+    formal: "The vital signs table by visit shall present the observed value and the change from baseline in separate blocks."
+    brief: "Vital signs table by visit: observed value and change from baseline in separate blocks."

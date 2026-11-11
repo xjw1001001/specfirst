@@ -1,0 +1,25 @@
+id: tfl.tests.include
+unit: tfl-demographics
+applies_when: design.multiple_arms
+question: Are treatments compared in the demographics table?
+alternatives:
+  - id: none
+    statement: "The demographics table shows no comparison between treatments."
+  - id: anova_chisq
+    statement: "The demographics table compares treatments by analysis of variance for continuous rows and by the chi-square test for categorical rows."
+  - id: anova_fisher
+    statement: "The demographics table compares treatments by analysis of variance for continuous rows and by Fisher's exact test for categorical rows."
+notes: A comparison adds one p-value column after the treatment columns. The analysis of variance is one-way, with treatment as the factor.
+house_default: none
+compile: templates/tfl.tests.include.yaml
+phrasings: phrasings/tfl.tests.include.yaml
+reading: knowledge/tfl.tests.include.md
+probes: [output_shape, sparse_categorical_row]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "Mth03_CatVar_Comp_PChiSq"
+    where: "comparison methods of the demographics output: chi-square, analysis of variance, Fisher's exact test"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-2.01, footnotes: analysis of variance and chi-square test (PLAN.md, E23)"

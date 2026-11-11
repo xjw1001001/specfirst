@@ -1,0 +1,50 @@
+# House standard open-default@1: layout template of the table of adverse
+# events by system organ class and preferred term. Layout draft 0; see
+# layout/demographics.yaml for the parts.
+output:
+  id: Out_AESOCPT
+  title: Treatment-Emergent Adverse Events by System Organ Class and Preferred Term
+columns:
+  grouping: "Grp_${trt_var}"
+  order: {$get: column_order}
+  header_count: An_AESOCPT_N
+  total:
+    $if: {get: total.mode, eq: none}
+    then: null
+    else:
+      grouping: Grp_Total_AESOCPT
+      label: Total
+      header_count: An_AESOCPT_N_Tot
+      pools: {$get: total}
+rows:
+  $for: level
+  in: {$get: levels}
+  do:
+    label: "${level.label}"
+    kind: count_percent
+    nesting: {$get: level.groupings}
+    analysis: "An_AESOCPT_${level.code}"
+    total_analysis:
+      $if: {get: total.mode, eq: none}
+      then: null
+      else: "An_AESOCPT_${level.code}_Tot"
+    events_analysis:
+      $if: {get: term_counts, eq: subjects_and_events}
+      then: "An_AESOCPT_${level.code}_Events"
+      else: null
+    total_events_analysis:
+      $if:
+        all:
+          - {get: term_counts, eq: subjects_and_events}
+          - {not: {get: total.mode, eq: none}}
+      then: "An_AESOCPT_${level.code}_Events_Tot"
+      else: null
+sort:
+  rule: {$get: term_sort}
+  levels: [Grp_AESOC, Grp_AEDECOD]
+  measure: subjects
+threshold: {$get: term_threshold}
+formats:
+  rounding: {$get: rounding}
+  percent: {$get: percent_format}
+  counts: {$get: term_counts}

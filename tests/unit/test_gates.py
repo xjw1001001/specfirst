@@ -99,6 +99,16 @@ def test_real1_gate_has_the_checks_of_the_plan():
     assert gates.PILOT_P2 == "TOTAL cells=9119605 mismatched=0"  # E1
 
 
+def test_std1_gate_has_the_checks_of_the_plan():
+    """PLAN.md section 13.4: round trip, yamaa check, ARS schema, public sources."""
+    names = [check.name for check in gates.GATES["std-1"]]
+    for needed in ("round trip", "yamaa check", "ARS schema", "public sources",
+                   "catalog", "house standard", "unit tests", "ASCII"):
+        assert needed in names
+    assert names[0] == "environment"  # drift is checked first (rule R3)
+    assert names.index("pins") < names.index("public sources")  # the cache is verified first
+
+
 def junit(tmp_path, body: str):
     path = tmp_path / "report.xml"
     path.write_text(

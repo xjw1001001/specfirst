@@ -1,0 +1,49 @@
+entry: bds.window.tiebreak
+alternatives:
+  closest_then_earlier:
+    adam:
+      ADVS:
+        columns:
+          - name: _ANLRN
+            type: int
+            label: "Working value: rank of the record within its analysis visit"
+            derivation:
+              row_number:
+                window:
+                  group_by: [STUDYID, USUBJID, PARAMCD, AVISIT]
+                  order_by:
+                    - {variable: _AWDIFF, nulls: last}
+                    - _DTC
+                    - VSSEQ
+                  filter: "_ANLCAND = 'Y'"
+  closest_then_later:
+    adam:
+      ADVS:
+        columns:
+          - name: _ANLRN
+            type: int
+            label: "Working value: rank of the record within its analysis visit"
+            derivation:
+              row_number:
+                window:
+                  group_by: [STUDYID, USUBJID, PARAMCD, AVISIT]
+                  order_by:
+                    - {variable: _AWDIFF, nulls: last}
+                    - {variable: _DTC, direction: desc}
+                    - {variable: VSSEQ, direction: desc}
+                  filter: "_ANLCAND = 'Y'"
+  last_record:
+    adam:
+      ADVS:
+        columns:
+          - name: _ANLRN
+            type: int
+            label: "Working value: rank of the record within its analysis visit"
+            derivation:
+              row_number:
+                window:
+                  group_by: [STUDYID, USUBJID, PARAMCD, AVISIT]
+                  order_by:
+                    - {variable: _DTC, direction: desc}
+                    - {variable: VSSEQ, direction: desc}
+                  filter: "_ANLCAND = 'Y'"

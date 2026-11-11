@@ -1,0 +1,31 @@
+entry: demo.race.pooling
+alternatives:
+  not_pooled:
+    adam:
+      ADSL:
+        columns:
+          - name: RACEGR1
+            type: str
+            label: Pooled Race Group 1
+            derivation: RACE
+  pooled_below_count:
+    adam:
+      ADSL:
+        columns:
+          - name: _RACEN
+            type: int
+            label: "Working value: number of subjects of the same race"
+            derivation:
+              aggregate:
+                key: {RACE: RACE}
+                expr: "COUNT(DM.USUBJID)"
+          - name: RACEGR1
+            type: str
+            label: Pooled Race Group 1
+            derivation:
+              case:
+                - when: "RACE IS NULL OR RACE = ''"
+                  then: null
+                - when: "_RACEN < ${count}"
+                  then: "'OTHER'"
+                - otherwise: RACE

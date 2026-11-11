@@ -1,0 +1,7 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.vs.scope
+alternatives:
+  stated_lists:
+    plain: "The vital signs table by visit covers these parameters: {parameters}, each at these analysis visits: {visits}."
+    formal: "The vital signs table by visit shall present the following parameters: {parameters}, at the following analysis visits: {visits}."
+    brief: "Vital signs table by visit - parameters: {parameters}; analysis visits: {visits}."

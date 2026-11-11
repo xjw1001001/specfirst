@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: ae.start.imputation
+alternatives:
+  first_of_month_not_before_first_dose:
+    plain: "When an adverse event start date is partial but its month is known, it is completed with the first day of that month; when the treatment start date falls in that month, it is completed with the treatment start date instead."
+    formal: "A partial adverse event start date with a known month shall be imputed as the first day of that month, or as the treatment start date where the treatment start date falls in that month."
+    brief: "Partial adverse event start date with a known month: first day of that month, or the treatment start date when that date falls in that month."
+  first_of_month:
+    plain: "When an adverse event start date is partial but its month is known, it is completed with the first day of that month."
+    formal: "A partial adverse event start date with a known month shall be imputed as the first day of that month."
+    brief: "Partial adverse event start date with a known month: completed with the first day of that month."
+  not_completed:
+    plain: "A partial adverse event start date is left incomplete, and no analysis start date is taken from it."
+    formal: "A partial adverse event start date shall not be imputed and shall yield no analysis start date."
+    brief: "Partial adverse event start date: not completed; gives no analysis start date."

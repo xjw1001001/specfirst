@@ -1,0 +1,8 @@
+entry: tfl.population
+alternatives:
+  safety:
+    params: {analysis_set: SAF}
+  randomized:
+    params: {analysis_set: ITT}
+  efficacy:
+    params: {analysis_set: EFF}

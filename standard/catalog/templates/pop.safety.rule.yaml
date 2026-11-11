@@ -1,0 +1,20 @@
+entry: pop.safety.rule
+alternatives:
+  at_least_one_dose:
+    adam:
+      ADSL:
+        columns:
+          - name: SAFFL
+            type: str
+            label: Safety Population Flag
+            derivation:
+              flag: {condition: "TRTSDT IS NOT NULL", false_value: N, missing: N}
+  randomized_and_dosed:
+    adam:
+      ADSL:
+        columns:
+          - name: SAFFL
+            type: str
+            label: Safety Population Flag
+            derivation:
+              flag: {condition: "RANDFL = 'Y' AND TRTSDT IS NOT NULL", false_value: N, missing: N}

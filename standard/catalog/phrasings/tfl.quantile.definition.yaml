@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.quantile.definition
+alternatives:
+  sas5:
+    plain: "In {output}, quantiles are computed by SAS definition 5, which is the empirical distribution function with averaging."
+    formal: "Quantiles in {output} shall be calculated according to SAS definition 5 (empirical distribution function with averaging)."
+    brief: "Quantiles in {output}: SAS definition 5 (empirical distribution function with averaging)."
+  r7:
+    plain: "In {output}, quantiles are computed by R type 7, which is linear interpolation of the order statistics."
+    formal: "Quantiles in {output} shall be calculated according to R type 7 (linear interpolation of the order statistics)."
+    brief: "Quantiles in {output}: R type 7 (linear interpolation of the order statistics)."

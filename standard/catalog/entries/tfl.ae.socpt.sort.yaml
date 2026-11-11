@@ -1,0 +1,25 @@
+id: tfl.ae.socpt.sort
+unit: tfl-ae-soc-pt
+applies_when: design.collects_adverse_events
+question: How are system organ classes and preferred terms sorted?
+alternatives:
+  - id: alphabetical
+    statement: "System organ classes and preferred terms are sorted alphabetically."
+  - id: descending_frequency_total
+    statement: "System organ classes and preferred terms are sorted by descending frequency over all arms, and alphabetically on a tie."
+  - id: descending_frequency_highest_dose
+    statement: "System organ classes and preferred terms are sorted by descending frequency in the arm with the highest dose, and alphabetically on a tie."
+notes: >-
+  Frequency is the number of subjects. Preferred terms are sorted within
+  their system organ class.
+house_default: alphabetical
+compile: templates/tfl.ae.socpt.sort.yaml
+phrasings: phrasings/tfl.ae.socpt.sort.yaml
+reading: knowledge/tfl.ae.socpt.sort.md
+probes: [term_frequency_order_not_alphabetical, term_order_differs_between_total_and_highest_dose, terms_with_equal_frequency]
+sources:
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-5.01: organ classes and terms in alphabetical order (PLAN.md, E25)"
+  - ref: fda-stf
+    where: "adverse event tables sorted by descending frequency"

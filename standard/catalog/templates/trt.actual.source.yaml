@@ -1,0 +1,32 @@
+entry: trt.actual.source
+alternatives:
+  dm_actarm:
+    adam:
+      ADSL:
+        columns:
+          - name: TRT01A
+            type: str
+            label: Actual Treatment for Period 01
+            derivation: DM.ACTARM
+  first_ex_treatment:
+    adam:
+      ADSL:
+        intermediates:
+          - id: EX_FIRST
+            dataset: EX
+            key: [STUDYID, USUBJID]
+            order_by: [EX.EXSTDTC, EX.EXSEQ]
+            keep: first
+        columns:
+          - name: TRT01A
+            type: str
+            label: Actual Treatment for Period 01
+            derivation: EX_FIRST.EXTRT
+  same_as_planned:
+    adam:
+      ADSL:
+        columns:
+          - name: TRT01A
+            type: str
+            label: Actual Treatment for Period 01
+            derivation: TRT01P

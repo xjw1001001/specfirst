@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.rounding.rule
+alternatives:
+  half_away_from_zero:
+    plain: "Numbers shown in {output} are rounded by the half away from zero rule."
+    formal: "Displayed numbers in {output} shall be rounded half away from zero."
+    brief: "Rounding of displayed numbers in {output}: half away from zero."
+  half_even:
+    plain: "Numbers shown in {output} are rounded by the half to even rule."
+    formal: "Displayed numbers in {output} shall be rounded half to even."
+    brief: "Rounding of displayed numbers in {output}: half to even."

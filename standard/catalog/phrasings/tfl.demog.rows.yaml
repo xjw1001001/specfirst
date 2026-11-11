@@ -1,0 +1,7 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.demog.rows
+alternatives:
+  stated_list:
+    plain: "The demographics table has the following rows, in the order given: {rows}."
+    formal: "The demographics table shall present the following rows, in the order listed: {rows}."
+    brief: "Demographics table rows, in order: {rows}."

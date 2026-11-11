@@ -1,0 +1,23 @@
+id: tfl.vs.layout
+unit: tfl-vitals-by-visit
+applies_when: design.has_bds_parameters
+question: How are the observed value and the change from baseline arranged?
+alternatives:
+  - id: side_by_side
+    statement: "The vital signs table by visit shows the observed value and the change from baseline side by side."
+  - id: stacked
+    statement: "The vital signs table by visit shows the observed value and the change from baseline in separate blocks."
+notes: Change from baseline is shown for post-baseline visits only.
+house_default: side_by_side
+compile: templates/tfl.vs.layout.yaml
+phrasings: phrasings/tfl.vs.layout.yaml
+reading: knowledge/tfl.vs.layout.md
+probes: [output_shape]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "Dss10_VS_NonBl_AnRec"
+    where: "observed value and change from baseline as two analyses of one output"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Tables 14-7.01 and 14-7.02: observed value and change in separate tables (PLAN.md, appendix D)"

@@ -1,0 +1,31 @@
+# House standard open-default@1: layout template of the adverse event
+# summary table. Layout draft 0; see layout/demographics.yaml for the parts.
+output:
+  id: Out_AESUM
+  title: Summary of Treatment-Emergent Adverse Events
+columns:
+  grouping: "Grp_${trt_var}"
+  order: {$get: column_order}
+  header_count: An_AESUM_N
+  total:
+    $if: {get: total.mode, eq: none}
+    then: null
+    else:
+      grouping: Grp_Total_AESUM
+      label: Total
+      header_count: An_AESUM_N_Tot
+      pools: {$get: total}
+rows:
+  $for: row
+  in: {$get: rows}
+  do:
+    label: "${row.label}"
+    kind: count_percent
+    analysis: "An_AESUM_${row.code}"
+    total_analysis:
+      $if: {get: total.mode, eq: none}
+      then: null
+      else: "An_AESUM_${row.code}_Tot"
+formats:
+  rounding: {$get: rounding}
+  percent: {$get: percent_format}

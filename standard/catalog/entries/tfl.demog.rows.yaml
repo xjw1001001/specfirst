@@ -1,0 +1,30 @@
+id: tfl.demog.rows
+unit: tfl-demographics
+applies_when: design.always
+question: Which characteristics does the demographics table show, in which order?
+alternatives:
+  - id: stated_list
+    statement: "The rows of the demographics table are, in this order, {rows}."
+    definition: >-
+      Each row is named by its variable of the subject-level dataset: AGE,
+      AGEGR1, SEX, RACEGR1, ETHNIC, HEIGHTBL, WEIGHTBL or BMIBL.
+    slots:
+      rows:
+        type: "list[name]"
+        choices: [AGE, AGEGR1, SEX, RACEGR1, ETHNIC, HEIGHTBL, WEIGHTBL, BMIBL]
+        examples:
+          - [AGE, AGEGR1, SEX, RACEGR1, ETHNIC, HEIGHTBL, WEIGHTBL, BMIBL]
+          - [SEX, AGE]
+          - [AGE, AGEGR1, SEX, RACEGR1]
+house_default: null
+compile: templates/tfl.demog.rows.yaml
+phrasings: phrasings/tfl.demog.rows.yaml
+reading: knowledge/tfl.demog.rows.md
+probes: [output_shape]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "An03_02_AgeGrp_Summ_ByTrt"
+    where: "the analyses of the demographics output: age, age group, sex, ethnicity, race, height"
+  - ref: ich-e3
+    where: "section 11.2: demographic variables such as age, sex and race"

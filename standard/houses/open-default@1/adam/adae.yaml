@@ -1,0 +1,220 @@
+# House standard open-default@1: parent spec of ADAE, one record per
+# adverse event.
+#
+# This layer holds what no decision changes. It reads columns that decisions
+# own (ASTDT, ASTDY, RELGR1 and the working values _TESTART and _TEEND); the
+# compiler adds one fragment per decision that writes them. Variable names
+# follow ADaMIG 1.3 and OCCDS 1.1.
+#
+# TRTEMFL follows admiral's derive_var_trtemfl(): not flagged without a
+# treatment start date, not flagged when the event ended before it, flagged
+# when the start date is missing, otherwise flagged when the start and end
+# conditions of the decisions ae.teae.start and ae.teae.end both hold.
+yamaa: "1.0"
+type: spec
+model: ADaM
+domain: ADAE
+keys: [STUDYID, USUBJID, AESEQ]
+input:
+  AE:
+    path: ../sdtm/ae.parquet
+    relative_to: entry
+  ADSL:
+    path: adsl.parquet
+    relative_to: entry
+    schema: adsl.yaml
+    key: [STUDYID, USUBJID]
+base: AE
+
+output:
+  path: adae.parquet
+  relative_to: entry
+  columns: [STUDYID, USUBJID, AESEQ]
+  order_by: [USUBJID, AESEQ]
+
+columns:
+  - name: STUDYID
+    type: str
+    label: Study Identifier
+    derivation: AE.STUDYID
+
+  - name: USUBJID
+    type: str
+    label: Unique Subject Identifier
+    derivation: AE.USUBJID
+
+  - name: AESEQ
+    type: int
+    label: Sequence Number
+    derivation: AE.AESEQ
+
+  - name: TRTP
+    type: str
+    label: Planned Treatment
+    derivation: ADSL.TRT01P
+
+  - name: TRTA
+    type: str
+    label: Actual Treatment
+    derivation: ADSL.TRT01A
+
+  - name: SAFFL
+    type: str
+    label: Safety Population Flag
+    derivation: ADSL.SAFFL
+
+  - name: ITTFL
+    type: str
+    label: Intent-To-Treat Population Flag
+    derivation: ADSL.ITTFL
+
+  - name: TRTSDT
+    type: date
+    label: Date of First Exposure to Treatment
+    derivation: ADSL.TRTSDT
+
+  - name: TRTSDTM
+    type: datetime
+    label: Datetime of First Exposure to Treatment
+    derivation: ADSL.TRTSDTM
+
+  - name: TRTEDT
+    type: date
+    label: Date of Last Exposure to Treatment
+    derivation: ADSL.TRTEDT
+
+  - name: EOSDT
+    type: date
+    label: End of Study Date
+    derivation: ADSL.EOSDT
+
+  - name: _RFSTDTC
+    type: str
+    label: "Working value: subject reference start date text"
+    derivation: ADSL.RFSTDTC
+
+  - name: _RFSTDT
+    type: date
+    label: "Working value: subject reference start date"
+    derivation:
+      impute:
+        type: date
+        source: _RFSTDTC
+        invalid: null
+
+  - name: AETERM
+    type: str
+    label: Reported Term for the Adverse Event
+    derivation: AE.AETERM
+
+  - name: AEDECOD
+    type: str
+    label: Dictionary-Derived Term
+    derivation: AE.AEDECOD
+
+  - name: AESOC
+    type: str
+    label: Primary System Organ Class
+    derivation: AE.AESOC
+
+  - name: AESEV
+    type: str
+    label: Severity/Intensity
+    derivation: AE.AESEV
+
+  - name: AESER
+    type: str
+    label: Serious Event
+    derivation: AE.AESER
+
+  - name: AEREL
+    type: str
+    label: Causality
+    derivation: AE.AEREL
+
+  - name: AEACN
+    type: str
+    label: Action Taken with Study Treatment
+    derivation: AE.AEACN
+
+  - name: AEOUT
+    type: str
+    label: Outcome of Adverse Event
+    derivation: AE.AEOUT
+
+  - name: AESDTH
+    type: str
+    label: Results in Death
+    derivation: AE.AESDTH
+
+  - name: AENDT
+    type: date
+    label: Analysis End Date
+    derivation:
+      impute:
+        type: date
+        source: AE.AEENDTC
+        invalid: null
+
+  - name: TRTEMFL
+    type: str
+    label: Treatment Emergent Analysis Flag
+    derivation:
+      case:
+        - when: "TRTSDT IS NULL"
+          then: null
+        - when: "AENDT < TRTSDT"
+          then: null
+        - when: "ASTDT IS NULL"
+          then: "'Y'"
+        - when: "_TESTART = 'Y' AND _TEEND = 'Y'"
+          then: "'Y'"
+        - otherwise: null
+
+  - name: _TERN
+    type: int
+    label: "Working value: order among the treatment-emergent events of the subject"
+    derivation:
+      row_number:
+        window:
+          group_by: [STUDYID, USUBJID]
+          order_by: [AESEQ]
+          filter: "TRTEMFL = 'Y'"
+
+  - name: AOCCFL
+    type: str
+    label: 1st Occurrence within Subject Flag
+    derivation:
+      flag: "_TERN = 1"
+
+  - name: _TESOCRN
+    type: int
+    label: "Working value: order among the treatment-emergent events of the organ class"
+    derivation:
+      row_number:
+        window:
+          group_by: [STUDYID, USUBJID, AESOC]
+          order_by: [AESEQ]
+          filter: "TRTEMFL = 'Y'"
+
+  - name: AOCCSFL
+    type: str
+    label: 1st Occurrence of SOC Flag
+    derivation:
+      flag: "_TESOCRN = 1"
+
+  - name: _TEPTRN
+    type: int
+    label: "Working value: order among the treatment-emergent events of the preferred term"
+    derivation:
+      row_number:
+        window:
+          group_by: [STUDYID, USUBJID, AEDECOD]
+          order_by: [AESEQ]
+          filter: "TRTEMFL = 'Y'"
+
+  - name: AOCCPFL
+    type: str
+    label: 1st Occurrence of Preferred Term Flag
+    derivation:
+      flag: "_TEPTRN = 1"

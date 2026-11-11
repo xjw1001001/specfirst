@@ -1,0 +1,75 @@
+# House standard open-default@1: layout template of the demographics table.
+#
+# Layout draft 0 (PLAN.md section 7.4): what the ARS file does not hold.
+# real-3 fixes the layout format (ADR-003); this draft is then aligned.
+#   output    the ARS output the layout belongs to
+#   columns   the column axis: grouping, order rule, total, comparison column
+#   rows      the row axis: one block per analysis, with its statistics
+#   formats   display rules: rounding, decimals, percentages, p-values
+output:
+  id: Out_DM
+  title: Demographic and Baseline Characteristics
+columns:
+  grouping: "Grp_${trt_var}"
+  order: {$get: column_order}
+  header_count: An_DM_N
+  total:
+    $if: {get: total.mode, eq: none}
+    then: null
+    else:
+      grouping: Grp_Total_DM
+      label: Total
+      header_count: An_DM_N_Tot
+      pools: {$get: total}
+  comparison:
+    $if: {get: tests, eq: none}
+    then: null
+    else: {label: p-value, format: {$get: pvalue_format}}
+rows:
+  $for: row
+  in: {$get: rows}
+  do:
+    $if: {get: row.kind, eq: continuous}
+    then:
+      label: "${row.label}"
+      kind: continuous
+      analysis: "An_DM_${row.var}_Summ"
+      total_analysis:
+        $if: {get: total.mode, eq: none}
+        then: null
+        else: "An_DM_${row.var}_Summ_Tot"
+      statistics: {$get: continuous_statistics}
+      comparison:
+        $if: {get: tests, eq: none}
+        then: null
+        else: "An_DM_${row.var}_Comp"
+    else:
+      label: "${row.label}"
+      kind: categorical
+      analysis: "An_DM_${row.var}_Summ"
+      total_analysis:
+        $if: {get: total.mode, eq: none}
+        then: null
+        else: "An_DM_${row.var}_Summ_Tot"
+      categories: "Grp_${row.var}"
+      denominator: {$get: denominator}
+      denominator_analysis:
+        $if: {get: denominator, eq: subjects_with_data}
+        then: "An_DM_${row.var}_N"
+        else: An_DM_N
+      total_denominator_analysis:
+        $if: {get: total.mode, eq: none}
+        then: null
+        else:
+          $if: {get: denominator, eq: subjects_with_data}
+          then: "An_DM_${row.var}_N_Tot"
+          else: An_DM_N_Tot
+      comparison:
+        $if: {get: tests, eq: none}
+        then: null
+        else: "An_DM_${row.var}_Comp"
+formats:
+  rounding: {$get: rounding}
+  decimals: {$get: decimals}
+  percent: {$get: percent_format}
+  quantile_definition: {$get: quantile_definition}

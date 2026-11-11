@@ -1,0 +1,4 @@
+entry: tfl.demog.rows
+alternatives:
+  stated_list:
+    params: {demog_rows: {$get: rows}}

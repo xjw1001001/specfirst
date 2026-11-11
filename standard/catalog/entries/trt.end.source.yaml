@@ -1,0 +1,33 @@
+id: trt.end.source
+unit: mod-treatment
+applies_when: design.has_exposure
+question: What is the treatment end date?
+alternatives:
+  - id: last_ex_end_date
+    statement: "The treatment end date is the latest end date of an exposure record with a dose."
+  - id: last_ex_start_date
+    statement: "The treatment end date is the latest start date of an exposure record with a dose."
+  - id: ds_date_when_ex_missing
+    statement: "The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date."
+    definition: >-
+      The disposition date is the start date of the end-of-study record
+      (decision disp.status.record). It is taken only for a subject with a
+      treatment start.
+notes: >-
+  An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is
+  zero and EXTRT contains PLACEBO. Which partial dates take part is decision
+  trt.date.imputation.
+house_default: last_ex_end_date
+compile: templates/trt.end.source.yaml
+phrasings: phrasings/trt.end.source.yaml
+reading: knowledge/trt.end.source.md
+probes: [last_exposure_record_spans_days, no_exposure_end_date]
+sources:
+  - ref: adamig
+    where: "ADSL treatment timing variables, TRTEDT"
+  - ref: admiral
+    where: "ADSL vignette, TRTEDTM from the last EX record with EXDOSE > 0 or a placebo record"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "use the date of discontinuation"
+    where: "TRTEDT of the pilot ADSL: disposition date when the date of final dose is missing"

@@ -1,0 +1,149 @@
+# House standard open-default@1: ARS template of the table of vital signs
+# by visit (unit tfl-vitals-by-visit). Parameters and analysis visits are
+# the lists of the decision tfl.vs.scope; the analysis records are those
+# with ANL01FL = Y, as in the CDISC ARS example "Common Safety Displays".
+define:
+  trt_var:
+    $if: {get: analysis_set, eq: SAF}
+    then: {$get: safety_treatment_variable}
+    else: TRT01P
+  variants:
+    $concat:
+      - [{suffix: "", grouping: "Grp_${trt_var}"}]
+      - $if: {get: total.mode, eq: none}
+        then: []
+        else: [{suffix: _Tot, grouping: Grp_Total_VS}]
+  measures:
+    - {code: Value, variable: AVAL, label: observed value, subset: Dss_VS_Analysis}
+    - {code: Change, variable: CHG, label: change from baseline, subset: Dss_VS_PostBaseline}
+
+analysisGroupings:
+  - id: "Grp_${trt_var}"
+    name: Treatment
+    groupingDataset: ADSL
+    groupingVariable: "${trt_var}"
+    dataDriven: true
+  - $if: {not: {get: total.mode, eq: none}}
+    then:
+      id: Grp_Total_VS
+      name: Total
+      groupingDataset: ADSL
+      groupingVariable: "${trt_var}"
+      dataDriven: false
+      groups:
+        - id: Grp_Total_VS_1
+          name: Total
+          level: 1
+          order: 1
+          condition:
+            dataset: ADSL
+            variable: "${trt_var}"
+            comparator: NOTIN
+            value:
+              $if: {get: total.mode, eq: active_arms}
+              then: ["", {$get: total.control}]
+              else: [""]
+  - id: Grp_VS_PARAMCD
+    name: Parameter
+    groupingDataset: ADVS
+    groupingVariable: PARAMCD
+    dataDriven: false
+    groups:
+      $for: p
+      in: {$fn: numbered, args: [{$get: vs_parameters}]}
+      do:
+        id: "Grp_VS_PARAMCD_${p.number}"
+        name: "${p.item}"
+        level: 1
+        order: {$get: p.number}
+        condition: {dataset: ADVS, variable: PARAMCD, comparator: EQ, value: ["${p.item}"]}
+  - id: Grp_VS_AVISIT
+    name: Analysis visit
+    groupingDataset: ADVS
+    groupingVariable: AVISIT
+    dataDriven: false
+    groups:
+      $for: p
+      in: {$fn: numbered, args: [{$get: vs_visits}]}
+      do:
+        id: "Grp_VS_AVISIT_${p.number}"
+        name: "${p.item}"
+        level: 1
+        order: {$get: p.number}
+        condition: {dataset: ADVS, variable: AVISIT, comparator: EQ, value: ["${p.item}"]}
+
+dataSubsets:
+  - id: Dss_VS_Analysis
+    name: Analysis records
+    level: 1
+    order: 1
+    condition: {dataset: ADVS, variable: ANL01FL, comparator: EQ, value: ["Y"]}
+  - id: Dss_VS_PostBaseline
+    name: Analysis records after baseline
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADVS, variable: ANL01FL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADVS, variable: AVISIT, comparator: NE, value: [Baseline]}}
+
+analyses:
+  - $for: v
+    in: {$get: variants}
+    do:
+      id: "An_VS_N${v.suffix}"
+      name: Number of subjects
+      reason: {controlledTerm: SPECIFIED IN SAP}
+      purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+      methodId: Mth_Count
+      dataset: ADSL
+      variable: USUBJID
+      analysisSetId: "AnalysisSet_${analysis_set}"
+      orderedGroupings:
+        - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+  - $for: m
+    in: {$get: measures}
+    do:
+      $for: v
+      in: {$get: variants}
+      do:
+        id: "An_VS_${m.code}${v.suffix}"
+        name: "Summary of the ${m.label} by parameter and visit"
+        reason: {controlledTerm: SPECIFIED IN SAP}
+        purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+        methodId: Mth_ContSumm
+        dataset: ADVS
+        variable: "${m.variable}"
+        analysisSetId: "AnalysisSet_${analysis_set}"
+        dataSubsetId: "${m.subset}"
+        orderedGroupings:
+          - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+          - {order: 2, groupingId: Grp_VS_PARAMCD, resultsByGroup: true}
+          - {order: 3, groupingId: Grp_VS_AVISIT, resultsByGroup: true}
+        programmingCode:
+          context: specfirst method registry
+          parameters:
+            - {name: quantile_definition, value: ["${quantile_definition}"]}
+
+outputs:
+  - id: Out_VS
+    name: Vital signs by visit
+    version: 1
+    displays:
+      - order: 1
+        display:
+          id: Disp_VS
+          name: Vital signs by visit
+          version: 1
+          displayTitle: Vital Signs by Visit
+          displaySections:
+            - sectionType: Title
+              orderedSubSections:
+                - order: 1
+                  subSection: {id: Disp_VS_Title_1, text: Vital Signs by Visit}
+
+listItem:
+  name: Vital signs by visit
+  level: 1
+  outputId: Out_VS

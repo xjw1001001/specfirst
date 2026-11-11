@@ -1,8 +1,9 @@
 """Load and apply the shared formats in standard/schemas/.
 
-Version 0 has four schemas: decision-record, ard, grid and graph. The graph
-schema has two parts, "node" and "edge". Changing a schema needs an ADR
-(PLAN.md section 13.2).
+Version 0 has four schemas from base-0: decision-record, ard, grid and
+graph. The graph schema has two parts, "node" and "edge". std-1 adds
+catalog-entry (ADR-004). Changing a schema needs an ADR (PLAN.md section
+13.2).
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from jsonschema import Draft202012Validator
 
 from specfirst.paths import repo_root
 
-NAMES = ("decision-record", "ard", "grid", "graph")
+NAMES = ("decision-record", "ard", "grid", "graph", "catalog-entry")
 
 
 def schema_dir(root: Path | None = None) -> Path:
