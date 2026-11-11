@@ -1,0 +1,167 @@
+clean clone gate std-1
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     f86fe0fb7639756238cdad99264ac9c804dac76b
+clone:      /tmp/specfirst-clean-LU5j4i/specfirst
+environment and cache: /tmp/specfirst-clean-LU5j4i/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-LU5j4i/specfirst
+
+$ git -C /tmp/specfirst-clean-LU5j4i/specfirst checkout --quiet --detach f86fe0fb7639756238cdad99264ac9c804dac76b
+
+$ git -C /tmp/specfirst-clean-LU5j4i/specfirst log -1 --format=%H %s
+f86fe0fb7639756238cdad99264ac9c804dac76b std-1: second pass of the review (PASS) and what followed from it
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-LU5j4i/env/venv-specfirst-1729596614
+R library: /tmp/specfirst-clean-LU5j4i/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-LU5j4i/env/r-lib
+python     3.12.3  (/tmp/specfirst-clean-LU5j4i/env/venv-specfirst-1729596614/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+system lock: 32 packages recorded, 0 differ
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-LU5j4i/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate std-1 --clean
+gate std-1 at commit f86fe0fb7639756238cdad99264ac9c804dac76b (clean)
+
+== [1/12] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-LU5j4i/env/venv-specfirst-1729596614/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+system lock: 32 packages recorded, 0 differ
+doctor: ok
+-- PASS environment (0.3 s)
+
+== [2/12] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-LU5j4i/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (1.2 s)
+
+== [3/12] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/12] unit tests: pytest -m "not evidence" -q
+........................................................................ [ 13%]
+........................................................................ [ 26%]
+........................................................................ [ 39%]
+........................................................................ [ 53%]
+........................................................................ [ 66%]
+........................................................................ [ 79%]
+........................................................................ [ 92%]
+.......................................                                  [100%]
+543 passed, 13 deselected in 35.27s
+-- PASS unit tests (35.5 s)
+
+== [5/12] catalog: specfirst catalog
+catalog specfirst-m1 draft-1: 43 entries, 62 questions (entry and unit), 96 alternatives, 9 units, 50 probes
+schema and cross-references: 0 problems
+compile templates on their examples: 0 problems
+probes: every pair of alternatives, every slot: 0 problems
+structural probes separate for any data: 0 problems
+phrasings and reading notes: 0 problems
+parameters set and read: 0 problems
+-- PASS catalog (0.5 s)
+
+== [6/12] public sources: specfirst catalog --sources
+43 entries, 0 without a public source
+104 citations: 59 to pinned sources, checked on the fetch cache (44 with a text that must stand in the file); 45 to published documents, judged and not checked by script
+public sources: 0 problems
+-- PASS public sources (0.0 s)
+
+== [7/12] round trip: specfirst catalog --roundtrip
+243 statements rendered and parsed back, for 140 alternatives (entry, unit and alternative)
+round trip decisions to statements to decisions: 0 problems
+document round trip on 62 decisions: 0 problems
+-- PASS round trip (0.0 s)
+
+== [8/12] yamaa check: specfirst catalog --yamaa
+compiled files and built datasets: /tmp/specfirst-std1-gqxd4hlw (removed when the command ends)
+106 decision vectors (the base and one changed decision each), 106 compiled
+  note: tfl.pvalue.format/four_decimals #1: shows only beside another decision, for example tfl.tests.include/anova_chisq #1
+every alternative compiles and changes the compiled files: 0 problems
+47 distinct sets of ADaM specs, 141 entry specs checked by yamaa (each with its house parent and one fragment per decision)
+yamaa check: 0 problems
+-- PASS yamaa check (8.0 s)
+
+== [9/12] yamaa run: specfirst catalog --run
+106 decision vectors, compiled by an earlier check
+47 distinct sets of ADaM specs, 141 datasets built by yamaa on the tiny study of specfirst.compile.tiny (4 subjects; this shows that the specs run, not that their values are right)
+yamaa run: 0 problems
+-- PASS yamaa run (5.7 s)
+
+== [10/12] ARS schema: specfirst catalog --tables
+106 decision vectors, compiled by an earlier check
+ARS schema: project/jsonschema/ars_ldm.schema.json of the pinned source 'ars'
+negative controls: 3 schema defects planted in the base ARS file, 3 reported
+59 distinct ARS files with their layouts checked: schema, references, and that layouts and ARS name the same analyses
+ARS schema and layouts: 0 problems
+-- PASS ARS schema (0.6 s)
+
+== [11/12] house standard: specfirst house
+house standard open-default@1: 58 defaults, 4 decisions without a default, 3 parent specs, 4 table families
+house standard: 0 problems
+-- PASS house standard (0.0 s)
+
+== [12/12] ASCII: python -m specfirst.asciicheck
+ASCII check: 328 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.3 s
+PASS  pins                 1.2 s
+PASS  lint                 0.0 s
+PASS  unit tests          35.5 s
+PASS  catalog              0.5 s
+PASS  public sources       0.0 s
+PASS  round trip           0.0 s
+PASS  yamaa check          8.0 s
+PASS  yamaa run            5.7 s
+PASS  ARS schema           0.6 s
+PASS  house standard       0.0 s
+PASS  ASCII                0.0 s
+GATE std-1: PASS
+
+clean clone gate std-1: PASS (clone kept in /tmp/specfirst-clean-LU5j4i/specfirst until /tmp is cleared)
