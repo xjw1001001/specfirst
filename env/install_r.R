@@ -1,5 +1,5 @@
 # Install the R packages of env/r-packages.txt, with everything they need,
-# into the project library (R_LIBS_USER, set by scripts/env.sh) from the
+# into the project library (SPECFIRST_R_LIBS, set by scripts/env.sh) from the
 # dated repository snapshot named in env/r-repo.txt. Then compare the
 # library with env/r-packages.lock.
 #
@@ -19,10 +19,11 @@ read_lines <- function(name) {
   x[nzchar(x)]
 }
 
-lib <- Sys.getenv("R_LIBS_USER")
-if (!nzchar(lib)) stop("R_LIBS_USER is not set; source scripts/env.sh first")
+lib <- Sys.getenv("SPECFIRST_R_LIBS")
+if (!nzchar(lib)) stop("SPECFIRST_R_LIBS is not set; source scripts/env.sh first")
 dir.create(lib, recursive = TRUE, showWarnings = FALSE)
-.libPaths(c(lib, .libPaths()))
+# The project library and R's own library only: no user or site library.
+.libPaths(lib, include.site = FALSE)
 
 repo <- read_lines("r-repo.txt")[1]
 options(

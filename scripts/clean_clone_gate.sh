@@ -28,7 +28,7 @@ exec > >(tee "$log") 2>&1
 work="$(mktemp -d "${TMPDIR:-/tmp}/specfirst-clean-XXXXXX")"
 clone="$work/specfirst"
 unset SPECFIRST_HOME SPECFIRST_CACHE _SPECFIRST_OWNS_CACHE SPECFIRST_VENV SPECFIRST_ROOT
-unset R_LIBS_USER VIRTUAL_ENV
+unset SPECFIRST_R_LIBS R_LIBS_USER VIRTUAL_ENV
 
 step() {
   echo

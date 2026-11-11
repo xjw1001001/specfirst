@@ -5,16 +5,16 @@
 # environment when it exists.
 #
 # In the checkout (the default):
-#   SPECFIRST_VENV   .venv              Python virtual environment
-#   R_LIBS_USER      .r-lib             R package library
-#   fetch cache      third_party/cache  (or what third_party/cache-location names)
+#   SPECFIRST_VENV    .venv              Python virtual environment
+#   SPECFIRST_R_LIBS  .r-lib             R package library (also R_LIBS_USER)
+#   fetch cache       third_party/cache  (or what third_party/cache-location names)
 #
 # Under SPECFIRST_HOME, when that variable is set or when the checkout is on
 # a Windows drive under WSL (/mnt/<letter>/...), where the mount is slow and
 # has no symbolic links. The default home is ~/.local/share/specfirst:
-#   SPECFIRST_VENV   $SPECFIRST_HOME/venv-<checkout folder name>
-#   R_LIBS_USER      $SPECFIRST_HOME/r-lib    shared by all checkouts
-#   SPECFIRST_CACHE  $SPECFIRST_HOME/cache    shared by all checkouts
+#   SPECFIRST_VENV    $SPECFIRST_HOME/venv-<checkout folder name>
+#   SPECFIRST_R_LIBS  $SPECFIRST_HOME/r-lib    shared by all checkouts
+#   SPECFIRST_CACHE   $SPECFIRST_HOME/cache    shared by all checkouts
 
 _sf_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -36,15 +36,19 @@ fi
 
 if [ -n "$_sf_home" ]; then
   export SPECFIRST_VENV="$_sf_home/venv-$(basename "$_sf_root")"
-  export R_LIBS_USER="$_sf_home/r-lib"
+  export SPECFIRST_R_LIBS="$_sf_home/r-lib"
   if [ -z "${SPECFIRST_CACHE:-}" ]; then
     export SPECFIRST_CACHE="$_sf_home/cache"
     export _SPECFIRST_OWNS_CACHE=1
   fi
 else
   export SPECFIRST_VENV="$_sf_root/.venv"
-  export R_LIBS_USER="$_sf_root/.r-lib"
+  export SPECFIRST_R_LIBS="$_sf_root/.r-lib"
 fi
+# The R scripts in env/ read SPECFIRST_R_LIBS: R fills R_LIBS_USER with its
+# own default when it is unset, so that variable cannot tell them where the
+# project library is. R_LIBS_USER is set too, for interactive R sessions.
+export R_LIBS_USER="$SPECFIRST_R_LIBS"
 
 if [ -f "$SPECFIRST_VENV/bin/activate" ]; then
   # shellcheck disable=SC1091

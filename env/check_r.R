@@ -5,10 +5,16 @@
 # by the gates.
 
 args <- commandArgs(trailingOnly = TRUE)
-lib <- Sys.getenv("R_LIBS_USER")
+lib <- Sys.getenv("SPECFIRST_R_LIBS")
+if (!nzchar(lib) || !dir.exists(lib)) {
+  cat("no project library: SPECFIRST_R_LIBS is not set or is not a folder;",
+      "source scripts/env.sh and run make install\n")
+  quit(status = 1)
+}
+# The project library and R's own library only: no user or site library.
+.libPaths(lib, include.site = FALSE)
 
 if (identical(args, "--list")) {
-  if (!nzchar(lib) || !dir.exists(lib)) quit(status = 1)
   ip <- installed.packages(lib.loc = lib)
   o <- order(ip[, "Package"], method = "radix")
   cat(sprintf("%s\t%s\n", ip[o, "Package"], ip[o, "Version"]), sep = "")

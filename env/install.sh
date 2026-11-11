@@ -23,8 +23,8 @@ pip_install() {
 pip_install --require-hashes --only-binary=:all: -r env/requirements.lock
 pip_install --no-build-isolation -e .
 
-echo "R library: $R_LIBS_USER"
-mkdir -p "$R_LIBS_USER"
+echo "R library: $SPECFIRST_R_LIBS"
+mkdir -p "$SPECFIRST_R_LIBS"
 Rscript --vanilla env/install_r.R
 
 # shellcheck disable=SC1091

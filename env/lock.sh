@@ -24,7 +24,7 @@ python3 -m venv "$tool/venv"
   --custom-compile-command "bash env/lock.sh" \
   --output-file env/requirements.lock
 
-mkdir -p "$R_LIBS_USER"
+mkdir -p "$SPECFIRST_R_LIBS"
 Rscript --vanilla env/install_r.R --write-lock
 
 {
