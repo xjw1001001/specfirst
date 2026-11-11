@@ -6,9 +6,10 @@
 #   Rscript --vanilla env/install_r.R               install what the lock lists, verify
 #   Rscript --vanilla env/install_r.R --write-lock  resolve from r-packages.txt, rewrite the lock
 #
-# Recommended packages (Matrix, MASS, ...) are installed here too, so that
-# every package comes from the same snapshot and is in the lock. Only the
-# base packages come from the R installation.
+# The base and the recommended packages (Matrix, MASS, mgcv, ...) come with
+# the R installation, whose version env/r-version.txt pins: CRAN's current
+# versions of them often need an R newer than the released one. Everything
+# else comes from the snapshot and is in the lock.
 
 args <- commandArgs(trailingOnly = TRUE)
 file_arg <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
@@ -54,8 +55,12 @@ if (write_lock) {
   deps <- tools::package_dependencies(
     wanted, db = db, which = c("Depends", "Imports", "LinkingTo"), recursive = TRUE
   )
-  base <- rownames(installed.packages(priority = "base"))
-  target <- sort(setdiff(unique(c(wanted, unlist(deps))), base), method = "radix")
+  with_r <- rownames(installed.packages(lib.loc = .Library, priority = c("base", "recommended")))
+  target <- sort(setdiff(unique(c(wanted, unlist(deps))), with_r), method = "radix")
+  gone <- setdiff(target, rownames(db))
+  if (length(gone)) {
+    stop("not available for ", R.version.string, ": ", paste(gone, collapse = ", "))
+  }
   versions <- stats::setNames(db[target, "Version"], target)
 } else {
   rows <- strsplit(read_lines("r-packages.lock"), "[[:space:]]+")

@@ -1,9 +1,12 @@
 # System packages on Ubuntu 24.04, installed by env/system.sh.
+# R is not in this list: env/system.sh installs it from CRAN's repository
+# at the version in env/r-version.txt.
 build-essential
 ca-certificates
 cmake
 curl
 git
+gnupg
 libcurl4-openssl-dev
 libssl-dev
 libxml2-dev
@@ -11,5 +14,3 @@ make
 poppler-utils
 python3
 python3-venv
-r-base
-r-base-dev

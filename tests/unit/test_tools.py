@@ -68,6 +68,21 @@ def test_read_table_and_list(tmp_path):
     assert doctor.read_list(table) == ["cards 0.7.0", "mmrm\t0.3.15"]
 
 
+def test_pinned_r_version_is_the_one_the_lock_was_resolved_with(root):
+    pinned = doctor.pinned_r_version(root)
+    assert tuple(int(part) for part in pinned.split(".")) >= (4, 2)  # PLAN.md: R 4.2 or later
+    header = (root / "env" / "r-packages.lock").read_text(encoding="ascii").splitlines()[:2]
+    assert any(f"R version {pinned} " in line for line in header)
+
+
+def test_python_lock_has_the_pins_of_the_plan(root):
+    pins = doctor.read_requirements_lock(root / "env" / "requirements.lock")
+    planned = {"yamaa": "0.7.0", "polars": "1.44.2", "pyarrow": "25.0.1", "pyyaml": "6.0.3"}
+    lower = {name.lower(): version for name, version in pins.items()}
+    for name, version in planned.items():
+        assert lower.get(name) == version, name
+
+
 def test_status_prints_every_track(root):
     lines: list[str] = []
     assert status.run(root, lines.append) == 0

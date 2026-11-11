@@ -1,9 +1,10 @@
 """`specfirst doctor`: is this the environment the lock files describe?
 
 Hard failures (exit 1): Python older than 3.12, a Python package that
-differs from env/requirements.lock, R missing or older than 4.2, an R
-package that differs from env/r-packages.lock, pdftotext missing or not
-poppler. Differences in system packages are printed as notes only.
+differs from env/requirements.lock, R missing or not the version of
+env/r-version.txt, an R package that differs from env/r-packages.lock,
+pdftotext missing or not poppler. Differences in other system packages are
+printed as notes only.
 """
 
 from __future__ import annotations
@@ -33,10 +34,12 @@ def read_table(path: Path) -> dict[str, str]:
     """Name to version from a two-column file; '#' starts a comment."""
     table: dict[str, str] = {}
     for line in path.read_text(encoding="ascii").splitlines():
-        line = line.split("#", 1)[0].strip()
-        if line:
-            name, version = line.split()
-            table[name] = version
+        parts = line.split("#", 1)[0].split()
+        if not parts:
+            continue
+        if len(parts) != 2:
+            raise ValueError(f"{path.name}: expected a name and a version, found {line!r}")
+        table[parts[0]] = parts[1]
     return table
 
 
@@ -69,10 +72,16 @@ def _first_line(argv: list[str]) -> str | None:
     return lines[0].strip() if lines else ""
 
 
-def r_version() -> tuple[int, int] | None:
+def r_version() -> str | None:
+    """The installed R version, for example "4.6.2"."""
     line = _first_line(["R", "--version"])
-    match = re.search(r"R version (\d+)\.(\d+)", line or "")
-    return (int(match.group(1)), int(match.group(2))) if match else None
+    match = re.search(r"R version (\d+\.\d+\.\d+)", line or "")
+    return match.group(1) if match else None
+
+
+def pinned_r_version(root: Path) -> str:
+    """The R version of env/r-version.txt, without the package revision."""
+    return read_list(root / "env" / "r-version.txt")[0].split("-")[0]
 
 
 def r_library(root: Path) -> dict[str, str] | None:
@@ -142,8 +151,9 @@ def run(root: Path, out: Callable[[str], None] = print) -> int:
     if r is None:
         failures.append("R is not installed")
     else:
-        if r < (4, 2):
-            failures.append("R 4.2 or later is required")
+        pinned = pinned_r_version(root)
+        if r != pinned:
+            failures.append(f"R is {r}, env/r-version.txt pins {pinned}")
         r_lock = root / "env" / "r-packages.lock"
         if not r_lock.is_file():
             failures.append("env/r-packages.lock is missing")

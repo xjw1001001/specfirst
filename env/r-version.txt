@@ -1,0 +1,4 @@
+# The R version, as the package version in CRAN's repository for Ubuntu
+# 24.04 (https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/).
+# env/system.sh installs exactly this; specfirst doctor checks it.
+4.6.2-1.2404.0

@@ -6,13 +6,18 @@ pinned.
 
 | File | What it pins | Written by |
 | --- | --- | --- |
-| `apt-packages.txt` | the system packages: Python 3.12, R, poppler, git, compilers | hand |
-| `system.lock` | their versions when the locks were written (information) | `lock.sh` |
+| `apt-packages.txt` | the system packages: Python 3.12, poppler, git, compilers | hand |
+| `r-version.txt` | the exact R version, installed from CRAN's repository for Ubuntu | hand |
+| `system.lock` | versions of the system packages, R and its recommended packages when the locks were written (information) | `lock.sh` |
 | `requirements.in` | the top-level Python requirements | hand |
 | `requirements.lock` | every Python package: exact version and hashes | `lock.sh` (uv) |
 | `r-packages.txt` | the R packages the project loads | hand |
 | `r-repo.txt` | the dated CRAN snapshot they come from | hand |
 | `r-packages.lock` | every R package in the project library: exact version | `lock.sh` |
+
+R's base and recommended packages (Matrix, MASS, mgcv and the like) come
+with the pinned R. Everything else is in the project library, and the R
+scripts load from those two places only, never from a personal library.
 
 ## Install
 

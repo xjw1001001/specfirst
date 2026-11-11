@@ -30,8 +30,15 @@ Rscript --vanilla env/install_r.R --write-lock
 {
   echo "# Versions of the system packages when the locks were written (Ubuntu 24.04)."
   echo "# For information: specfirst doctor prints a note when one differs."
-  grep -v '^#' env/apt-packages.txt | sort | while read -r name; do
-    [ -n "$name" ] && printf '%s %s\n' "$name" "$(dpkg-query -W -f='${Version}' "$name")"
+  # The listed packages, R itself, and the recommended R packages that come with it.
+  {
+    grep -v '^#' env/apt-packages.txt
+    dpkg-query -W -f='${db:Status-Abbrev}${Package}\n' 'r-base*' 'r-recommended' 'r-cran-*' \
+      2>/dev/null | sed -n 's/^ii //p' || true
+  } | LC_ALL=C sort -u | while read -r name; do
+    if [ -n "$name" ]; then
+      printf '%s %s\n' "$name" "$(dpkg-query -W -f='${Version}' "$name")"
+    fi
   done
 } > env/system.lock
 echo "locks written: env/requirements.lock env/r-packages.lock env/system.lock"

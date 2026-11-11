@@ -18,7 +18,7 @@ DIRECTORIES = [
 FILES = [
     "PLAN.md", "CLAUDE.md", "README.md", "LICENSE",
     "docs/lessons.md", "third_party/SOURCES.md", "third_party/sources.yaml",
-    "src/specfirst/cli.py", "env/requirements.lock", "env/r-packages.lock",
+    "src/specfirst/cli.py", "env/requirements.lock", "env/r-packages.lock", "env/r-version.txt",
     ".claude/settings.json", ".github/workflows/ci.yml", "scripts/worktree.sh",
 ]
 TRACKS = ["base", "real", "std", "gen", "read"]
