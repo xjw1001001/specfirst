@@ -1,0 +1,116 @@
+# Pinned public sources (PLAN.md appendix A).
+#
+# `specfirst fetch` clones each source at exactly its commit into the ignored
+# cache and verifies it. Nothing in the cache is ever committed (rule 4 of
+# section 2.1, E20). SOURCES.md is the readable record with the licenses as
+# confirmed in base-0. A test keeps this file, SOURCES.md and appendix A of
+# PLAN.md in agreement.
+
+sources:
+  - name: p7
+    title: Pilot 7
+    repository: RConsortium/submissions-pilot7-synthetic-data
+    commit: 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8
+    license: MIT for code; study data excluded
+    used_for: pilot specs and data, claims, verifier, kn189, kn564
+
+  - name: yamaa
+    title: yamaa
+    repository: elong0527/yamaa
+    commit: 93a6757594988fddc9b05d220d5f53deb5085d50
+    license: MIT
+    used_for: documentation of the SDTM and ADaM engine; the engine itself is yamaa 0.7.0 from PyPI
+
+  - name: ars
+    title: CDISC ARS
+    repository: cdisc-org/analysis-results-standard
+    commit: 2c9b4b68724386e8f91dc576724855af7fafac65
+    license: MIT for code, CC BY 4.0 for content
+    used_for: ARS model and examples
+
+  - name: p6
+    title: Pilot 6
+    repository: RConsortium/submissions-pilot6-adams-tlfs
+    commit: a4f85c95cfef1f6aa27795362630f8ae43210185
+    license: "no license file: fetch, never redistribute"
+    used_for: CSR, SAP, table programs
+
+  - name: atorus
+    title: Atorus replication
+    repository: atorus-research/CDISC_pilot_replication
+    commit: fc8d658d7709aac0cccd753d0ca9ae6726090a61
+    license: MIT
+    used_for: R programs and notes for the 30 CSR tables
+
+  - name: phuse
+    title: PHUSE scripts
+    repository: phuse-org/phuse-scripts
+    commit: 398a6d33ced9359ffb58c46650a6d488811176b1
+    license: MIT-style for code; pilot data under CDISC terms
+    used_for: other editions of the pilot ADaM, with ADLBCPV and ADLBHPV
+
+  - name: c360i
+    title: CDISC 360i
+    repository: cdisc-org/360i
+    commit: 24bd98bdcea3db3046436e6a749bbbc92196fe12
+    license: MIT for code, CC BY 4.0 for content
+    used_for: pilot USDM JSON and protocol
+
+  - name: acdc
+    title: AC/DC
+    repository: cdisc-org/analysis-concepts
+    commit: 739344ca31203bb502efeee2b855286e17977be6
+    license: MIT
+    used_for: method library, eSAP schema
+
+  - name: siera
+    title: siera
+    repository: clymbclinical/siera
+    commit: 9208a9b6a00876f13d2b17f01aa318290c066674
+    license: MIT
+    used_for: candidate base for the R engine
+
+  - name: cardinal
+    title: cardinal
+    repository: pharmaverse/cardinal
+    commit: b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5
+    license: Apache-2.0
+    used_for: FDA safety table templates
+
+  - name: pharma-skills
+    title: pharma-skills
+    repository: RConsortium/pharma-skills
+    commit: e5db96d54ef5a79cbfd06e2339a3351e4583f8da
+    license: MIT per skill folder
+    used_for: skill format, benchmark runner, simulator
+
+  - name: pharmaverseraw
+    title: pharmaverseraw
+    repository: pharmaverse/pharmaverseraw
+    commit: e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b
+    license: Apache-2.0
+    used_for: raw data and annotated CRFs for pilot domains (M3)
+
+  - name: c360i-pocs
+    title: 360i proofs of concept
+    repository: lexjansen/cdisc360i-pocs
+    commit: 9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e
+    license: MIT
+    used_for: USDM to CRF (ODM) generation (M3)
+
+# Files pinned by SHA-256 on top of their commit.
+files:
+  - source: ars
+    path: workfiles/examples/ARS v1/Common Safety Displays.json
+    sha256: 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+    note: the ARS v1 example of E2 to E5 (PLAN.md appendix A)
+
+  - source: p6
+    path: documents/CSR.pdf
+    sha256: 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+    note: the CSR of CDISCPILOT01, 492 pages; hash recorded in base-0
+
+  - source: p6
+    path: documents/SAP.pdf
+    sha256: 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+    note: the SAP of CDISCPILOT01; hash recorded in base-0

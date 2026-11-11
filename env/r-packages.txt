@@ -1,0 +1,9 @@
+# R packages the project loads (PLAN.md section 13.2). Their dependencies
+# are resolved into env/r-packages.lock by env/lock.sh.
+cards
+cardx
+siera
+emmeans
+mmrm
+coin
+car

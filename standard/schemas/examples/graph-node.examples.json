@@ -1,0 +1,117 @@
+{
+  "schema": "graph",
+  "part": "node",
+  "valid": [
+    {
+      "name": "an ADaM variable",
+      "instance": {
+        "id": "adam:ADAE.TRTEMFL",
+        "layer": "L4",
+        "kind": "variable",
+        "label": "Treatment Emergent Analysis Flag",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/spec/adae.yaml", "line": 212 }
+      }
+    },
+    {
+      "name": "a document span",
+      "instance": {
+        "id": "doc:sap#9.2/s3",
+        "layer": "L0",
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source": { "file": "inputs/docs/sap.md", "line": 340 }
+      }
+    },
+    {
+      "name": "a cell",
+      "instance": {
+        "id": "cell:Out14-3-1-1/r4/c2",
+        "layer": "L7",
+        "kind": "cell",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/grid/Out14-3-1-1.json", "line": 88 }
+      }
+    },
+    {
+      "name": "a decision",
+      "instance": {
+        "id": "decision:ae.teae.end",
+        "layer": "decision",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/decisions.jsonl", "line": 19 }
+      }
+    },
+    {
+      "name": "a variable that exists for conformance only",
+      "instance": {
+        "id": "adam:ADSL.STUDYID",
+        "layer": "L4",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/spec/adsl.yaml", "line": 12 },
+        "tags": ["conformance_only"]
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "no hash",
+      "why": "every element has a content hash",
+      "instance": {
+        "id": "adam:ADAE.TRTEMFL",
+        "layer": "L4",
+        "source": { "file": "gold/spec/adae.yaml", "line": 212 }
+      }
+    },
+    {
+      "name": "layer and ID disagree",
+      "why": "an L4 element is an adam: element",
+      "instance": {
+        "id": "sdtm:AE.AESTDTC",
+        "layer": "L4",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/spec/adae.yaml", "line": 212 }
+      }
+    },
+    {
+      "name": "source without a line",
+      "why": "every element has the file and line it came from",
+      "instance": {
+        "id": "adam:ADAE.TRTEMFL",
+        "layer": "L4",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/spec/adae.yaml" }
+      }
+    },
+    {
+      "name": "unknown layer",
+      "why": "there are eight layers and the decisions",
+      "instance": {
+        "id": "adam:ADAE.TRTEMFL",
+        "layer": "L8",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/spec/adae.yaml", "line": 212 }
+      }
+    },
+    {
+      "name": "ID with an unknown prefix",
+      "why": "the prefix names the layer",
+      "instance": {
+        "id": "tfl:Out14-3-1-1",
+        "layer": "L7",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/grid/Out14-3-1-1.json", "line": 1 }
+      }
+    },
+    {
+      "name": "an edge field on a node",
+      "why": "a node is not an edge",
+      "instance": {
+        "id": "adam:ADAE.TRTEMFL",
+        "layer": "L4",
+        "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "source": { "file": "gold/spec/adae.yaml", "line": 212 },
+        "proof": "static"
+      }
+    }
+  ]
+}

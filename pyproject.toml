@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "specfirst"
+version = "0.0.0"
+description = "A spec-first framework for clinical analysis and reporting"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+authors = [{ name = "Jingwei Xiong" }]
+# Exact versions live in env/requirements.lock. The four pins below are the
+# ones PLAN.md fixes (section 3.1).
+dependencies = [
+    "yamaa==0.7.0",
+    "polars==1.44.2",
+    "pyarrow==25.0.1",
+    "PyYAML==6.0.3",
+    "pandas",
+    "scipy",
+    "numpy",
+    "jsonschema",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+specfirst = "specfirst.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+addopts = "-ra"
+markers = [
+    "evidence: reruns an evidence spike on the fetch cache (slow; needs `specfirst fetch`)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# evidence/ holds the spikes as they were run; they are not maintained code.
+extend-exclude = ["evidence", "third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

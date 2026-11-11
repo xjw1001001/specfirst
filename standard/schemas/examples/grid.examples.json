@@ -1,0 +1,184 @@
+{
+  "schema": "grid",
+  "valid": [
+    {
+      "name": "a small table",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out14-3-1-1",
+        "titles": ["Table 14-3.1.1", "Summary of Demographics", "Safety Population"],
+        "columns": [
+          { "id": "c1", "label": "Placebo (N=86)" },
+          { "id": "c2", "label": "Low Dose (N=84)", "spanner": "Xanomeline" }
+        ],
+        "rows": [
+          {
+            "id": "r1",
+            "label": "Age (years)",
+            "section": "Age",
+            "cells": [
+              { "id": "cell:Out14-3-1-1/r1/c1", "column": "c1", "text": "", "ard": [] },
+              { "id": "cell:Out14-3-1-1/r1/c2", "column": "c2", "text": "", "ard": [] }
+            ]
+          },
+          {
+            "id": "r2",
+            "label": "Mean (SD)",
+            "indent": 1,
+            "section": "Age",
+            "cells": [
+              {
+                "id": "cell:Out14-3-1-1/r2/c1",
+                "column": "c1",
+                "text": "75.2 (8.59)",
+                "ard": ["ard:An03_01/mean/Trt_1", "ard:An03_01/sd/Trt_1"]
+              },
+              {
+                "id": "cell:Out14-3-1-1/r2/c2",
+                "column": "c2",
+                "text": "75.7 (8.29)",
+                "ard": ["ard:An03_01/mean/Trt_2", "ard:An03_01/sd/Trt_2"]
+              }
+            ]
+          }
+        ],
+        "footnotes": ["SD = standard deviation."]
+      }
+    },
+    {
+      "name": "a mock shell: masks in place of numbers",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out14-3-1-1",
+        "titles": ["Summary of Demographics"],
+        "columns": [{ "id": "c1", "label": "Placebo (N=xx)" }],
+        "rows": [
+          {
+            "id": "r1",
+            "label": "Mean (SD)",
+            "cells": [
+              {
+                "id": "cell:Out14-3-1-1/r1/c1",
+                "column": "c1",
+                "text": "xx.x (xx.xx)",
+                "ard": ["ard:An03_01/mean/Trt_1", "ard:An03_01/sd/Trt_1"]
+              }
+            ]
+          }
+        ],
+        "footnotes": []
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "cell without its ARD references",
+      "why": "every cell lists the ARD rows behind it, even when the list is empty",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out1",
+        "titles": [],
+        "columns": [{ "id": "c1", "label": "Placebo" }],
+        "rows": [
+          {
+            "id": "r1",
+            "label": "n",
+            "cells": [{ "id": "cell:Out1/r1/c1", "column": "c1", "text": "86" }]
+          }
+        ],
+        "footnotes": []
+      }
+    },
+    {
+      "name": "another format version",
+      "why": "this is version 0",
+      "instance": {
+        "schema": "specfirst/grid@1",
+        "output_id": "Out1",
+        "titles": [],
+        "columns": [{ "id": "c1", "label": "Placebo" }],
+        "rows": [],
+        "footnotes": []
+      }
+    },
+    {
+      "name": "no columns",
+      "why": "a grid has at least one data column",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out1",
+        "titles": [],
+        "columns": [],
+        "rows": [],
+        "footnotes": []
+      }
+    },
+    {
+      "name": "cell id that is not a cell id",
+      "why": "a cell ID is cell:<output>/r<n>/c<n>",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out1",
+        "titles": [],
+        "columns": [{ "id": "c1", "label": "Placebo" }],
+        "rows": [
+          {
+            "id": "r1",
+            "label": "n",
+            "cells": [{ "id": "Out1-r1-c1", "column": "c1", "text": "86", "ard": [] }]
+          }
+        ],
+        "footnotes": []
+      }
+    },
+    {
+      "name": "a number in place of the text",
+      "why": "a cell holds the printed text; numbers live in the ARD",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out1",
+        "titles": [],
+        "columns": [{ "id": "c1", "label": "Placebo" }],
+        "rows": [
+          {
+            "id": "r1",
+            "label": "n",
+            "cells": [{ "id": "cell:Out1/r1/c1", "column": "c1", "text": 86, "ard": [] }]
+          }
+        ],
+        "footnotes": []
+      }
+    },
+    {
+      "name": "reference to something that is not an ARD row",
+      "why": "a cell points at ARD rows only",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out1",
+        "titles": [],
+        "columns": [{ "id": "c1", "label": "Placebo" }],
+        "rows": [
+          {
+            "id": "r1",
+            "label": "n",
+            "cells": [
+              { "id": "cell:Out1/r1/c1", "column": "c1", "text": "86", "ard": ["adam:ADSL.USUBJID"] }
+            ]
+          }
+        ],
+        "footnotes": []
+      }
+    },
+    {
+      "name": "no footnotes field",
+      "why": "titles and footnotes are always present",
+      "instance": {
+        "schema": "specfirst/grid@0",
+        "output_id": "Out1",
+        "titles": [],
+        "columns": [{ "id": "c1", "label": "Placebo" }],
+        "rows": []
+      }
+    }
+  ]
+}

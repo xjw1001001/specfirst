@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "specfirst:schemas/0/decision-record",
+  "title": "Decision record",
+  "description": "One answered catalog question (PLAN.md section 4.3). One record per line in decisions.jsonl. Version 0; a change needs an ADR.",
+  "type": "object",
+  "required": ["id", "unit", "value", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "A catalog ID such as ae.teae.end, or custom:<slug> for a decision outside the catalog.",
+      "type": "string",
+      "pattern": "^([a-z][a-z0-9_]*(\\.[a-z0-9_]+)+|custom:[a-z0-9][a-z0-9_-]*)$"
+    },
+    "unit": {
+      "description": "The owning unit (PLAN.md section 10): a module or a table family.",
+      "type": "string",
+      "pattern": "^(mod|tfl)-[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "value": {
+      "description": "The chosen alternative (rule) with its parameters. Null when there is none: the reader asked, found a conflict, or the decision does not apply.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["rule"],
+          "properties": {
+            "rule": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+          }
+        }
+      ]
+    },
+    "status": {
+      "enum": ["stated", "default", "asked", "conflict", "not_applicable"]
+    },
+    "class": {
+      "description": "Where the information lives (PLAN.md section 4.5).",
+      "enum": ["document_rule", "house_default", "study_input", "gold_quirk", "no_gold"]
+    },
+    "statement": {
+      "description": "The standard form, rendered from the value.",
+      "type": "string",
+      "minLength": 1
+    },
+    "citations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/citation" }
+    },
+    "binds": {
+      "description": "The spec elements this decision sets. Filled by the compiler.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/element_id" },
+      "uniqueItems": true
+    },
+    "identifiable": {
+      "description": "Filled by the machine, never by the agent (PLAN.md section 4.7).",
+      "enum": ["separated", "unseparated"]
+    }
+  },
+  "allOf": [
+    {
+      "description": "Every record has a class, except one in conflict: documents that contradict each other need a person before any class is given (section 4.5).",
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "const": "conflict" } }
+      },
+      "else": { "required": ["class"] }
+    },
+    {
+      "description": "A stated or default decision has a value.",
+      "if": {
+        "required": ["status"],
+        "properties": { "status": { "enum": ["stated", "default"] } }
+      },
+      "then": { "properties": { "value": { "type": "object" } } }
+    },
+    {
+      "description": "A stated or default decision whose information lives in a document (document_rule) or in the house standard (house_default) cites it. A gold_quirk has no source to cite (section 4.8).",
+      "if": {
+        "required": ["status", "class"],
+        "properties": {
+          "status": { "enum": ["stated", "default"] },
+          "class": { "enum": ["document_rule", "house_default"] }
+        }
+      },
+      "then": {
+        "required": ["citations"],
+        "properties": { "citations": { "minItems": 1 } }
+      }
+    }
+  ],
+  "$defs": {
+    "citation": {
+      "type": "object",
+      "required": ["doc", "anchor", "quote"],
+      "additionalProperties": false,
+      "properties": {
+        "doc": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+        "anchor": { "type": "string", "minLength": 1 },
+        "quote": { "type": "string", "minLength": 1 }
+      }
+    },
+    "element_id": {
+      "description": "A stable element ID (PLAN.md section 4.1): a layer prefix, a colon, then printable ASCII without spaces.",
+      "type": "string",
+      "pattern": "^(doc|usdm|odm|sdtm|adam|ars|ard|cell|decision):[!-~]+$"
+    }
+  }
+}

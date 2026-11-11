@@ -1,0 +1,123 @@
+{
+  "schema": "ard",
+  "valid": [
+    {
+      "name": "count in a pre-defined group",
+      "instance": {
+        "id": "ard:An07_01/n/Trt_1",
+        "analysis_id": "An07_01",
+        "operation_id": "n",
+        "group1_groupingId": "AnlsGrouping_01_Trt",
+        "group1_groupId": "Trt_1",
+        "method_id": "count.subjects",
+        "method_options_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_value": 86
+      }
+    },
+    {
+      "name": "percent in a data-driven group, at full precision",
+      "instance": {
+        "analysis_id": "An07_09",
+        "operation_id": "pct",
+        "group1_groupingId": "AnlsGrouping_01_Trt",
+        "group1_groupId": "Trt_1",
+        "group2_groupingId": "AnlsGrouping_06_Soc",
+        "group2_groupId": null,
+        "group2_groupValue": "CARDIAC DISORDERS",
+        "method_id": "percent.subjects",
+        "method_options_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_value": 15.116279069767442
+      }
+    },
+    {
+      "name": "a value that does not exist is null",
+      "instance": {
+        "analysis_id": "An03_02",
+        "operation_id": "sd",
+        "group1_groupingId": "AnlsGrouping_01_Trt",
+        "group1_groupId": "Trt_2",
+        "method_id": "summary.continuous",
+        "method_options_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "raw_value": null
+      }
+    },
+    {
+      "name": "no grouping at all",
+      "instance": {
+        "analysis_id": "An01_01",
+        "operation_id": "n",
+        "method_id": "count.subjects",
+        "method_options_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_value": 254
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "no method options hash",
+      "why": "every row says which method options made it",
+      "instance": {
+        "analysis_id": "An07_01",
+        "operation_id": "n",
+        "method_id": "count.subjects",
+        "raw_value": 86
+      }
+    },
+    {
+      "name": "formatted text as the value",
+      "why": "rounding and formatting happen once, at display",
+      "instance": {
+        "analysis_id": "An07_01",
+        "operation_id": "n",
+        "method_id": "count.subjects",
+        "method_options_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_value": "86 (100%)"
+      }
+    },
+    {
+      "name": "group column without its number",
+      "why": "group columns are group<n>_groupingId, group<n>_groupId, group<n>_groupValue",
+      "instance": {
+        "analysis_id": "An07_01",
+        "operation_id": "n",
+        "group_groupingId": "AnlsGrouping_01_Trt",
+        "method_id": "count.subjects",
+        "method_options_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_value": 86
+      }
+    },
+    {
+      "name": "truncated hash",
+      "why": "the hash is a full SHA-256",
+      "instance": {
+        "analysis_id": "An07_01",
+        "operation_id": "n",
+        "method_id": "count.subjects",
+        "method_options_hash": "44136fa3",
+        "raw_value": 86
+      }
+    },
+    {
+      "name": "id with a space",
+      "why": "element IDs hold no spaces",
+      "instance": {
+        "id": "ard:An07_01/n/CARDIAC DISORDERS",
+        "analysis_id": "An07_01",
+        "operation_id": "n",
+        "method_id": "count.subjects",
+        "method_options_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_value": 86
+      }
+    },
+    {
+      "name": "no value field",
+      "why": "raw_value is present even when it is null",
+      "instance": {
+        "analysis_id": "An07_01",
+        "operation_id": "n",
+        "method_id": "count.subjects",
+        "method_options_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+      }
+    }
+  ]
+}

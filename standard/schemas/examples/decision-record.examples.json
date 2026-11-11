@@ -1,0 +1,216 @@
+{
+  "schema": "decision-record",
+  "valid": [
+    {
+      "name": "stated, with every field (the example of PLAN.md section 4.3)",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": { "rule": "last_dose_plus_days", "days": 30 },
+        "status": "stated",
+        "class": "document_rule",
+        "statement": "An adverse event is treatment-emergent if it starts on or after the first dose date and no later than 30 days after the last dose date.",
+        "citations": [
+          { "doc": "sap", "anchor": "9.2/s3", "quote": "up to 30 days after the last dose" }
+        ],
+        "binds": ["adam:ADAE.TRTEMFL"],
+        "identifiable": "separated"
+      }
+    },
+    {
+      "name": "house default, citing the house standard",
+      "instance": {
+        "id": "bds.baseline.rule",
+        "unit": "mod-bds-visits",
+        "value": { "rule": "last_before_first_dose" },
+        "status": "default",
+        "class": "house_default",
+        "statement": "Baseline is the last non-missing value before the first dose.",
+        "citations": [
+          { "doc": "house", "anchor": "4.1/s1", "quote": "Baseline is the last non-missing value before the first dose." }
+        ]
+      }
+    },
+    {
+      "name": "asked: no default and no statement, so there is no value",
+      "instance": {
+        "id": "ae.related.values",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "asked",
+        "class": "study_input"
+      }
+    },
+    {
+      "name": "custom decision outside the catalog",
+      "instance": {
+        "id": "custom:shift-high-rule",
+        "unit": "tfl-lab-shift",
+        "value": { "rule": "any_visit_high" },
+        "status": "stated",
+        "class": "document_rule",
+        "citations": [{ "doc": "sap", "anchor": "11.5/s2", "quote": "the most extreme value" }]
+      }
+    },
+    {
+      "name": "conflict: the documents contradict each other, so there is no class yet",
+      "instance": {
+        "id": "bds.baseline.rule",
+        "unit": "mod-bds-visits",
+        "value": null,
+        "status": "conflict",
+        "citations": [
+          { "doc": "sap", "anchor": "8.1/s2", "quote": "Baseline is the value collected at Visit 1." },
+          { "doc": "protocol", "anchor": "6.3/s4", "quote": "the last value before the first dose" }
+        ]
+      }
+    },
+    {
+      "name": "gold_quirk: a rule the reference follows and no source supports, so nothing is cited",
+      "instance": {
+        "id": "custom:pvalue-double-rounding",
+        "unit": "tfl-ae-soc-pt",
+        "value": { "rule": "round_to_4_then_3" },
+        "status": "default",
+        "class": "gold_quirk"
+      }
+    },
+    {
+      "name": "not applicable to this design",
+      "instance": {
+        "id": "bds.eot.record",
+        "unit": "mod-bds-visits",
+        "value": null,
+        "status": "not_applicable",
+        "class": "document_rule"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "unknown status",
+      "why": "the status is one of five words",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": { "rule": "no_end" },
+        "status": "guessed",
+        "class": "house_default"
+      }
+    },
+    {
+      "name": "stated without a citation",
+      "why": "a stated decision cites its document",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": { "rule": "no_end" },
+        "status": "stated",
+        "class": "document_rule"
+      }
+    },
+    {
+      "name": "default with an empty citation list",
+      "why": "a default cites the house standard",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": { "rule": "no_end" },
+        "status": "default",
+        "class": "house_default",
+        "citations": []
+      }
+    },
+    {
+      "name": "stated without a value",
+      "why": "a stated decision has a value",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "stated",
+        "class": "document_rule",
+        "citations": [{ "doc": "sap", "anchor": "9.2/s3", "quote": "30 days" }]
+      }
+    },
+    {
+      "name": "value without a rule",
+      "why": "a value names its alternative",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": { "days": 30 },
+        "status": "asked",
+        "class": "study_input"
+      }
+    },
+    {
+      "name": "free-text id",
+      "why": "the vocabulary is closed: a catalog ID or custom:<slug>",
+      "instance": {
+        "id": "AE TEAE END",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "asked",
+        "class": "study_input"
+      }
+    },
+    {
+      "name": "bound element without a layer prefix",
+      "why": "binds holds element IDs",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "asked",
+        "class": "study_input",
+        "binds": ["ADAE.TRTEMFL"]
+      }
+    },
+    {
+      "name": "no class on a record that is not in conflict",
+      "why": "only a conflict may wait for its class",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "asked"
+      }
+    },
+    {
+      "name": "unknown class",
+      "why": "the class is one of five words",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "asked",
+        "class": "convention"
+      }
+    },
+    {
+      "name": "extra field",
+      "why": "a reader may not add fields such as a confidence",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": null,
+        "status": "asked",
+        "class": "study_input",
+        "confidence": 0.9
+      }
+    },
+    {
+      "name": "citation without a quote",
+      "why": "a citation has doc, anchor and quote",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "value": { "rule": "no_end" },
+        "status": "stated",
+        "class": "document_rule",
+        "citations": [{ "doc": "sap", "anchor": "9.2/s3" }]
+      }
+    }
+  ]
+}

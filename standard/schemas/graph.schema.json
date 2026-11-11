@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "specfirst:schemas/0/graph",
+  "title": "Trace graph line",
+  "description": "One line of graph/nodes.jsonl (part node) or graph/edges.jsonl (part edge). Layers and edges are those of PLAN.md sections 4.1 and 4.2. Version 0; a change needs an ADR.",
+  "oneOf": [{ "$ref": "#/$defs/node" }, { "$ref": "#/$defs/edge" }],
+  "$defs": {
+    "element_id": {
+      "description": "A stable element ID: a layer prefix, a colon, then printable ASCII without spaces.",
+      "type": "string",
+      "pattern": "^(doc|usdm|odm|sdtm|adam|ars|ard|cell|decision):[!-~]+$"
+    },
+    "source": {
+      "description": "The file and line the element came from.",
+      "type": "object",
+      "required": ["file", "line"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "layer", "hash", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/element_id" },
+        "layer": { "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "decision"] },
+        "kind": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "hash": {
+          "description": "SHA-256 of the element's canonical content.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source": { "$ref": "#/$defs/source" },
+        "tags": {
+          "description": "For example conformance_only (PLAN.md section 4.6, P3).",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "layer": { "const": "L0" } } }, "then": { "properties": { "id": { "pattern": "^doc:" } } } },
+        { "if": { "properties": { "layer": { "const": "L1" } } }, "then": { "properties": { "id": { "pattern": "^usdm:" } } } },
+        { "if": { "properties": { "layer": { "const": "L2" } } }, "then": { "properties": { "id": { "pattern": "^odm:" } } } },
+        { "if": { "properties": { "layer": { "const": "L3" } } }, "then": { "properties": { "id": { "pattern": "^sdtm:" } } } },
+        { "if": { "properties": { "layer": { "const": "L4" } } }, "then": { "properties": { "id": { "pattern": "^adam:" } } } },
+        { "if": { "properties": { "layer": { "const": "L5" } } }, "then": { "properties": { "id": { "pattern": "^ars:" } } } },
+        { "if": { "properties": { "layer": { "const": "L6" } } }, "then": { "properties": { "id": { "pattern": "^ard:" } } } },
+        { "if": { "properties": { "layer": { "const": "L7" } } }, "then": { "properties": { "id": { "pattern": "^cell:" } } } },
+        { "if": { "properties": { "layer": { "const": "decision" } } }, "then": { "properties": { "id": { "pattern": "^decision:" } } } }
+      ]
+    },
+    "edge": {
+      "type": "object",
+      "required": ["type", "from", "to", "proof"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": ["shows", "computes", "reads", "derives_from", "maps_from", "collects", "decides", "cites"]
+        },
+        "from": { "$ref": "#/$defs/element_id" },
+        "to": { "$ref": "#/$defs/element_id" },
+        "proof": {
+          "description": "executed and static edges are proven by scripts. A judged edge is never presented as proven.",
+          "enum": ["executed", "static", "judged"]
+        },
+        "source": { "$ref": "#/$defs/source" },
+        "origin": {
+          "description": "imported marks an edge taken over from another project, such as Pilot 7's claims.",
+          "enum": ["built", "imported"]
+        },
+        "quote_verified": {
+          "description": "cites only: a script found the quote at the anchor.",
+          "type": "boolean"
+        },
+        "approved_by": {
+          "description": "cites only: the person who approved that the quote supports the decision.",
+          "type": ["string", "null"]
+        }
+      },
+      "allOf": [
+        {
+          "description": "cites is the one judged edge; every other edge is executed or static.",
+          "if": { "properties": { "type": { "const": "cites" } } },
+          "then": { "properties": { "proof": { "const": "judged" } } },
+          "else": {
+            "properties": { "proof": { "enum": ["executed", "static"] } },
+            "not": { "anyOf": [{ "required": ["quote_verified"] }, { "required": ["approved_by"] }] }
+          }
+        },
+        { "if": { "properties": { "type": { "const": "shows" } } }, "then": { "properties": { "from": { "pattern": "^cell:" }, "to": { "pattern": "^ard:" } } } },
+        { "if": { "properties": { "type": { "const": "computes" } } }, "then": { "properties": { "from": { "pattern": "^ard:" }, "to": { "pattern": "^ars:" } } } },
+        { "if": { "properties": { "type": { "const": "reads" } } }, "then": { "properties": { "from": { "pattern": "^ars:" }, "to": { "pattern": "^adam:" } } } },
+        { "if": { "properties": { "type": { "const": "derives_from" } } }, "then": { "properties": { "from": { "pattern": "^adam:" }, "to": { "pattern": "^(adam|sdtm):" } } } },
+        { "if": { "properties": { "type": { "const": "maps_from" } } }, "then": { "properties": { "from": { "pattern": "^sdtm:" }, "to": { "pattern": "^odm:" } } } },
+        { "if": { "properties": { "type": { "const": "collects" } } }, "then": { "properties": { "from": { "pattern": "^odm:" }, "to": { "pattern": "^usdm:" } } } },
+        { "if": { "properties": { "type": { "const": "decides" } } }, "then": { "properties": { "from": { "pattern": "^decision:" }, "to": { "pattern": "^(adam|ars|cell):" } } } },
+        {
+          "description": "A citation ends at a document span. It starts at a decision (section 4.2), or at an ADaM variable or an analysis when it is taken over from a source that cites documents directly: Pilot 7's claims, ARS documentRefs (section 13.3).",
+          "if": { "properties": { "type": { "const": "cites" } } },
+          "then": { "properties": { "from": { "pattern": "^(decision|adam|ars):" }, "to": { "pattern": "^doc:" } } }
+        }
+      ]
+    }
+  }
+}
