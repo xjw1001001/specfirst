@@ -1,0 +1,270 @@
+clean clone gate real-1
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     6e6a2ce1bc54e7fe7b6351ec5b2e6f94720cc002
+clone:      /tmp/specfirst-clean-mdfd8f/specfirst
+environment and cache: /tmp/specfirst-clean-mdfd8f/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-mdfd8f/specfirst
+
+$ git -C /tmp/specfirst-clean-mdfd8f/specfirst checkout --quiet --detach 6e6a2ce1bc54e7fe7b6351ec5b2e6f94720cc002
+
+$ git -C /tmp/specfirst-clean-mdfd8f/specfirst log -1 --format=%H %s
+6e6a2ce1bc54e7fe7b6351ec5b2e6f94720cc002 real-1: fixes from the first pass of the independent review
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-mdfd8f/env/venv-specfirst-3393077720
+R library: /tmp/specfirst-clean-mdfd8f/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-mdfd8f/env/r-lib
+python     3.12.3  (/tmp/specfirst-clean-mdfd8f/env/venv-specfirst-3393077720/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+system lock: 32 packages recorded, 0 differ
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-mdfd8f/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate real-1 --clean
+gate real-1 at commit 6e6a2ce1bc54e7fe7b6351ec5b2e6f94720cc002 (clean)
+
+== [1/11] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-mdfd8f/env/venv-specfirst-3393077720/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+system lock: 32 packages recorded, 0 differ
+doctor: ok
+-- PASS environment (0.3 s)
+
+== [2/11] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-mdfd8f/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (0.7 s)
+
+== [3/11] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/11] unit tests: pytest -m "not evidence" -q
+........................................................................ [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 63%]
+........................................................................ [ 84%]
+....................................................                     [100%]
+340 passed, 13 deselected in 10.15s
+-- PASS unit tests (10.4 s)
+
+== [5/11] kit: specfirst kit assemble cdiscpilot01
+study data in git (E20): 116 maintained files checked, 0 problems
+kit cdiscpilot01: 64 files match their pinned SHA-256 (26 inputs, 38 gold) in /tmp/specfirst-clean-mdfd8f/specfirst/build/kits/cdiscpilot01
+-- PASS kit (0.1 s)
+
+== [6/11] P1 determinism: specfirst check cdiscpilot01 --twice (its first part)
+build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 805 nodes, 3975 edges, 23 files in /tmp/specfirst-clean-mdfd8f/specfirst/build/p1/cdiscpilot01/first)
+build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 805 nodes, 3975 edges, 23 files in /tmp/specfirst-clean-mdfd8f/specfirst/build/p1/cdiscpilot01/second)
+same      98966f855b1f9a06 98966f855b1f9a06 gold/data/adam/adae.parquet
+same      87ea384e00bacdc3 87ea384e00bacdc3 gold/data/adam/adlbc.parquet
+same      d95331eea03d86b3 d95331eea03d86b3 gold/data/adam/adlbh.parquet
+same      182a39372904c356 182a39372904c356 gold/data/adam/adlbhy.parquet
+same      e16dc811e47eacc1 e16dc811e47eacc1 gold/data/adam/adqsadas.parquet
+same      d28be025f2926112 d28be025f2926112 gold/data/adam/adqscibc.parquet
+same      7c409eb6df376433 7c409eb6df376433 gold/data/adam/adqsnpix.parquet
+same      cc7e238ce918a8a7 cc7e238ce918a8a7 gold/data/adam/adsl.parquet
+same      9fc9404e60736ea5 9fc9404e60736ea5 gold/data/adam/adtte.parquet
+same      270cada0a4a60291 270cada0a4a60291 gold/data/adam/advs.parquet
+same      356127185426e1e0 356127185426e1e0 gold/graph/coverage.json
+same      63a13aa8ca5d2306 63a13aa8ca5d2306 gold/graph/edges.jsonl
+same      45af1a74e0a35c89 45af1a74e0a35c89 gold/graph/nodes.jsonl
+same      c219f3b1fce3ce3b c219f3b1fce3ce3b gold/resolved/adae.json
+same      0801da1da1f9b09e 0801da1da1f9b09e gold/resolved/adlbc.json
+same      c08b51b5d9edaf0a c08b51b5d9edaf0a gold/resolved/adlbh.json
+same      149e79b32a48012c 149e79b32a48012c gold/resolved/adlbhy.json
+same      c984b124c68bef94 c984b124c68bef94 gold/resolved/adqsadas.json
+same      ddcd7b62b6020aa6 ddcd7b62b6020aa6 gold/resolved/adqscibc.json
+same      5e29d4624ac55f52 5e29d4624ac55f52 gold/resolved/adqsnpix.json
+same      5b4ccf4019ca253e 5b4ccf4019ca253e gold/resolved/adsl.json
+same      2faaa1493e74c8c1 2faaa1493e74c8c1 gold/resolved/adtte.json
+same      b3c5b4f08f26ae5a b3c5b4f08f26ae5a gold/resolved/advs.json
+P1 determinism: 23 of 23 files have the same SHA-256 in both builds
+-- PASS P1 determinism (30.9 s)
+
+== [7/11] P2 reproduction: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its first part)
+ADSL      rows=   254 cols= 48 cells=   12192 mismatched=     0 storage_type_diffs=28
+ADAE      rows=  1191 cols= 55 cells=   65505 mismatched=     0 storage_type_diffs=38
+ADLBC     rows= 74264 cols= 46 cells= 3416144 mismatched=     0 storage_type_diffs=22
+ADLBH     rows= 49932 cols= 46 cells= 2296872 mismatched=     0 storage_type_diffs=22
+ADLBHY    rows=  9954 cols= 43 cells=  428022 mismatched=     0 storage_type_diffs=21
+ADQSADAS  rows= 12463 cols= 40 cells=  498520 mismatched=     0 storage_type_diffs=20
+ADQSCIBC  rows=   730 cols= 36 cells=   26280 mismatched=     0 storage_type_diffs=19
+ADQSNPIX  rows= 31140 cols= 41 cells= 1276740 mismatched=     0 storage_type_diffs=21
+ADTTE     rows=   254 cols= 26 cells=    6604 mismatched=     0 storage_type_diffs=14
+ADVS      rows= 32139 cols= 34 cells= 1092726 mismatched=     0 storage_type_diffs=16
+TOTAL cells=9119605 mismatched=0
+numbers equal within the tolerance but not exactly: 1869 cells, largest difference 4.5e-13
+storage type only, same values (reference -> built): large_string -> string in 221 columns
+P2 reproduction: 10 of 10 datasets equal their reference (numeric tolerance 1e-10)
+-- PASS P2 reproduction (0.5 s)
+
+== [8/11] trace: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its second part)
+dataset   columns to SDTM by rows literal  gaps
+ADSL           48      48       0       0     0
+ADAE           55      55       0       0     0
+ADLBC          46      46       1       0     0
+ADLBH          46      46       1       0     0
+ADLBHY         43      43       3       0     0
+ADQSADAS       40      40       1       0     0
+ADQSCIBC       36      36       5       0     0
+ADQSNPIX       41      41       3       0     0
+ADTTE          26      24       0       2     0
+ADVS           34      34       0       0     0
+TOTAL         415     413      14       2     0
+to SDTM: reaches SDTM columns through derives_from. by rows: those of them whose own rule reads no column
+and that reach SDTM only through the filter of a row template.
+nodes: L0 279, L3 111, L4 415
+edges: cites 706, derives_from 3269
+cites edges: 706 imported, 0 with a verified quote, 0 approved by a person
+literal columns sit on rows of: adam:ADSL (2)
+claims ADAE       21 claims,  57 citations of kit documents ->  49 cites edges (one per column and span); 28 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBC      22 claims,  98 citations of kit documents ->  67 cites edges (one per column and span); 31 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBH      23 claims, 120 citations of kit documents ->  78 cites edges (one per column and span); 29 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBHY     23 claims, 102 citations of kit documents ->  74 cites edges (one per column and span); 49 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSADAS   22 claims,  92 citations of kit documents ->  83 cites edges (one per column and span); 43 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSCIBC   19 claims,  87 citations of kit documents ->  68 cites edges (one per column and span); 53 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSNPIX   24 claims,  89 citations of kit documents ->  74 cites edges (one per column and span); 27 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADSL       34 claims,  87 citations of kit documents ->  70 cites edges (one per column and span); 38 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADTTE      22 claims, 101 citations of kit documents ->  85 cites edges (one per column and span); 30 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADVS       12 claims,  80 citations of kit documents ->  58 cites edges (one per column and span); 20 citations of programs or other files, not imported; 0 variables that are not output columns
+trace: complete
+-- PASS trace (0.9 s)
+
+== [9/11] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -m evidence -s -q
+
+--- A1-resolve
+ADSL      composed specification equals Pilot 7's snapshot: True
+ADAE      composed specification equals Pilot 7's snapshot: True
+ADLBC     composed specification equals Pilot 7's snapshot: True
+ADLBH     composed specification equals Pilot 7's snapshot: True
+ADLBHY    composed specification equals Pilot 7's snapshot: True
+ADQSADAS  composed specification equals Pilot 7's snapshot: True
+ADQSCIBC  composed specification equals Pilot 7's snapshot: True
+ADQSNPIX  composed specification equals Pilot 7's snapshot: True
+ADTTE     composed specification equals Pilot 7's snapshot: True
+ADVS      composed specification equals Pilot 7's snapshot: True
+Pilot 7 pins yamaa at git revision c039509082b545fe913c00d1686426c3d245778c (cdiscpilot01/program/adam/python/requirements.txt)
+snapshots were made with yamaa 0.7.0 built from git revision c039509082b545fe913c00d1686426c3d245778c
+installed: yamaa 0.7.0 (wheel)
+.
+--- A2-runner
+ADSL         254 rows x  48 columns: runner equals yamaa's project run: True
+ADAE        1191 rows x  55 columns: runner equals yamaa's project run: True
+ADLBC      74264 rows x  46 columns: runner equals yamaa's project run: True
+ADLBH      49932 rows x  46 columns: runner equals yamaa's project run: True
+ADLBHY      9954 rows x  43 columns: runner equals yamaa's project run: True
+ADQSADAS   12463 rows x  40 columns: runner equals yamaa's project run: True
+ADQSCIBC     730 rows x  36 columns: runner equals yamaa's project run: True
+ADQSNPIX   31140 rows x  41 columns: runner equals yamaa's project run: True
+ADTTE        254 rows x  26 columns: runner equals yamaa's project run: True
+ADVS       32139 rows x  34 columns: runner equals yamaa's project run: True
+.
+--- A3-lineage
+ADSL       305 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADAE       167 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBC      182 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBH      184 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBHY     347 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSADAS   119 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSCIBC   102 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSNPIX   652 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADTTE      110 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADVS       152 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+.
+--- A4-unread
+SDTM columns with a node in the graph: 111; without one: 202, all of them rolled by one row (131 hold more than one value)
+ADaM datasets that changed: none
+.
+--- A5-adapted
+recorded as adapted: src/specfirst/machine/lineage.py shares 73 lines with cached sources
+recorded as adapted: src/specfirst/machine/runner.py shares 3 lines with cached sources
+compared 45 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 1 (allowed: 2)
+.
+5 passed in 54.56s
+-- PASS pilot tests (54.8 s)
+
+== [10/11] cache untouched: specfirst fetch --verify
+cache: /tmp/specfirst-clean-mdfd8f/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS cache untouched (0.1 s)
+
+== [11/11] ASCII: python -m specfirst.asciicheck
+ASCII check: 116 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.3 s
+PASS  pins                 0.7 s
+PASS  lint                 0.0 s
+PASS  unit tests          10.4 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      30.9 s
+PASS  P2 reproduction      0.5 s
+PASS  trace                0.9 s
+PASS  pilot tests         54.8 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-1: PASS
+
+clean clone gate real-1: PASS (clone kept in /tmp/specfirst-clean-mdfd8f/specfirst until /tmp is cleared)
