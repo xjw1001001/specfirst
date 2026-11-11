@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "specfirst:schemas/0/ard",
+  "title": "ARD row",
+  "description": "One computed value: one row per analysis, operation and group combination (PLAN.md section 7.2). Group columns use siera's stamping names. Version 0; a change needs an ADR.",
+  "type": "object",
+  "required": ["analysis_id", "operation_id", "method_id", "method_options_hash", "raw_value"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "The stable ID of the row, for example ard:An07_01/n/Trt_1.",
+      "type": "string",
+      "pattern": "^ard:[!-~]+$"
+    },
+    "analysis_id": { "type": "string", "minLength": 1 },
+    "operation_id": { "type": "string", "minLength": 1 },
+    "method_id": {
+      "description": "The method registry entry that computed the value.",
+      "type": "string",
+      "minLength": 1
+    },
+    "method_options_hash": {
+      "description": "SHA-256 of the canonical method options.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "raw_value": {
+      "description": "The number at full precision; rounding happens once, at display. Null when the value does not exist (for example the standard deviation of one record).",
+      "type": ["number", "null"]
+    }
+  },
+  "patternProperties": {
+    "^group[1-9][0-9]*_groupingId$": { "type": "string", "minLength": 1 },
+    "^group[1-9][0-9]*_groupId$": { "type": ["string", "null"] },
+    "^group[1-9][0-9]*_groupValue$": { "type": ["string", "null"] }
+  }
+}

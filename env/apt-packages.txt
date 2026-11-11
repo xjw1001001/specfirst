@@ -1,0 +1,15 @@
+# System packages on Ubuntu 24.04, installed by env/system.sh.
+build-essential
+ca-certificates
+cmake
+curl
+git
+libcurl4-openssl-dev
+libssl-dev
+libxml2-dev
+make
+poppler-utils
+python3
+python3-venv
+r-base
+r-base-dev

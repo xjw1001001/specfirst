@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(/reference/**)",
+      "Edit(/reference/**)",
+      "Read(//d/trial_work/reference/**)",
+      "Edit(//d/trial_work/reference/**)",
+      "Read(//mnt/d/trial_work/reference/**)",
+      "Edit(//mnt/d/trial_work/reference/**)",
+      "Bash(*trial_work/reference*)",
+      "Bash(*trial_work\\reference*)",
+      "Bash(*trial_work\\\\reference*)",
+      "PowerShell(*trial_work/reference*)",
+      "PowerShell(*trial_work\\reference*)",
+      "PowerShell(*trial_work\\\\reference*)"
+    ]
+  }
+}

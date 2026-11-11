@@ -1,0 +1,137 @@
+{
+  "schema": "graph",
+  "part": "edge",
+  "valid": [
+    {
+      "name": "shows: a cell to an ARD row, recorded by the grid builder",
+      "instance": {
+        "type": "shows",
+        "from": "cell:Out14-3-1-1/r4/c2",
+        "to": "ard:An07_01/n/Trt_1",
+        "proof": "executed"
+      }
+    },
+    {
+      "name": "computes: an ARD row to its analysis",
+      "instance": { "type": "computes", "from": "ard:An07_01/n/Trt_1", "to": "ars:An07_01", "proof": "executed" }
+    },
+    {
+      "name": "reads: an analysis to an ADaM variable",
+      "instance": { "type": "reads", "from": "ars:An07_01", "to": "adam:ADAE.TRTEMFL", "proof": "static" }
+    },
+    {
+      "name": "derives_from: an ADaM variable to an SDTM variable, with the spec line",
+      "instance": {
+        "type": "derives_from",
+        "from": "adam:ADAE.TRTEMFL",
+        "to": "sdtm:AE.AESTDTC",
+        "proof": "static",
+        "source": { "file": "gold/spec/adae.yaml", "line": 214 }
+      }
+    },
+    {
+      "name": "derives_from: an ADaM variable to another ADaM variable",
+      "instance": { "type": "derives_from", "from": "adam:ADAE.TRTEMFL", "to": "adam:ADSL.TRTSDT", "proof": "static" }
+    },
+    {
+      "name": "decides: a decision to the element it sets",
+      "instance": {
+        "type": "decides",
+        "from": "decision:ae.teae.end",
+        "to": "adam:ADAE.TRTEMFL",
+        "proof": "static",
+        "origin": "built"
+      }
+    },
+    {
+      "name": "cites: judged, with the quote found by script and no approval yet",
+      "instance": {
+        "type": "cites",
+        "from": "decision:ae.teae.end",
+        "to": "doc:sap#9.2/s3",
+        "proof": "judged",
+        "origin": "imported",
+        "quote_verified": true,
+        "approved_by": null
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "a citation presented as proven",
+      "why": "cites is judged; never present a judged edge as proven",
+      "instance": {
+        "type": "cites",
+        "from": "decision:ae.teae.end",
+        "to": "doc:sap#9.2/s3",
+        "proof": "static"
+      }
+    },
+    {
+      "name": "an execution edge marked as judged",
+      "why": "only cites is judged",
+      "instance": {
+        "type": "shows",
+        "from": "cell:Out14-3-1-1/r4/c2",
+        "to": "ard:An07_01/n/Trt_1",
+        "proof": "judged"
+      }
+    },
+    {
+      "name": "derivation in the wrong direction",
+      "why": "derives_from goes from an ADaM variable to ADaM or SDTM",
+      "instance": {
+        "type": "derives_from",
+        "from": "sdtm:AE.AESTDTC",
+        "to": "adam:ADAE.TRTEMFL",
+        "proof": "static"
+      }
+    },
+    {
+      "name": "unknown edge type",
+      "why": "there are eight edge types",
+      "instance": {
+        "type": "uses",
+        "from": "ars:An07_01",
+        "to": "adam:ADAE.TRTEMFL",
+        "proof": "static"
+      }
+    },
+    {
+      "name": "approval on an edge that is not a citation",
+      "why": "quote_verified and approved_by belong to cites",
+      "instance": {
+        "type": "reads",
+        "from": "ars:An07_01",
+        "to": "adam:ADAE.TRTEMFL",
+        "proof": "static",
+        "approved_by": "reviewer"
+      }
+    },
+    {
+      "name": "no proof",
+      "why": "every edge says how it is proven",
+      "instance": { "type": "reads", "from": "ars:An07_01", "to": "adam:ADAE.TRTEMFL" }
+    },
+    {
+      "name": "a cell that shows an ADaM variable directly",
+      "why": "shows goes from a cell to ARD rows",
+      "instance": {
+        "type": "shows",
+        "from": "cell:Out14-3-1-1/r4/c2",
+        "to": "adam:ADAE.TRTEMFL",
+        "proof": "executed"
+      }
+    },
+    {
+      "name": "a citation of something that is not a document",
+      "why": "cites goes from a decision to a document span",
+      "instance": {
+        "type": "cites",
+        "from": "decision:ae.teae.end",
+        "to": "adam:ADAE.TRTEMFL",
+        "proof": "judged"
+      }
+    }
+  ]
+}

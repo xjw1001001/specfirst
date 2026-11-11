@@ -1,0 +1,4 @@
+# The dated CRAN snapshot the R packages come from (Posit Public Package
+# Manager, Linux binaries for Ubuntu 24.04 "noble"). Changing the date means
+# running env/lock.sh again.
+https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
