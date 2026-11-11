@@ -318,6 +318,66 @@ def family_templates(house: House, unit: str) -> tuple[dict, dict]:
     return ars, layout
 
 
+def other_values(catalog: Catalog, entry_id: str, value: dict) -> list[dict]:
+    """Every other value of an entry that its alternatives and their examples give."""
+    values = []
+    for alternative in catalog.entry(entry_id).alternatives:
+        rows = max([len(slot.examples) for slot in alternative.slots] or [1])
+        for row in range(rows):
+            other = {"rule": alternative.id}
+            for slot in alternative.slots:
+                other[slot.name] = slot.examples[row % len(slot.examples)]
+            if other != value and other not in values:
+                values.append(other)
+    return values
+
+
+def bind_tables(catalog: Catalog, house: House, records: list[dict], compiled: Compiled,
+                house_ref: str, **options: str) -> None:
+    """Fill the binds of a compile for ARS elements and layout parts (the `decides` edge).
+
+    A decision binds an element when changing the decision to another value
+    of its entry (another alternative, or another example of a slot) changes
+    the element or removes it, all other decisions kept. This is the compile
+    check of PLAN.md section 4.2: the edge is proven by mutation, not read off
+    a template. It costs one compile per other value.
+
+    An ADaM bind is the column a fragment writes. It may be a working column
+    (`adam:ADAE._TEEND`); the dataset variables it reaches follow from the
+    `derives_from` edges of the resolved spec.
+    """
+    base_ars = {name: {e["id"]: e for e in (compiled.ars or {}).get(name, [])}
+                for name in ARS_LISTS}
+    for record in records:
+        key = (record.get("id"), record.get("unit"))
+        if record.get("value") is None or key[0] not in catalog.entries:
+            continue
+        ars: set[str] = set()
+        layout: set[str] = set()
+        for value in other_values(catalog, key[0], record["value"]):
+            changed = [{**r, "value": value} if (r.get("id"), r.get("unit")) == key else r
+                       for r in records]
+            try:
+                other = compile_decisions(catalog, house, changed, house_ref, **options)
+            except CompileError:
+                continue  # this value does not fit the other decisions of the study
+            for name in ARS_LISTS:
+                theirs = {e["id"]: e for e in (other.ars or {}).get(name, [])}
+                ars |= {f"ars:{element_id}" for element_id, element in base_ars[name].items()
+                        if theirs.get(element_id) != element}
+            for unit, parts in compiled.layouts.items():
+                layout |= {f"layout:{unit}/{part}" for part, body in parts.items()
+                           if other.layouts.get(unit, {}).get(part, _DROPPED) != body}
+        adam = [bind for bind in compiled.binds.get(key, []) if bind.startswith("adam:")]
+        if adam or ars:
+            compiled.binds[key] = sorted(set(adam) | ars)
+        if layout:
+            compiled.layout_binds[key] = sorted(layout)
+
+
+_DROPPED = object()
+
+
 def _with_reads(node: object, scope: dict, where: str, problems: list[str]) -> tuple[object, set]:
     reads: set[str] = set()
     try:
@@ -329,9 +389,12 @@ def _with_reads(node: object, scope: dict, where: str, problems: list[str]) -> t
 
 def _compile_tables(catalog: Catalog, house: House, fragments: dict,
                     result: Compiled) -> list[str]:
-    shared, by_family, setter, problems = parameters_of(catalog, fragments)
+    shared, by_family, _, problems = parameters_of(catalog, fragments)
     families = [unit for unit, known in catalog.units.items()
                 if known.kind == "table_family" and unit in (house.ars.get("families") or {})]
+    for unit in families:
+        if "included" not in by_family.get(unit, {}):
+            problems.append(f"{unit}: no value for tfl.output.include")
     included = [unit for unit in families if by_family.get(unit, {}).get("included") is True]
     if not included or problems:
         return problems
@@ -345,18 +408,8 @@ def _compile_tables(catalog: Catalog, house: House, fragments: dict,
     for unit in included:
         scope = {**shared, **by_family.get(unit, {})}
         ars_template, layout_template = family_templates(house, unit)
-        derived: dict[str, set[str]] = {}  # a defined name -> the parameters behind it
-
-        def parameters(reads: set[str], derived: dict = derived) -> list[str]:
-            return sorted(set().union(*[derived.get(read, {read}) for read in reads]))
-
-        def setter_of(name: str, unit: str = unit) -> tuple[str, str] | None:
-            return setter.get((unit, name)) or setter.get(("", name))
-
         for name, expression in (ars_template.get("define") or {}).items():
-            value, reads = _with_reads(expression, scope, f"{unit}: define {name}", problems)
-            scope[name] = value
-            derived[name] = set(parameters(reads))
+            scope[name], _ = _with_reads(expression, scope, f"{unit}: define {name}", problems)
         family_analyses: list[dict] = []
         for name in ARS_LISTS:
             for index, member in enumerate(ars_template.get(name) or []):
@@ -375,10 +428,6 @@ def _compile_tables(catalog: Catalog, house: House, fragments: dict,
                         )
                     if name == "analyses":
                         family_analyses.append(element)
-                    for parameter in parameters(reads):
-                        key = setter_of(parameter)
-                        if key:
-                            result.binds.setdefault(key, []).append(f"ars:{element.get('id')}")
         item, _ = _with_reads(ars_template.get("listItem"), scope, f"{unit}: listItem", problems)
         if isinstance(item, dict):
             item["order"] = len(items) + 1
@@ -390,25 +439,13 @@ def _compile_tables(catalog: Catalog, house: House, fragments: dict,
             items.append(item)
         layout: dict = {}
         for part, template in layout_template.items():
-            value, reads = _with_reads(template, scope, f"{unit}: layout {part}", problems)
-            layout[part] = value
-            for parameter in parameters(reads):
-                key = setter_of(parameter)
-                if key:
-                    result.layout_binds.setdefault(key, []).append(f"layout:{unit}/{part}")
+            layout[part], _ = _with_reads(template, scope, f"{unit}: layout {part}", problems)
         result.layouts[unit] = layout
         result.families.append(unit)
         result.files[f"layout/{unit}.json"] = canonical_json(layout)
     if problems:
         return problems
     prune_ars(doc)
-    live = {f"ars:{element['id']}" for name in ARS_LISTS for element in doc[name]}
-    for key in result.binds:
-        result.binds[key] = sorted(
-            {bind for bind in result.binds[key] if not bind.startswith("ars:") or bind in live}
-        )
-    for key in result.layout_binds:
-        result.layout_binds[key] = sorted(set(result.layout_binds[key]))
     result.ars = doc
     result.files["ars/reporting-event.json"] = canonical_json(doc)
     return problems

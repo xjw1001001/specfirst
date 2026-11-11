@@ -7,7 +7,8 @@ differ only for a subject who was dosed without being randomized.
 
 - SAP: section on analysis populations or analysis sets.
 - Protocol: statistical section, definition of the safety population.
-- Almost always stated; the wording is usually close to the ICH E9 definition.
+- Almost always stated; the wording is usually close to ICH E9 section 6.3 (subjects who
+  received at least one dose).
 
 ## Words to look for
 

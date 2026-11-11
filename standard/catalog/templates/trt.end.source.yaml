@@ -1,4 +1,7 @@
 entry: trt.end.source
+# As for the start date: _TRTEDTC is the latest text among complete dates,
+# _TRTEDTCM among dates with at least a known month; trt.date.imputation
+# takes one of them. Only exposure records with a dose take part.
 alternatives:
   last_ex_end_date:
     adam:
@@ -6,34 +9,71 @@ alternatives:
         columns:
           - name: _TRTEDTC
             type: str
-            label: "Working value: treatment end date text"
+            label: "Working value: latest complete exposure date text"
             derivation:
-              aggregate: "MAX(EX.EXENDTC)"
+              aggregate:
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%-%'"
+                expr: "MAX(EX.EXENDTC)"
+          - name: _TRTEDTCM
+            type: str
+            label: "Working value: latest exposure date text with a known month"
+            derivation:
+              aggregate:
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%'"
+                expr: "MAX(EX.EXENDTC)"
   last_ex_start_date:
     adam:
       ADSL:
         columns:
           - name: _TRTEDTC
             type: str
-            label: "Working value: treatment end date text"
+            label: "Working value: latest complete exposure date text"
             derivation:
-              aggregate: "MAX(EX.EXSTDTC)"
+              aggregate:
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%-%'"
+                expr: "MAX(EX.EXSTDTC)"
+          - name: _TRTEDTCM
+            type: str
+            label: "Working value: latest exposure date text with a known month"
+            derivation:
+              aggregate:
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%'"
+                expr: "MAX(EX.EXSTDTC)"
   ds_date_when_ex_missing:
     adam:
       ADSL:
         columns:
           - name: _EXENDMAX
             type: str
-            label: "Working value: latest exposure end date text"
+            label: "Working value: latest complete exposure date text"
             derivation:
-              aggregate: "MAX(EX.EXENDTC)"
+              aggregate:
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%-%'"
+                expr: "MAX(EX.EXENDTC)"
+          - name: _EXENDMAXM
+            type: str
+            label: "Working value: latest exposure date text with a known month"
+            derivation:
+              aggregate:
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '%-%'"
+                expr: "MAX(EX.EXENDTC)"
           - name: _TRTEDTC
             type: str
             label: "Working value: treatment end date text"
             derivation:
               case:
-                - when: "_EXENDMAX IS NOT NULL AND _EXENDMAX <> ''"
+                - when: "_EXENDMAX IS NOT NULL"
                   then: _EXENDMAX
-                - when: "_TRTSDTC IS NOT NULL AND _TRTSDTC <> ''"
+                - when: "_TRTSDTCM IS NOT NULL"
+                  then: _EOSDTC
+                - otherwise: null
+          - name: _TRTEDTCM
+            type: str
+            label: "Working value: treatment end date text"
+            derivation:
+              case:
+                - when: "_EXENDMAXM IS NOT NULL"
+                  then: _EXENDMAXM
+                - when: "_TRTSDTCM IS NOT NULL"
                   then: _EOSDTC
                 - otherwise: null

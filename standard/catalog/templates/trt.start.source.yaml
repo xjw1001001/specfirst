@@ -1,4 +1,8 @@
 entry: trt.start.source
+# Each alternative gives two candidates: the earliest date text among complete
+# dates (_TRTSDTC), and among dates with at least a known month (_TRTSDTCM).
+# The decision trt.date.imputation takes one of them. Among the texts of one
+# candidate set, the order of the texts is the order of the completed dates.
 alternatives:
   first_ex_with_dose:
     adam:
@@ -6,10 +10,17 @@ alternatives:
         columns:
           - name: _TRTSDTC
             type: str
-            label: "Working value: treatment start date text"
+            label: "Working value: earliest complete exposure start date text"
             derivation:
               aggregate:
-                filter: "EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')"
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%-%'"
+                expr: "MIN(EX.EXSTDTC)"
+          - name: _TRTSDTCM
+            type: str
+            label: "Working value: earliest exposure start date text with a known month"
+            derivation:
+              aggregate:
+                filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXSTDTC LIKE '%-%'"
                 expr: "MIN(EX.EXSTDTC)"
   first_ex_record:
     adam:
@@ -17,14 +28,35 @@ alternatives:
         columns:
           - name: _TRTSDTC
             type: str
-            label: "Working value: treatment start date text"
+            label: "Working value: earliest complete exposure start date text"
             derivation:
-              aggregate: "MIN(EX.EXSTDTC)"
+              aggregate:
+                filter: "EX.EXSTDTC LIKE '%-%-%'"
+                expr: "MIN(EX.EXSTDTC)"
+          - name: _TRTSDTCM
+            type: str
+            label: "Working value: earliest exposure start date text with a known month"
+            derivation:
+              aggregate:
+                filter: "EX.EXSTDTC LIKE '%-%'"
+                expr: "MIN(EX.EXSTDTC)"
   dm_rfxstdtc:
     adam:
       ADSL:
         columns:
           - name: _TRTSDTC
             type: str
-            label: "Working value: treatment start date text"
-            derivation: DM.RFXSTDTC
+            label: "Working value: complete first exposure date text"
+            derivation:
+              case:
+                - when: "DM.RFXSTDTC LIKE '%-%-%'"
+                  then: DM.RFXSTDTC
+                - otherwise: null
+          - name: _TRTSDTCM
+            type: str
+            label: "Working value: first exposure date text with a known month"
+            derivation:
+              case:
+                - when: "DM.RFXSTDTC LIKE '%-%'"
+                  then: DM.RFXSTDTC
+                - otherwise: null

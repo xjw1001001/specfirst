@@ -42,6 +42,8 @@ Applies when: `design.has_exposure`. Default: `first_ex_with_dose`.
 | `first_ex_record` | The treatment start date is the earliest start date of any exposure record. |  |
 | `dm_rfxstdtc` | The treatment start date is the date of first exposure in the demographics domain (DM.RFXSTDTC). |  |
 
+For every alternative: Which partial dates take part is decision trt.date.imputation.
+
 - Sources: CDISC ADaM Implementation Guide (ADSL treatment timing variables, TRTSDT); admiral (pharmaverse), function reference and source (ADSL vignette, TRTSDTM from EX records with EXDOSE > 0 or a placebo record); CDISC SDTM Implementation Guide (DM domain, RFXSTDTC); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (TRTSDT of the pilot program template).
 - Probes: zero_dose_record_before_first_dose, rfxstdtc_differs_from_exposure.
 
@@ -51,11 +53,13 @@ Applies when: `design.has_exposure`. Default: `last_ex_end_date`.
 
 | Alternative | Statement | Meaning |
 | --- | --- | --- |
-| `last_ex_end_date` | The treatment end date is the latest end date of an exposure record. |  |
-| `last_ex_start_date` | The treatment end date is the latest start date of an exposure record. |  |
-| `ds_date_when_ex_missing` | The treatment end date is the latest end date of an exposure record, or the end-of-study disposition date when no exposure record has an end date. | The disposition date is the start date of the end-of-study record (decision disp.status.record). |
+| `last_ex_end_date` | The treatment end date is the latest end date of an exposure record with a dose. |  |
+| `last_ex_start_date` | The treatment end date is the latest start date of an exposure record with a dose. |  |
+| `ds_date_when_ex_missing` | The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date. | The disposition date is the start date of the end-of-study record (decision disp.status.record). It is taken only for a subject with a treatment start. |
 
-- Sources: CDISC ADaM Implementation Guide (ADSL treatment timing variables, TRTEDT); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (TRTEDT of the pilot ADSL: disposition date when the date of final dose is missing).
+For every alternative: An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO. Which partial dates take part is decision trt.date.imputation.
+
+- Sources: CDISC ADaM Implementation Guide (ADSL treatment timing variables, TRTEDT); admiral (pharmaverse), function reference and source (ADSL vignette, TRTEDTM from the last EX record with EXDOSE > 0 or a placebo record); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (TRTEDT of the pilot ADSL: disposition date when the date of final dose is missing).
 - Probes: last_exposure_record_spans_days, no_exposure_end_date.
 
 ### `trt.date.imputation`: How are partial exposure dates completed?
@@ -64,11 +68,11 @@ Applies when: `design.has_exposure`. Default: `not_completed`.
 
 | Alternative | Statement | Meaning |
 | --- | --- | --- |
-| `not_completed` | A partial exposure date is not completed and gives no treatment date. |  |
-| `first_day_of_month` | A partial exposure date with a known month is completed with the first day of that month. | A date with an unknown month is not completed. |
+| `not_completed` | A partial exposure date is not completed and is left out of the treatment dates. | The treatment start and end dates are taken from the exposure dates that have a year, a month and a day. |
+| `first_day_of_month` | A partial exposure date with a known month is completed with the first day of that month. | A date with an unknown month is left out of the treatment dates. |
 
 - Sources: admiral (pharmaverse), function reference and source (derive_vars_dt(), highest_imputation (default n: no imputation) and date_imputation (first)); yamaa, language documentation, rules and benchmarks (the impute verb: a source with no day gives missing unless a day is supplied).
-- Probes: partial_exposure_date.
+- Probes: partial_exposure_date, partial_exposure_date_not_earliest.
 
 ### `date.studyday.origin`: Which date is study day 1?
 
@@ -98,7 +102,7 @@ Applies when: `design.randomized`. Default: `all_randomized`.
 For every alternative: A subject is randomized when the planned arm code (DM.ARMCD) is present and is neither SCRNFAIL nor NOTASSGN.
 
 - Slot `test` of `randomized_with_postbaseline`: type `name`.
-- Sources: ICH E9: Statistical Principles for Clinical Trials (section 5.2.1, full analysis set); CDISC ADaM Implementation Guide (ADSL population flags, ITTFL and RANDFL); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (ITTFL of the pilot ADSL).
+- Sources: ICH E9: Statistical Principles for Clinical Trials (section 5.2.1, full analysis set: all randomised subjects; lack of any data post randomisation as a possible exclusion); CDISC ADaM Implementation Guide (ADSL population flags, ITTFL and RANDFL); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (ITTFL of the pilot ADSL).
 - Probes: randomized_without_postbaseline_value.
 
 ### `pop.safety.rule`: Who is in the safety set?
@@ -110,9 +114,9 @@ Applies when: `design.has_exposure`. Default: `at_least_one_dose`.
 | `at_least_one_dose` | The safety set holds every subject who received at least one dose of study treatment. |  |
 | `randomized_and_dosed` | The safety set holds every randomized subject who received at least one dose of study treatment. |  |
 
-For every alternative: A subject received a dose when the treatment start date is present. A subject is randomized as decision pop.randomized.rule defines it.
+For every alternative: A subject received a dose when the treatment start date is present. A subject is randomized when the planned arm code (DM.ARMCD) is present and is neither SCRNFAIL nor NOTASSGN; the rule of the randomized set (pop.randomized.rule) does not enter.
 
-- Sources: ICH E9: Statistical Principles for Clinical Trials (section 5.2.3 and glossary, safety analysis set: subjects who received at least one dose); CDISC ADaM Implementation Guide (ADSL population flags, SAFFL); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (SAFFL of the pilot ADSL: randomized and dosed).
+- Sources: ICH E9: Statistical Principles for Clinical Trials (section 6.3: for safety and tolerability, the subjects who received at least one dose); CDISC ADaM Implementation Guide (ADSL population flags, SAFFL); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (SAFFL of the pilot ADSL: randomized and dosed).
 - Probes: dosed_but_not_randomized, randomized_never_dosed.
 
 ### `pop.safety.grouping`: Which treatment groups the safety analyses?
@@ -126,7 +130,7 @@ Applies when: `design.has_exposure and design.multiple_arms`. Default: `actual`.
 
 For every alternative: The decision holds for every output whose analysis set is the safety set. Outputs on another analysis set group subjects by planned treatment.
 
-- Sources: ICH E9: Statistical Principles for Clinical Trials (section 5.2.3, safety evaluation by treatment received); CDISC Analysis Results Standard v1, model and examples (the treatment grouping of the safety displays); FDA Standard Safety Tables and Figures: Integrated Guide (general conventions: safety tables by actual treatment arm).
+- Sources: CDISC Analysis Results Standard v1, model and examples (the treatment grouping of the safety displays); FDA Standard Safety Tables and Figures: Integrated Guide (general conventions: safety tables by actual treatment arm).
 - Probes: actual_arm_differs_from_planned.
 
 ### `pop.efficacy.rule`: Who is efficacy-evaluable?
@@ -140,7 +144,7 @@ Applies when: `design.has_efficacy_set`. Default: none: the documents state it, 
 
 - Slot `test` of `baseline_and_postbaseline`: type `name`.
 - Slot `visit` of `attended_visit`: type `text`.
-- Sources: ICH E9: Statistical Principles for Clinical Trials (section 5.2.2, per protocol set and criteria such as availability of measurements); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (EFFFL of the pilot ADSL: post-baseline records required); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (COMP24FL of the pilot ADSL: a population defined by an attended visit).
+- Sources: ICH E9: Statistical Principles for Clinical Trials (section 5.2.2, per protocol set and criteria such as availability of measurements); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (EFFFL of the pilot ADSL: post-baseline records of the efficacy measures are required (it asks for no baseline value)); R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (COMP24FL of the pilot ADSL: a population defined by an attended visit).
 - Probes: postbaseline_value_but_visit_missed, baseline_value_of_other_test_only.
 
 ### `disp.status.record`: Which record gives the end-of-study status?
@@ -184,7 +188,7 @@ Applies when: `design.always`. Default: `not_pooled`.
 | `pooled_below_count` | A race category with fewer than {count} subjects is pooled into the category OTHER. | The subjects are counted over all subjects of the subject-level dataset, whatever their arm. |
 
 - Slot `count` of `pooled_below_count`: type `int`.
-- Sources: CDISC ADaM Implementation Guide (ADSL subject-level grouping variables, RACEGRy (pooled race group)); R Consortium Submissions Pilot 6, CSR and SAP of CDISCPILOT01 (Table 14-2.01, race reported in pooled origin categories (PLAN.md, E15)).
+- Sources: CDISC ADaM Implementation Guide (ADSL subject-level grouping variables, RACEGRy (pooled race group); the rule of pooling is the sponsor's).
 - Probes: race_category_at_pooling_count.
 
 ### `demo.baseline.record`: Which record gives baseline weight and height?
@@ -193,7 +197,7 @@ Applies when: `design.collects_vital_signs`. Default: `last_on_or_before_first_d
 
 | Alternative | Statement | Meaning |
 | --- | --- | --- |
-| `last_on_or_before_first_dose` | Baseline weight and height are the last non-missing values on or before the treatment start date. | Of several values on the last date the highest VSSEQ is taken. A subject without a treatment start date has no baseline weight and height. |
+| `last_on_or_before_first_dose` | Baseline weight and height are the last non-missing values on or before the treatment start date. | The last value is the latest by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the highest VSSEQ breaks a remaining tie. A subject without a treatment start date has no baseline weight and height. |
 | `at_visit` | Baseline weight and height are the non-missing values at the visit {visit}. | Of several values at the visit the highest VSSEQ is taken. |
 
 - Slot `visit` of `at_visit`: type `text`.
@@ -224,7 +228,7 @@ Applies when: `design.collects_adverse_events`. Default: `first_of_month_not_bef
 | `first_of_month` | A partial adverse event start date with a known month is completed with the first day of that month. | A date with an unknown month is not completed. |
 | `not_completed` | A partial adverse event start date is not completed and gives no analysis start date. |  |
 
-- Sources: admiral (pharmaverse), function reference and source (derive_vars_dt(), date_imputation = first with min_dates: the imputed date is not before the given dates); yamaa, language documentation, rules and benchmarks (the benchmark of partial adverse event start dates); CDISC ADaM Implementation Guide (date imputation flag, ASTDTF).
+- Sources: admiral (pharmaverse), function reference and source (derive_vars_dt(), date_imputation = first with min_dates: the imputed date is not before the given dates); yamaa, language documentation, rules and benchmarks (the benchmark of partial adverse event start dates: a completed date is not before the treatment start date (the benchmark supplies day 15, not the first day)); CDISC ADaM Implementation Guide (date imputation flag, ASTDTF).
 - Probes: partial_ae_start_in_month_of_first_dose, partial_ae_start_before_month_of_first_dose.
 
 ### `ae.teae.start`: When does treatment emergence begin?
@@ -279,7 +283,7 @@ Applies when: `design.has_bds_parameters`. Default: `last_before_first_dose`.
 | `last_on_or_before_first_dose_date` | Baseline is the last non-missing value on or before the treatment start date. | Dates are compared; times are ignored. |
 | `scheduled_baseline_visit` | Baseline is the last non-missing value at the scheduled visit {visit}. |  |
 
-For every alternative: The last value is the one with the latest date and time; the highest sequence number breaks a tie. Whether records of unscheduled visits may be baseline is decision bds.unscheduled.use.
+For every alternative: The last value is the latest by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the highest sequence number breaks a remaining tie. Whether records of unscheduled visits may be baseline is decision bds.unscheduled.use.
 
 - Slot `visit` of `scheduled_baseline_visit`: type `text`.
 - Sources: CDISC ADaM Implementation Guide (BDS, baseline record flag ABLFL and baseline value BASE); admiral (pharmaverse), function reference and source (derive_var_extreme_flag(), order and mode, for the last record before treatment); yamaa, language documentation, rules and benchmarks (the baseline_flag verb: the last eligible row up to a reference date); R Consortium Submissions Pilot 6, CSR and SAP of CDISCPILOT01 (baseline defined as the value of a named visit (PLAN.md, E26)).
@@ -291,7 +295,7 @@ Applies when: `design.has_bds_parameters and design.fixed_visits`. Default: `nom
 
 | Alternative | Statement | Meaning |
 | --- | --- | --- |
-| `protocol_windows` | Post-baseline records are assigned to analysis visits by these study day windows: {windows}. | Both limits belong to the window. A record on a study day outside every window has no analysis visit. |
+| `protocol_windows` | Post-baseline records are assigned to analysis visits by these study day windows: {windows}. | Both limits belong to the window, the target day lies in it, and the windows are listed in ascending order without overlap. A record on a study day outside every window has no analysis visit. |
 | `midpoint_windows` | Post-baseline records are assigned to the analysis visit with the nearest target day, the earlier visit on a tie: {visits}. | The first window starts on study day 2 and the last one has no upper limit. |
 | `nominal_visit` | Post-baseline records keep their collected visit as the analysis visit. | The target day of the visit is its planned study day (VISITDY). A record of an unscheduled visit has no analysis visit. |
 
@@ -312,7 +316,7 @@ Applies when: `design.has_bds_parameters and design.fixed_visits`. Default: `clo
 | `closest_then_later` | Of several records in one analysis visit, the one closest to the target day is analyzed, and the later one on a tie. |  |
 | `last_record` | Of several records in one analysis visit, the last one is analyzed. |  |
 
-For every alternative: Only non-missing values compete. Earlier and later are by date and time; the sequence number breaks a remaining tie.
+For every alternative: Only non-missing values compete. Earlier and later are by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the sequence number breaks a remaining tie.
 
 - Sources: CDISC ADaM Implementation Guide (BDS analysis record flag ANLzzFL and distance from target AWTDIFF); yamaa, language documentation, rules and benchmarks (the benchmark of closest visit selection: distance, then a tie rule).
 - Probes: two_records_equally_far_from_target, two_records_in_window_later_one_farther, unscheduled_record_inside_window.
@@ -341,7 +345,7 @@ Applies when: `design.has_bds_parameters and design.has_exposure`. Default: `las
 | `none` | There is no end-of-treatment record. |  |
 
 - Sources: R Consortium Submissions Pilot 7, yamaa specs and reviews of CDISCPILOT01 (the end-of-treatment records of the pilot ADVS); yamaa, language documentation, rules and benchmarks (the benchmark of the end-of-treatment record); CDISC ADaM Implementation Guide (BDS derivation type DTYPE for derived records).
-- Probes: output_shape.
+- Probes: end_of_treatment_visit_shown.
 
 ## Table families: tfl-demographics, tfl-ae-summary, tfl-ae-soc-pt, tfl-vitals-by-visit
 
@@ -382,7 +386,7 @@ Applies when: `design.multiple_arms`. Default: `ascending_dose_placebo_first`.
 For every alternative: Each column is headed by the treatment and the number of subjects of the analysis set in it.
 
 - Sources: CDISC Analysis Results Standard v1, model and examples (the treatment grouping: placebo, low dose, high dose); R Consortium Submissions Pilot 6, CSR and SAP of CDISCPILOT01 (column order of Tables 14-2.01 and 14-5.01: placebo, low dose, high dose).
-- Probes: output_shape.
+- Probes: arms_listed_out_of_dose_order.
 
 ### `tfl.columns.total`: Is there a total column?
 
@@ -488,7 +492,7 @@ Applies when: `design.multiple_arms`. Default: `three_decimals`.
 | `four_decimals` | P-values in the demographics table have four decimals, and a value below 0.0001 is shown as <0.0001. |  |
 
 - Sources: R Consortium Submissions Pilot 6, CSR and SAP of CDISCPILOT01 (p-values of Tables 14-2.01 and 14-5.01 (PLAN.md, E24 and E25)); CDISC Analysis Results Standard v1, model and examples (a p-value operation with its result pattern).
-- Probes: output_shape, pvalue_below_display_limit.
+- Probes: pvalue_column_shown, pvalue_below_display_limit.
 
 ### `tfl.demog.rows`: Which characteristics does the demographics table show, in which order?
 
@@ -616,6 +620,12 @@ For every alternative: Change from baseline is shown for post-baseline visits on
 
 - Sources: CDISC Analysis Results Standard v1, model and examples (observed value and change from baseline as two analyses of one output); R Consortium Submissions Pilot 6, CSR and SAP of CDISCPILOT01 (Tables 14-7.01 and 14-7.02: observed value and change in separate tables (PLAN.md, appendix D)).
 - Probes: output_shape.
+
+## Alternatives without a public source of their own
+
+- `demo.race.pooling/pooled_below_count`: ADaMIG has the variable for a pooled race group (RACEGRy) and leaves the rule to the sponsor. No public source states pooling below a count.
+- `ae.teae.end/end_of_study`: admiral takes any treatment end date and a window after it; no cited source names the end-of-study date as the end of emergence.
+- `tfl.ae.socpt.sort/descending_frequency_highest_dose`: The FDA guide is cited for sorting by descending frequency; that it names the arm with the highest dose was not confirmed.
 
 ## Left out of this draft
 

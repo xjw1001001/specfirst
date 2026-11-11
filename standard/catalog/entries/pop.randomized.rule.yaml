@@ -20,7 +20,7 @@ reading: knowledge/pop.randomized.rule.md
 probes: [randomized_without_postbaseline_value]
 sources:
   - ref: ich-e9
-    where: "section 5.2.1, full analysis set"
+    where: "section 5.2.1, full analysis set: all randomised subjects; lack of any data post randomisation as a possible exclusion"
   - ref: adamig
     where: "ADSL population flags, ITTFL and RANDFL"
   - ref: p7

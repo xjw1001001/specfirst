@@ -15,7 +15,7 @@ alternatives:
       For the cuts 18 and 65 the groups are labelled <18, 18-<65 and >=65. An
       age equal to a cut is in the group that starts there.
     slots:
-      cuts: {type: "list[int]", min: 1, max: 120, examples: [[18, 65], [40], [18, 65, 75]]}
+      cuts: {type: "list[int]", min: 1, max: 120, ascending: true, examples: [[18, 65], [40], [18, 65, 75]]}
 house_default: lt65_65to80_gt80
 compile: templates/demo.age.groups.yaml
 phrasings: phrasings/demo.age.groups.yaml

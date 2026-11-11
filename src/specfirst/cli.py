@@ -158,6 +158,8 @@ def _compile(root: Path, args: argparse.Namespace) -> int:
         for problem in error.problems:
             print(f"cannot compile: {problem}")
         return 1
+    compiler.bind_tables(known, standard, records, compiled, reference,
+                         sdtm_dir=args.sdtm, adam_dir=args.adam)
     compiled.write(out)
     print(f"compiled {len(records)} decisions into {len(compiled.files) + 1} files in {out}")
     return 0

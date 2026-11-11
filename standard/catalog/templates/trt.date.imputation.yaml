@@ -32,12 +32,12 @@ alternatives:
             type: date
             label: Date of First Exposure to Treatment
             derivation:
-              impute: {type: date, source: _TRTSDTC, day: first, invalid: null}
+              impute: {type: date, source: _TRTSDTCM, day: first, invalid: null}
           - name: TRTSDTM
             type: datetime
             label: Datetime of First Exposure to Treatment
             derivation:
-              impute: {type: datetime, source: _TRTSDTC, day: first, time: first, invalid: null}
+              impute: {type: datetime, source: _TRTSDTCM, day: first, time: first, invalid: null}
           - name: TRTSTMF
             type: str
             label: Time of First Exposure Imputation Flag
@@ -47,4 +47,4 @@ alternatives:
             type: date
             label: Date of Last Exposure to Treatment
             derivation:
-              impute: {type: date, source: _TRTEDTC, day: first, invalid: null}
+              impute: {type: date, source: _TRTEDTCM, day: first, invalid: null}

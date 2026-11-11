@@ -16,8 +16,6 @@ phrasings: phrasings/pop.safety.grouping.yaml
 reading: knowledge/pop.safety.grouping.md
 probes: [actual_arm_differs_from_planned]
 sources:
-  - ref: ich-e9
-    where: "section 5.2.3, safety evaluation by treatment received"
   - ref: ars
     path: "workfiles/examples/ARS v1/Common Safety Displays.json"
     find: '"groupingVariable": "TRT01A"'

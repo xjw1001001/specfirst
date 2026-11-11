@@ -12,6 +12,7 @@ alternatives:
     statement: "The treatment start date is the earliest start date of any exposure record."
   - id: dm_rfxstdtc
     statement: "The treatment start date is the date of first exposure in the demographics domain (DM.RFXSTDTC)."
+notes: Which partial dates take part is decision trt.date.imputation.
 house_default: first_ex_with_dose
 compile: templates/trt.start.source.yaml
 phrasings: phrasings/trt.start.source.yaml

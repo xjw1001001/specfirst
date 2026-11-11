@@ -61,7 +61,7 @@ sources:
     title: "ICH E9: Statistical Principles for Clinical Trials"
     version: "1998"
     url: https://database.ich.org/sites/default/files/E9_Guideline.pdf
-    confirmed: cited
+    confirmed: read 2026-11-11 (sections 5.2.1 to 5.2.3 and 6.3, and the glossary)
   fda-stf:
     kind: document
     title: "FDA Standard Safety Tables and Figures: Integrated Guide"

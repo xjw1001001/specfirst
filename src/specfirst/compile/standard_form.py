@@ -26,6 +26,8 @@ from specfirst.compile.slots import Slot, SlotError, parse_value, render_value
 OUTPUT_SLOT = "output"
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
 _ANCHORED = re.compile(r"^\[([0-9]+/s[0-9]+)\] (.*)$")
+_ANCHOR = re.compile(r"\[[0-9]+/s[0-9]+\]")
+_CATALOG = re.compile(r"^Catalog: (\S+) (\S+)$")
 _SECTION = re.compile(r"^## ([0-9]+) (.+) \(([a-z0-9-]+)\)$")
 _DOCUMENT = re.compile(r"^Document: ([a-z][a-z0-9_-]*)$")
 # What may continue a token of a type; the text after a slot must not start with it.
@@ -334,13 +336,25 @@ class StandardForm:
         `anchor`.
         """
         doc = None
+        catalog = None
         section_unit: dict[str, str] = {}
         records: list[dict] = []
         seen: dict[tuple[str, str], str] = {}
         for number, line in enumerate(text.split("\n"), start=1):
             match = _DOCUMENT.match(line)
-            if match and doc is None:
+            if match:
+                if doc is not None:
+                    raise StandardFormError(f"line {number}: a second 'Document:' line")
                 doc = match.group(1)
+                continue
+            match = _CATALOG.match(line)
+            if match:
+                catalog = (match.group(1), match.group(2))
+                if catalog != (self.catalog.name, self.catalog.version):
+                    raise StandardFormError(
+                        f"line {number}: written for the catalog {' '.join(catalog)}, "
+                        f"not for {self.catalog.name} {self.catalog.version}"
+                    )
                 continue
             match = _SECTION.match(line)
             if match:
@@ -348,7 +362,9 @@ class StandardForm:
                 continue
             match = _ANCHORED.match(line)
             if not match:
-                if line.startswith("["):
+                # A line that holds an anchor is a statement or an error: an
+                # indented, bulleted or emphasized statement must not be lost.
+                if line.startswith("[") or _ANCHOR.search(line):
                     raise StandardFormError(f"line {number}: not an anchored statement: {line}")
                 continue
             anchor, statement = match.groups()
@@ -373,6 +389,8 @@ class StandardForm:
                             "statement": statement, "anchor": anchor})
         if doc is None:
             raise StandardFormError("the document has no 'Document: <id>' line")
+        if catalog is None:
+            raise StandardFormError("the document has no 'Catalog: <name> <version>' line")
         return doc, records
 
 

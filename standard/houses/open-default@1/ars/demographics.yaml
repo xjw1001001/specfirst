@@ -102,7 +102,7 @@ analyses:
           name: "Summary of ${row.label}"
           reason: {controlledTerm: SPECIFIED IN SAP}
           purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
-          methodId: Mth_ContSumm
+          methodId: {$get: continuous_method}
           dataset: ADSL
           variable: "${row.var}"
           analysisSetId: "AnalysisSet_${analysis_set}"

@@ -23,9 +23,9 @@ treatment emergence window that is counted from the last dose.
 
 - With one record per dose, start and end date agree; the first two alternatives differ only
   when a record spans several days. Plain "date of last dose" means `last_ex_end_date`.
-- The fallback of `ds_date_when_ex_missing` applies only when no exposure record of the
-  subject has an end date, and it takes the date of the end-of-study record
-  (`disp.status.record`).
+- Only exposure records with a dose count (a dose above zero, or a placebo record). The
+  fallback of `ds_date_when_ex_missing` applies only when no such record of the subject has
+  an end date, and it takes the date of the end-of-study record (`disp.status.record`).
 - A fallback to the last visit, the last contact or a data cut-off date matches no
   alternative. Report the passage instead of picking the nearest one.
 - The date of an "end of treatment visit" is a visit date, not the treatment end date.

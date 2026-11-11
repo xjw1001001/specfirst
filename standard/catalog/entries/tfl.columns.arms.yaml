@@ -12,7 +12,7 @@ house_default: ascending_dose_placebo_first
 compile: templates/tfl.columns.arms.yaml
 phrasings: phrasings/tfl.columns.arms.yaml
 reading: knowledge/tfl.columns.arms.md
-probes: [output_shape]
+probes: [arms_listed_out_of_dose_order]
 sources:
   - ref: ars
     path: "workfiles/examples/ARS v1/Common Safety Displays.json"

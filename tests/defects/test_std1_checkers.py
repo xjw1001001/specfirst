@@ -210,6 +210,24 @@ def test_an_unused_source_is_found(work):
     assert "sources.yaml: rumour is cited by no entry" in static_problems(work)["sources"]
 
 
+def test_a_structural_probe_that_needs_another_decision_is_found(work):
+    """The p-value format shows only when the table compares treatments: the probe must say so."""
+    catalog, house = load(work)
+    assert checks.structural_probe_problems(catalog, house) == []
+    change(work / "standard" / "catalog" / "probes.yaml",
+           lambda d: d["probes"]["pvalue_column_shown"].__delitem__("needs"))
+    catalog, house = load(work)
+    found = checks.structural_probe_problems(catalog, house)
+    assert any("pvalue_column_shown" in problem and "same table files" in problem
+               for problem in found)
+
+
+def test_a_probe_of_an_unknown_kind_is_found(work):
+    change(work / "standard" / "catalog" / "probes.yaml",
+           lambda d: d["probes"]["output_shape"].__setitem__("kind", "obvious"))
+    assert any("unknown kind 'obvious'" in p for p in static_problems(work)["probes"])
+
+
 def test_reading_notes_that_skip_an_alternative_are_found(work):
     note = work / "standard" / "catalog" / "knowledge" / "ae.teae.end.md"
     note.write_text(note.read_text(encoding="ascii").replace("`end_of_study`", "the last one"),
@@ -336,6 +354,22 @@ ARS_DEFECTS = [
      lambda doc: doc["mainListOfContents"]["contentsList"]["listItems"][0]["sublist"][
          "listItems"][0].__setitem__("analysisId", "An_Lost"),
      "lists the unknown analysis 'An_Lost'"),
+    ("a total percentage divided by the count of each arm",
+     lambda doc: next(a for a in doc["analyses"] if a["id"] == "An_AESUM_ANY_Tot")[
+         "referencedAnalysisOperations"][1].__setitem__("analysisId", "An_AESUM_N"),
+     "'An_AESUM_N' has other subject groupings"),
+    ("a denominator on another analysis set",
+     lambda doc: next(a for a in doc["analyses"] if a["id"] == "An_AESUM_ANY")[
+         "referencedAnalysisOperations"][1].__setitem__("analysisId", "An_DM_N"),
+     "'An_DM_N' is on another analysis set"),
+    ("a denominator taken from an analysis without the count operation",
+     lambda doc: next(a for a in doc["analyses"] if a["id"] == "An_AESUM_ANY")[
+         "referencedAnalysisOperations"][1].__setitem__("analysisId", "An_AESUM_SERIOUS"),
+     "'An_AESUM_SERIOUS' has no operation 'Mth_Count_n'"),
+    ("a relationship to an operation that no method has",
+     lambda doc: next(m for m in doc["methods"] if m["id"] == "Mth_CatSumm")["operations"][1][
+         "referencedOperationRelationships"][1].__setitem__("operationId", "Mth_Count_x"),
+     "the operation 'Mth_Count_x' is not defined"),
     ("a denominator taken from an unknown analysis",
      lambda doc: next(a for a in doc["analyses"] if a.get("referencedAnalysisOperations"))[
          "referencedAnalysisOperations"][1].__setitem__("analysisId", "An_Nobody"),

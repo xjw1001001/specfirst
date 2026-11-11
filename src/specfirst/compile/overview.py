@@ -70,6 +70,11 @@ def render(catalog: Catalog, house: House) -> str:
             f"{catalog.sources.get(s.get('ref'), {}).get('title', s.get('ref'))} "
             f"({_cell(s.get('where', ''))})" for s in entry.sources)
         lines += [f"- Sources: {cited}.", f"- Probes: {', '.join(entry.probes)}.", ""]
+    unsourced = catalog.raw.get("unsourced_alternatives") or {}
+    if unsourced:
+        lines += ["## Alternatives without a public source of their own", ""]
+        lines += [f"- `{name}`: {_cell(reason)}" for name, reason in unsourced.items()]
+        lines.append("")
     deferred = catalog.raw.get("deferred") or {}
     partly = catalog.raw.get("deferred_alternatives") or {}
     if deferred or partly:

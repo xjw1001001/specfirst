@@ -11,7 +11,7 @@ house_default: three_decimals
 compile: templates/tfl.pvalue.format.yaml
 phrasings: phrasings/tfl.pvalue.format.yaml
 reading: knowledge/tfl.pvalue.format.md
-probes: [output_shape, pvalue_below_display_limit]
+probes: [pvalue_column_shown, pvalue_below_display_limit]
 sources:
   - ref: p6
     path: documents/CSR.pdf

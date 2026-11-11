@@ -44,6 +44,10 @@ class Slot:
     choices: tuple | None = None
     fields: tuple[tuple[str, str], ...] = ()  # records: (field name, scalar type)
     item: str = ""  # records: the template of one record
+    ascending: str | bool = False  # a list: True; records: the field that must ascend
+    unique: tuple[str, ...] = ()  # records: fields whose values may not repeat
+    ranges: tuple[tuple[str, str], ...] = ()  # records: {low, high, inside} -> field names
+    field_min: tuple[tuple[str, float], ...] = ()  # records: field -> lowest value
     examples: tuple = field(default=(), compare=False)
 
     @property
@@ -67,8 +71,20 @@ def slot_from_spec(name: str, spec: dict) -> Slot:
         choices=tuple(spec["choices"]) if spec.get("choices") is not None else None,
         fields=tuple((k, str(v)) for k, v in (spec.get("fields") or {}).items()),
         item=str(spec.get("item") or ""),
+        ascending=spec.get("ascending") or False,
+        unique=tuple(spec.get("unique") or ()),
+        ranges=tuple((spec.get("ranges") or {}).items()),
+        field_min=tuple((spec.get("field_min") or {}).items()),
         examples=tuple(spec.get("examples") or ()),
     )
+    known = {field_name for field_name, _ in slot.fields}
+    named = set(slot.unique) | {name for _, name in slot.ranges} | {n for n, _ in slot.field_min}
+    if isinstance(slot.ascending, str):
+        named.add(slot.ascending)
+    if named - known:
+        raise SlotError(f"slot '{name}': a rule names the unknown field {sorted(named - known)}")
+    if slot.ranges and {key for key, _ in slot.ranges} - {"low", "high", "inside"}:
+        raise SlotError(f"slot '{name}': ranges takes low, high and inside")
     if kind in SCALARS or slot.item_type in SCALARS:
         if slot.fields or slot.item:
             raise SlotError(f"slot '{name}': fields and item belong to the type records")
@@ -173,6 +189,8 @@ def check_value(slot: Slot, value: object) -> None:
             _check_scalar(slot.item_type, item, where)
         if len({repr(item) for item in value}) != len(value):
             raise SlotError(f"{where}: an item is listed twice")
+        if slot.ascending and sorted(value) != list(value):
+            raise SlotError(f"{where}: the items must ascend")
         items = list(value)
     else:
         if not isinstance(value, list) or not value:
@@ -183,6 +201,7 @@ def check_value(slot: Slot, value: object) -> None:
                 raise SlotError(f"{where}: a record needs exactly the fields {names}")
             for field_name, field_type in slot.fields:
                 _check_scalar(field_type, record[field_name], f"{where}, field '{field_name}'")
+        _check_table(slot, value, where)
         items = []
     for item in items:
         if slot.minimum is not None and item < slot.minimum:
@@ -191,6 +210,33 @@ def check_value(slot: Slot, value: object) -> None:
             raise SlotError(f"{where}: {item!r} is above the maximum {slot.maximum!r}")
         if slot.choices is not None and item not in slot.choices:
             raise SlotError(f"{where}: {item!r} is not one of {list(slot.choices)}")
+
+
+def _check_table(slot: Slot, records: list[dict], where: str) -> None:
+    """The rules a list of records must keep so that it does not contradict itself."""
+    for field_name in slot.unique:
+        values = [record[field_name] for record in records]
+        if len(set(values)) != len(values):
+            raise SlotError(f"{where}: the field '{field_name}' repeats a value")
+    for field_name, lowest in slot.field_min:
+        if any(record[field_name] < lowest for record in records):
+            raise SlotError(f"{where}: the field '{field_name}' is below {lowest!r}")
+    if isinstance(slot.ascending, str):
+        values = [record[slot.ascending] for record in records]
+        if any(a >= b for a, b in zip(values, values[1:], strict=False)):
+            raise SlotError(f"{where}: the field '{slot.ascending}' must ascend")
+    ranges = dict(slot.ranges)
+    if ranges:
+        low, high = ranges["low"], ranges["high"]
+        for record in records:
+            if record[low] > record[high]:
+                raise SlotError(f"{where}: '{low}' is above '{high}'")
+            inside = ranges.get("inside")
+            if inside and not record[low] <= record[inside] <= record[high]:
+                raise SlotError(f"{where}: '{inside}' is outside '{low}' to '{high}'")
+        for first, second in zip(records, records[1:], strict=False):
+            if second[low] <= first[high]:
+                raise SlotError(f"{where}: two ranges overlap or are out of order")
 
 
 def render_value(slot: Slot, value: object) -> str:

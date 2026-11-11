@@ -8,14 +8,16 @@ so the gate log is the evidence of the report (rule R8).
 
 from __future__ import annotations
 
+import atexit
 import shutil
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
 from specfirst.compile import catalog as catalog_module
 from specfirst.compile import checks
 from specfirst.compile import house as house_module
-from specfirst.paths import build_dir, cache_dir
+from specfirst.paths import cache_dir
 
 Out = Callable[[str], None]
 
@@ -45,6 +47,8 @@ def catalog_check(root: Path, out: Out) -> bool:
         ("schema and cross-references", checks.catalog_problems(catalog, root)),
         ("compile templates on their examples", checks.evaluate_examples(catalog)),
         ("probes: every pair of alternatives, every slot", checks.probe_problems(catalog)),
+        ("structural probes separate for any data",
+         checks.structural_probe_problems(catalog, house)),
         ("phrasings and reading notes", checks.wording_problems(catalog)),
         ("parameters set and read", checks.template_problems(catalog, house)),
     ):
@@ -90,11 +94,17 @@ _COMPILED: dict[str, tuple[list[checks.Variant], Path]] = {}
 
 
 def _variants(root: Path, out: Out) -> tuple[list[checks.Variant], Path]:
-    """Every decision vector, compiled once per process and checkout."""
-    work = build_dir(root) / "gates" / "std-1" / "compiled"
+    """Every decision vector, compiled once per process and checkout.
+
+    The files go to a new folder under the system's temporary folder, not
+    into the checkout: yamaa refuses to save a dataset on a Windows drive
+    under WSL (`target_changed`), and the checkout of this project is on one.
+    """
     if str(root) not in _COMPILED:
         catalog, house = _load(root)
-        shutil.rmtree(work, ignore_errors=True)
+        work = Path(tempfile.mkdtemp(prefix="specfirst-std1-"))
+        atexit.register(shutil.rmtree, work, ignore_errors=True)
+        out(f"compiled files and built datasets: {work} (removed when the command ends)")
         found = checks.compile_all(catalog, house, work)
         reference = checks.house_reference(house, work)
         problems, notes = checks.coverage_problems(catalog, house, found, reference)

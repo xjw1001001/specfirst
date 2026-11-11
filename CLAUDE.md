@@ -53,4 +53,5 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - Pilot 7 names: the spec is adqsnipx.yaml, the reference file is adqsnpix.parquet.
 - Searches started in D:\trial_work reach reference/. Always work from inside the checkout.
 - `yamaa check` reads no data: a spec can pass it and fail when run. Run a changed fragment (`specfirst catalog --run`).
+- yamaa refuses to save a dataset on a Windows drive under WSL (`target_changed`). Build under /tmp.
 - standard/houses/open-default@1/STANDARD.md is rendered: after a catalog change run `specfirst house --write`.

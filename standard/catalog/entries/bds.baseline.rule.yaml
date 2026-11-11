@@ -18,9 +18,11 @@ alternatives:
     slots:
       visit: {type: text, examples: ["BASELINE", "Screening"]}
 notes: >-
-  The last value is the one with the latest date and time; the highest
-  sequence number breaks a tie. Whether records of unscheduled visits may
-  be baseline is decision bds.unscheduled.use.
+  The last value is the latest by the collected date and time; of the
+  values of one day, a value without a collected time comes before those
+  with a time, and the highest sequence number breaks a remaining tie.
+  Whether records of unscheduled visits may be baseline is decision
+  bds.unscheduled.use.
 house_default: last_before_first_dose
 compile: templates/bds.baseline.rule.yaml
 phrasings: phrasings/bds.baseline.rule.yaml

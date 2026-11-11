@@ -6,7 +6,12 @@
 #
 # kind: record      a subject or record to plant in the SDTM domains named
 # kind: structural  nothing to plant: the alternatives differ in the rows,
-#                   columns or text of the output for any data
+#                   columns or text of the output for any data. The gate
+#                   compiles each claimed pair and asks for different table
+#                   files, unless the probe says in `needs` which other
+#                   decision the difference depends on
+# kind: design      nothing to plant in the data: the design of the study
+#                   must have the property the recipe names
 # separates         entry -> the pairs of alternatives the probe separates,
 #                   or `all` for every pair of the entry
 # varies            entry -> the slots whose values the probe separates
@@ -19,11 +24,8 @@ probes:
       No planted record. The alternatives, or two values of the slot, give
       outputs with different rows, columns or cell text for any data.
     separates:
-      bds.eot.record: all
       tfl.output.include: all
-      tfl.columns.arms: all
       tfl.columns.total: all
-      tfl.pvalue.format: all
       tfl.demog.rows: all
       tfl.demog.stats: all
       tfl.tests.include: [[none, anova_chisq], [none, anova_fisher]]
@@ -36,6 +38,38 @@ probes:
       tfl.demog.rows: [rows]
       tfl.ae.summary.rows: [rows]
       tfl.vs.scope: [parameters, visits]
+  arms_listed_out_of_dose_order:
+    kind: design
+    recipe: >-
+      A design whose protocol lists the arms in another order than ascending
+      dose with placebo first. With the usual order the two alternatives
+      give the same columns.
+    separates:
+      tfl.columns.arms: all
+  end_of_treatment_visit_shown:
+    kind: structural
+    needs: The decision tfl.vs.scope lists the analysis visit End of Treatment.
+    recipe: >-
+      No planted record. The vital signs table shows the visit End of
+      Treatment, which has records only when the end-of-treatment record
+      exists.
+    separates:
+      bds.eot.record: all
+  pvalue_column_shown:
+    kind: structural
+    needs: The decision tfl.tests.include is not none.
+    recipe: >-
+      No planted record. The demographics table has a p-value column, whose
+      cells have three or four decimals.
+    separates:
+      tfl.pvalue.format: all
+  partial_exposure_date_not_earliest:
+    kind: record
+    domains: [EX]
+    recipe: >-
+      A subject with complete first and last exposure dates and one more
+      exposure record whose dates have a year and a month only.
+    stresses: [trt.date.imputation]
   arm_label_differs_from_decode:
     kind: record
     domains: [DM]

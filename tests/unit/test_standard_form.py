@@ -176,3 +176,60 @@ def test_document_defects_are_refused(catalog, form):
         form.parse_document(text.replace("Document: sap", "Doc sap"))
     with pytest.raises(StandardFormError, match="two decisions"):
         form.render_document("sap", "SAP", records + records)
+
+
+@pytest.mark.parametrize("damage", [
+    lambda line: " " + line,              # indented
+    lambda line: "- " + line,             # a list item
+    lambda line: "**" + line + "**",      # emphasized
+    lambda line: line.replace("] ", "]"),  # no space after the anchor
+])
+def test_a_statement_line_is_never_dropped_in_silence(form, damage):
+    """Section 6.6: a parser recovers every decision. A damaged line is an error, not a gap."""
+    records = [{"id": "ae.teae.end", "unit": "mod-ae-emergence", "value": {"rule": "no_end"}},
+               {"id": "ae.teae.start", "unit": "mod-ae-emergence",
+                "value": {"rule": "on_or_after_first_dose_date"}}]
+    text = form.render_document("sap", "SAP", records)
+    line = "[1/s2] Treatment emergence has no end date."
+    assert line in text and len(form.parse_document(text)[1]) == 2
+    with pytest.raises(StandardFormError, match="not an anchored statement"):
+        form.parse_document(text.replace(line, damage(line)))
+
+
+def test_a_document_names_its_catalog_and_itself_once(catalog, form):
+    records = [{"id": "ae.teae.end", "unit": "mod-ae-emergence", "value": {"rule": "no_end"}}]
+    text = form.render_document("sap", "SAP", records)
+    named = f"Catalog: {catalog.name} {catalog.version}"
+    assert named in text
+    with pytest.raises(StandardFormError, match="written for the catalog"):
+        form.parse_document(text.replace(named, f"Catalog: {catalog.name} 99"))
+    with pytest.raises(StandardFormError, match="no 'Catalog:"):
+        form.parse_document(text.replace(named + "\n", ""))
+    with pytest.raises(StandardFormError, match="second 'Document:' line"):
+        form.parse_document(text + "\nDocument: protocol\n")
+
+
+@pytest.mark.parametrize("entry_id, value, problem", [
+    ("bds.window.table", {"rule": "protocol_windows", "windows": [
+        {"visit": "Week 2", "target": 15, "low": 22, "high": 8}]}, "is above"),
+    ("bds.window.table", {"rule": "protocol_windows", "windows": [
+        {"visit": "Week 2", "target": 30, "low": 8, "high": 21}]}, "is outside"),
+    ("bds.window.table", {"rule": "protocol_windows", "windows": [
+        {"visit": "Week 2", "target": 15, "low": 8, "high": 21},
+        {"visit": "Week 4", "target": 21, "low": 20, "high": 42}]}, "overlap"),
+    ("bds.window.table", {"rule": "protocol_windows", "windows": [
+        {"visit": "Week 2", "target": 15, "low": 8, "high": 21},
+        {"visit": "Week 2", "target": 29, "low": 22, "high": 42}]}, "repeats a value"),
+    ("bds.window.table", {"rule": "midpoint_windows", "visits": [
+        {"visit": "Week 4", "target": 29}, {"visit": "Week 2", "target": 15}]}, "must ascend"),
+    ("bds.window.table", {"rule": "midpoint_windows", "visits": [
+        {"visit": "Day 1", "target": 1}]}, "is below"),
+    ("trt.planned.source", {"rule": "dm_armcd_map", "map": [
+        {"code": "A", "label": "Drug"}, {"code": "A", "label": "Placebo"}]}, "repeats a value"),
+    ("demo.age.groups", {"rule": "stated_cuts", "cuts": [65, 18]}, "must ascend"),
+])
+def test_a_table_that_contradicts_itself_is_not_a_decision(catalog, form, entry_id, value,
+                                                           problem):
+    unit = catalog.entry(entry_id).units[0]
+    with pytest.raises(StandardFormError, match=problem):
+        form.render(entry_id, unit, value)

@@ -55,6 +55,7 @@ from specfirst.compile.standard_form import template_problems as statement_probl
 from specfirst.compile.template import TemplateError, evaluate, names_used
 
 MINIMUM_ENTRIES = 40  # PLAN.md section 13.4
+PROBE_KINDS = ("record", "structural", "design")
 # Where the specs of a variant read SDTM and write ADaM, relative to their
 # folder <out>/v<nnn>/adam: the SDTM data are shared, the ADaM data are not.
 VARIANT_SDTM = "../../sdtm"
@@ -215,7 +216,7 @@ def probe_problems(catalog: Catalog) -> list[str]:
     problems = []
     mentioned: dict[str, set[str]] = {}
     for probe_id, probe in catalog.probes.items():
-        if probe.get("kind") not in ("record", "structural"):
+        if probe.get("kind") not in PROBE_KINDS:
             problems.append(f"probe {probe_id}: unknown kind '{probe.get('kind')}'")
         if not probe.get("recipe"):
             problems.append(f"probe {probe_id}: no recipe")
@@ -267,6 +268,54 @@ def probe_problems(catalog: Catalog) -> list[str]:
                 if slot.name not in varied:
                     problems.append(
                         f"{entry.id}/{alternative.id}: no probe varies the slot '{slot.name}'"
+                    )
+    return problems
+
+
+def structural_probe_problems(catalog: Catalog, house: House) -> list[str]:
+    """A structural probe that names no condition separates its pairs for any data.
+
+    The check compiles the base decisions with each alternative of a claimed
+    pair: the ARS or layout files must differ. A probe whose claim holds only
+    beside another decision says so in `needs`, and one that needs a
+    property of the design has the kind `design`; neither is compiled here.
+    """
+    problems = []
+    base = base_vector(catalog, house)
+    reference = "house"
+    cache: dict[str, dict] = {}
+
+    def tables(entry_id: str, unit: str, rule: str) -> dict:
+        label = f"{entry_id}|{unit}|{rule}"
+        if label not in cache:
+            alternative = catalog.entry(entry_id).alternative(rule)
+            value = {"rule": rule, **{s.name: s.examples[0] for s in alternative.slots}}
+            records = [{**r, "value": value} if (r["id"], r["unit"]) == (entry_id, unit) else r
+                       for r in base]
+            try:
+                files = compile_decisions(catalog, house, records, reference).files
+            except CompileError as error:
+                problems.append(f"{entry_id}/{rule}: {error.problems[0]}")
+                files = {}
+            cache[label] = {p: t for p, t in files.items() if not p.startswith("adam/")}
+        return cache[label]
+
+    for probe_id, probe in catalog.probes.items():
+        if probe.get("kind") != "structural" or probe.get("needs"):
+            continue
+        for entry_id, pairs in (probe.get("separates") or {}).items():
+            if entry_id not in catalog.entries:
+                continue
+            entry = catalog.entry(entry_id)
+            ids = [alternative.id for alternative in entry.alternatives]
+            claimed = list(combinations(ids, 2)) if pairs == "all" else \
+                [tuple(pair) for pair in pairs or [] if set(pair) <= set(ids)]
+            for first, second in claimed:
+                if not any(tables(entry_id, unit, first) != tables(entry_id, unit, second)
+                           for unit in entry.units):
+                    problems.append(
+                        f"probe {probe_id}: {entry_id}: {first} and {second} compile to the "
+                        "same table files; name what the probe needs, or plant a record"
                     )
     return problems
 
@@ -758,11 +807,14 @@ def yamaa_run(spec: Path) -> list[str]:
     """Run one specification and save its dataset; the issues as text."""
     import yamaa  # the engine is imported only where a spec is run
 
-    result = yamaa.spec(str(spec)).run()
-    issues = _issues(result.issues)
-    if result.status != "succeeded":
-        return issues or [f"run {result.status}"]
-    result.save()
+    try:
+        result = yamaa.spec(str(spec)).run()
+        issues = _issues(result.issues)
+        if result.status != "succeeded":
+            return issues or [f"run {result.status}"]
+        result.save()
+    except yamaa.Error as error:
+        return [f"run refused: {error}"]
     return issues
 
 
@@ -770,7 +822,10 @@ def yamaa_check(spec: Path) -> list[str]:
     """The issues `yamaa check` reports for one specification, as text."""
     import yamaa  # the engine is imported only where a spec is checked
 
-    result = yamaa.spec(str(spec)).check()
+    try:
+        result = yamaa.spec(str(spec)).check()
+    except yamaa.Error as error:
+        return [f"check refused: {error}"]
     issues = _issues(result.issues)
     if result.status != "succeeded" and not issues:
         issues.append(f"check {result.status}")
@@ -802,6 +857,26 @@ def ars_problems(doc: dict, schema: dict) -> list[str]:
         for operation in method.get("operations") or []
         for relationship in operation.get("referencedOperationRelationships") or []
     }
+    operation_method = {
+        operation.get("id"): method.get("id")
+        for method in doc.get("methods") or []
+        for operation in method.get("operations") or []
+    }
+    referenced_operation = {
+        relationship.get("id"): relationship.get("operationId")
+        for method in doc.get("methods") or []
+        for operation in method.get("operations") or []
+        for relationship in operation.get("referencedOperationRelationships") or []
+    }
+    for relationship, operation in sorted(referenced_operation.items()):
+        if operation not in operation_method:
+            problems.append(f"relationship {relationship}: the operation '{operation}' "
+                            "is not defined")
+    by_id = {analysis.get("id"): analysis for analysis in doc.get("analyses") or []}
+
+    def groupings(analysis: dict) -> list:
+        return [g.get("groupingId") for g in analysis.get("orderedGroupings") or []]
+
     for analysis in doc.get("analyses") or []:
         where = f"analysis {analysis.get('id')}"
         for key, name in (("analysisSetId", "analysisSets"), ("dataSubsetId", "dataSubsets"),
@@ -819,6 +894,21 @@ def ars_problems(doc: dict, schema: dict) -> list[str]:
             relationship = reference.get("referencedOperationRelationshipId")
             if operations.get(relationship) != analysis.get("methodId"):
                 problems.append(f"{where}: its method has no relationship '{relationship}'")
+            other = by_id.get(reference.get("analysisId"))
+            if other is None:
+                continue
+            # The analysis that gives a numerator or a denominator holds the
+            # operation, has the same analysis set and the same leading (subject)
+            # groupings: a Total percentage divides by the Total count.
+            operation = referenced_operation.get(relationship)
+            if operation in operation_method and \
+                    operation_method[operation] != other.get("methodId"):
+                problems.append(f"{where}: '{other.get('id')}' has no operation '{operation}'")
+            if other.get("analysisSetId") != analysis.get("analysisSetId"):
+                problems.append(f"{where}: '{other.get('id')}' is on another analysis set")
+            theirs = groupings(other)
+            if not theirs or groupings(analysis)[:len(theirs)] != theirs:
+                problems.append(f"{where}: '{other.get('id')}' has other subject groupings")
 
     def walk(items: list, where: str) -> None:
         for item in items:

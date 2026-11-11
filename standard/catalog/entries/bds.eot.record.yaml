@@ -15,7 +15,7 @@ house_default: last_on_treatment_value
 compile: templates/bds.eot.record.yaml
 phrasings: phrasings/bds.eot.record.yaml
 reading: knowledge/bds.eot.record.md
-probes: [output_shape]
+probes: [end_of_treatment_visit_shown]
 sources:
   - ref: p7
     path: cdiscpilot01/spec/yamaa/advs.yaml

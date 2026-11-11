@@ -17,11 +17,15 @@ The statements are in the standard form of the decision catalog: a parser reads 
 
 [1/s3] The treatment start date is the earliest start date of an exposure record with a dose.
 
-Meaning: An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO.
+Meaning: An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO. Which partial dates take part is decision trt.date.imputation.
 
-[1/s4] The treatment end date is the latest end date of an exposure record.
+[1/s4] The treatment end date is the latest end date of an exposure record with a dose.
 
-[1/s5] A partial exposure date is not completed and gives no treatment date.
+Meaning: An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO. Which partial dates take part is decision trt.date.imputation.
+
+[1/s5] A partial exposure date is not completed and is left out of the treatment dates.
+
+Meaning: The treatment start and end dates are taken from the exposure dates that have a year, a month and a day.
 
 [1/s6] Study day 1 is the treatment start date.
 
@@ -35,7 +39,7 @@ Meaning: A subject is randomized when the planned arm code (DM.ARMCD) is present
 
 [2/s2] The safety set holds every subject who received at least one dose of study treatment.
 
-Meaning: A subject received a dose when the treatment start date is present. A subject is randomized as decision pop.randomized.rule defines it.
+Meaning: A subject received a dose when the treatment start date is present. A subject is randomized when the planned arm code (DM.ARMCD) is present and is neither SCRNFAIL nor NOTASSGN; the rule of the randomized set (pop.randomized.rule) does not enter.
 
 [2/s3] Safety analyses group subjects by actual treatment.
 
@@ -55,7 +59,7 @@ Meaning: The groups are labelled <65, 65-80 and >80. An age of exactly 80 is in 
 
 [3/s3] Baseline weight and height are the last non-missing values on or before the treatment start date.
 
-Meaning: Of several values on the last date the highest VSSEQ is taken. A subject without a treatment start date has no baseline weight and height.
+Meaning: The last value is the latest by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the highest VSSEQ breaks a remaining tie. A subject without a treatment start date has no baseline weight and height.
 
 [3/s4] Baseline body mass index is derived from baseline weight and height and rounded to one decimal.
 
@@ -77,7 +81,7 @@ Meaning: Dates are compared; times are ignored. For every alternative: an event 
 
 [5/s1] Baseline is the last non-missing value before the first dose.
 
-Meaning: A value is before the first dose when its date is before the treatment start date. A value on that date is before the first dose unless both its time and the time of the first dose were collected and its time is not earlier. The last value is the one with the latest date and time; the highest sequence number breaks a tie. Whether records of unscheduled visits may be baseline is decision bds.unscheduled.use.
+Meaning: A value is before the first dose when its date is before the treatment start date. A value on that date is before the first dose unless both its time and the time of the first dose were collected and its time is not earlier. The last value is the latest by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the highest sequence number breaks a remaining tie. Whether records of unscheduled visits may be baseline is decision bds.unscheduled.use.
 
 [5/s2] Post-baseline records keep their collected visit as the analysis visit.
 
@@ -85,7 +89,7 @@ Meaning: The target day of the visit is its planned study day (VISITDY). A recor
 
 [5/s3] Of several records in one analysis visit, the one closest to the target day is analyzed, and the earlier one on a tie.
 
-Meaning: Only non-missing values compete. Earlier and later are by date and time; the sequence number breaks a remaining tie.
+Meaning: Only non-missing values compete. Earlier and later are by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the sequence number breaks a remaining tie.
 
 [5/s4] Records of unscheduled visits compete for baseline and for analysis visits.
 

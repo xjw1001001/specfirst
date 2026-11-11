@@ -26,7 +26,7 @@ sources:
   - ref: p7
     path: cdiscpilot01/spec/yamaa/adsl.yaml
     find: "at least one record in QS for"
-    where: "EFFFL of the pilot ADSL: post-baseline records required"
+    where: "EFFFL of the pilot ADSL: post-baseline records of the efficacy measures are required (it asks for no baseline value)"
   - ref: p7
     path: cdiscpilot01/spec/yamaa/adsl.yaml
     find: "Y if subject has a SV.VISITNUM=12"

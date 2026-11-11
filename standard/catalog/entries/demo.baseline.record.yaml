@@ -6,9 +6,10 @@ alternatives:
   - id: last_on_or_before_first_dose
     statement: "Baseline weight and height are the last non-missing values on or before the treatment start date."
     definition: >-
-      Of several values on the last date the highest VSSEQ is taken. A
-      subject without a treatment start date has no baseline weight and
-      height.
+      The last value is the latest by the collected date and time; of the
+      values of one day, a value without a collected time comes before those
+      with a time, and the highest VSSEQ breaks a remaining tie. A subject
+      without a treatment start date has no baseline weight and height.
   - id: at_visit
     statement: "Baseline weight and height are the non-missing values at the visit {visit}."
     definition: Of several values at the visit the highest VSSEQ is taken.

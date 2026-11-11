@@ -13,6 +13,7 @@ alternatives:
         type: records
         fields: {code: text, label: text}
         item: "{code} means {label}"
+        unique: [code]
         examples:
           - [{code: PBO, label: Placebo}, {code: LOW, label: Low Dose}, {code: HIGH, label: High Dose}]
           - [{code: A, label: "Drug X, 10 mg"}, {code: B, label: Placebo}]

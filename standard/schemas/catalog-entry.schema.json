@@ -163,6 +163,32 @@
           "type": "string",
           "minLength": 1
         },
+        "ascending": {
+          "description": "A list: true when its items must ascend. Type records: the field whose values must ascend strictly.",
+          "type": ["boolean", "string"]
+        },
+        "unique": {
+          "description": "Type records: fields whose values may not repeat.",
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "ranges": {
+          "description": "Type records: the fields that hold the limits of a range (low, high) and a value that must lie in it (inside). Ranges ascend and do not overlap.",
+          "type": "object",
+          "required": ["low", "high"],
+          "additionalProperties": false,
+          "properties": {
+            "low": { "type": "string" },
+            "high": { "type": "string" },
+            "inside": { "type": "string" }
+          }
+        },
+        "field_min": {
+          "description": "Type records: the lowest value of a field.",
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
         "examples": {
           "description": "Values for tests: the round trip and the compile check run on each.",
           "type": "array",

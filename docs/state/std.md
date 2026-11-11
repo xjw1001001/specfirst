@@ -24,9 +24,20 @@ section 13.4).
   std-2 aligns the house layout templates.
 - `yamaa check` is the gate; yamaa's lint is not run on compiled files (its
   findings are spacing and line width, and `unused_input_key`).
-- The compiled specs are proven to run on a tiny hand-made study, not to
-  give the right values on real or generated data. std-2 checks by result
-  on the pilot; gen-2 checks P4 on the twin.
+- The compiled specs are proven to run on a tiny hand-made study. For the
+  alternatives that study can tell apart, 40 cases compare a built value
+  with the statement (`tests/unit/test_alternatives_on_tiny.py`). That is
+  not a proof on real or generated data: std-2 checks by result on the
+  pilot; gen-2 checks P4 on the twin.
+- Known limits of the house specs, for the owner and for std-2: ADVS has
+  one parameter per VSTESTCD (position and time point, VSPOS and VSTPT, are
+  not read) and PARAM is VSTEST without the unit; AOCCFL, AOCCSFL and
+  AOCCPFL take the first event by AESEQ; BMI assumes kg and cm; a record
+  on the first dose day timed after the dose is neither baseline nor
+  post-baseline; the baseline weight of ADSL and the baseline of ADVS
+  follow two rules (ADR-004, item 7).
+- Three alternatives have no public source of their own
+  (`unsourced_alternatives` in standard/catalog/catalog.yaml).
 
 ## Next
 
@@ -37,7 +48,9 @@ section 13.4).
 
 - gen-1 can start from the draft catalog now. Entries, alternatives, slots
   with examples and probe recipes (`standard/catalog/probes.yaml`) are
-  usable as they are. What gen-1 should know:
+  usable as they are. A probe of the kind `design` asks for a property of
+  the design (arms listed out of dose order), not for a planted record.
+  What gen-1 should know:
   - SDTM variables the house specs read: DM (ARM, ARMCD, ACTARM, RFSTDTC,
     RFXSTDTC and the demographics), EX (EXSEQ, EXTRT, EXDOSE, EXSTDTC,
     EXENDTC), DS (DSSEQ, DSCAT, DSSCAT, DSDECOD, DSSTDTC), SV (VISIT,
@@ -48,6 +61,11 @@ section 13.4).
     EXDOSE 0 and an EXTRT that contains PLACEBO. A subject is randomized
     when ARMCD is present and is neither SCRNFAIL nor NOTASSGN.
   - `specfirst.compile.tiny` is a three-subject study in these domains.
+- std-2 and std-3: `compiler.bind_tables` gives the `decides` edges to ARS
+  elements and layout parts by mutation; `specfirst compile` writes them to
+  `compile.json`. An ADaM bind is the column a fragment writes, often a
+  working column; the dataset variables behind it follow from the
+  `derives_from` edges that real-1 builds from the resolved spec.
 - gen-2: a decision can compile into files no output reads (for example
   `pop.efficacy.rule` when no table uses the efficacy-evaluable set), and
   `tfl.pvalue.format` shows only beside a treatment comparison. Such a

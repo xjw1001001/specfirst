@@ -9,7 +9,9 @@ alternatives:
     statement: "The safety set holds every randomized subject who received at least one dose of study treatment."
 notes: >-
   A subject received a dose when the treatment start date is present. A
-  subject is randomized as decision pop.randomized.rule defines it.
+  subject is randomized when the planned arm code (DM.ARMCD) is present and
+  is neither SCRNFAIL nor NOTASSGN; the rule of the randomized set
+  (pop.randomized.rule) does not enter.
 house_default: at_least_one_dose
 compile: templates/pop.safety.rule.yaml
 phrasings: phrasings/pop.safety.rule.yaml
@@ -17,7 +19,7 @@ reading: knowledge/pop.safety.rule.md
 probes: [dosed_but_not_randomized, randomized_never_dosed]
 sources:
   - ref: ich-e9
-    where: "section 5.2.3 and glossary, safety analysis set: subjects who received at least one dose"
+    where: "section 6.3: for safety and tolerability, the subjects who received at least one dose"
   - ref: adamig
     where: "ADSL population flags, SAFFL"
   - ref: p7

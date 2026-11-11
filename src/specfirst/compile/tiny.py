@@ -3,7 +3,8 @@
 It is not generated data and has no clinical meaning. Each record is there
 to exercise one rule of the house parent specs or of a catalog decision.
 
-    S1  randomized to Low Dose and dosed from 2024-03-10T08:00 to 2024-04-20
+    S1  randomized to Low Dose and dosed from 2024-03-10T08:00 to 2024-04-20;
+        a third exposure record has partial dates (2024-03 to 2024-05)
     S2  randomized to Placebo and dosed from 2024-03-12; partial dates
     S3  randomized to Low Dose and never dosed
 """
@@ -31,6 +32,7 @@ EX = [
     # USUBJID, EXSEQ, EXTRT, EXDOSE, EXSTDTC, EXENDTC
     ("S1", 1, "Low Dose", 10.0, "2024-03-10T08:00", "2024-03-31"),
     ("S1", 2, "Low Dose", 10.0, "2024-04-01", "2024-04-20"),
+    ("S1", 3, "Low Dose", 10.0, "2024-03", "2024-05"),  # partial dates
     ("S2", 1, "PLACEBO", 0.0, "2024-03-12", "2024-04-30"),
 ]
 

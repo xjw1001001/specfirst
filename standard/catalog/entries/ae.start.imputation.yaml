@@ -22,6 +22,6 @@ sources:
   - ref: yamaa
     path: benchmarks/adam-adae-partial-dates/spec.yaml
     find: "not_before: TRTSDT"
-    where: "the benchmark of partial adverse event start dates"
+    where: "the benchmark of partial adverse event start dates: a completed date is not before the treatment start date (the benchmark supplies day 15, not the first day)"
   - ref: adamig
     where: "date imputation flag, ASTDTF"

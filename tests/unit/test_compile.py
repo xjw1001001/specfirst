@@ -12,7 +12,12 @@ from specfirst import schemas
 from specfirst.compile import catalog as catalog_module
 from specfirst.compile import checks, overview, predicate, tiny
 from specfirst.compile import house as house_module
-from specfirst.compile.compiler import CompileError, compile_decisions, relative_reference
+from specfirst.compile.compiler import (
+    CompileError,
+    bind_tables,
+    compile_decisions,
+    relative_reference,
+)
 from specfirst.compile.template import (
     TemplateError,
     cut_labels,
@@ -137,21 +142,57 @@ def test_a_fragment_is_a_pure_function_of_the_value(catalog, house, base, tmp_pa
     assert differing == {"adam/fragments/adae/ae.teae.end.yaml"}
 
 
-def test_binds_are_element_ids_of_the_decision_record_schema(root, catalog, house, base, tmp_path):
-    compiled = compile_decisions(catalog, house, base,
-                                 relative_reference(house.directory, tmp_path / "adam"))
+def test_binds_are_proven_by_mutation(root, catalog, house, base, tmp_path):
+    """A decision binds what changes when the decision changes, and nothing else."""
+    reference = relative_reference(house.directory, tmp_path / "adam")
+    compiled = compile_decisions(catalog, house, base, reference)
+    assert compiled.binds[("ae.teae.end", "mod-ae-emergence")] == ["adam:ADAE._TEEND"]
+    bind_tables(catalog, house, base, compiled, reference)
     for record in base:
         key = (record["id"], record["unit"])
         full = {**record, "status": "stated", "class": "document_rule",
                 "citations": [{"doc": "sap", "anchor": "1/s1", "quote": "x"}],
                 "binds": compiled.binds.get(key, [])}
         assert schemas.problems("decision-record", full, root=root) == []
-    assert "ars:An_DM_N" in compiled.binds[("tfl.population", "tfl-demographics")]
-    assert compiled.layout_binds[("tfl.rounding.rule", "tfl-ae-summary")] == \
-        ["layout:tfl-ae-summary/formats"]
+    binds, layout = compiled.binds, compiled.layout_binds
+    assert binds[("ae.teae.end", "mod-ae-emergence")] == ["adam:ADAE._TEEND"]
+    # Leaving an output out removes all of it, and nothing of another output.
+    include = binds[("tfl.output.include", "tfl-ae-soc-pt")]
+    assert {"ars:Out_AESOCPT", "ars:An_AESOCPT_Pt", "ars:Grp_AEDECOD"} <= set(include)
+    assert not any(bind.startswith(("ars:An_DM_", "ars:An_AESUM_")) for bind in include)
+    # The analysis set of the demographics table: its analyses and the set only it uses.
+    population = binds[("tfl.population", "tfl-demographics")]
+    assert {"ars:An_DM_N", "ars:AnalysisSet_ITT"} <= set(population)
+    assert "ars:AnalysisSet_SAF" not in binds[("tfl.population", "tfl-ae-summary")]
+    # The quantile definition reaches continuous summaries, not categorical ones.
+    quantile = binds[("tfl.quantile.definition", "tfl-demographics")]
+    assert "ars:An_DM_AGE_Summ" in quantile and "ars:An_DM_SEX_Summ" not in quantile
+    # The total column: the total analyses and their grouping, not the analyses by arm.
+    total = binds[("tfl.columns.total", "tfl-ae-summary")]
+    assert {"ars:An_AESUM_ANY_Tot", "ars:Grp_Total_AESUM"} <= set(total)
+    assert "ars:An_AESUM_ANY" not in total
+    # Statistics with quartiles: another method for the continuous rows, and the layout rows.
+    assert "ars:An_DM_AGE_Summ" in binds[("tfl.demog.stats", "tfl-demographics")]
+    assert layout[("tfl.demog.stats", "tfl-demographics")] == ["layout:tfl-demographics/rows"]
+    # A display rule binds a layout part and no ARS element.
+    assert ("tfl.rounding.rule", "tfl-ae-summary") not in binds
+    assert layout[("tfl.rounding.rule", "tfl-ae-summary")] == ["layout:tfl-ae-summary/formats"]
     # The safety grouping reaches the three safety outputs, not the demographics table.
-    shared = compiled.binds[("pop.safety.grouping", "mod-populations")]
+    shared = binds[("pop.safety.grouping", "mod-populations")]
     assert "ars:An_AESUM_N" in shared and "ars:An_DM_N" not in shared
+    # Without a comparison the p-value format decides nothing in this study.
+    assert ("tfl.pvalue.format", "tfl-demographics") not in binds
+    assert ("tfl.pvalue.format", "tfl-demographics") not in layout
+
+
+def test_the_ars_file_holds_no_display_format(catalog, house, base, tmp_path):
+    """Display formats are decisions of the layout; the ARS file states none (ADR-004)."""
+    compiled = compile_decisions(catalog, house, base,
+                                 relative_reference(house.directory, tmp_path / "adam"))
+    assert "resultPattern" not in compiled.files["ars/reporting-event.json"]
+    methods = {m["id"]: [o["id"] for o in m["operations"]] for m in compiled.ars["methods"]}
+    assert "Mth_ContSummQ" not in methods  # no quartiles under the default statistics
+    assert len(methods["Mth_ContSumm"]) == 6
 
 
 def test_compile_problems_are_reported_together(catalog, house, base, tmp_path):
@@ -167,6 +208,10 @@ def test_compile_problems_are_reported_together(catalog, house, base, tmp_path):
     custom = [{"id": "custom:shift-high-rule", "unit": "tfl-lab-shift", "value": {"rule": "x"}}]
     with pytest.raises(CompileError, match="hand-written fragment"):
         compile_decisions(catalog, house, base + custom, reference)
+    # Never guess (section 5.2, rule 4): whether an output is planned must be said.
+    silent = [r for r in base if (r["id"], r["unit"]) != ("tfl.output.include", "tfl-ae-soc-pt")]
+    with pytest.raises(CompileError, match="tfl-ae-soc-pt: no value for tfl.output.include"):
+        compile_decisions(catalog, house, silent, reference)
 
 
 def test_an_optional_decision_leaves_its_column_out(catalog, house, base, tmp_path):

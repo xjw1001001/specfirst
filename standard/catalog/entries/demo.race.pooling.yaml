@@ -17,7 +17,4 @@ reading: knowledge/demo.race.pooling.md
 probes: [race_category_at_pooling_count]
 sources:
   - ref: adamig
-    where: "ADSL subject-level grouping variables, RACEGRy (pooled race group)"
-  - ref: p6
-    path: documents/CSR.pdf
-    where: "Table 14-2.01, race reported in pooled origin categories (PLAN.md, E15)"
+    where: "ADSL subject-level grouping variables, RACEGRy (pooled race group); the rule of pooling is the sponsor's"

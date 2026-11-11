@@ -6,13 +6,16 @@ alternatives:
   - id: protocol_windows
     statement: "Post-baseline records are assigned to analysis visits by these study day windows: {windows}."
     definition: >-
-      Both limits belong to the window. A record on a study day outside
-      every window has no analysis visit.
+      Both limits belong to the window, the target day lies in it, and the
+      windows are listed in ascending order without overlap. A record on a
+      study day outside every window has no analysis visit.
     slots:
       windows:
         type: records
         fields: {visit: text, target: int, low: int, high: int}
         item: "{visit} with target day {target} from day {low} to day {high}"
+        unique: [visit]
+        ranges: {low: low, high: high, inside: target}
         examples:
           - [{visit: Week 2, target: 15, low: 8, high: 21}, {visit: Week 4, target: 29, low: 22, high: 42}]
           - [{visit: Week 8, target: 57, low: 50, high: 64}]
@@ -26,6 +29,9 @@ alternatives:
         type: records
         fields: {visit: text, target: int}
         item: "{visit} with target day {target}"
+        unique: [visit]
+        ascending: target
+        field_min: {target: 2}
         examples:
           - [{visit: Week 2, target: 15}, {visit: Week 4, target: 29}, {visit: Week 8, target: 57}]
           - [{visit: Week 12, target: 85}]

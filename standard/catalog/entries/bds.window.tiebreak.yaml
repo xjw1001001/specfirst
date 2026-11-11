@@ -10,8 +10,10 @@ alternatives:
   - id: last_record
     statement: "Of several records in one analysis visit, the last one is analyzed."
 notes: >-
-  Only non-missing values compete. Earlier and later are by date and time;
-  the sequence number breaks a remaining tie.
+  Only non-missing values compete. Earlier and later are by the collected
+  date and time; of the values of one day, a value without a collected time
+  comes before those with a time, and the sequence number breaks a
+  remaining tie.
 house_default: closest_then_earlier
 compile: templates/bds.window.tiebreak.yaml
 phrasings: phrasings/bds.window.tiebreak.yaml
