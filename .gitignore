@@ -1,0 +1,34 @@
+# Clean room (PLAN.md section 2.1): employer material never enters this tree.
+/reference/
+
+# Fetch cache and third-party study data (rule 4, E20): never committed.
+/third_party/cache/
+/third_party/cache-location
+
+# Local environment
+/.venv/
+/.r-lib/
+/.specfirst/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Build products and gate logs
+/build/
+
+# Claude Code local settings
+/.claude/settings.local.json
+/.claude/worktrees/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

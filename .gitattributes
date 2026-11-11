@@ -1,0 +1,9 @@
+# Same bytes on every platform: text files are LF in the repository and in
+# the working tree (rule R4, determinism). Windows git must not write CRLF.
+* text=auto eol=lf
+
+*.parquet binary
+*.xpt binary
+*.pdf binary
+*.png binary
+*.rds binary
