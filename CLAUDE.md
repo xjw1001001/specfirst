@@ -10,6 +10,8 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - `make test`, `make lint`, `make ascii`: unit tests, ruff, ASCII check (what CI runs)
 - `specfirst fetch`: clone the pinned sources into the ignored cache; `--verify` downloads nothing
 - `specfirst gate <wp>`: the gate of a work package; its log is build/gates/<wp>/gate.log
+- `specfirst catalog [--roundtrip|--sources|--yamaa|--run|--tables]`, `specfirst house [--write]`: the checks of the catalog and of the house standard
+- `specfirst compile --decisions d.jsonl --defaults --out DIR`; `specfirst render`, `specfirst parse`: decisions to specs; decisions to a standard-form document and back
 - `scripts/clean_clone_gate.sh <wp>`: the same gate on a fresh clone with a fresh install and fetch
 - `make evidence`: rerun the evidence spikes (about 7 minutes)
 - `specfirst status`, `specfirst doctor`: all state files; the environment against the locks
@@ -47,3 +49,5 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - scipy.stats.fisher_exact is exact for 2 x 2 tables only (E27).
 - Pilot 7 names: the spec is adqsnipx.yaml, the reference file is adqsnpix.parquet.
 - Searches started in D:\trial_work reach reference/. Always work from inside the checkout.
+- `yamaa check` reads no data: a spec can pass it and fail when run. Run a changed fragment (`specfirst catalog --run`).
+- standard/houses/open-default@1/STANDARD.md is rendered: after a catalog change run `specfirst house --write`.

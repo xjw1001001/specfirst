@@ -1,0 +1,6 @@
+entry: tfl.ae.socpt.threshold
+alternatives:
+  none:
+    params: {term_threshold: {rule: none}}
+  min_percent_any_arm:
+    params: {term_threshold: {rule: min_percent_any_arm, percent: {$get: percent}}}

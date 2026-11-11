@@ -1,0 +1,30 @@
+entry: trt.start.source
+alternatives:
+  first_ex_with_dose:
+    adam:
+      ADSL:
+        columns:
+          - name: _TRTSDTC
+            type: str
+            label: "Working value: treatment start date text"
+            derivation:
+              aggregate:
+                filter: "EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')"
+                expr: "MIN(EX.EXSTDTC)"
+  first_ex_record:
+    adam:
+      ADSL:
+        columns:
+          - name: _TRTSDTC
+            type: str
+            label: "Working value: treatment start date text"
+            derivation:
+              aggregate: "MIN(EX.EXSTDTC)"
+  dm_rfxstdtc:
+    adam:
+      ADSL:
+        columns:
+          - name: _TRTSDTC
+            type: str
+            label: "Working value: treatment start date text"
+            derivation: DM.RFXSTDTC

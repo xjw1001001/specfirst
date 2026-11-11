@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: pop.randomized.rule
+alternatives:
+  all_randomized:
+    plain: "The randomized set is made up of all randomized subjects."
+    formal: "The randomized set shall consist of all subjects who were randomized."
+    brief: "Randomized set: all randomized subjects."
+  randomized_with_postbaseline:
+    plain: "The randomized set is made up of all randomized subjects who have one or more post-baseline values of the vital sign {test}."
+    formal: "The randomized set shall consist of all randomized subjects with at least one post-baseline value of the vital sign {test}."
+    brief: "Randomized set: all randomized subjects with at least one post-baseline value of the vital sign {test}."

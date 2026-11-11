@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.ae.socpt.sort
+alternatives:
+  alphabetical:
+    plain: "System organ classes and preferred terms appear in alphabetical order."
+    formal: "System organ classes and preferred terms shall be presented in alphabetical order."
+    brief: "System organ classes and preferred terms: alphabetical order."
+  descending_frequency_total:
+    plain: "System organ classes and preferred terms appear from the most frequent to the least frequent over all arms, and in alphabetical order when frequencies are equal."
+    formal: "System organ classes and preferred terms shall be sorted by descending frequency over all arms; ties shall be sorted alphabetically."
+    brief: "System organ classes and preferred terms: descending frequency over all arms, alphabetical on a tie."
+  descending_frequency_highest_dose:
+    plain: "System organ classes and preferred terms appear from the most frequent to the least frequent in the arm with the highest dose, and in alphabetical order when frequencies are equal."
+    formal: "System organ classes and preferred terms shall be sorted by descending frequency in the arm with the highest dose; ties shall be sorted alphabetically."
+    brief: "System organ classes and preferred terms: descending frequency in the arm with the highest dose, alphabetical on a tie."

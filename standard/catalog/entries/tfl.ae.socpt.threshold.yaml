@@ -1,0 +1,26 @@
+id: tfl.ae.socpt.threshold
+unit: tfl-ae-soc-pt
+applies_when: design.collects_adverse_events
+question: Is there a display threshold for preferred terms?
+alternatives:
+  - id: none
+    statement: "Every preferred term with at least one event is shown."
+  - id: min_percent_any_arm
+    statement: "A preferred term is shown only when at least {percent} percent of the subjects of an arm have it."
+    definition: >-
+      The percentage is taken at full precision in each treatment column. A
+      system organ class is shown when one of its terms is shown; its own
+      row still counts every subject with an event in the class.
+    slots:
+      percent: {type: number, min: 0, max: 100, examples: [5, 2.5]}
+house_default: none
+compile: templates/tfl.ae.socpt.threshold.yaml
+phrasings: phrasings/tfl.ae.socpt.threshold.yaml
+reading: knowledge/tfl.ae.socpt.threshold.md
+probes: [term_at_display_threshold]
+sources:
+  - ref: fda-stf
+    where: "common adverse events: terms at or above a stated percentage in any arm"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-5.01 shows every term (PLAN.md, E25)"

@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.population
+alternatives:
+  safety:
+    plain: "The safety set is the analysis set used for {output}."
+    formal: "The analysis set for {output} shall be the safety set."
+    brief: "Analysis set of {output}: safety set."
+  randomized:
+    plain: "The randomized set is the analysis set used for {output}."
+    formal: "The analysis set for {output} shall be the randomized set."
+    brief: "Analysis set of {output}: randomized set."
+  efficacy:
+    plain: "The efficacy-evaluable set is the analysis set used for {output}."
+    formal: "The analysis set for {output} shall be the efficacy-evaluable set."
+    brief: "Analysis set of {output}: efficacy-evaluable set."

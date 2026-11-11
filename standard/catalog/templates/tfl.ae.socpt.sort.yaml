@@ -1,0 +1,8 @@
+entry: tfl.ae.socpt.sort
+alternatives:
+  alphabetical:
+    params: {term_sort: alphabetical}
+  descending_frequency_total:
+    params: {term_sort: descending_frequency_total}
+  descending_frequency_highest_dose:
+    params: {term_sort: descending_frequency_highest_dose}

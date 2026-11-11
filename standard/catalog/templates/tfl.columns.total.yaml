@@ -1,0 +1,8 @@
+entry: tfl.columns.total
+alternatives:
+  all_arms:
+    params: {total: {mode: all_arms}}
+  none:
+    params: {total: {mode: none}}
+  active_arms:
+    params: {total: {mode: active_arms, control: {$get: control}}}

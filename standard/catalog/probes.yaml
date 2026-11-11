@@ -1,0 +1,373 @@
+# Probe recipes (PLAN.md section 6.5).
+#
+# A probe is a planted subject or record on which two alternatives of one
+# decision give different results. The generator (gen-1) implements each
+# recipe; the twin carries all of them.
+#
+# kind: record      a subject or record to plant in the SDTM domains named
+# kind: structural  nothing to plant: the alternatives differ in the rows,
+#                   columns or text of the output for any data
+# separates         entry -> the pairs of alternatives the probe separates,
+#                   or `all` for every pair of the entry
+# varies            entry -> the slots whose values the probe separates
+# stresses          entries whose rule the probe tests at its edge without
+#                   separating two alternatives
+probes:
+  output_shape:
+    kind: structural
+    recipe: >-
+      No planted record. The alternatives, or two values of the slot, give
+      outputs with different rows, columns or cell text for any data.
+    separates:
+      bds.eot.record: all
+      tfl.output.include: all
+      tfl.columns.arms: all
+      tfl.columns.total: all
+      tfl.pvalue.format: all
+      tfl.demog.rows: all
+      tfl.demog.stats: all
+      tfl.tests.include: [[none, anova_chisq], [none, anova_fisher]]
+      tfl.ae.summary.rows: all
+      tfl.ae.socpt.counts: all
+      tfl.vs.scope: all
+      tfl.vs.layout: all
+    varies:
+      tfl.columns.total: [control]
+      tfl.demog.rows: [rows]
+      tfl.ae.summary.rows: [rows]
+      tfl.vs.scope: [parameters, visits]
+  arm_label_differs_from_decode:
+    kind: record
+    domains: [DM]
+    recipe: An arm whose DM.ARM text differs from the label the decode gives its DM.ARMCD.
+    separates:
+      trt.planned.source: all
+    varies:
+      trt.planned.source: [map]
+  actual_arm_differs_from_planned:
+    kind: record
+    domains: [DM, EX]
+    recipe: >-
+      A subject dosed with another arm's treatment: DM.ACTARM differs from
+      DM.ARM, and the exposure records name the treatment of DM.ACTARM.
+    separates:
+      trt.actual.source: [[dm_actarm, same_as_planned], [first_ex_treatment, same_as_planned]]
+      pop.safety.grouping: all
+  first_exposure_other_treatment:
+    kind: record
+    domains: [DM, EX]
+    recipe: >-
+      A subject whose first exposure record names another treatment than
+      DM.ACTARM, and whose later records name the treatment of DM.ACTARM.
+    separates:
+      trt.actual.source: [[dm_actarm, first_ex_treatment]]
+  zero_dose_record_before_first_dose:
+    kind: record
+    domains: [EX]
+    recipe: >-
+      A subject on active treatment with an exposure record of dose zero
+      dated before the first record with a dose above zero.
+    separates:
+      trt.start.source: [[first_ex_with_dose, first_ex_record]]
+  rfxstdtc_differs_from_exposure:
+    kind: record
+    domains: [DM, EX]
+    recipe: A subject whose DM.RFXSTDTC is another date than the earliest exposure start date.
+    separates:
+      trt.start.source: [[first_ex_with_dose, dm_rfxstdtc], [first_ex_record, dm_rfxstdtc]]
+  last_exposure_record_spans_days:
+    kind: record
+    domains: [EX]
+    recipe: A subject whose last exposure record ends some days after it starts.
+    separates:
+      trt.end.source: [[last_ex_end_date, last_ex_start_date], [last_ex_start_date, ds_date_when_ex_missing]]
+  no_exposure_end_date:
+    kind: record
+    domains: [EX, DS]
+    recipe: A dosed subject with no exposure end date at all and a disposition event with a date.
+    separates:
+      trt.end.source: [[last_ex_end_date, ds_date_when_ex_missing]]
+  partial_exposure_date:
+    kind: record
+    domains: [EX]
+    recipe: A subject whose earliest exposure start date has a year and a month and no day.
+    separates:
+      trt.date.imputation: all
+  reference_start_before_first_dose:
+    kind: record
+    domains: [DM, EX]
+    recipe: A subject whose DM.RFSTDTC is some days before the first dose.
+    separates:
+      date.studyday.origin: all
+  randomized_without_postbaseline_value:
+    kind: record
+    domains: [DM, VS]
+    recipe: >-
+      A randomized subject with no value of the named vital sign after the
+      treatment start date, and with later values of another vital sign.
+    separates:
+      pop.randomized.rule: all
+    varies:
+      pop.randomized.rule: [test]
+  dosed_but_not_randomized:
+    kind: record
+    domains: [DM, EX]
+    recipe: A subject with exposure records whose DM.ARMCD is NOTASSGN.
+    separates:
+      pop.safety.rule: all
+  postbaseline_value_but_visit_missed:
+    kind: record
+    domains: [VS, SV]
+    recipe: >-
+      A dosed subject with a baseline and a later value of the named vital
+      sign who has no SV record of the named visit.
+    separates:
+      pop.efficacy.rule: all
+    varies:
+      pop.efficacy.rule: [visit]
+  baseline_value_of_other_test_only:
+    kind: record
+    domains: [VS]
+    recipe: >-
+      A dosed subject with baseline and later values of one vital sign and
+      no baseline value of another one.
+    varies:
+      pop.efficacy.rule: [test]
+  two_disposition_events:
+    kind: record
+    domains: [DS]
+    recipe: >-
+      A subject with two disposition event records of different DSSCAT,
+      DSDECOD and date: the end of treatment, then the end of the study.
+    separates:
+      disp.status.record: all
+    varies:
+      disp.status.record: [subcategory]
+  age_at_cut_points:
+    kind: record
+    domains: [DM]
+    recipe: Subjects aged exactly at each cut point, one year below it and one year above it.
+    separates:
+      demo.age.groups: all
+    varies:
+      demo.age.groups: [cuts]
+  race_category_at_pooling_count:
+    kind: record
+    domains: [DM]
+    recipe: >-
+      One race category with exactly the pooling count of subjects and one
+      with one subject fewer.
+    separates:
+      demo.race.pooling: all
+    varies:
+      demo.race.pooling: [count]
+  weight_at_screening_and_day_1:
+    kind: record
+    domains: [VS]
+    recipe: >-
+      A subject with different weights at the screening visit and on the
+      first dose date, and likewise for height.
+    separates:
+      demo.baseline.record: all
+    varies:
+      demo.baseline.record: [visit]
+  collected_bmi_differs_from_derived:
+    kind: record
+    domains: [VS]
+    recipe: A subject whose collected body mass index differs from the one derived from weight and height.
+    separates:
+      demo.bmi.rule: all
+  partial_ae_start_in_month_of_first_dose:
+    kind: record
+    domains: [AE, EX]
+    recipe: >-
+      An adverse event whose start has a year and a month only, in the month
+      of the first dose, for a subject first dosed after the first day of
+      that month.
+    separates:
+      ae.start.imputation: [[first_of_month_not_before_first_dose, first_of_month]]
+  partial_ae_start_before_month_of_first_dose:
+    kind: record
+    domains: [AE, EX]
+    recipe: >-
+      An ongoing adverse event whose start has a year and a month only, in a
+      month before the month of the first dose.
+    separates:
+      ae.start.imputation: [[first_of_month_not_before_first_dose, not_completed], [first_of_month, not_completed]]
+  ae_on_first_dose_date_without_time:
+    kind: record
+    domains: [AE, EX]
+    recipe: >-
+      An adverse event that starts on the first dose date with no time, for
+      a subject whose first dose has a time after 00:00.
+    separates:
+      ae.teae.start: all
+  ae_starts_after_emergence_window:
+    kind: record
+    domains: [AE, EX]
+    recipe: Adverse events that start exactly N days and N + 1 days after the last dose.
+    separates:
+      ae.teae.end: [[no_end, last_dose_plus_days]]
+    varies:
+      ae.teae.end: [days]
+  ae_starts_after_end_of_study:
+    kind: record
+    domains: [AE, DS]
+    recipe: An adverse event that starts after the date of the end-of-study record.
+    separates:
+      ae.teae.end: [[no_end, end_of_study]]
+  ae_between_window_end_and_end_of_study:
+    kind: record
+    domains: [AE, EX, DS]
+    recipe: >-
+      An adverse event that starts more than N days after the last dose and
+      before the end-of-study date.
+    separates:
+      ae.teae.end: [[last_dose_plus_days, end_of_study]]
+  ae_with_each_causality_value:
+    kind: record
+    domains: [AE]
+    recipe: Treatment-emergent adverse events with every causality value the study collects.
+    varies:
+      ae.related.values: [values]
+  day_1_value_after_first_dose_time:
+    kind: record
+    domains: [VS, EX]
+    recipe: >-
+      A subject with a screening value and a value on the first dose date
+      timed after the first dose.
+    separates:
+      bds.baseline.rule: [[last_before_first_dose, last_on_or_before_first_dose_date]]
+  only_unscheduled_predose_value:
+    kind: record
+    domains: [VS]
+    recipe: >-
+      A subject whose only value before the first dose is from an
+      unscheduled visit (PLAN.md, E26).
+    separates:
+      bds.baseline.rule: [[last_before_first_dose, scheduled_baseline_visit], [last_on_or_before_first_dose_date, scheduled_baseline_visit]]
+      bds.unscheduled.use: all
+    varies:
+      bds.baseline.rule: [visit]
+  record_in_other_window_than_collected_visit:
+    kind: record
+    domains: [VS]
+    recipe: A record collected at one visit on a study day inside the window of another visit.
+    separates:
+      bds.window.table: [[protocol_windows, nominal_visit], [midpoint_windows, nominal_visit]]
+    varies:
+      bds.window.table: [windows, visits]
+  record_in_gap_between_protocol_windows:
+    kind: record
+    domains: [VS]
+    recipe: A record on a study day that no protocol window holds.
+    separates:
+      bds.window.table: [[protocol_windows, midpoint_windows]]
+  two_records_equally_far_from_target:
+    kind: record
+    domains: [VS]
+    recipe: Two records of one analysis visit, equally far before and after the target day.
+    separates:
+      bds.window.tiebreak: [[closest_then_earlier, closest_then_later]]
+  two_records_in_window_later_one_farther:
+    kind: record
+    domains: [VS]
+    recipe: Two records of one analysis visit, the later one farther from the target day.
+    separates:
+      bds.window.tiebreak: [[closest_then_earlier, last_record], [closest_then_later, last_record]]
+  unscheduled_record_inside_window:
+    kind: record
+    domains: [VS]
+    recipe: A record of an unscheduled visit inside a window, closer to the target day than the scheduled record.
+    stresses: [bds.unscheduled.use, bds.window.tiebreak]
+  randomized_never_dosed:
+    kind: record
+    domains: [DM]
+    recipe: A randomized subject with no exposure record.
+    separates:
+      tfl.population: [[safety, randomized]]
+    stresses: [pop.safety.rule]
+  dosed_without_postbaseline_value:
+    kind: record
+    domains: [VS, EX]
+    recipe: A dosed subject who fails the rule of the efficacy-evaluable set.
+    separates:
+      tfl.population: [[safety, efficacy], [randomized, efficacy]]
+  missing_characteristic_value:
+    kind: record
+    domains: [DM]
+    recipe: A subject of the analysis set with a missing value of a categorical characteristic.
+    separates:
+      tfl.denominator: all
+  category_with_zero_count:
+    kind: record
+    domains: [DM, AE]
+    recipe: A category or term that occurs in one arm and not in another.
+    separates:
+      tfl.percent.format: all
+  group_size_separating_quantiles:
+    kind: record
+    domains: [DM, VS]
+    recipe: >-
+      A treatment group whose number of non-missing values makes the two
+      quantile definitions differ, with unequal neighbouring values.
+    separates:
+      tfl.quantile.definition: all
+  statistic_at_rounding_half:
+    kind: record
+    domains: [DM, VS, AE]
+    recipe: >-
+      A group whose mean or percentage lies exactly halfway between two
+      displayed values, with an even digit before the half.
+    separates:
+      tfl.rounding.rule: all
+  data_decimals_differ_from_stated:
+    kind: record
+    domains: [VS]
+    recipe: A parameter collected with more decimals than the stated decimals allow for.
+    separates:
+      tfl.decimals.rule: all
+    varies:
+      tfl.decimals.rule: [mean, sd, median, range]
+  pvalue_below_display_limit:
+    kind: record
+    domains: [DM]
+    recipe: A characteristic whose p-value is below 0.001 and one whose p-value is below 0.0001.
+    stresses: [tfl.pvalue.format]
+  sparse_categorical_row:
+    kind: record
+    domains: [DM]
+    recipe: A categorical characteristic with small counts, for which the two tests give different p-values.
+    separates:
+      tfl.tests.include: [[anova_chisq, anova_fisher]]
+  term_frequency_order_not_alphabetical:
+    kind: record
+    domains: [AE]
+    recipe: >-
+      Two preferred terms of one organ class whose order by frequency, over
+      all arms and in the arm with the highest dose, is not alphabetical.
+    separates:
+      tfl.ae.socpt.sort: [[alphabetical, descending_frequency_total], [alphabetical, descending_frequency_highest_dose]]
+  term_order_differs_between_total_and_highest_dose:
+    kind: record
+    domains: [AE]
+    recipe: >-
+      Two preferred terms of one organ class, one more frequent over all
+      arms and the other more frequent in the arm with the highest dose.
+    separates:
+      tfl.ae.socpt.sort: [[descending_frequency_total, descending_frequency_highest_dose]]
+  terms_with_equal_frequency:
+    kind: record
+    domains: [AE]
+    recipe: Two preferred terms with the same frequency.
+    stresses: [tfl.ae.socpt.sort]
+  term_at_display_threshold:
+    kind: record
+    domains: [AE]
+    recipe: >-
+      One preferred term exactly at the threshold percentage in its most
+      frequent arm and one just below it.
+    separates:
+      tfl.ae.socpt.threshold: all
+    varies:
+      tfl.ae.socpt.threshold: [percent]

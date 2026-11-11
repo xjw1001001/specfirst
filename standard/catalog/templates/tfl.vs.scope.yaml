@@ -1,0 +1,6 @@
+entry: tfl.vs.scope
+alternatives:
+  stated_lists:
+    params:
+      vs_parameters: {$get: parameters}
+      vs_visits: {$get: visits}

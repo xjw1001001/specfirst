@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: disp.status.record
+alternatives:
+  disposition_event:
+    plain: "The disposition event record of the subject serves as the end-of-study record."
+    formal: "The end-of-study record shall be taken as the disposition event record of the subject."
+    brief: "End-of-study record: disposition event record of the subject."
+  disposition_event_by_subcategory:
+    plain: "The subject's disposition event record with the subcategory {subcategory} serves as the end-of-study record."
+    formal: "The end-of-study record shall be taken as the disposition event record of the subject with the subcategory {subcategory}."
+    brief: "End-of-study record: disposition event record of the subject with the subcategory {subcategory}."

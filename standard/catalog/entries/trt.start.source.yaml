@@ -1,0 +1,30 @@
+id: trt.start.source
+unit: mod-treatment
+applies_when: design.has_exposure
+question: What is the treatment start date?
+alternatives:
+  - id: first_ex_with_dose
+    statement: "The treatment start date is the earliest start date of an exposure record with a dose."
+    definition: >-
+      An exposure record has a dose when EXDOSE is above zero, or when EXDOSE
+      is zero and EXTRT contains PLACEBO.
+  - id: first_ex_record
+    statement: "The treatment start date is the earliest start date of any exposure record."
+  - id: dm_rfxstdtc
+    statement: "The treatment start date is the date of first exposure in the demographics domain (DM.RFXSTDTC)."
+house_default: first_ex_with_dose
+compile: templates/trt.start.source.yaml
+phrasings: phrasings/trt.start.source.yaml
+reading: knowledge/trt.start.source.md
+probes: [zero_dose_record_before_first_dose, rfxstdtc_differs_from_exposure]
+sources:
+  - ref: adamig
+    where: "ADSL treatment timing variables, TRTSDT"
+  - ref: admiral
+    where: "ADSL vignette, TRTSDTM from EX records with EXDOSE > 0 or a placebo record"
+  - ref: sdtmig
+    where: "DM domain, RFXSTDTC"
+  - ref: p7
+    path: spec/yamaa/pilot-program/adsl_v1.yaml
+    find: "MIN(EX.EXSTDTC)"
+    where: "TRTSDT of the pilot program template"

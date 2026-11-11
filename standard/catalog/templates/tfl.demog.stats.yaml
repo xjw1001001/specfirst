@@ -1,0 +1,6 @@
+entry: tfl.demog.stats
+alternatives:
+  n_mean_sd_median_min_max:
+    params: {continuous_statistics: [n, mean, sd, median, min, max]}
+  with_quartiles:
+    params: {continuous_statistics: [n, mean, sd, median, q1, q3, min, max]}

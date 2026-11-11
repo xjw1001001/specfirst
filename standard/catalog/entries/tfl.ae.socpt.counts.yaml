@@ -1,0 +1,23 @@
+id: tfl.ae.socpt.counts
+unit: tfl-ae-soc-pt
+applies_when: design.collects_adverse_events
+question: Does the table count subjects, events or both?
+alternatives:
+  - id: subjects
+    statement: "The adverse event table by system organ class and preferred term counts subjects."
+  - id: subjects_and_events
+    statement: "The adverse event table by system organ class and preferred term counts subjects and events."
+    definition: The number of events follows the subjects and their percentage in each cell.
+house_default: subjects
+compile: templates/tfl.ae.socpt.counts.yaml
+phrasings: phrasings/tfl.ae.socpt.counts.yaml
+reading: knowledge/tfl.ae.socpt.counts.md
+probes: [output_shape]
+sources:
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-5.01: subjects, percentages and events (PLAN.md, appendix D)"
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "An07_10_SocPt_Summ_ByTrt"
+    where: "subjects by system organ class and preferred term"

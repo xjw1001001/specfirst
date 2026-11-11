@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.ae.socpt.threshold
+alternatives:
+  none:
+    plain: "All preferred terms that have one or more events are shown."
+    formal: "Every preferred term with at least one event shall be presented."
+    brief: "Preferred terms shown: every term with at least one event."
+  min_percent_any_arm:
+    plain: "A preferred term appears only if {percent} percent or more of the subjects of an arm have it."
+    formal: "A preferred term shall be presented only if at least {percent} percent of the subjects of an arm have it."
+    brief: "Preferred terms shown: only those that at least {percent} percent of the subjects of an arm have."

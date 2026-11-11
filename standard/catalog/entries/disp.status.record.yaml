@@ -1,0 +1,35 @@
+id: disp.status.record
+unit: mod-populations
+applies_when: design.always
+question: Which record gives the end-of-study status?
+alternatives:
+  - id: disposition_event
+    statement: "The end-of-study record is the disposition event record of the subject."
+    definition: >-
+      The DS record with DSCAT equal to DISPOSITION EVENT. Of several such
+      records the last by DSSEQ is taken.
+  - id: disposition_event_by_subcategory
+    statement: "The end-of-study record is the disposition event record of the subject with the subcategory {subcategory}."
+    definition: >-
+      The DS record with DSCAT equal to DISPOSITION EVENT and DSSCAT equal to
+      the named subcategory. Of several such records the last by DSSEQ is taken.
+    slots:
+      subcategory: {type: text, examples: ["STUDY PARTICIPATION", "END OF STUDY"]}
+notes: >-
+  The record gives the end-of-study date (its DSSTDTC) and status: COMPLETED
+  when DSDECOD is COMPLETED, DISCONTINUED for any other term, ONGOING when
+  the subject has no such record.
+house_default: disposition_event
+compile: templates/disp.status.record.yaml
+phrasings: phrasings/disp.status.record.yaml
+reading: knowledge/disp.status.record.md
+probes: [two_disposition_events]
+sources:
+  - ref: sdtmig
+    where: "DS domain, DSCAT (DISPOSITION EVENT) and DSSCAT"
+  - ref: adamig
+    where: "ADSL trial experience variables, EOSSTT, EOSDT and DCSREAS"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "DS.DSDECOD where DSCAT='DISPOSITION EVENT'"
+    where: "DCDECOD of the pilot ADSL"

@@ -1,0 +1,53 @@
+id: bds.window.table
+unit: mod-bds-visits
+applies_when: design.has_bds_parameters and design.fixed_visits
+question: How are records assigned to analysis visits?
+alternatives:
+  - id: protocol_windows
+    statement: "Post-baseline records are assigned to analysis visits by these study day windows: {windows}."
+    definition: >-
+      Both limits belong to the window. A record on a study day outside
+      every window has no analysis visit.
+    slots:
+      windows:
+        type: records
+        fields: {visit: text, target: int, low: int, high: int}
+        item: "{visit} with target day {target} from day {low} to day {high}"
+        examples:
+          - [{visit: Week 2, target: 15, low: 8, high: 21}, {visit: Week 4, target: 29, low: 22, high: 42}]
+          - [{visit: Week 8, target: 57, low: 50, high: 64}]
+  - id: midpoint_windows
+    statement: "Post-baseline records are assigned to the analysis visit with the nearest target day, the earlier visit on a tie: {visits}."
+    definition: >-
+      The first window starts on study day 2 and the last one has no upper
+      limit.
+    slots:
+      visits:
+        type: records
+        fields: {visit: text, target: int}
+        item: "{visit} with target day {target}"
+        examples:
+          - [{visit: Week 2, target: 15}, {visit: Week 4, target: 29}, {visit: Week 8, target: 57}]
+          - [{visit: Week 12, target: 85}]
+  - id: nominal_visit
+    statement: "Post-baseline records keep their collected visit as the analysis visit."
+    definition: >-
+      The target day of the visit is its planned study day (VISITDY). A
+      record of an unscheduled visit has no analysis visit.
+notes: A record is post-baseline when its date is after the treatment start date.
+house_default: nominal_visit
+compile: templates/bds.window.table.yaml
+phrasings: phrasings/bds.window.table.yaml
+reading: knowledge/bds.window.table.md
+probes: [record_in_other_window_than_collected_visit, record_in_gap_between_protocol_windows]
+sources:
+  - ref: adamig
+    where: "BDS analysis visit windowing variables, AVISIT, AWTARGET, AWLO and AWHI"
+  - ref: yamaa
+    path: benchmarks/adam-advs-windows/spec.yaml
+    find: "breaks: [0, 2, 22, 43]"
+    where: "the benchmark of analysis windows by study day"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/advs.yaml
+    find: "Derived from VS.VISIT"
+    where: "AVISIT of the pilot ADVS: the collected visit"

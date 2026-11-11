@@ -1,0 +1,26 @@
+id: tfl.columns.total
+units: [tfl-demographics, tfl-ae-summary, tfl-ae-soc-pt, tfl-vitals-by-visit]
+applies_when: design.multiple_arms
+question: Is there a total column?
+alternatives:
+  - id: all_arms
+    statement: "A total column of {output} pools all treatment arms."
+  - id: none
+    statement: "There is no total column in {output}."
+  - id: active_arms
+    statement: "A total column of {output} pools the treatment arms other than {control}."
+    definition: The control is named by its treatment label as the treatment columns show it.
+    slots:
+      control: {type: text, examples: [Placebo, "Active Control"]}
+notes: A total column is the last column.
+house_default: all_arms
+compile: templates/tfl.columns.total.yaml
+phrasings: phrasings/tfl.columns.total.yaml
+reading: knowledge/tfl.columns.total.md
+probes: [output_shape]
+sources:
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-2.01 with a Total column; Table 14-5.01 without one"
+  - ref: fda-stf
+    where: "demographic table with a total column; pooled active arms as an option of the safety tables"

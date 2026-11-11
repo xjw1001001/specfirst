@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.tests.include
+alternatives:
+  none:
+    plain: "Treatments are not compared in the demographics table."
+    formal: "No comparison between treatments shall be presented in the demographics table."
+    brief: "Demographics table: no comparison between treatments."
+  anova_chisq:
+    plain: "In the demographics table, treatments are compared using analysis of variance for continuous rows and the chi-square test for categorical rows."
+    formal: "In the demographics table, treatments shall be compared by analysis of variance for continuous rows and by the chi-square test for categorical rows."
+    brief: "Demographics table, comparison of treatments: analysis of variance (continuous rows), chi-square test (categorical rows)."
+  anova_fisher:
+    plain: "In the demographics table, treatments are compared using analysis of variance for continuous rows and Fisher's exact test for categorical rows."
+    formal: "In the demographics table, treatments shall be compared by analysis of variance for continuous rows and by Fisher's exact test for categorical rows."
+    brief: "Demographics table, comparison of treatments: analysis of variance (continuous rows), Fisher's exact test (categorical rows)."

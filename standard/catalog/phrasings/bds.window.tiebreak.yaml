@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: bds.window.tiebreak
+alternatives:
+  closest_then_earlier:
+    plain: "When several records fall in one analysis visit, the record closest to the target day is analyzed; if there is a tie, the earlier record is analyzed."
+    formal: "Where several records fall within one analysis visit, the record closest to the target day shall be analyzed; in case of a tie, the earlier record shall be analyzed."
+    brief: "Several records in one analysis visit: the one closest to the target day is analyzed; on a tie, the earlier one."
+  closest_then_later:
+    plain: "When several records fall in one analysis visit, the record closest to the target day is analyzed; if there is a tie, the later record is analyzed."
+    formal: "Where several records fall within one analysis visit, the record closest to the target day shall be analyzed; in case of a tie, the later record shall be analyzed."
+    brief: "Several records in one analysis visit: the one closest to the target day is analyzed; on a tie, the later one."
+  last_record:
+    plain: "When several records fall in one analysis visit, the last of them is analyzed."
+    formal: "Where several records fall within one analysis visit, the last record shall be analyzed."
+    brief: "Several records in one analysis visit: the last one is analyzed."

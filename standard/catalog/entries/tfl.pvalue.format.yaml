@@ -1,0 +1,22 @@
+id: tfl.pvalue.format
+unit: tfl-demographics
+applies_when: design.multiple_arms
+question: How are p-values displayed?
+alternatives:
+  - id: three_decimals
+    statement: "P-values in the demographics table have three decimals, and a value below 0.001 is shown as <0.001."
+  - id: four_decimals
+    statement: "P-values in the demographics table have four decimals, and a value below 0.0001 is shown as <0.0001."
+house_default: three_decimals
+compile: templates/tfl.pvalue.format.yaml
+phrasings: phrasings/tfl.pvalue.format.yaml
+reading: knowledge/tfl.pvalue.format.md
+probes: [output_shape, pvalue_below_display_limit]
+sources:
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "p-values of Tables 14-2.01 and 14-5.01 (PLAN.md, E24 and E25)"
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "Mth04_ContVar_Comp_Anova_1_pval"
+    where: "a p-value operation with its result pattern"

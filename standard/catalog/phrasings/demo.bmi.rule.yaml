@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: demo.bmi.rule
+alternatives:
+  derived:
+    plain: "Baseline body mass index is calculated from baseline weight and baseline height, and the result is rounded to one decimal."
+    formal: "Baseline body mass index shall be derived from baseline weight and height and shall be rounded to one decimal place."
+    brief: "Baseline body mass index: derived from baseline weight and height, rounded to one decimal."
+  as_collected:
+    plain: "The collected body mass index is used as baseline body mass index; it is selected by the same rule as baseline weight and height."
+    formal: "Baseline body mass index shall be the collected body mass index, selected according to the rule for baseline weight and height."
+    brief: "Baseline body mass index: collected body mass index, selected by the rule for baseline weight and height."

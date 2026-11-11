@@ -1,0 +1,6 @@
+entry: tfl.denominator
+alternatives:
+  analysis_set_per_column:
+    params: {denominator: analysis_set_per_column}
+  subjects_with_data:
+    params: {denominator: subjects_with_data}

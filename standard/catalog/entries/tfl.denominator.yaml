@@ -1,0 +1,19 @@
+id: tfl.denominator
+unit: tfl-demographics
+applies_when: design.always
+question: What is the denominator of a percentage?
+alternatives:
+  - id: analysis_set_per_column
+    statement: "Percentages in the demographics table are based on the number of subjects of the analysis set in the column."
+  - id: subjects_with_data
+    statement: "Percentages in the demographics table are based on the number of subjects with a non-missing value in the column."
+house_default: analysis_set_per_column
+compile: templates/tfl.denominator.yaml
+phrasings: phrasings/tfl.denominator.yaml
+reading: knowledge/tfl.denominator.md
+probes: [missing_characteristic_value]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "Mth01_CatVar_Summ_ByGrp_2_pct_DEN"
+    where: "the percent operation names the analysis that gives its denominator"

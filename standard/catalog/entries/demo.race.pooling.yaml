@@ -1,0 +1,23 @@
+id: demo.race.pooling
+unit: mod-demographics
+applies_when: design.always
+question: Are small race categories pooled?
+alternatives:
+  - id: not_pooled
+    statement: "Race categories are shown as collected and are not pooled."
+  - id: pooled_below_count
+    statement: "A race category with fewer than {count} subjects is pooled into the category OTHER."
+    definition: The subjects are counted over all subjects of the subject-level dataset, whatever their arm.
+    slots:
+      count: {type: int, min: 1, examples: [5, 10]}
+house_default: not_pooled
+compile: templates/demo.race.pooling.yaml
+phrasings: phrasings/demo.race.pooling.yaml
+reading: knowledge/demo.race.pooling.md
+probes: [race_category_at_pooling_count]
+sources:
+  - ref: adamig
+    where: "ADSL subject-level grouping variables, RACEGRy (pooled race group)"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-2.01, race reported in pooled origin categories (PLAN.md, E15)"

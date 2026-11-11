@@ -1,0 +1,130 @@
+# The decision catalog for the M1 families (PLAN.md section 5, appendix B).
+#
+# Draft of std-1. The owner approves it at node N1; only then is the version
+# set to 1 and the catalog frozen as catalog@1. Until then other tracks may
+# read it as a draft.
+catalog: specfirst-m1
+version: draft-1
+
+# The units that own decisions (PLAN.md section 10), in the order of the
+# standard form. A table family has a phrase: how a statement names its
+# output.
+units:
+  mod-treatment:
+    kind: module
+    title: Treatment and exposure
+  mod-populations:
+    kind: module
+    title: Analysis populations and disposition
+  mod-demographics:
+    kind: module
+    title: Demographics and baseline characteristics
+  mod-ae-emergence:
+    kind: module
+    title: Adverse event emergence
+  mod-bds-visits:
+    kind: module
+    title: Baseline and analysis visits
+  tfl-demographics:
+    kind: table_family
+    title: Table of demographic and baseline characteristics
+    phrase: the demographics table
+  tfl-ae-summary:
+    kind: table_family
+    title: Summary table of adverse events
+    phrase: the adverse event summary table
+  tfl-ae-soc-pt:
+    kind: table_family
+    title: Table of adverse events by system organ class and preferred term
+    phrase: the adverse event table by system organ class and preferred term
+  tfl-vitals-by-visit:
+    kind: table_family
+    title: Table of vital signs by visit
+    phrase: the vital signs table by visit
+
+# What `applies_when` may name (PLAN.md section 6.2). A predicate joins
+# these names with `and`, `or`, `not` and parentheses.
+design_features:
+  design.always: True for every study.
+  design.randomized: Subjects are allocated to arms by randomization.
+  design.multiple_arms: The study has two or more arms.
+  design.has_exposure: Study treatment is given and its exposure is collected (EX).
+  design.has_efficacy_set: The study defines an efficacy-evaluable population.
+  design.collects_adverse_events: Adverse events are collected (AE).
+  design.collects_vital_signs: Vital signs are collected (VS).
+  design.has_bds_parameters: Repeated measurements are analyzed by parameter and visit.
+  design.fixed_visits: Visits are scheduled on target study days.
+  design.unscheduled_visits: Unscheduled visits can occur.
+
+# The entries, in the order of the standard form. One file each in entries/.
+entries:
+  - trt.planned.source
+  - trt.actual.source
+  - trt.start.source
+  - trt.end.source
+  - trt.date.imputation
+  - date.studyday.origin
+  - pop.randomized.rule
+  - pop.safety.rule
+  - pop.safety.grouping
+  - pop.efficacy.rule
+  - disp.status.record
+  - demo.age.groups
+  - demo.race.pooling
+  - demo.baseline.record
+  - demo.bmi.rule
+  - ae.start.imputation
+  - ae.teae.start
+  - ae.teae.end
+  - ae.related.values
+  - bds.baseline.rule
+  - bds.window.table
+  - bds.window.tiebreak
+  - bds.unscheduled.use
+  - bds.eot.record
+  - tfl.output.include
+  - tfl.population
+  - tfl.columns.arms
+  - tfl.columns.total
+  - tfl.denominator
+  - tfl.percent.format
+  - tfl.quantile.definition
+  - tfl.rounding.rule
+  - tfl.decimals.rule
+  - tfl.pvalue.format
+  - tfl.demog.rows
+  - tfl.demog.stats
+  - tfl.tests.include
+  - tfl.ae.summary.rows
+  - tfl.ae.socpt.sort
+  - tfl.ae.socpt.threshold
+  - tfl.ae.socpt.counts
+  - tfl.vs.scope
+  - tfl.vs.layout
+
+# Entries of appendix B that this draft leaves out, with the reason. They
+# return with the table family or the data that makes them identifiable
+# (PLAN.md section 4.6, property P4).
+deferred:
+  ae.teae.worsening: >-
+    Needs the severity before treatment, which the SDTM domains of M1 (DM,
+    DS, EX, AE, VS, SV) do not hold: the public sources use a sponsor
+    variable (admiral, initial_intensity) or Findings About records (yamaa
+    benchmark adam-adae-worsening-emergence).
+  ae.severity.worst: >-
+    No table family of M1 prints severity by term, so no alternative can
+    change a result.
+  ae.occurrence.flags: >-
+    The M1 tables count subjects from the records themselves, so the flags
+    change no result. The house parent spec of ADAE adds AOCCFL, AOCCSFL and
+    AOCCPFL as conformance variables.
+  disp.reason.source: >-
+    No table family of M1 prints the reason for discontinuation. The house
+    parent spec of ADSL adds DCSREAS from DSDECOD as a conformance variable.
+deferred_alternatives:
+  bds.baseline.rule/mean_of_predose_records: >-
+    Needs a derived record (DTYPE AVERAGE) built by aggregation; kept for
+    std-2 together with its yamaa row template.
+  bds.window.tiebreak/average: >-
+    Needs a derived record (DTYPE AVERAGE) per analysis visit; kept for
+    std-2 together with its yamaa row template.

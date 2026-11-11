@@ -1,0 +1,39 @@
+entry: trt.end.source
+alternatives:
+  last_ex_end_date:
+    adam:
+      ADSL:
+        columns:
+          - name: _TRTEDTC
+            type: str
+            label: "Working value: treatment end date text"
+            derivation:
+              aggregate: "MAX(EX.EXENDTC)"
+  last_ex_start_date:
+    adam:
+      ADSL:
+        columns:
+          - name: _TRTEDTC
+            type: str
+            label: "Working value: treatment end date text"
+            derivation:
+              aggregate: "MAX(EX.EXSTDTC)"
+  ds_date_when_ex_missing:
+    adam:
+      ADSL:
+        columns:
+          - name: _EXENDMAX
+            type: str
+            label: "Working value: latest exposure end date text"
+            derivation:
+              aggregate: "MAX(EX.EXENDTC)"
+          - name: _TRTEDTC
+            type: str
+            label: "Working value: treatment end date text"
+            derivation:
+              case:
+                - when: "_EXENDMAX IS NOT NULL AND _EXENDMAX <> ''"
+                  then: _EXENDMAX
+                - when: "_TRTSDTC IS NOT NULL AND _TRTSDTC <> ''"
+                  then: _EOSDTC
+                - otherwise: null

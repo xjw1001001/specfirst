@@ -1,0 +1,16 @@
+entry: ae.related.values
+alternatives:
+  stated_list:
+    adam:
+      ADAE:
+        columns:
+          - name: RELGR1
+            type: str
+            label: Pooled Causality Group 1
+            derivation:
+              case:
+                - when: "AEREL IN ${values|qlist}"
+                  then: "'RELATED'"
+                - when: "AEREL IS NOT NULL AND AEREL <> ''"
+                  then: "'NOT RELATED'"
+                - otherwise: null

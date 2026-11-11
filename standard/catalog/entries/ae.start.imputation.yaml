@@ -1,0 +1,27 @@
+id: ae.start.imputation
+unit: mod-ae-emergence
+applies_when: design.collects_adverse_events
+question: How are partial adverse event start dates completed?
+alternatives:
+  - id: first_of_month_not_before_first_dose
+    statement: "A partial adverse event start date with a known month is completed with the first day of that month, or with the treatment start date when it falls in that month."
+    definition: A date with an unknown month is not completed.
+  - id: first_of_month
+    statement: "A partial adverse event start date with a known month is completed with the first day of that month."
+    definition: A date with an unknown month is not completed.
+  - id: not_completed
+    statement: "A partial adverse event start date is not completed and gives no analysis start date."
+house_default: first_of_month_not_before_first_dose
+compile: templates/ae.start.imputation.yaml
+phrasings: phrasings/ae.start.imputation.yaml
+reading: knowledge/ae.start.imputation.md
+probes: [partial_ae_start_in_month_of_first_dose, partial_ae_start_before_month_of_first_dose]
+sources:
+  - ref: admiral
+    where: "derive_vars_dt(), date_imputation = first with min_dates: the imputed date is not before the given dates"
+  - ref: yamaa
+    path: benchmarks/adam-adae-partial-dates/spec.yaml
+    find: "not_before: TRTSDT"
+    where: "the benchmark of partial adverse event start dates"
+  - ref: adamig
+    where: "date imputation flag, ASTDTF"

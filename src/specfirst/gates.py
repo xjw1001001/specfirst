@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from specfirst import asciicheck, doctor, fetch
+from specfirst.compile import gate as std1
 from specfirst.paths import build_dir, git_env
 
 # The evidence tests the base-0 gate must see pass (PLAN.md section 13.2).
@@ -123,6 +124,11 @@ def _ascii(ctx: Context) -> bool:
     return asciicheck.check(ctx.root, ctx.out) == 0
 
 
+def _root_check(run: Callable[[Path, Callable[[str], None]], bool]) -> Callable[[Context], bool]:
+    """A check that takes the checkout and a line printer."""
+    return lambda ctx: run(ctx.root, ctx.out)
+
+
 GATES: dict[str, tuple[Check, ...]] = {
     "base-0": (
         Check("environment", "specfirst doctor", _environment),
@@ -133,6 +139,23 @@ GATES: dict[str, tuple[Check, ...]] = {
               _evidence),
         Check("R packages", "Rscript --vanilla env/check_r.R $(cat env/r-packages.txt)",
               _r_packages),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # PLAN.md section 13.4: the round trip is exact for every alternative;
+    # compiled fragments pass yamaa check and the ARS schema; every entry has
+    # at least one public source.
+    "std-1": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("catalog", "specfirst catalog", _root_check(std1.catalog_check)),
+        Check("public sources", "specfirst catalog --sources", _root_check(std1.sources_check)),
+        Check("round trip", "specfirst catalog --roundtrip", _root_check(std1.roundtrip_check)),
+        Check("yamaa check", "specfirst catalog --yamaa", _root_check(std1.yamaa_check)),
+        Check("yamaa run", "specfirst catalog --run", _root_check(std1.run_check)),
+        Check("ARS schema", "specfirst catalog --tables", _root_check(std1.tables_check)),
+        Check("house standard", "specfirst house", _root_check(std1.house_check)),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
 }

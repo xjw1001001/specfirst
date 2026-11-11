@@ -1,0 +1,6 @@
+entry: tfl.pvalue.format
+alternatives:
+  three_decimals:
+    params: {pvalue_format: {decimals: 3, below: "<0.001"}}
+  four_decimals:
+    params: {pvalue_format: {decimals: 4, below: "<0.0001"}}

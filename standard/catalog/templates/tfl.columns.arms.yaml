@@ -1,0 +1,6 @@
+entry: tfl.columns.arms
+alternatives:
+  ascending_dose_placebo_first:
+    params: {column_order: ascending_dose_placebo_first}
+  protocol_order:
+    params: {column_order: protocol_order}

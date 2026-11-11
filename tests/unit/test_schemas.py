@@ -1,4 +1,4 @@
-"""The shared formats, version 0 (PLAN.md section 13.2).
+"""The shared formats, version 0 (PLAN.md sections 13.2 and 13.4).
 
 Each schema is a valid JSON Schema, accepts its valid examples and rejects
 its planted invalid ones (rule R5).
@@ -13,7 +13,7 @@ from jsonschema import Draft202012Validator
 
 from specfirst import schemas
 
-EXAMPLES = ("decision-record", "ard", "grid", "graph-node", "graph-edge")
+EXAMPLES = ("decision-record", "ard", "grid", "graph-node", "graph-edge", "catalog-entry")
 
 
 def examples(root, name: str) -> dict:

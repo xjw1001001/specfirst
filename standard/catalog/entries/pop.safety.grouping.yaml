@@ -1,0 +1,26 @@
+id: pop.safety.grouping
+unit: mod-populations
+applies_when: design.has_exposure and design.multiple_arms
+question: Which treatment groups the safety analyses?
+alternatives:
+  - id: actual
+    statement: "Safety analyses group subjects by actual treatment."
+  - id: planned
+    statement: "Safety analyses group subjects by planned treatment."
+notes: >-
+  The decision holds for every output whose analysis set is the safety set.
+  Outputs on another analysis set group subjects by planned treatment.
+house_default: actual
+compile: templates/pop.safety.grouping.yaml
+phrasings: phrasings/pop.safety.grouping.yaml
+reading: knowledge/pop.safety.grouping.md
+probes: [actual_arm_differs_from_planned]
+sources:
+  - ref: ich-e9
+    where: "section 5.2.3, safety evaluation by treatment received"
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: '"groupingVariable": "TRT01A"'
+    where: "the treatment grouping of the safety displays"
+  - ref: fda-stf
+    where: "general conventions: safety tables by actual treatment arm"

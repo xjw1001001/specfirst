@@ -1,0 +1,24 @@
+id: ae.related.values
+unit: mod-ae-emergence
+applies_when: design.collects_adverse_events
+question: Which causality values count as related to study treatment?
+alternatives:
+  - id: stated_list
+    statement: "An adverse event is related to study treatment when its causality is one of {values}."
+    definition: The causality is the collected value of AEREL, compared exactly.
+    slots:
+      values:
+        type: "list[text]"
+        examples: [[POSSIBLE, PROBABLE], [RELATED], ["POSSIBLY RELATED", "PROBABLY RELATED", "DEFINITELY RELATED"]]
+house_default: null
+compile: templates/ae.related.values.yaml
+phrasings: phrasings/ae.related.values.yaml
+reading: knowledge/ae.related.values.md
+probes: [ae_with_each_causality_value]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "Dss02_Related_TEAE"
+    where: "related events defined as a list of AEREL values"
+  - ref: occds
+    where: "pooled causality group, RELGRy"
