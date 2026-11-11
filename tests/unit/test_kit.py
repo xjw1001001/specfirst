@@ -181,6 +181,40 @@ def test_study_data_and_documents_may_not_be_in_git(toy, root):
     ]
 
 
+def test_study_data_under_another_name_or_suffix_is_found(toy, root):
+    """The cases a list of suffixes misses (review of real-1, finding F5)."""
+    import shutil
+
+    real = toy_kit.make(toy / "real", root, tier="C", engine_version="0.0.0")
+    cache = real / "third_party/cache/toy"
+    (real / "tests/data").mkdir(parents=True)
+    (real / "docs").mkdir()
+    # A pinned claims file and a pinned document, committed under other names.
+    shutil.copyfile(cache / "review/adsl-claims.json", real / "tests/data/expected.json")
+    shutil.copyfile(cache / "docs/sap.md", real / "docs/notes.txt")
+    # The Define-XML, edited, so that no hash matches.
+    define = (cache / "define/define-sdtm.xml").read_text("ascii").replace("AGE", "AGEX")
+    (real / "docs/define.xml").write_text(define, encoding="ascii")
+    (real / "docs/layout.xml").write_text("<svg></svg>\n", encoding="ascii")
+    (real / "docs/own.json").write_text('{"ours": true}\n', encoding="ascii")
+    names = ["tests/data/expected.json", "docs/notes.txt", "docs/define.xml", "docs/layout.xml",
+             "docs/own.json", "data/adsl.rds", "data/dm.feather", "data/adsl.TSV",
+             "kits/toy/kit.yaml"]
+    assert kits.tracked_data_problems(real, names) == [
+        "tests/data/expected.json: byte for byte gold/claims/adsl-claims.json of kit toy, "
+        "which stays in the fetch cache",
+        "docs/notes.txt: byte for byte inputs/docs/sap.md of kit toy, which stays in the "
+        "fetch cache",
+        "docs/define.xml: a Define-XML or other ODM file in git",
+        "data/adsl.rds: study data or a study document in git",
+        "data/dm.feather: study data or a study document in git",
+        "data/adsl.TSV: study data or a study document in git",
+    ]
+    # A known limit: a document retyped or converted is not seen.
+    (real / "docs/sap-retyped.txt").write_text("Subjects are grouped by age.\n", encoding="ascii")
+    assert kits.tracked_data_problems(real, ["docs/sap-retyped.txt"]) == []
+
+
 def test_the_repository_tracks_no_study_data(root):
     from specfirst import asciicheck
 

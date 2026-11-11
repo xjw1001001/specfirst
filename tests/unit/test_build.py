@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import pytest
 import toy_kit
 
@@ -115,10 +117,11 @@ def test_build_then_all_checks_pass(make):
 
     passed, text = run(build.trace, toy, "toy")
     assert passed, text
-    assert "ADSL            6       5       1     0" in text
-    assert "ADAE            5       5       0     0" in text
-    assert "claims ADSL        2 claims ->   1 cites edges; 1 citations of files that are not "\
-           "kit documents; 1 variables that are not output columns" in text
+    assert "ADSL            6       5       0       1     0" in text
+    assert "ADAE            5       5       0       0     0" in text
+    assert ("claims ADSL        2 claims,   1 citations of kit documents ->   1 cites edges "
+            "(one per column and span); 1 citations of programs or other files, not imported; "
+            "1 variables that are not output columns") in text
 
     assert run(build.check, toy, "toy")[0] == 0
 
@@ -153,6 +156,33 @@ def test_two_builds_have_the_same_hashes(make):
     assert "P1 determinism: 7 of 7 files have the same SHA-256 in both builds" in text
     first = build.read_manifest(toy / "build/p1/toy/first")
     assert first == build.read_manifest(toy / "build/p1/toy/second")
+    # Each build assembled the kit in its own folder: the two share no path of the kit.
+    for folder in ("first", "second"):
+        assert (toy / "build/p1/toy" / folder / "inputs/data/sdtm/dm.parquet").is_file()
+    assert not kits.assembled_dir(toy, "toy").exists()
+
+
+def test_p1_fails_when_a_built_file_depends_on_its_folder(make, tmp_path, monkeypatch):
+    """Review of real-1, finding F3: the paths of a resolution left absolute.
+
+    The defect is planted in the build processes themselves, through a
+    sitecustomize module that only they import.
+    """
+    toy = make()
+    hook = tmp_path / "hook"
+    hook.mkdir()
+    (hook / "sitecustomize.py").write_text(
+        "import specfirst.machine.runner as runner\n"
+        "runner._relocate = lambda record, kit_dir: record\n",
+        encoding="ascii",
+    )
+    paths = [str(hook), *filter(None, [os.environ.get("PYTHONPATH")])]
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join(paths))
+    passed, text = run(build.determinism, toy, "toy")
+    assert not passed, text
+    assert "P1: gold/resolved/adsl.json: the two builds differ" in text
+    assert "P1: gold/graph/nodes.jsonl: the two builds differ" in text
+    assert "same      " in text  # the datasets themselves do not depend on the folder
 
 
 def test_compare_builds_sees_planted_differences():

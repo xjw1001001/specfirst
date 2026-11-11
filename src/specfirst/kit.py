@@ -303,18 +303,43 @@ def assemble(root: Path, kit: Kit, dest: Path | None = None) -> list[str]:
 # Formats of study data and study documents. A kit of real data or real
 # documents (tiers B and C) keeps them in the fetch cache, never in git.
 DATA_SUFFIXES = frozenset({
-    ".parquet", ".xpt", ".sas7bdat", ".csv", ".pdf", ".rtf", ".doc", ".docx", ".xls", ".xlsx",
+    ".parquet", ".xpt", ".sas7bdat", ".csv", ".tsv", ".rds", ".rda", ".feather", ".arrow",
+    ".pdf", ".rtf", ".doc", ".docx", ".xls", ".xlsx",
 })
+
+
+def pinned_hashes(root: Path) -> dict[str, str]:
+    """SHA-256 -> name, for every file a kit manifest or sources.yaml pins."""
+    found: dict[str, str] = {}
+    try:
+        manifest = pinned.load_manifest(pinned.manifest_path(root))
+        found.update({pin.sha256: f"{pin.source}:{pin.path}" for pin in manifest.files})
+    except (OSError, ValueError, yaml.YAMLError):
+        pass
+    for path in sorted((root / "kits").glob("*/kit.yaml")):
+        try:
+            with open(path, encoding="ascii") as handle:
+                kit = parse_kit(yaml.safe_load(handle))
+        except (OSError, ValueError, yaml.YAMLError):
+            continue
+        if kit.tier != "A":
+            found.update({entry.sha256: f"{entry.path} of kit {kit.id}" for entry in kit.files})
+    return found
 
 
 def tracked_data_problems(root: Path, names: list[str]) -> list[str]:
     """Why the maintained files `names` break rule 4 of PLAN.md section 2.1 (E20).
 
-    A kit folder of tier B or C may hold kit.yaml and README.md only. A
-    generated kit (tier A) may hold its small fixtures.
+    Three checks. A kit folder of tier B or C may hold kit.yaml and README.md
+    only (a generated kit, tier A, may hold its small fixtures). Outside
+    such a folder, no file may have the suffix of a data or document format,
+    be a Define-XML or other ODM file, or be byte for byte a file that a kit
+    of tier B or C or third_party/sources.yaml pins. A study document
+    retyped or converted to another format is beyond these checks.
     """
     problems = []
     tiers: dict[str, str] = {}
+    pinned_files = pinned_hashes(root)
     for name in names:
         parts = name.split("/")
         tier = None
@@ -331,8 +356,16 @@ def tracked_data_problems(root: Path, names: list[str]) -> list[str]:
                 problems.append(f"{name}: a tier {tier} kit folder holds kit.yaml and "
                                 "README.md only")
                 continue
-        if Path(name).suffix.lower() in DATA_SUFFIXES and tier != "A":
+        if tier == "A":
+            continue
+        path = root / name
+        if path.suffix.lower() in DATA_SUFFIXES:
             problems.append(f"{name}: study data or a study document in git")
+        elif path.is_file():
+            if path.suffix.lower() == ".xml" and b"<ODM" in path.read_bytes()[:65536]:
+                problems.append(f"{name}: a Define-XML or other ODM file in git")
+            elif (same := pinned_files.get(sha256_file(path))) is not None:
+                problems.append(f"{name}: byte for byte {same}, which stays in the fetch cache")
     return problems
 
 

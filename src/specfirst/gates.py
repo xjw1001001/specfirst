@@ -26,7 +26,7 @@ BASE0_EVIDENCE = ("E1", "E2-E3", "E4", "E24", "E25-csr", "E25-single", "E26", "E
 # print for it (E1), and the tests behind ADR-001.
 PILOT = "cdiscpilot01"
 PILOT_P2 = "TOTAL cells=9119605 mismatched=0"
-REAL1_PILOT_TESTS = ("A1-resolve", "A2-runner", "A3-lineage")
+REAL1_PILOT_TESTS = ("A1-resolve", "A2-runner", "A3-lineage", "A4-unread", "A5-adapted")
 
 
 class Context:

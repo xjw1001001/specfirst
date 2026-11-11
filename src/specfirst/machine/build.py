@@ -33,13 +33,16 @@ Out = Callable[[str], None]
 RESOLVED, ADAM, GRAPH, MANIFEST = "gold/resolved", "gold/data/adam", "gold/graph", "gold/build.json"
 
 
-def _assembled(root: Path, kit_id: str, out: Out) -> tuple[kits.Kit, Path] | None:
+def _assembled(
+    root: Path, kit_id: str, folder: Path | None, out: Out
+) -> tuple[kits.Kit, Path] | None:
+    """The kit, assembled in `folder` (default build/kits/<kit>) from the fetch cache."""
     try:
         kit = kits.load_kit(root, kit_id)
     except kits.KitError as error:
         out(f"kit {kit_id}: {error}")
         return None
-    dest = kits.assembled_dir(root, kit_id)
+    dest = (folder or kits.assembled_dir(root, kit_id)).resolve()
     problems = kits.assemble(root, kit, dest)
     for problem in problems:
         out(f"kit {kit_id}: {problem}")
@@ -47,15 +50,19 @@ def _assembled(root: Path, kit_id: str, out: Out) -> tuple[kits.Kit, Path] | Non
 
 
 def build(root: Path, kit_id: str, into: Path | None = None, out: Out = print) -> int:
-    """`specfirst build <kit>`: assemble, check the pins, run, write. Returns 0 or 1."""
+    """`specfirst build <kit>`: assemble, check the pins, run, write. Returns 0 or 1.
+
+    The kit is assembled in the folder it is built in, so a build stands on
+    its own, and two builds in two folders share no path (P1).
+    """
     import pyarrow
 
-    found = _assembled(root, kit_id, out)
+    found = _assembled(root, kit_id, into, out)
     if found is None:
         out(f"build {kit_id}: FAIL (the kit could not be assembled from the fetch cache)")
         return 1
     kit, dest = found
-    into = (into or dest).resolve()
+    into = dest
     wanted, installed = kit.engines.get(runner.ENGINE), runner.engine_version()
     if wanted != installed:
         out(f"build {kit_id}: FAIL (the kit pins {runner.ENGINE} {wanted}, "
@@ -135,7 +142,11 @@ def compare_builds(first: dict, second: dict) -> tuple[list[str], list[str]]:
 
 
 def determinism(root: Path, kit_id: str, out: Out = print) -> bool:
-    """P1: build twice, each in a new process and its own folder, and compare the hashes."""
+    """P1: build twice, each in a new process and its own folder, and compare the hashes.
+
+    Each build assembles the kit in its own folder, so the two share no path
+    of the kit: a built file that depends on where it was built differs.
+    """
     base = build_dir(root) / "p1" / kit_id
     folders = [base / "first", base / "second"]
     for folder in folders:
@@ -165,16 +176,19 @@ def determinism(root: Path, kit_id: str, out: Out = print) -> bool:
 
 
 def _built(root: Path, kit_id: str, folder: Path | None, out: Out):
-    """The kit, the assembled folder and the build folder, or None when one is unusable."""
-    found = _assembled(root, kit_id, out)
+    """The kit and the folder of a build of it, or None when one of them is unusable.
+
+    The pinned files of the folder are checked again (and restored from the
+    cache if they changed), then the built files against build.json.
+    """
+    found = _assembled(root, kit_id, folder, out)
     if found is None:
         return None
-    kit, dest = found
-    folder = (folder or dest).resolve()
+    kit, folder = found
     problems = manifest_problems(folder)
     for problem in problems:
         out(f"build in {folder}: {problem}")
-    return None if problems else (kit, dest, folder)
+    return None if problems else (kit, folder)
 
 
 def reproduction(root: Path, kit_id: str, folder: Path | None = None, out: Out = print) -> bool:
@@ -184,7 +198,8 @@ def reproduction(root: Path, kit_id: str, folder: Path | None = None, out: Out =
     found = _built(root, kit_id, folder, out)
     if found is None:
         return False
-    kit, dest, folder = found
+    kit, folder = found
+    dest = folder
     datasets = read_manifest(folder)["datasets"]
     references = sorted(
         Path(entry.path).stem.upper() for entry in kit.files
@@ -206,6 +221,7 @@ def reproduction(root: Path, kit_id: str, folder: Path | None = None, out: Out =
         if not result.equal:
             problems.append(f"{name}: differs from the reference")
     out(compare.total_line(results))
+    out(compare.tolerance_line(results))
     for pair, count in compare.storage_summary(results).items():
         out(f"storage type only, same values (reference -> built): {pair} in {count} columns")
     for problem in problems:
@@ -223,20 +239,26 @@ def trace(root: Path, kit_id: str, folder: Path | None = None, out: Out = print)
     found = _built(root, kit_id, folder, out)
     if found is None:
         return False
-    kit, _, folder = found
+    kit, folder = found
     expected = {
         name: pq.read_schema(folder / ADAM / f"{name.lower()}.parquet").names
         for name in read_manifest(folder)["datasets"]
     }
-    lines, problems = graph.check_graph(root, folder / GRAPH, expected, kit.trace_gaps)
+    sdtm = {
+        path.stem.upper(): set(pq.read_schema(path).names)
+        for path in sorted((folder / kit.sdtm).glob("*.parquet"))
+    }
+    lines, problems = graph.check_graph(root, folder / GRAPH, expected, kit.trace_gaps, sdtm)
     for line in lines:
         out(line)
     with open(folder / GRAPH / "coverage.json", encoding="ascii") as handle:
         claims = json.load(handle).get("claims", {})
     for name, summary in claims.items():
         skipped = sum(summary["citations_not_to_kit_documents"].values())
-        out(f"claims {name:9s} {summary['claims']:3d} claims -> {summary['cites_edges']:3d} "
-            f"cites edges; {skipped} citations of files that are not kit documents; "
+        out(f"claims {name:9s} {summary['claims']:3d} claims, "
+            f"{summary['citations_of_kit_documents']:3d} citations of kit documents -> "
+            f"{summary['cites_edges']:3d} cites edges (one per column and span); "
+            f"{skipped} citations of programs or other files, not imported; "
             f"{len(summary['variables_not_output_columns'])} variables that are not output columns")
     for problem in problems:
         out(f"trace: {problem}")

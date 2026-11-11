@@ -66,6 +66,14 @@ def _relocate(record: dict, kit_dir: Path) -> dict:
 
     A resolution names files by absolute path. Two builds in two folders must
     give the same bytes (P1), and the graph cites kit paths.
+
+    Adapted from `relocate` in Pilot 7's `.github/scripts/resolved_specs.py`
+    (RConsortium/submissions-pilot7-synthetic-data, commit
+    213cb6ab3adc51abe4295cbbc546c0e6d46c3df8), which walks the same fields
+    to make its committed snapshots portable. Copyright (c) 2026 R
+    Consortium Pilot 7 contributors; MIT License:
+    third_party/licenses/PILOT7-MIT.txt. Changed: one direction only, and
+    each distinct file is resolved once (lesson 10).
     """
     base = kit_dir.resolve()
     result = deepcopy(record)

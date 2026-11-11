@@ -10,9 +10,9 @@ E20). They are fetched at a pinned commit and assembled on demand:
 ```bash
 specfirst fetch                      # Pilot 7 at the pinned commit, into the cache
 specfirst kit assemble cdiscpilot01  # copy 64 files, checking the SHA-256 of each
-specfirst build cdiscpilot01         # resolved specs, ADaM datasets, graph
+specfirst build cdiscpilot01         # assemble, then resolved specs, ADaM datasets, graph
 specfirst check cdiscpilot01         # P2 against the reference ADaM, and the trace
-specfirst check cdiscpilot01 --twice # the same after two fresh builds (P1)
+specfirst check cdiscpilot01 --twice # first two fresh builds, each in its own folder (P1)
 ```
 
 ## Layout of the assembled kit (build/kits/cdiscpilot01/)

@@ -6,7 +6,12 @@ import datetime
 
 import pytest
 
-from specfirst.machine.compare import compare_tables, storage_summary, total_line
+from specfirst.machine.compare import (
+    compare_tables,
+    storage_summary,
+    tolerance_line,
+    total_line,
+)
 
 pa = pytest.importorskip("pyarrow")
 
@@ -65,7 +70,14 @@ def test_planted_difference_is_counted(change, column, count):
 
 def test_difference_within_the_tolerance_is_equal():
     close = pa.array([1.0, 2.5 + 1e-11, None, float("nan")])
-    assert compare_tables("X", reference(), built(N=close)).equal
+    result = compare_tables("X", reference(), built(N=close))
+    assert result.equal
+    # How much of the equality rests on the tolerance is counted and printed.
+    assert result.close == 1 and 0.9e-11 < result.largest < 1.1e-11
+    assert tolerance_line([result]).startswith(
+        "numbers equal within the tolerance but not exactly: 1 cells, largest difference 1.0e-11")
+    exact = compare_tables("X", reference(), built())
+    assert exact.close == 0 and exact.largest == 0.0
 
 
 def test_large_integers_are_compared_exactly():
@@ -93,6 +105,24 @@ def test_missing_extra_and_reordered_columns_fail():
     reordered = compare_tables("X", reference(), built().select(["N", "ID", "K", "D"]))
     assert reordered.mismatched == 0 and not reordered.equal
     assert reordered.problems == ["columns are in another order"]
+
+
+def test_a_time_zone_is_not_a_storage_type():
+    moment = datetime.datetime(2020, 1, 1, 12, 0, 0)
+    plain = pa.table({"T": pa.array([moment, None], pa.timestamp("s"))})
+    finer = pa.table({"T": pa.array([moment, None], pa.timestamp("ms"))})
+    zoned = pa.table({"T": pa.array([moment, None], pa.timestamp("s", tz="UTC"))})
+    same = compare_tables("X", plain, finer)
+    assert same.equal and same.storage == [("T", "timestamp[s]", "timestamp[ms]")]
+    other = compare_tables("X", plain, zoned)
+    assert not other.equal and other.mismatched == 1 and other.storage == []
+
+
+def test_the_tolerance_is_absolute():
+    # PLAN.md section 4.6 says "numeric tolerance 1e-10" and the E1 spike read it this way.
+    left = pa.table({"N": [1e-12, 1e12]})
+    assert compare_tables("X", left, pa.table({"N": [9e-11, 1e12 + 1e-4]})).mismatched == 1
+    assert compare_tables("X", left, pa.table({"N": [9e-11, 1e12]})).equal
 
 
 def test_all_missing_column_of_null_type_equals_a_typed_one():

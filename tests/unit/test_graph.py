@@ -116,22 +116,116 @@ def test_coverage_reaches_sdtm_through_other_columns(tmp_path):
     result = graph.build_graph(make_kit(tmp_path), tmp_path, [plan(COLUMNS, OUTPUTS, ORIGINS)])
     coverage = {entry["column"]: entry for entry in result.coverage["columns"]}
     assert coverage["adam:ADSL.AGEGR1N"] == {
-        "column": "adam:ADSL.AGEGR1N", "terminal": "sdtm", "sdtm": 1, "inputs": ["sdtm:DM"],
-        "gaps": []}
+        "column": "adam:ADSL.AGEGR1N", "terminal": "sdtm", "sdtm": 1, "value": True,
+        "inputs": ["sdtm:DM"], "gaps": []}
     assert coverage["adam:ADSL.STUDYID"]["terminal"] == "literal"
+    assert coverage["adam:ADSL.STUDYID"]["value"] is False
     assert coverage["adam:ADSL.STUDYID"]["inputs"] == ["sdtm:DM"]  # rows of the base dataset
+
+
+def hashes(tmp_path, kit, columns) -> dict[str, str]:
+    result = graph.build_graph(kit, tmp_path, [plan(columns, OUTPUTS, ORIGINS)])
+    return {node["id"]: node["hash"] for node in result.nodes}
 
 
 def test_a_changed_rule_changes_the_hash_of_its_node_only(tmp_path):
     kit = make_kit(tmp_path)
-    before = {n["id"]: n["hash"] for n in graph.build_graph(
-        kit, tmp_path, [plan(COLUMNS, OUTPUTS, ORIGINS)]).nodes}
+    before = hashes(tmp_path, kit, COLUMNS)
     changed = [dict(column) for column in COLUMNS]
     changed[2] = {"name": "AGEGR1", "derivation": {"value": {"case": [
         {"when": "AGE_N < 70", "then": "'<70'"}, {"otherwise": "'>=70'"}]}}}
-    after = {n["id"]: n["hash"] for n in graph.build_graph(
-        kit, tmp_path, [plan(changed, OUTPUTS, ORIGINS)]).nodes}
+    after = hashes(tmp_path, kit, changed)
     assert {key for key in before if before[key] != after[key]} == {"adam:ADSL.AGEGR1"}
+
+
+def test_a_changed_helper_changes_the_hash_of_the_column_that_reads_it(tmp_path):
+    # The same edges and the same own rule, but another rule behind it.
+    kit = make_kit(tmp_path)
+    before = hashes(tmp_path, kit, COLUMNS)
+    changed = [dict(column) for column in COLUMNS]
+    changed[1] = {"name": "AGE_N", "derivation": {"value": "DM.AGE + 10"}}
+    after = hashes(tmp_path, kit, changed)
+    assert {key for key in before if before[key] != after[key]} == {"adam:ADSL.AGEGR1"}
+
+
+ROW_ORIGINS = {
+    "/rows/0": {"declaring_source": "gold/spec/adsl.yaml", "line": 90, "source_kind": "authored"},
+    "/intermediates/0": {"declaring_source": "gold/spec/adsl.yaml", "line": 50,
+                         "source_kind": "authored"},
+    "/columns/0/derivation": {"declaring_source": "gold/spec/adsl.yaml", "line": 60,
+                              "source_kind": "authored"},
+    "/columns/2/derivation": {"declaring_source": "gold/spec/adsl.yaml", "line": 70,
+                              "source_kind": "authored"},
+}
+
+
+def with_rows() -> SpecPlan:
+    """A specification with a row template that filters, and a lookup."""
+    result = plan(
+        [
+            {"name": "USUBJID", "derivation": {"value": "DM.USUBJID"}},
+            {"name": "FLAG", "derivation": {"value": "'Y'"}},
+            {"name": "HT", "derivation": {"value": "BASE.VSSTRESN"}},
+        ],
+        ["USUBJID", "FLAG", "HT"],
+        ROW_ORIGINS,
+    )
+    result.specification["rows"] = [
+        {"id": "treated", "dataset": "DM", "filter": "DM.ARM <> 'Screen Failure'",
+         "derivations": {}}]
+    result.specification["intermediates"] = [
+        {"id": "BASE", "dataset": "VS", "key": ["USUBJID"], "keep": "first"}]
+    return result
+
+
+def test_value_and_context_dependencies(tmp_path):
+    result = graph.build_graph(make_kit(tmp_path), tmp_path, [with_rows()])
+    coverage = {entry["column"]: entry for entry in result.coverage["columns"]}
+    # FLAG is a literal on filtered rows: it reaches SDTM, but not by its own rule.
+    assert coverage["adam:ADSL.FLAG"]["terminal"] == "sdtm"
+    assert coverage["adam:ADSL.FLAG"]["value"] is False
+    assert coverage["adam:ADSL.HT"]["value"] is True
+    # A column taken through a lookup is cited where the rule names it (line 70),
+    # not at the declaration of the lookup (line 50).
+    assert edge(result, "adam:ADSL.HT", "sdtm:VS.VSSTRESN")["source"]["line"] == 70
+    # The key of the lookup is read at its declaration, the row filter at the row template.
+    assert edge(result, "adam:ADSL.HT", "sdtm:VS.USUBJID")["source"]["line"] == 50
+    assert edge(result, "adam:ADSL.HT", "sdtm:DM.ARM")["source"]["line"] == 90
+    # A rule is preferred to a row template or a lookup as the place of an edge.
+    assert edge(result, "adam:ADSL.USUBJID", "sdtm:DM.USUBJID")["source"]["line"] == 60
+
+
+def test_a_gap_is_passed_on_to_the_columns_that_read_it(tmp_path, root):
+    """Review of real-1, finding F2: AGEGR1N reads only AGEGR1, which has a gap."""
+    kit = make_kit(tmp_path)
+    result = graph.build_graph(kit, tmp_path, [plan(bad(2, "AGE_TYPO < 65"), OUTPUTS, ORIGINS)])
+    coverage = {entry["column"]: entry for entry in result.coverage["columns"]}
+    assert coverage["adam:ADSL.AGEGR1"]["terminal"] == "gap"
+    assert coverage["adam:ADSL.AGEGR1N"]["terminal"] == "gap"
+    assert coverage["adam:ADSL.AGEGR1N"]["gaps"] == ["reads adam:ADSL.AGEGR1, which has a gap"]
+    assert coverage["adam:ADSL.USUBJID"]["terminal"] == "sdtm"
+    graph.write_graph(tmp_path / "graph", result)
+    expected = {"ADSL": OUTPUTS}
+    # Listing the gap of AGEGR1 alone is not enough.
+    _, problems = graph.check_graph(root, tmp_path / "graph", expected,
+                                    {"adam:ADSL.AGEGR1": "known"})
+    assert len(problems) == 1 and problems[0].startswith(
+        "adam:ADSL.AGEGR1N: gap with no listed reason")
+    lines, problems = graph.check_graph(
+        root, tmp_path / "graph", expected,
+        {"adam:ADSL.AGEGR1": "known", "adam:ADSL.AGEGR1N": "behind AGEGR1"})
+    assert problems == [] and "ADSL            5       2       0       1     2" in lines
+    # A coverage file that calls the reading column complete does not pass either.
+    with open(tmp_path / "graph" / "coverage.json", encoding="ascii") as handle:
+        recorded = json.load(handle)
+    for entry in recorded["columns"]:
+        if entry["column"] == "adam:ADSL.AGEGR1N":
+            entry.update(terminal="literal", gaps=[])
+    write_json(tmp_path / "graph" / "coverage.json", recorded)
+    _, problems = graph.check_graph(root, tmp_path / "graph", expected,
+                                    {"adam:ADSL.AGEGR1": "known"})
+    assert problems == ["adam:ADSL.AGEGR1N: recorded as complete, but it reads "
+                        "adam:ADSL.AGEGR1, which has a gap"]
 
 
 def bad(index: int, value) -> list[dict]:
@@ -171,11 +265,43 @@ def written(tmp_path):
 
 
 def test_complete_graph_passes(written, root):
-    lines, problems = graph.check_graph(root, written, {"ADSL": OUTPUTS}, {})
+    sdtm = {"DM": {"USUBJID", "AGE", "ARM"}, "VS": {"USUBJID", "VSSTRESN"}}
+    lines, problems = graph.check_graph(root, written, {"ADSL": OUTPUTS}, {}, sdtm)
     assert problems == []
-    assert "ADSL            5       4       1     0" in lines
+    assert "dataset   columns to SDTM by rows literal  gaps" in lines
+    assert "ADSL            5       4       0       1     0" in lines
     assert "nodes: L3 3, L4 5" in lines
     assert "literal columns sit on rows of: sdtm:DM (1)" in lines
+    assert "cites edges: 0 imported, 0 with a verified quote, 0 approved by a person" in lines
+
+
+def test_an_sdtm_node_must_be_a_column_of_the_kit(written, root):
+    """Review of real-1, finding F6: a node and an edge for a column that does not exist."""
+    rewrite(written, "nodes.jsonl", lambda nodes: [*nodes, {
+        "id": "sdtm:ZZ.NOSUCH", "layer": "L3", "hash": "0" * 64,
+        "source": {"file": "inputs/data/sdtm/zz.parquet", "line": 1}}])
+    sdtm = {"DM": {"USUBJID", "AGE", "ARM"}, "VS": {"USUBJID", "VSSTRESN"}}
+    _, problems = graph.check_graph(root, written, {"ADSL": OUTPUTS}, {}, sdtm)
+    assert problems == ["node sdtm:ZZ.NOSUCH: not a column of the kit's SDTM data"]
+    _, problems = graph.check_graph(root, written, {"ADSL": OUTPUTS}, {}, {"DM": {"AGE"}})
+    assert "node sdtm:DM.USUBJID: not a column of the kit's SDTM data" in problems
+
+
+def test_the_cites_line_counts_what_the_edges_say(written, root):
+    """Review of real-1, finding F6: the words after the count were fixed text."""
+    def add(edges):
+        return sorted([*edges, {
+            "type": "cites", "from": "adam:ADSL.HT", "to": "doc:sap#p1", "proof": "judged",
+            "origin": "imported", "quote_verified": True, "approved_by": "nobody"}],
+            key=lambda e: (e["type"], e["from"], e["to"]))
+
+    rewrite(written, "edges.jsonl", add)
+    rewrite(written, "nodes.jsonl", lambda nodes: sorted([*nodes, {
+        "id": "doc:sap#p1", "layer": "L0", "hash": "0" * 64,
+        "source": {"file": "inputs/docs/sap.pdf", "line": 1}}], key=lambda n: n["id"]))
+    lines, problems = graph.check_graph(root, written, {"ADSL": OUTPUTS}, {})
+    assert problems == []
+    assert "cites edges: 1 imported, 1 with a verified quote, 1 approved by a person" in lines
 
 
 def rewrite(folder, name, change):
@@ -193,6 +319,10 @@ def test_an_output_column_without_a_node_fails(written, root):
     assert problems == ["adam:ADSL.NEWCOL: an output column with no node or no coverage entry"]
 
 
+# The next two tests change one of the two files, so they show that the check
+# compares the files. They are not the case of a reference the analysis
+# missed, which leaves both files agreeing (review of real-1, finding F4):
+# tests/pilot A4-unread tests that case against the engine.
 def test_a_removed_edge_fails(written, root):
     rewrite(written, "edges.jsonl", lambda edges: [e for e in edges if e["from"] != "adam:ADSL.HT"])
     _, problems = graph.check_graph(root, written, {"ADSL": OUTPUTS}, {})
@@ -265,8 +395,10 @@ def test_claims_become_imported_judged_cites_edges(tmp_path):
     assert nodes["doc:define-sdtm#DM.AGE"]["source"] == {
         "file": "inputs/data/sdtm/define.xml", "line": 3}  # the ItemDef of that name
     assert nodes["doc:define-sdtm#page%204"]["source"]["line"] == 1
+    # Three citations of the kit's document; two of them name the same span.
     assert result.coverage["claims"]["ADSL"] == {
-        "file": "gold/claims/adsl-claims.json", "claims": 2, "cites_edges": 2,
+        "file": "gold/claims/adsl-claims.json", "claims": 2,
+        "citations_of_kit_documents": 3, "cites_edges": 2,
         "citations_not_to_kit_documents": {"a/program.sas": 1},
         "variables_not_output_columns": ["AGE_N"],
     }

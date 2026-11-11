@@ -44,7 +44,9 @@ def build_parser() -> argparse.ArgumentParser:
         "build", help="build a kit's resolved specs, ADaM datasets and graph"
     )
     p_build.add_argument("kit", help="kit ID")
-    p_build.add_argument("--into", type=Path, help="build here, not in build/kits/<kit>")
+    p_build.add_argument(
+        "--into", type=Path, help="assemble and build here, not in build/kits/<kit>"
+    )
 
     p_check = commands.add_parser(
         "check", help="compare a build with the reference (P2) and check its trace"

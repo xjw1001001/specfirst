@@ -56,7 +56,10 @@ def test_adapted_code_names_its_source_and_carries_its_license(root, manifest):
     """Rule 1 of PLAN.md section 2.1, and the notice an MIT license asks to keep."""
     text = (root / "third_party" / "SOURCES.md").read_text(encoding="ascii")
     rows = ADAPTED.findall(text)
-    assert [row[0] for row in rows] == ["src/specfirst/machine/lineage.py"]
+    # This test checks the rows that are there. tests/pilot (A5-adapted) looks for
+    # adapted code that nobody recorded.
+    assert [row[0] for row in rows] == [
+        "src/specfirst/machine/lineage.py", "src/specfirst/machine/runner.py"]
     for file, url, commit, license_file in rows:
         assert any(url == src.web_url and commit == src.commit for src in manifest.sources)
         notice = (root / license_file).read_text(encoding="ascii")

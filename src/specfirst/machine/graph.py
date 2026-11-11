@@ -2,18 +2,35 @@
 
 Nodes: one per ADaM output column (layer L4) and one per SDTM column that a
 specification reads (layer L3). Edges: `derives_from`, static, from an ADaM
-column to the ADaM or SDTM columns its rule reads, each with the file and
-line of the place in the specification where the column is read. Helper
-columns, intermediates and row templates are not nodes: an edge goes through
-them, and its line is the nearest place on the way that reads the target.
+column to the ADaM or SDTM columns its rule reads. Helper columns, lookups
+(yamaa's intermediates) and row templates are not nodes: an edge goes
+through them.
+
+What an edge means, and what it does not (ADR-001, item 6):
+
+- It says what a column's rule reads, not which rows contributed. A value
+  the rule computes with and a column that only selects or orders rows (the
+  filter of a row template, the key, filter and order of a lookup) both
+  give an edge, and the edge does not say which it is. coverage.json says
+  per column whether the rule itself reads a column (`value`).
+- There is one edge per pair of columns. Its file and line are those of one
+  place that reads the target: a rule before a row template or the
+  declaration of a lookup, then the nearest on the way, then the lowest file
+  and line. A column taken through a lookup is cited where the rule names
+  it. A join key is cited at the rule that causes the join; the key itself
+  is named in the specification's `input`.
+- The hash of an ADaM node covers the column's own rule and every helper
+  column, lookup and row template the rule passes through.
 
 Pilot 7's reviewed claims are taken over as candidate `cites` edges from
 ADaM columns to document spans (layer L0). They are judged edges, marked
-imported, with no verified quote and no approval (section 4.2).
+imported, with no verified quote and no approval (section 4.2). Several
+citations of one span by one column give one edge.
 
-The graph has no node for a literal. A column whose rule reads no column at
-all is recorded in coverage.json as `literal`, with the declared inputs
-whose rows it is built on.
+The graph has no node for a literal or for a dataset. A column that reaches
+no column is recorded in coverage.json as `literal`, with the declared
+inputs whose rows it is built on. A column is complete only if every column
+it reaches is: a gap is passed on to the columns that read it.
 """
 
 from __future__ import annotations
@@ -28,7 +45,7 @@ from urllib.parse import quote
 from specfirst import schemas
 from specfirst.kit import Kit
 from specfirst.machine.canonical import content_hash, read_jsonl, write_json, write_jsonl
-from specfirst.machine.lineage import Lineage, Read, column_dependencies
+from specfirst.machine.lineage import Lineage, Read, column_dependencies, pointer
 from specfirst.machine.runner import SpecPlan
 
 _ITEM_DEF = re.compile(r'<ItemDef\b[^>]*?\bOID="([^"]+)"')
@@ -96,84 +113,128 @@ def _column_content(spec: dict, name: str) -> dict:
     return {"column": column, "rows": rows}
 
 
+def _node_content(spec: dict, name: str, through: set[str]) -> dict:
+    """What the hash of an ADaM node covers: the rule and everything it passes through."""
+    lookups = {item["id"]: item for item in spec.get("intermediates", [])}
+    rows = {row["id"]: row for row in spec.get("rows", [])}
+    passed: dict[str, object] = {}
+    for element in sorted(through):
+        head, _, tail = element.partition(".")
+        if head == "spec":
+            passed[element] = _column_content(spec, tail)
+        elif head == "row":
+            passed[element] = {k: v for k, v in rows.get(tail, {}).items() if k != "derivations"}
+        elif head == "intermediate":
+            passed[element] = lookups.get(tail)
+        elif head in lookups:
+            passed[f"intermediate.{head}"] = lookups[head]
+    return {**_column_content(spec, name), "through": passed}
+
+
 @dataclass
 class _Trace:
-    targets: dict[str, tuple[int, str, int]] = field(default_factory=dict)  # id -> depth, site
+    # target ID -> (0 for a rule, 1 for a row template or a lookup declaration; depth; file; line)
+    targets: dict[str, tuple[int, int, str, int]] = field(default_factory=dict)
     inputs: set[str] = field(default_factory=set)
     gaps: set[str] = field(default_factory=set)
+    through: set[str] = field(default_factory=set)
+    value: bool = False  # the rule itself reads a column, apart from its row templates
 
 
 def _trace_column(
     plan: SpecPlan, lineage: Lineage, by_element: dict[str, list[Read]], name: str,
     datasets: dict[str, tuple[str, str]],
 ) -> _Trace:
-    """Follow one output column through helpers, intermediates and row templates."""
+    """Follow one output column through helpers, lookups and row templates."""
+    spec = plan.specification
     outputs = set(lineage.outputs)
-    intermediates = {item["id"]: item["dataset"] for item in plan.specification.get(
-        "intermediates", [])}
-    rows = {row["id"]: row["dataset"] for row in plan.specification.get("rows", [])}
+    lookups = {item["id"]: (j, item) for j, item in enumerate(spec.get("intermediates", []))}
+    rows = {row["id"]: row["dataset"] for row in spec.get("rows", [])}
     trace = _Trace()
     if name not in lineage.defined:
         trace.gaps.add("no derivation in the specification")
 
     def whole(alias: str) -> None:
-        alias = intermediates.get(alias, alias)
+        alias = lookups[alias][1]["dataset"] if alias in lookups else alias
         if alias in datasets:
             layer, dataset = datasets[alias]
             trace.inputs.add(f"{layer}:{dataset}")
 
-    def target(node: str, depth: int, site: tuple[str, int]) -> None:
-        found = (depth, *site)
-        if node not in trace.targets or found < trace.targets[node]:
-            trace.targets[node] = found
+    def passes_on(element: str, read: Read) -> bool:
+        """A column taken from a lookup as it is: the rule that names it is the place."""
+        head, _, tail = element.partition(".")
+        if head not in lookups:
+            return False
+        j, item = lookups[head]
+        return tail not in item.get("derivations", {}) and read.pointer == pointer(
+            "intermediates", j)
+
+    def walk(with_rows: bool) -> dict[str, tuple[int, int, str, int]]:
+        targets: dict[str, tuple[int, int, str, int]] = {}
+
+        def target(node: str, found: tuple[int, int, str, int]) -> None:
+            if node not in targets or found < targets[node]:
+                targets[node] = found
+
+        start = f"spec.{name}"
+        seen = {start}
+        queue: deque[tuple[str, int, tuple[str, int] | None]] = deque([(start, 0, None)])
+        while queue:
+            element, depth, named_at = queue.popleft()
+            if element.startswith("row."):
+                whole(rows.get(element[4:], ""))
+            context = 1 if element.startswith(("row.", "intermediate.")) else 0
+            for read in by_element.get(element, []):
+                site = _site(plan, read.pointer)
+                trace.gaps.update(f"unresolved reference {ref} at {site[0]}:{site[1]}"
+                                  for ref in read.unresolved)
+                trace.gaps.update(f"unknown name {ref} at {site[0]}:{site[1]}"
+                                  for ref in read.unknown)
+                for alias in read.whole:
+                    whole(alias)
+                taken = named_at if named_at and passes_on(element, read) else site
+                for ref in sorted(read.refs):
+                    head, _, tail = ref.partition(".")
+                    if head == "row" and not with_rows:
+                        continue
+                    if head == "spec" and tail in outputs and tail != name:
+                        target(adam_id(plan.name, tail), (context, depth, *site))
+                    elif head in datasets and head not in ("spec", "row", "intermediate"):
+                        layer, dataset = datasets[head]
+                        target(f"{layer}:{dataset}.{tail}", (context, depth, *taken))
+                    elif ref not in seen:
+                        seen.add(ref)
+                        queue.append((ref, depth + 1, site))
+        trace.through |= seen - {start}
+        return targets
 
     if not rows:  # without row templates, every row comes from the base dataset
-        whole(plan.specification.get("base") or "")
-
-    start = f"spec.{name}"
-    seen, queue = {start}, deque([(start, 0)])
-    while queue:
-        element, depth = queue.popleft()
-        if element.startswith("row."):
-            whole(rows.get(element[4:], ""))
-        for read in by_element.get(element, []):
-            site = _site(plan, read.pointer)
-            trace.gaps |= {f"unresolved reference {ref} at {site[0]}:{site[1]}"
-                           for ref in read.unresolved}
-            trace.gaps |= {f"unknown name {ref} at {site[0]}:{site[1]}" for ref in read.unknown}
-            for alias in read.whole:
-                whole(alias)
-            for ref in sorted(read.refs):
-                head, _, tail = ref.partition(".")
-                if head == "spec" and tail in outputs and tail != name:
-                    target(adam_id(plan.name, tail), depth, site)
-                elif head in datasets and head not in ("spec", "row", "intermediate"):
-                    layer, dataset = datasets[head]
-                    target(f"{layer}:{dataset}.{tail}", depth, site)
-                elif ref not in seen:
-                    seen.add(ref)
-                    queue.append((ref, depth + 1))
+        whole(spec.get("base") or "")
+    trace.value = bool(walk(with_rows=False))
+    trace.targets = walk(with_rows=True)
     return trace
 
 
-def _reach(edges: list[dict]) -> dict[str, set[str]]:
-    """For every node with a derives_from edge: the SDTM columns it reaches."""
+def _closure(edges: list[dict]) -> dict[str, set[str]]:
+    """For every node with a derives_from edge: all nodes it reaches through such edges."""
     following: dict[str, set[str]] = {}
     for edge in edges:
         if edge["type"] == "derives_from":
             following.setdefault(edge["from"], set()).add(edge["to"])
     reach: dict[str, set[str]] = {}
     for start in following:
-        seen, stack, found = {start}, [start], set()
+        seen, stack = {start}, [start]
         while stack:
             for nxt in following.get(stack.pop(), ()):
-                if nxt.startswith("sdtm:"):
-                    found.add(nxt)
-                elif nxt not in seen:
+                if nxt not in seen:
                     seen.add(nxt)
                     stack.append(nxt)
-        reach[start] = found
+        reach[start] = seen - {start}
     return reach
+
+
+def _sdtm(nodes: set[str]) -> set[str]:
+    return {node for node in nodes if node.startswith("sdtm:")}
 
 
 def build_graph(kit: Kit, kit_dir: Path, plans: list[SpecPlan]) -> Graph:
@@ -208,17 +269,17 @@ def build_graph(kit: Kit, kit_dir: Path, plans: list[SpecPlan]) -> Graph:
         labels = {c["name"]: c.get("label") for c in plan.specification.get("columns", [])}
         for name in lineage.outputs:
             node = adam_id(plan.name, name)
+            trace = _trace_column(plan, lineage, by_element, name, datasets)
+            traces[node] = trace
             file, line = _site(plan, _definition_place(plan, lineage, name))
             nodes[node] = {
                 "id": node, "layer": "L4", "kind": "variable",
-                "hash": content_hash(_column_content(plan.specification, name)),
+                "hash": content_hash(_node_content(plan.specification, name, trace.through)),
                 "source": {"file": file, "line": line},
             }
             if labels.get(name):
                 nodes[node]["label"] = labels[name]
-            trace = _trace_column(plan, lineage, by_element, name, datasets)
-            traces[node] = trace
-            for to, (_, file, line) in trace.targets.items():
+            for to, (_, _, file, line) in trace.targets.items():
                 edges[("derives_from", node, to)] = {
                     "type": "derives_from", "from": node, "to": to, "proof": "static",
                     "origin": "built", "source": {"file": file, "line": line},
@@ -244,15 +305,20 @@ def build_graph(kit: Kit, kit_dir: Path, plans: list[SpecPlan]) -> Graph:
 
     claims = _import_claims(kit, kit_dir, plans, nodes, edges)
     ordered_edges = [edges[key] for key in sorted(edges)]
-    reach = _reach(ordered_edges)
+    reach = _closure(ordered_edges)
+    with_gap = {node for node, trace in traces.items() if trace.gaps}
     columns = []
     for node in sorted(traces):
         trace = traces[node]
-        reached = len(reach.get(node, ()))
-        terminal = "gap" if trace.gaps else "sdtm" if reached else "literal"
+        reached = reach.get(node, set())
+        # A gap is passed on: a column is complete only if every column it reaches is.
+        gaps = sorted(trace.gaps) + [
+            f"reads {other}, which has a gap" for other in sorted(reached & with_gap)
+        ]
+        sdtm = len(_sdtm(reached))
         columns.append({
-            "column": node, "terminal": terminal, "sdtm": reached,
-            "inputs": sorted(trace.inputs), "gaps": sorted(trace.gaps),
+            "column": node, "terminal": "gap" if gaps else "sdtm" if sdtm else "literal",
+            "sdtm": sdtm, "value": trace.value, "inputs": sorted(trace.inputs), "gaps": gaps,
         })
     return Graph(
         nodes=[nodes[key] for key in sorted(nodes)],
@@ -296,7 +362,7 @@ def _import_claims(
             raise GraphError(f"{file}: the claims are for dataset {data.get('dataset')!r}")
         claims = data.get("claims") or []
         lines = _claim_lines(text, [claim.get("variable") for claim in claims], file)
-        taken, not_documents, not_columns = 0, Counter(), set()
+        taken, cited, not_documents, not_columns = 0, 0, Counter(), set()
         for claim, line in zip(claims, lines, strict=True):
             node = adam_id(plan.name, str(claim.get("variable")))
             if node not in nodes:
@@ -307,6 +373,7 @@ def _import_claims(
                 if document is None:
                     not_documents[str(citation.get("document", ""))] += 1
                     continue
+                cited += 1
                 section = str(citation.get("section") or "")
                 anchor = quote(section, safe=_ANCHOR_SAFE)
                 span = f"doc:{document.id}#{anchor}" if anchor else f"doc:{document.id}"
@@ -327,7 +394,8 @@ def _import_claims(
                         "source": {"file": file, "line": line},
                     }
         summary[plan.name] = {
-            "file": file, "claims": len(claims), "cites_edges": taken,
+            "file": file, "claims": len(claims), "citations_of_kit_documents": cited,
+            "cites_edges": taken,
             "citations_not_to_kit_documents": dict(sorted(not_documents.items())),
             "variables_not_output_columns": sorted(not_columns),
         }
@@ -343,14 +411,23 @@ def write_graph(folder: Path, graph: Graph) -> list[Path]:
 
 
 def check_graph(
-    root: Path, folder: Path, expected: dict[str, list[str]], accepted_gaps: dict[str, str]
+    root: Path, folder: Path, expected: dict[str, list[str]], accepted_gaps: dict[str, str],
+    sdtm_columns: dict[str, set[str]] | None = None,
 ) -> tuple[list[str], list[str]]:
     """Check the written graph against the gate of real-1 (PLAN.md section 13.3).
 
     expected: the output columns of every dataset, taken from the built data.
     accepted_gaps: column ID -> reason, for gaps the kit lists.
-    Returns the lines of the report and the problems. Reachability is
-    computed here from edges.jsonl, not taken from coverage.json.
+    sdtm_columns: the columns of every SDTM dataset of the kit, if known.
+    Returns the lines of the report and the problems.
+
+    What this proves: the files fit the schema and agree with each other,
+    every output column has a node, no column has a gap the kit does not
+    list, and reachability, computed here from edges.jsonl, is what
+    coverage.json records. It cannot see a reference the dependency analysis
+    missed: such a column would be recorded as literal in both files. For
+    the pilot, tests/pilot compares the analysis with Pilot 7's (A3) and
+    with the engine (A4).
     """
     lines: list[str] = []
     problems: list[str] = []
@@ -375,14 +452,21 @@ def check_graph(
         problems.append("nodes.jsonl is not sorted by id")
     if edges != sorted(edges, key=lambda e: (e["type"], e["from"], e["to"])):
         problems.append("edges.jsonl is not sorted by type, from, to")
+    if sdtm_columns is not None:
+        for name in sorted(_sdtm(known)):
+            dataset, _, column = name[len("sdtm:"):].partition(".")
+            if column not in sdtm_columns.get(dataset, set()):
+                problems.append(f"node {name}: not a column of the kit's SDTM data")
 
-    reach = _reach(edges)
+    reach = _closure(edges)
     recorded = {entry["column"]: entry for entry in coverage.get("columns", [])}
+    with_gap = {column for column, entry in recorded.items() if entry["gaps"]}
     wanted = {adam_id(dataset, column) for dataset, columns in expected.items()
               for column in columns}
     for extra in sorted(set(recorded) - wanted):
         problems.append(f"{extra}: in coverage.json but not an output column of the built data")
-    lines.append(f"{'dataset':9s} {'columns':>7s} {'to SDTM':>7s} {'literal':>7s} {'gaps':>5s}")
+    lines.append(f"{'dataset':9s} {'columns':>7s} {'to SDTM':>7s} {'by rows':>7s} "
+                 f"{'literal':>7s} {'gaps':>5s}")
     totals = Counter()
     for dataset, columns in expected.items():
         count = Counter()
@@ -393,7 +477,9 @@ def check_graph(
                 problems.append(f"{node}: an output column with no node or no coverage entry")
                 count["gaps"] += 1
                 continue
-            reached = len(reach.get(node, ()))
+            reached = reach.get(node, set())
+            sdtm = len(_sdtm(reached))
+            behind = sorted((reached & with_gap) - {node})
             if entry["gaps"]:
                 count["gaps"] += 1
                 reason = accepted_gaps.get(node)
@@ -402,30 +488,42 @@ def check_graph(
                     lines.append(f"  gap {node}: {detail} (listed: {reason})")
                 else:
                     problems.append(f"{node}: gap with no listed reason: {detail}")
-            elif reached:
+            elif behind:
+                count["gaps"] += 1
+                problems.append(f"{node}: recorded as complete, but it reads {behind[0]}, "
+                                "which has a gap")
+            elif sdtm:
                 count["sdtm"] += 1
+                count["rows"] += 0 if entry.get("value") else 1
             elif entry["terminal"] == "literal":
                 count["literal"] += 1
             else:
                 problems.append(f"{node}: no derives_from path to an SDTM column")
                 count["gaps"] += 1
-            if reached != entry["sdtm"] or (not entry["gaps"] and entry["terminal"] != (
-                    "sdtm" if reached else "literal")):
+            if sdtm != entry["sdtm"] or (not entry["gaps"] and entry["terminal"] != (
+                    "sdtm" if sdtm else "literal")):
                 problems.append(f"{node}: coverage.json disagrees with edges.jsonl")
         totals.update(count)
-        lines.append(f"{dataset:9s} {len(columns):7d} {count['sdtm']:7d} {count['literal']:7d} "
-                     f"{count['gaps']:5d}")
+        lines.append(f"{dataset:9s} {len(columns):7d} {count['sdtm']:7d} {count['rows']:7d} "
+                     f"{count['literal']:7d} {count['gaps']:5d}")
     total = sum(len(columns) for columns in expected.values())
-    lines.append(f"{'TOTAL':9s} {total:7d} {totals['sdtm']:7d} {totals['literal']:7d} "
-                 f"{totals['gaps']:5d}")
-    for node in sorted(set(accepted_gaps) - {c for c, e in recorded.items() if e["gaps"]}):
+    lines.append(f"{'TOTAL':9s} {total:7d} {totals['sdtm']:7d} {totals['rows']:7d} "
+                 f"{totals['literal']:7d} {totals['gaps']:5d}")
+    lines.append("to SDTM: reaches SDTM columns through derives_from. by rows: those of them "
+                 "whose own rule reads no column")
+    lines.append("and that reach SDTM only through the filter of a row template.")
+    for node in sorted(set(accepted_gaps) - with_gap):
         problems.append(f"{node}: listed as a gap in the kit, but it has none")
     by_layer = Counter(node["layer"] for node in nodes)
     by_type = Counter(edge["type"] for edge in edges)
-    imported = sum(1 for edge in edges if edge.get("origin") == "imported")
+    cites = [edge for edge in edges if edge["type"] == "cites"]
     lines.append("nodes: " + ", ".join(f"{k} {v}" for k, v in sorted(by_layer.items())))
-    lines.append("edges: " + ", ".join(f"{k} {v}" for k, v in sorted(by_type.items()))
-                 + f" ({imported} imported, judged, not verified, not approved)")
+    lines.append("edges: " + ", ".join(f"{k} {v}" for k, v in sorted(by_type.items())))
+    lines.append(
+        f"cites edges: {sum(1 for e in cites if e.get('origin') == 'imported')} imported, "
+        f"{sum(1 for e in cites if e.get('quote_verified'))} with a verified quote, "
+        f"{sum(1 for e in cites if e.get('approved_by'))} approved by a person"
+    )
     literal = [entry for entry in coverage.get("columns", []) if entry["terminal"] == "literal"]
     if literal:
         on = Counter(", ".join(entry["inputs"]) or "no declared input" for entry in literal)

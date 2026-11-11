@@ -1,6 +1,8 @@
 """P2 for ADaM: the built dataset equals the reference, cell by cell.
 
-PLAN.md section 4.6: numeric tolerance 1e-10. A cell is one row of one
+PLAN.md section 4.6: numeric tolerance 1e-10. The tolerance is absolute, as
+in the E1 spike: two numbers are equal when they differ by 1e-10 or less,
+whatever their size. Text and dates are compared exactly. A cell is one row of one
 column of the reference. The count follows evidence/compare_adam.py (E1), so
 the total for the pilot is the same 9,119,605, with three holes of the spike
 closed: a NaN against a number is a mismatch, a column the reference does not
@@ -35,6 +37,8 @@ class Comparison:
     by_column: dict[str, int] = field(default_factory=dict)  # column -> mismatched cells
     # Columns of one logical kind in two storage types: column, reference, built.
     storage: list[tuple[str, str, str]] = field(default_factory=list)
+    close: int = 0  # numeric cells that are equal within the tolerance but not exactly
+    largest: float = 0.0  # the largest difference among them
 
     @property
     def cells(self) -> int:
@@ -66,7 +70,8 @@ def kind(data_type: pa.DataType) -> str:
     if types.is_date(data_type):
         return "date"
     if types.is_timestamp(data_type):
-        return "timestamp"
+        # A time zone is meaning, not storage: with and without one are two kinds.
+        return "timestamp with time zone" if data_type.tz else "timestamp"
     if types.is_time(data_type):
         return "time"
     if types.is_null(data_type):
@@ -74,7 +79,10 @@ def kind(data_type: pa.DataType) -> str:
     return str(data_type)
 
 
-def _column_mismatches(reference: pa.ChunkedArray, built: pa.ChunkedArray, tolerance: float) -> int:
+def _column_mismatches(
+    reference: pa.ChunkedArray, built: pa.ChunkedArray, tolerance: float
+) -> tuple[int, int, float]:
+    """Mismatched cells; cells equal only within the tolerance; their largest difference."""
     import numpy as np
     import pyarrow as pa
     import pyarrow.compute as pc
@@ -90,10 +98,11 @@ def _column_mismatches(reference: pa.ChunkedArray, built: pa.ChunkedArray, toler
     mismatched = left_null != right_null
     kinds = kind(left.type), kind(right.type)
     if "null" in kinds:
-        return int(mismatched.sum())
+        return int(mismatched.sum()), 0, 0.0
     if kinds[0] != kinds[1]:
-        return int((mismatched | both).sum())
+        return int((mismatched | both).sum()), 0, 0.0
     if kinds[0] == "number":
+        close, largest = 0, 0.0
         if pa.types.is_integer(left.type) and pa.types.is_integer(right.type):
             a = left.fill_null(0).to_numpy(zero_copy_only=False)
             b = right.fill_null(0).to_numpy(zero_copy_only=False)
@@ -103,24 +112,28 @@ def _column_mismatches(reference: pa.ChunkedArray, built: pa.ChunkedArray, toler
             b = pc.cast(right, pa.float64()).fill_null(0.0).to_numpy(zero_copy_only=False)
             a_nan, b_nan = np.isnan(a), np.isnan(b)
             with np.errstate(invalid="ignore"):
-                differ = np.abs(a - b) > tolerance
+                distance = np.abs(a - b)
+                differ = distance > tolerance
             differ = np.where(a_nan | b_nan, a_nan != b_nan, differ)  # NaN equals only NaN
             differ = np.where(np.isinf(a) | np.isinf(b), a != b, differ)
-        return int((mismatched | (both & differ)).sum())
+            inexact = both & ~differ & (a != b) & ~a_nan & ~b_nan
+            close = int(inexact.sum())
+            largest = float(distance[inexact].max()) if close else 0.0
+        return int((mismatched | (both & differ)).sum()), close, largest
     if kinds[0] == "text":
         left, right = pc.cast(left, pa.large_string()), pc.cast(right, pa.large_string())
     elif left.type != right.type:
         if kinds[0] == "date":
             target = pa.date64()
-        elif kinds[0] == "timestamp":
+        elif kinds[0].startswith("timestamp"):
             target = pa.timestamp("ns", tz=left.type.tz)
         elif kinds[0] == "time":
             target = pa.time64("ns")
         else:
-            return int((mismatched | both).sum())
+            return int((mismatched | both).sum()), 0, 0.0
         left, right = pc.cast(left, target), pc.cast(right, target)
     differ = np.asarray(pc.fill_null(pc.not_equal(left, right), False))
-    return int((mismatched | (both & differ)).sum())
+    return int((mismatched | (both & differ)).sum()), 0, 0.0
 
 
 def compare_tables(
@@ -146,7 +159,11 @@ def compare_tables(
             left, right = reference.schema.field(column).type, built.schema.field(column).type
             if left != right and kind(left) == kind(right):
                 result.storage.append((column, str(left), str(right)))
-            count = _column_mismatches(reference.column(column), built.column(column), tolerance)
+            count, close, largest = _column_mismatches(
+                reference.column(column), built.column(column), tolerance
+            )
+            result.close += close
+            result.largest = max(result.largest, largest)
         if count:
             result.by_column[column] = count
         result.mismatched += count
@@ -157,6 +174,14 @@ def total_line(results: list[Comparison]) -> str:
     cells = sum(result.cells for result in results)
     mismatched = sum(result.mismatched for result in results)
     return f"TOTAL cells={cells} mismatched={mismatched}"
+
+
+def tolerance_line(results: list[Comparison]) -> str:
+    """How much of the equality rests on the tolerance."""
+    close = sum(result.close for result in results)
+    largest = max((result.largest for result in results), default=0.0)
+    return (f"numbers equal within the tolerance but not exactly: {close} cells, "
+            f"largest difference {largest:.1e}")
 
 
 def storage_summary(results: list[Comparison]) -> dict[str, int]:
