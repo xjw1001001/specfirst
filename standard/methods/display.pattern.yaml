@@ -1,0 +1,44 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+id: display.pattern
+kind: display
+title: A number shown by a result pattern
+takes: one number and a pattern, such as "( XX.X)"
+operations:
+  text:
+    result: text
+    ars_names: []
+semantics:
+  - >-
+    A pattern is text with exactly one mask. A mask is a run of the capital
+    letter X, with or without one decimal point inside it and X on both sides
+    of the point: "XX", "XX.X". The text before and after the mask is kept as
+    it is: "(N=XX)" has "(N=" before and ")" after. A pattern with no mask or
+    with two is refused.
+  - >-
+    The number is rounded by display.round.half_away_from_zero to as many
+    decimals as the mask has X after its point, and to a whole number when the
+    mask has no point.
+  - >-
+    A mask with a decimal point: the rounded number, without its sign, is
+    padded with blanks on the left to the length of the mask. 9.52 under
+    "( XX.X)" is "(  9.5)". A number that is longer than the mask is not cut.
+  - >-
+    A mask without a decimal point: the rounded number is not padded. 8 under
+    "XXX" is "8".
+  - >-
+    A negative number has its minus sign before the padding: -3.3 under "XX.X"
+    is "- 3.3". A number that rounds to zero has no sign.
+  - A missing number gives a missing result.
+  - >-
+    For a mock shell the mask itself stands in place of the number, in lower
+    case: "( xx.x)". No number is needed.
+options: {}
+# Statements 3 to 5 are what the formatted values of CDISC's ARS example
+# "Common Safety Displays" show for its patterns (ADR-003). A display rule is
+# applied once, where the grid is built, so there is no second implementation.
+implementations: [python]
+vectors: tests/methods/display_pattern.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

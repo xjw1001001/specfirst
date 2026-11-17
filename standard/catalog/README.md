@@ -1,9 +1,9 @@
 # Decision catalog
 
 The closed list of questions a study answers (PLAN.md section 5, appendix
-B). This is the draft of std-1, version `draft-1`. The owner approves it at
-node N1; only then is it frozen as `catalog@1`. ADR-004 records the choices
-behind it.
+B). Version 1, frozen as `catalog@1` at owner node N1 on 2026-11-17. ADR-004
+records the choices behind it and the owner's answer, which the owner
+called provisional. A change is a new catalog version and needs an ADR.
 
 | File | Holds |
 | --- | --- |

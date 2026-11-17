@@ -125,10 +125,8 @@ def _tables(row_totals, column_totals):
                 yield [list(row), *rest]
 
 
-def fisher_exact_p(table) -> float | None:
-    rows = _reduced(table)
-    if len(rows) < 2 or len(rows[0]) < 2:
-        return None
+def _fisher_probabilities(rows) -> tuple[Fraction, list[Fraction]]:
+    """The probability of a table, and of every table with its margins, as fractions."""
     row_totals = [sum(row) for row in rows]
     column_totals = [sum(row[j] for row in rows) for j in range(len(rows[0]))]
     numerator = math.prod(math.factorial(v) for v in row_totals + column_totals)
@@ -138,13 +136,34 @@ def fisher_exact_p(table) -> float | None:
         return Fraction(numerator,
                         scale * math.prod(math.factorial(v) for row in candidate for v in row))
 
-    observed = probability(rows)
-    total = Fraction(0)
-    for candidate in _tables(row_totals, column_totals):
-        p = probability(candidate)
-        if p <= observed:  # exact: equal probabilities are equal fractions
-            total += p
-    return _float(total)
+    return probability(rows), [probability(candidate)
+                               for candidate in _tables(row_totals, column_totals)]
+
+
+def fisher_exact_p(table) -> float | None:
+    rows = _reduced(table)
+    if len(rows) < 2 or len(rows[0]) < 2:
+        return None
+    observed, every = _fisher_probabilities(rows)
+    # Exact: equal probabilities are equal fractions.
+    return _float(sum((p for p in every if p <= observed), Fraction(0)))
+
+
+def fisher_just_above(table, low: Fraction, high: Fraction) -> list[float]:
+    """The tables that are a little more probable than the observed one.
+
+    Returns the relative excess of every table with the margins of `table`
+    whose probability is above that of `table` by more than `low` and at
+    most `high`, in exact fractions. Such a table does not count by
+    statement 5 of test.fisher.exact when `low` is 1e-7; a looser
+    implementation counts it.
+    """
+    rows = _reduced(table)
+    if len(rows) < 2 or len(rows[0]) < 2:
+        return []
+    observed, every = _fisher_probabilities(rows)
+    return sorted(_float(p / observed - 1) for p in every
+                  if observed * (1 + low) < p <= observed * (1 + high))
 
 
 def expected(method: str, case: dict) -> dict:

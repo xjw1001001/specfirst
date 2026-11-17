@@ -23,13 +23,20 @@ Rscript --vanilla r/specfirstr/run.R --vectors <in.json> <out.json>
 How it differs from the Python engine, on purpose:
 
 - The arithmetic comes from R's `stats` package: `quantile` types 2 and 7,
-  `sd`, `chisq.test`, `fisher.test`, and the F test of `anova(lm())`. The
-  Python methods are written from the definitions. The two share no code.
+  `sd`, `chisq.test`, `fisher.test` for a 2 x 2 table, and the F test of
+  `anova(lm())`. The Python methods are written from the definitions. The
+  two share no code. One method is the same algorithm on both sides: the
+  Fisher test on a table larger than 2 x 2 is summed over every table,
+  because `fisher.test` does not follow the registry there
+  (`test.fisher.exact`, statement 8). `tests/methods` compares both sums
+  with `fisher.test` and with exact fractions.
 - It does not read Parquet or YAML: the locked R library has no reader for
   either. `specfirst build` hands it the columns the analyses read as JSON
   (one file per dataset) and the registry as
   `standard/methods/registry.json`. It reports a SHA-256 of every column
-  as it read it, and the build compares that with the Parquet data.
+  as it read it, and the build compares that with the Parquet data. The
+  JSON is read without jsonlite's simplification, which takes the text
+  "NA" for a missing value.
 
 Rules of the folder:
 

@@ -1,7 +1,7 @@
 # House standard open-default@1
 
 Document: house
-Catalog: specfirst-m1 draft-1
+Catalog: specfirst-m1 1
 
 This is the house standard open-default@1: an open default for analysis data and safety tables, built from public standards only.
 

@@ -41,8 +41,10 @@ m_summary_continuous <- function(values, quantile_definition = "sas5",
   }
   q <- stats::quantile(x, c(0.25, 0.5, 0.75), type = QUANTILE_TYPES[[quantile_definition]],
                        names = FALSE)
-  list(n = n, mean = mean(x), sd = if (n > 1) stats::sd(x) else NA_real_, median = q[2],
-       q1 = q[1], q3 = q[3], min = min(x), max = max(x))
+  # Statement 10: equal values have no spread, whatever the rounding of the mean.
+  spread <- if (n < 2) NA_real_ else if (min(x) == max(x)) 0 else stats::sd(x)
+  list(n = n, mean = mean(x), sd = spread, median = q[2], q1 = q[1], q3 = q[3], min = min(x),
+       max = max(x))
 }
 
 # A table of counts without the rows and columns whose total is 0.
@@ -61,20 +63,83 @@ m_chisq_p <- function(table) {
   suppressWarnings(stats::chisq.test(t, correct = FALSE))$p.value
 }
 
-# test.fisher.exact. fisher.test sums over every table (the network algorithm
-# FEXACT for more than 2 x 2). It fails when its workspace is too small; a
-# larger one is tried once, and after that the error stands: no simulation.
-m_fisher_p <- function(table) {
+# test.fisher.exact
+#
+# A 2 x 2 table goes to stats::fisher.test, which sums the probabilities that
+# are not larger than the observed one by more than a relative 1e-7: the
+# allowance of statement 5.
+#
+# A larger table is summed here. fisher.test (the network algorithm FEXACT)
+# allows a wider excess for it, so it counts a table that statement 5 leaves
+# out (statement 8; review of real-2, finding F3). The sum is over every table
+# with the observed margins, and more than FISHER_MAX_TABLES tables are
+# refused (statement 6).
+FISHER_RELATIVE_EXCESS <- 1e-7
+FISHER_MAX_TABLES <- 1e7
+
+m_fisher_p <- function(table, max_tables = FISHER_MAX_TABLES) {
   t <- reduced_table(table)
   if (nrow(t) < 2 || ncol(t) < 2) return(NA_real_)
-  p <- tryCatch(stats::fisher.test(t)$p.value, error = function(e) NULL)
-  if (is.null(p)) {
-    p <- tryCatch(stats::fisher.test(t, workspace = 2e7)$p.value, error = function(e) {
-      fail("test.fisher.exact: fisher.test could not sum this table (", conditionMessage(e),
-           "); the method does not approximate")
-    })
+  if (nrow(t) == 2 && ncol(t) == 2) return(min(1, stats::fisher.test(t)$p.value))
+  min(1, fisher_sum(t, max_tables))
+}
+
+# The sum of statement 4. The tables are walked row by row and cell by cell.
+# The last cell of a row and the whole last row are what is left; the largest
+# row and the largest column are put last, so that the cells that are walked
+# are bounded by the smaller totals. The last free cell of the walk is taken
+# for all its values at once.
+fisher_sum <- function(t, max_tables) {
+  t <- t[order(rowSums(t)), order(colSums(t)), drop = FALSE]
+  row_totals <- rowSums(t)
+  nr <- nrow(t)
+  nc <- ncol(t)
+  total <- sum(t)
+  log_factorial <- c(0, cumsum(log(seq_len(total))))  # element k + 1 is log(k!)
+  constant <- sum(log_factorial[row_totals + 1]) + sum(log_factorial[colSums(t) + 1]) -
+    log_factorial[total + 1]
+  limit <- constant - sum(log_factorial[t + 1]) + log1p(FISHER_RELATIVE_EXCESS)
+  state <- new.env()
+  state$sum <- 0
+  state$tables <- 0
+  # i, j: the cell to fill. left: what every column still has to take.
+  # cells: the sum of log(count!) over the cells filled so far.
+  walk <- function(i, j, left_in_row, left, cells) {
+    # What the later columns can still take bounds this cell from below.
+    lowest <- max(0, left_in_row - sum(left[(j + 1):nc]))
+    highest <- min(left_in_row, left[j])
+    if (lowest > highest) return(invisible(NULL))
+    counts <- lowest:highest
+    if (i == nr - 1 && j == nc - 1) {
+      rest <- left_in_row - counts  # the last cell of this row
+      last_row <- log_factorial[left[j] - counts + 1] + log_factorial[left[nc] - rest + 1]
+      if (nc > 2) last_row <- last_row + sum(log_factorial[left[seq_len(nc - 2)] + 1])
+      log_probability <- constant - cells - log_factorial[counts + 1] -
+        log_factorial[rest + 1] - last_row
+      state$tables <- state$tables + length(counts)
+      if (state$tables > max_tables) {
+        fail("test.fisher.exact: more than ", format(max_tables, scientific = FALSE),
+             " tables to sum; the method does not approximate")
+      }
+      state$sum <- state$sum + sum(exp(log_probability[log_probability <= limit]))
+      return(invisible(NULL))
+    }
+    for (count in counts) {
+      after <- left
+      after[j] <- left[j] - count
+      if (j == nc - 1) {  # the last cell of a row is what the row has left
+        rest <- left_in_row - count
+        after[nc] <- left[nc] - rest
+        walk(i + 1, 1, row_totals[i + 1], after,
+             cells + log_factorial[count + 1] + log_factorial[rest + 1])
+      } else {
+        walk(i, j + 1, left_in_row - count, after, cells + log_factorial[count + 1])
+      }
+    }
+    invisible(NULL)
   }
-  min(1, p)
+  walk(1, 1, row_totals[1], colSums(t), 0)
+  state$sum
 }
 
 # test.anova.oneway

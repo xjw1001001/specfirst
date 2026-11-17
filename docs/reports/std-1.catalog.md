@@ -1,4 +1,4 @@
-# Decision catalog specfirst-m1 draft-1: overview
+# Decision catalog specfirst-m1 1: overview
 
 Rendered by `specfirst catalog --overview` from `standard/catalog/` and the house standard open-default@1. 43 entries, 62 questions when an entry is counted once per unit, 96 alternatives, 4 questions without a default.
 
@@ -622,6 +622,8 @@ For every alternative: Change from baseline is shown for post-baseline visits on
 - Probes: output_shape.
 
 ## Alternatives without a public source of their own
+
+Kept by the owner at node N1 on 2026-11-17 as the plan's own alternatives (seed list of PLAN.md appendix B); the answer is provisional.
 
 - `demo.race.pooling/pooled_below_count`: ADaMIG has the variable for a pooled race group (RACEGRy) and leaves the rule to the sponsor. No public source states pooling below a count.
 - `ae.teae.end/end_of_study`: admiral takes any treatment end date and a window after it; no cited source names the end-of-study date as the end of emergence.

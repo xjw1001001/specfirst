@@ -2,9 +2,10 @@
 
 base-0 provides doctor, fetch, status and gate. real-1 adds kit, build and
 check. std-1 adds catalog, house, compile, render and parse. real-2 adds
-methods, and the results to build and check. gen-1a adds gen. The other
-commands of PLAN.md section 12 (preview, rebuild, score, run, ask) arrive
-with the work packages that build them.
+methods, and the results to build and check. real-3a adds the grids, their
+mock shells and pages, and the trace of their cells. gen-1a adds gen. The
+other commands of PLAN.md section 12 (preview, rebuild, score, run, ask)
+arrive with the work packages that build them.
 """
 
 from __future__ import annotations
@@ -44,7 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_kit.add_argument("kit", help="kit ID, for example cdiscpilot01")
 
     p_build = commands.add_parser(
-        "build", help="build a kit's resolved specs, ADaM datasets and graph"
+        "build", help="build a kit's resolved specs, ADaM datasets, results, grids and graph"
     )
     p_build.add_argument("kit", help="kit ID")
     p_build.add_argument(
@@ -59,7 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     p_check = commands.add_parser(
-        "check", help="compare a build with its references (P2), check its trace and its results"
+        "check", help="compare a build with its references (P2): ADaM, trace, results, grids"
     )
     p_check.add_argument("kit", help="kit ID")
     p_check.add_argument("--build", type=Path, help="the build to check; default build/kits/<kit>")

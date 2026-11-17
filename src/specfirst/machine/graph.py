@@ -556,3 +556,272 @@ def check_graph(
         lines.append("literal columns sit on rows of: "
                      + "; ".join(f"{k} ({v})" for k, v in sorted(on.items())))
     return lines, problems
+
+
+# ---- from cells to ADaM columns (real-3; PLAN.md sections 4.2 and 7.5) -----------------
+
+
+def ars_id(analysis_id: str) -> str:
+    return "ars:" + quote(analysis_id, safe="")
+
+
+@dataclass(frozen=True)
+class Display:
+    """One built grid with what it was built from, for the trace."""
+
+    grid: dict
+    grid_file: str  # in the build, with forward slashes
+    event: object  # the reporting event (specfirst.machine.ars.Event)
+    ars_file: str
+    ard_file: str
+    rows: list[dict]  # the ARD rows of the file, in its order
+    subject_key: str
+
+
+def _id_lines(path: Path, wanted: set[str]) -> dict[str, int]:
+    """The line of `"id": "<name>"` for every wanted name, in a JSON file as it is written."""
+    lines: dict[str, int] = {}
+    pattern = re.compile(r'^\s*"id"\s*:\s*("(?:[^"\\]|\\.)*")')
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        for number, line in enumerate(handle, start=1):
+            match = pattern.match(line)
+            if match:
+                name = json.loads(match.group(1))
+                if name in wanted:
+                    lines.setdefault(name, number)
+    return lines
+
+
+def referenced_analyses(event, analysis: dict, operation_id: str) -> list[str]:
+    """The analyses whose results an operation of an analysis is computed from.
+
+    A percent names a numerator and a denominator (rule I15); each is a
+    result of an analysis, the same one or another.
+    """
+    operation = event.operations.get(operation_id, ("", {}))[1]
+    wanted = {relation.get("id") for relation in
+              operation.get("referencedOperationRelationships") or []}
+    return sorted({reference["analysisId"]
+                   for reference in analysis.get("referencedAnalysisOperations") or []
+                   if reference.get("referencedOperationRelationshipId") in wanted})
+
+
+def add_displays(graph: Graph, kit_dir: Path, displays: list[Display]) -> None:
+    """Add the cells of built grids, the ARD rows they show and the analyses behind them.
+
+    Edges: `shows`, cell to ARD row, executed: the grid builder put the row
+    into the cell. `computes`, ARD row to analysis, executed: the engine
+    stamped the row with its analysis; a row that is computed from results
+    of another analysis (the denominator of a percent) has an edge to that
+    analysis too. `reads`, analysis to ADaM column, static: what the analysis
+    names in the ARS file, in any role (variable, set, subset, grouping,
+    key). The roles are in coverage.json: an edge of schema version 0 cannot
+    carry one.
+
+    Only what a built grid shows gets a node. An ADaM column that an
+    analysis reads and no specification builds has no node; that is a gap
+    of every cell behind it, recorded in coverage.json.
+    """
+    from specfirst.machine import ars as ars_module
+
+    nodes = {node["id"]: node for node in graph.nodes}
+    edges = {(edge["type"], edge["from"], edge["to"]): edge for edge in graph.edges}
+    reach = _closure(graph.edges)
+    gap_columns = {entry["column"] for entry in graph.coverage.get("columns", [])
+                   if entry["gaps"]}
+    analyses_read: dict[str, dict] = {}
+    coverage_displays: dict[str, dict] = {}
+    for display in displays:
+        event = display.event
+        row_at = {row["id"]: (number, row) for number, row in enumerate(display.rows, start=1)}
+        shown_analyses: set[str] = set()
+        output = display.grid["output_id"]
+        gaps: list[str] = []
+        cells = numeric = 0
+        behind: dict[str, set[str]] = {}  # cell -> analyses behind it
+        for row in display.grid["rows"]:
+            for cell in row["cells"]:
+                cells += 1
+                numeric += any(character.isdigit() for character in cell["text"])
+                nodes[cell["id"]] = {
+                    "id": cell["id"], "layer": "L7", "kind": "cell", "label": cell["text"],
+                    "hash": content_hash({"text": cell["text"], "ard": cell["ard"]}),
+                    "source": {"file": display.grid_file, "line": 1},
+                }
+                behind[cell["id"]] = set()
+                for key in cell["ard"]:
+                    if key not in row_at:
+                        gaps.append(f"{cell['id']} shows {key}, which is not in "
+                                    f"{display.ard_file}")
+                        continue
+                    number, result = row_at[key]
+                    source = {"file": display.ard_file, "line": number}
+                    nodes[key] = {"id": key, "layer": "L6", "kind": "result",
+                                  "hash": content_hash(result), "source": source}
+                    edges[("shows", cell["id"], key)] = {
+                        "type": "shows", "from": cell["id"], "to": key, "proof": "executed",
+                        "origin": "built", "source": {"file": display.grid_file, "line": 1}}
+                    analysis = event.analyses[result["analysis_id"]]
+                    computed_from = {analysis["id"], *referenced_analyses(
+                        event, analysis, result["operation_id"])}
+                    for name in sorted(computed_from):
+                        edges[("computes", key, ars_id(name))] = {
+                            "type": "computes", "from": key, "to": ars_id(name),
+                            "proof": "executed", "origin": "built", "source": source}
+                    shown_analyses |= computed_from
+                    behind[cell["id"]] |= computed_from
+        lines = _id_lines(kit_dir / display.ars_file, shown_analyses)
+        for name in sorted(shown_analyses):
+            analysis = event.analyses[name]
+            source = {"file": display.ars_file, "line": lines.get(name, 1)}
+            node = {"id": ars_id(name), "layer": "L5", "kind": "analysis",
+                    "hash": content_hash({k: v for k, v in analysis.items() if k != "results"}),
+                    "source": source}
+            if analysis.get("name"):
+                node["label"] = str(analysis["name"])
+            nodes[node["id"]] = node
+            reads = ars_module.reads(event, name, display.subject_key)
+            roles: dict[str, list[str]] = {}
+            for role, dataset, variable in reads:
+                roles.setdefault(adam_id(dataset, variable), []).append(role)
+            missing = sorted(column for column in roles if column not in nodes)
+            analyses_read[ars_id(name)] = {
+                "reads": [{"column": column, "roles": sorted(found)}
+                          for column, found in sorted(roles.items())],
+                "not_built": missing,
+            }
+            for column in sorted(roles):
+                if column in nodes:
+                    edges[("reads", ars_id(name), column)] = {
+                        "type": "reads", "from": ars_id(name), "to": column, "proof": "static",
+                        "origin": "built", "source": source}
+        complete = 0
+        sdtm: set[str] = set()
+        for cell_id in sorted(behind):
+            columns: set[str] = set()
+            trouble = []
+            for name in sorted(behind[cell_id]):
+                entry = analyses_read[ars_id(name)]
+                trouble += [f"{name} reads {column}, which the kit does not build"
+                            for column in entry["not_built"]]
+                columns |= {item["column"] for item in entry["reads"]} - set(entry["not_built"])
+            reached = set(columns)
+            for column in columns:
+                reached |= reach.get(column, set())
+            trouble += [f"{column} has a gap" for column in sorted(reached & gap_columns)]
+            if not behind[cell_id]:
+                continue
+            if trouble or not _sdtm(reached):
+                gaps += [f"{cell_id}: {problem}" for problem in trouble] or [
+                    f"{cell_id}: reaches no SDTM column"]
+            else:
+                complete += 1
+                sdtm |= _sdtm(reached)
+        coverage_displays[output] = {
+            "grid": display.grid_file, "cells": cells, "numeric": numeric,
+            "complete": complete, "results": len({key for row in display.grid["rows"]
+                                                  for cell in row["cells"] for key in cell["ard"]}),
+            "analyses": sorted(shown_analyses), "sdtm": len(sdtm), "gaps": sorted(set(gaps)),
+        }
+    graph.nodes = [nodes[key] for key in sorted(nodes)]
+    graph.edges = [edges[key] for key in sorted(edges)]
+    graph.coverage = {**graph.coverage, "analyses": analyses_read, "displays": coverage_displays}
+
+
+def check_cells(folder: Path, grids: dict[str, dict]) -> tuple[list[str], list[str]]:
+    """Every numeric cell of the grids has a complete path to SDTM columns (P3, section 4.6).
+
+    The paths are walked here, from nodes.jsonl and edges.jsonl alone: cell
+    -> shows -> ARD rows -> computes -> analyses -> reads -> ADaM columns ->
+    derives_from -> SDTM columns. A path is complete when every step has an
+    edge, every element on it is a node, the cell's `shows` edges are
+    exactly its `ard` list, no ADaM column on it has a gap, and it ends at
+    SDTM columns. A cell that prints a digit and shows no ARD row fails.
+
+    This cannot see a result the builder used and did not record, or a
+    column the engine reads and the ARS file does not name; tests/defects
+    holds both against the builder and the engine (D8).
+    """
+    lines: list[str] = []
+    problems: list[str] = []
+    nodes = {node["id"]: node for node in read_jsonl(folder / "nodes.jsonl")}
+    edges = read_jsonl(folder / "edges.jsonl")
+    with open(folder / "coverage.json", encoding="ascii") as handle:
+        coverage = json.load(handle)
+    following: dict[tuple[str, str], set[str]] = {}
+    for edge in edges:
+        following.setdefault((edge["type"], edge["from"]), set()).add(edge["to"])
+    reach = _closure(edges)
+    with_gap = {entry["column"] for entry in coverage.get("columns", []) if entry["gaps"]}
+    recorded = coverage.get("displays", {})
+    for output, grid in sorted(grids.items()):
+        count = Counter()
+        results_seen: set[str] = set()
+        analyses_seen: set[str] = set()
+        adam_seen: set[str] = set()
+        sdtm_seen: set[str] = set()
+        for row in grid["rows"]:
+            for cell in row["cells"]:
+                count["cells"] += 1
+                digits = any(character.isdigit() for character in cell["text"])
+                count["numeric"] += digits
+                if not cell["ard"]:
+                    if digits:
+                        problems.append(f"{cell['id']}: prints {cell['text']!r} and shows no "
+                                        "ARD row")
+                    continue
+                trouble = []
+                if cell["id"] not in nodes:
+                    trouble.append("the cell has no node")
+                shows = following.get(("shows", cell["id"]), set())
+                if shows != set(cell["ard"]):
+                    trouble.append("its shows edges are not the ARD rows of the cell")
+                reached_sdtm: set[str] = set()
+                for key in cell["ard"]:
+                    if key not in nodes:
+                        trouble.append(f"{key} has no node")
+                    analyses = following.get(("computes", key), set())
+                    if not analyses:
+                        trouble.append(f"{key} has no computes edge")
+                    elif "ars:" + key[len("ard:"):].split("/")[0] not in analyses:
+                        trouble.append(f"{key} has no computes edge to its own analysis")
+                    for analysis in sorted(analyses):
+                        columns = following.get(("reads", analysis), set())
+                        if analysis not in nodes or not columns:
+                            trouble.append(f"{analysis} has no node or no reads edge")
+                        not_built = coverage.get("analyses", {}).get(analysis, {}).get(
+                            "not_built", [])
+                        trouble += [f"{analysis} reads {column}, which the kit does not build"
+                                    for column in not_built]
+                        reached = set(columns)
+                        for column in columns:
+                            reached |= reach.get(column, set())
+                        trouble += [f"{column} is not a node" for column in sorted(reached)
+                                    if column not in nodes]
+                        trouble += [f"{column} has a gap" for column in sorted(reached & with_gap)]
+                        if not _sdtm(reached):
+                            trouble.append(f"{analysis} reaches no SDTM column")
+                        analyses_seen.add(analysis)
+                        adam_seen |= {column for column in reached if column.startswith("adam:")}
+                        reached_sdtm |= _sdtm(reached)
+                    results_seen.add(key)
+                if trouble:
+                    problems += [f"{cell['id']}: {problem}" for problem in sorted(set(trouble))]
+                else:
+                    count["complete"] += 1
+                    sdtm_seen |= reached_sdtm
+        with_results = sum(1 for row in grid["rows"] for cell in row["cells"] if cell["ard"])
+        lines.append(f"grid {output}: {count['cells']} cells, {count['numeric']} print a number; "
+                     f"{count['complete']} of the {with_results} cells with results have a "
+                     "complete path to SDTM columns")
+        lines.append(f"  through {len(results_seen)} ARD rows, {len(analyses_seen)} analyses, "
+                     f"{len(adam_seen)} ADaM columns, to {len(sdtm_seen)} SDTM columns")
+        entry = recorded.get(output)
+        if entry is None:
+            problems.append(f"grid {output}: coverage.json has no entry for it")
+        elif (entry["cells"], entry["numeric"], entry["complete"], entry["sdtm"]) != (
+                count["cells"], count["numeric"], count["complete"], len(sdtm_seen)):
+            problems.append(f"grid {output}: coverage.json disagrees with the graph files")
+    for output in sorted(set(recorded) - set(grids)):
+        problems.append(f"grid {output}: in coverage.json, but not a grid of the build")
+    return lines, problems

@@ -97,10 +97,13 @@ def run(root: Path, work: Path, ars_path: Path, registry_json: Path, binding: ar
     output = (done.stdout + done.stderr).strip()
     if done.returncode != 0 or not rows_path.is_file() or not meta_path.is_file():
         raise REngineError(f"the R engine exited {done.returncode}: {output}")
-    with open(rows_path, encoding="utf-8") as handle:
-        rows = [json.loads(line) for line in handle if line.strip()]
-    with open(meta_path, encoding="utf-8") as handle:
-        meta = json.load(handle)
+    try:
+        with open(rows_path, encoding="utf-8") as handle:
+            rows = [json.loads(line) for line in handle if line.strip()]
+        with open(meta_path, encoding="utf-8") as handle:
+            meta = json.load(handle)
+    except ValueError as error:
+        raise REngineError(f"the R engine wrote a file that is not JSON: {error}") from error
     return rows, meta, output
 
 

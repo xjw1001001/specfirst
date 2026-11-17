@@ -141,6 +141,52 @@ def test_real2_gate_has_the_checks_of_the_plan(root, tmp_path):
     assert any("the R engine reproduces 3710 of 3735" in line for line in said)
 
 
+def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
+    """ADR-005, part real-3a: the gate of real-2, the grid text, the trace of the cells, P1."""
+    checks = gates.GATES["real-3a"]
+    names = [check.name for check in checks]
+    assert names[0] == "environment"
+    # Everything the gate of real-2 checks is checked again, by the same functions.
+    before = {check.name: check.run for check in gates.GATES["real-2"]}
+    after = {check.name: check.run for check in checks}
+    assert set(after) == {*before, "grids"}
+    assert all(after[name] is run for name, run in before.items() if name != "planted defects")
+    assert names.index("P1 determinism") < names.index("trace") < names.index("grids")
+    assert names.index("grids") < names.index("planted defects") < names.index("cache untouched")
+    assert set(gates.REAL3A_DEFECTS) == {*gates.REAL2_DEFECTS, "D6-proofs", "D7-display",
+                                         "D8-trace"}
+    assert gates.PILOT_GRIDS == {"Out14-3-1-1": (27, 51)}
+
+    # The check of the grids fails on anything but: the outputs the gate names, their
+    # cells and results, and every cell equal or with one classified difference.
+    from specfirst.machine import build
+
+    def count(**changed):
+        return {"set": "x", "output": "Out14-3-1-1", "cells": 27, "results": 51, "equal": 27,
+                "differing": 0, "classified": 0, "no_reference": 0, "problems": 0, **changed}
+
+    said: list[str] = []
+    ctx = gates.Context(tmp_path, "demo", said.append)
+    try:
+        for given, passes, expected in (
+            ([count()], True, True),
+            ([count(equal=25, differing=2, classified=2)], True, True),
+            ([count()], False, False),  # the check of the build itself failed
+            ([count(equal=26, differing=1)], True, False),  # a difference with no class
+            ([count(cells=24, results=48, equal=24)], True, False),  # a row is missing
+            ([count(equal=26, no_reference=1)], True, False),
+            ([], True, False),
+            ([count(), count(output="Out14-1-1")], True, False),  # an output it does not know
+        ):
+            monkeypatch.setattr(build, "display_checks",
+                                lambda *args, g=given, p=passes, **kwargs: (p, g))
+            assert gates._grids(ctx) is expected, given
+    finally:
+        ctx.close()
+    assert any("The gate asks for 27 cells that show 51 results" in line for line in said)
+    assert any("the kit builds [], the gate asks for ['Out14-3-1-1']" in line for line in said)
+
+
 def test_std1_gate_has_the_checks_of_the_plan():
     """PLAN.md section 13.4: round trip, yamaa check, ARS schema, public sources."""
     names = [check.name for check in gates.GATES["std-1"]]

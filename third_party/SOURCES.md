@@ -56,10 +56,15 @@ repository at the pinned commit on 2026-11-11.
 Note on ars and c360i. The plan lists "CC BY 4.0 for content" for the two
 CDISC repositories. At the pinned commits only the MIT `LICENSE` file states
 a license; a search of their Markdown, text, YAML and HTML files for
-"CC BY" and "Creative Commons" found nothing. This does not affect the
-project now, because nothing from either repository is committed or
-redistributed. It matters only if content from them is ever imported;
-confirm the terms with CDISC before that.
+"CC BY" and "Creative Commons" found nothing. No file of either repository
+is committed or redistributed. Single values of the ARS example are quoted
+where a difference has to be named: the 25 embedded values of
+`kits/cdiscpilot01/gold/exceptions.yaml`, the same values in the issue
+draft `docs/upstream/`, three embedded values in
+`tests/unit/test_results.py` (one of them also in a vector of the display
+rule), and the formatted values named in the reports. The IDs of its
+analyses, operations and groups are used as names throughout. Importing
+content from them beyond that needs the terms confirmed with CDISC first.
 
 ## Pinned files
 

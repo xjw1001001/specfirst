@@ -50,6 +50,10 @@ semantics:
     (n - 1) * p = j + g with j an integer and 0 <= g < 1. The quantile is
     x[j + 1] + g * (x[j + 2] - x[j + 1]), and x[j + 1] when g = 0.
   - The median is the same number under both definitions.
+  - >-
+    sd: 0 when the smallest and the largest value are equal. This is decided by
+    comparing the values, not by the arithmetic of statement 4, which can leave a
+    rounding error of the mean (three values of 0.1).
 options:
   quantile_definition:
     values: [sas5, r7]

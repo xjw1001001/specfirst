@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import itertools
 import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote
@@ -49,9 +50,32 @@ class Table:
     kinds: dict[str, str]  # column -> "text" or "number"
 
 
+# A number in a condition (rule I3): ARS writes every value as text, and a number
+# is written as in JSON. Python's float() alone would also take "6_1", "nan" and
+# " 61 ", and R's as.numeric "0x3D".
+_NUMBER = re.compile(r"-?(?:0|[1-9][0-9]*)(?:[.][0-9]+)?(?:[eE][+-]?[0-9]+)?")
+
+
 def _number_text(value: float) -> str:
-    """A number as the text of a group value: 8 for 8.0, otherwise the shortest decimal."""
+    """A number as the text of a group value (standard/methods/README.md, rule I9).
+
+    Zero is "0"; any other whole number has all its digits and neither a
+    decimal point nor an exponent; any other number is the shortest decimal
+    that reads back as the same number.
+    """
     return str(int(value)) if value.is_integer() else repr(value)
+
+
+def condition_numbers(wanted: list) -> list[float]:
+    """The numbers a condition compares a number column with."""
+    if not wanted or not all(isinstance(v, str) and _NUMBER.fullmatch(v) for v in wanted):
+        raise EngineError(f"a number column is compared with {wanted!r}; a number is written "
+                          "as in JSON")
+    numbers = [float(value) for value in wanted]
+    if not all(math.isfinite(number) for number in numbers):
+        raise EngineError(f"a number column is compared with {wanted!r}, which is not a "
+                          "finite number")
+    return numbers
 
 
 def table_from_arrow(name: str, table) -> Table:
@@ -99,10 +123,7 @@ def load_tables(folder: Path, wanted: dict[str, list[str]]) -> dict[str, Table]:
 def compare(values: np.ndarray, kind: str, comparator: str, wanted: list) -> np.ndarray:
     """One condition on one column (rule I3)."""
     if kind == "number":
-        try:
-            numbers = [float(value) for value in wanted]
-        except (TypeError, ValueError) as error:
-            raise EngineError(f"a number column is compared with {wanted!r}") from error
+        numbers = condition_numbers(wanted)
         with np.errstate(invalid="ignore"):
             if comparator == "EQ":
                 return values == numbers[0]
@@ -179,6 +200,9 @@ class Engine:
         self._results: dict[str, list[Result]] = {}
         self._running: list[str] = []
         self._populations: dict[str, tuple[str, np.ndarray]] = {}
+        # The records of every cell of a continuous summary, for `cell_values`.
+        self._cells: dict[tuple[str, tuple], np.ndarray] = {}
+        self._by_row: dict[str, Result] | None = None
 
     # ---- columns ----------------------------------------------------------------
 
@@ -324,6 +348,44 @@ class Engine:
         self._populations[analysis["id"]] = (source, np.flatnonzero(keep))
         return self._populations[analysis["id"]]
 
+    def population_groups(self, analysis: dict, grouping: dict) -> list[tuple[str, str, int]]:
+        """The groups an occurrence test compares: (kind, key, subjects in the population).
+
+        Rule I12b: a group without a subject in the population gives no row
+        of the table, so it is not listed.
+        """
+        source, population = self.population(analysis)
+        everyone = self.text(source, self.subject_key)[population]
+        sizes = [(kind, key, methods.count_subjects(everyone[member].tolist()))
+                 for kind, key, member in self.members(source, grouping, population)]
+        return [(kind, key, size) for kind, key, size in sizes if size > 0]
+
+    def compared_groups(self, analysis_id: str) -> list[tuple[str, str]] | None:
+        """The groups the occurrence test of an analysis compares; None when it has none."""
+        analysis = self.event.analyses.get(analysis_id)
+        if analysis is None or analysis["variable"] != self.subject_key:
+            return None
+        compared = [self.event.groupings[entry["groupingId"]]
+                    for entry in self.event.groupings_of(analysis)
+                    if not entry.get("resultsByGroup")]
+        if len(compared) != 1 or not analysis.get("analysisSetId"):
+            return None
+        return [(kind, key) for kind, key, _ in self.population_groups(analysis, compared[0])]
+
+    def cell_values(self, row_id: str) -> tuple[str, list[float]] | None:
+        """For a row of summary.continuous: its registry operation and its cell's sorted values."""
+        if self._by_row is None:
+            self._by_row = {result.row()["id"]: result for analysis_id in self.event.analyses
+                            for result in self.results(analysis_id)}
+        result = self._by_row.get(row_id)
+        if result is None or result.method_id != "summary.continuous":
+            return None
+        analysis = self.event.analyses[result.analysis_id]
+        cell = self._cells[(result.analysis_id, result.groups)]
+        values = self.numbers(analysis["dataset"], analysis["variable"])[cell].tolist()
+        return (self.binding.operations[result.operation_id][1],
+                sorted(value for value in values if not math.isnan(value)))
+
     def counts(self, analysis: dict, rows: np.ndarray, compared: list[dict]) -> list[list[int]]:
         """The table of a chi-square or Fisher test on the records of one cell (rule I12)."""
         dataset, variable = analysis["dataset"], analysis["variable"]
@@ -341,13 +403,8 @@ class Engine:
             raise EngineError(f"{where}: an occurrence test counts subjects, so the analysis "
                               f"variable must be {self.subject_key}")
         grouping = compared[0]
-        source, population = self.population(analysis)
-        everyone = self.text(source, self.subject_key)[population]
         table = []
-        for kind, key, member in self.members(source, grouping, population):
-            size = methods.count_subjects(everyone[member].tolist())
-            if size == 0:
-                continue
+        for kind, key, size in self.population_groups(analysis, grouping):
             if kind == "value":
                 here = self.group_values(dataset, grouping)[rows] == key
             else:
@@ -414,6 +471,7 @@ class Engine:
                     if summary is None:
                         summary = methods.summary_continuous(
                             self.numbers(dataset, variable)[cell].tolist(), **options[method_id])
+                        self._cells[(analysis_id, groups)] = cell
                     value = summary[name]
                 elif method_id == "percent.subjects":
                     percents.append((groups, operation))

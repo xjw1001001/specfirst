@@ -73,6 +73,8 @@ def render(catalog: Catalog, house: House) -> str:
     unsourced = catalog.raw.get("unsourced_alternatives") or {}
     if unsourced:
         lines += ["## Alternatives without a public source of their own", ""]
+        if catalog.raw.get("unsourced_alternatives_kept"):
+            lines += [_cell(catalog.raw["unsourced_alternatives_kept"]), ""]
         lines += [f"- `{name}`: {_cell(reason)}" for name, reason in unsourced.items()]
         lines.append("")
     deferred = catalog.raw.get("deferred") or {}
