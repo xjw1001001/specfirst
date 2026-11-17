@@ -1,0 +1,40 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+#
+# Added by gen-2a (docs/decisions/ADR-007.md): the catalog entry
+# tfl.rounding.rule has the alternative half_even, and a display rule that a
+# decision can choose is a registry entry (PLAN.md sections 5.2 and 7.3).
+id: display.round.half_even
+kind: display
+title: Round half to even
+takes: one number and the count of decimals to show, 0 to 15
+operations:
+  text:
+    result: text
+    ars_names: []
+semantics:
+  - >-
+    The number is first written as the shortest decimal that reads back as the
+    same double, as in display.round.half_away_from_zero. That decimal is what
+    is rounded, not the binary value behind it.
+  - >-
+    The decimal is rounded to the asked count of decimals. A decimal exactly
+    halfway between two results goes to the one whose last digit is even:
+    0.125 gives 0.12, 0.135 gives 0.14, 2.5 gives 2 and 3.5 gives 4.
+  - >-
+    A decimal that is not exactly halfway goes to the nearer result, as in
+    display.round.half_away_from_zero: the two rules differ at a half only.
+  - >-
+    The result is text with exactly that count of decimals, and without a
+    decimal point when the count is 0. It has no exponent and no thousands
+    separator.
+  - A result that is zero has no minus sign.
+  - A missing number gives a missing result. Infinity and not-a-number are refused.
+options: {}
+# Display rules are applied once, where a grid is built (PLAN.md section
+# 7.2). The grid builders are Python, so there is no second implementation.
+implementations: [python]
+vectors: tests/methods/display_round_half_even.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

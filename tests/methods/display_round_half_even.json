@@ -1,0 +1,22 @@
+{
+  "method": "display.round.half_even",
+  "cases": [
+    {"name": "a half goes to the even digit below", "statements": [2], "input": {"value": 0.125, "decimals": 2}, "expected": {"text": "0.12"}},
+    {"name": "a half goes to the even digit above", "statements": [2], "input": {"value": 0.135, "decimals": 2}, "expected": {"text": "0.14"}},
+    {"name": "the decimal is rounded, not the double behind it", "statements": [1, 2], "input": {"value": 2.675, "decimals": 2}, "expected": {"text": "2.68"}},
+    {"name": "1.005 stays at the even digit", "statements": [1, 2], "input": {"value": 1.005, "decimals": 2}, "expected": {"text": "1.00"}},
+    {"name": "a percent at a half: one subject of sixteen", "statements": [2], "input": {"value": 6.25, "decimals": 1}, "expected": {"text": "6.2"}},
+    {"name": "a percent at a half: three subjects of sixteen", "statements": [2], "input": {"value": 18.75, "decimals": 1}, "expected": {"text": "18.8"}},
+    {"name": "0.5 to a whole number", "statements": [2, 4], "input": {"value": 0.5, "decimals": 0}, "expected": {"text": "0"}},
+    {"name": "1.5 to a whole number", "statements": [2, 4], "input": {"value": 1.5, "decimals": 0}, "expected": {"text": "2"}},
+    {"name": "2.5 to a whole number", "statements": [2, 4], "input": {"value": 2.5, "decimals": 0}, "expected": {"text": "2"}},
+    {"name": "a negative half goes to the even digit", "statements": [2], "input": {"value": -0.125, "decimals": 2}, "expected": {"text": "-0.12"}},
+    {"name": "-0.5 to a whole number: a zero has no sign", "statements": [2, 5], "input": {"value": -0.5, "decimals": 0}, "expected": {"text": "0"}},
+    {"name": "below the half", "statements": [3], "input": {"value": 0.0004999, "decimals": 3}, "expected": {"text": "0.000"}},
+    {"name": "above the half", "statements": [3], "input": {"value": 0.1250001, "decimals": 2}, "expected": {"text": "0.13"}},
+    {"name": "not at a half: as half away from zero", "statements": [3], "input": {"value": 15.116279069767442, "decimals": 1}, "expected": {"text": "15.1"}},
+    {"name": "zeros are written out", "statements": [4], "input": {"value": 86, "decimals": 1}, "expected": {"text": "86.0"}},
+    {"name": "a large number has no exponent", "statements": [2, 4], "input": {"value": 123456789012.5, "decimals": 0}, "expected": {"text": "123456789012"}},
+    {"name": "a missing number", "statements": [6], "input": {"value": null, "decimals": 1}, "expected": {"text": null}}
+  ]
+}

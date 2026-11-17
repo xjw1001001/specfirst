@@ -29,6 +29,12 @@ and place of reading, with the JSON pointer of that place in the composed
 specification, so that an edge of the graph can name the file and line where
 a column is read. Source spans are taken from yamaa's resolution instead of
 being recomputed from the YAML text.
+
+Added by gen-2a for the specifications compiled from the catalog, which use
+two things the pilot specifications do not: the key `part` of yamaa's
+`imputation_flag` holds a literal (date or time), and DATE before a quoted
+text is the keyword of a date literal. Both were read as names of columns
+that no schema has, and every column behind them had a gap.
 """
 
 from __future__ import annotations
@@ -43,12 +49,12 @@ TOKENS = re.compile(
 LITERALS = {
     "dict", "label", "type", "nulls", "keep", "pattern", "format", "unit", "closed", "side",
     "separator", "method", "ties", "missing", "unmapped", "true_value", "false_value",
-    "unconvertible", "invalid", "absent",
+    "unconvertible", "invalid", "absent", "part",
 }
 # Bare words of the expression language and of option values that are not names.
 KEYWORDS = {
     "AND", "OR", "NOT", "IN", "LIKE", "IS", "NULL", "BETWEEN", "TRUE", "FALSE",
-    "ASC", "DESC", "FIRST", "LAST",
+    "ASC", "DESC", "FIRST", "LAST", "DATE",
 }
 
 

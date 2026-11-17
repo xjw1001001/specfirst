@@ -32,10 +32,17 @@ semantics:
   - >-
     For a mock shell the mask itself stands in place of the number, in lower
     case: "( xx.x)". No number is needed.
-options: {}
+  - >-
+    With the option rounding set to half_even, the number is rounded by
+    display.round.half_even in place of the rule of statement 2. Statements
+    3 to 7 hold as they stand.
+options:
+  rounding: {values: [half_away_from_zero, half_even], default: half_away_from_zero}
 # Statements 3 to 5 are what the formatted values of CDISC's ARS example
 # "Common Safety Displays" show for its patterns (ADR-003). A display rule is
 # applied once, where the grid is built, so there is no second implementation.
+# Statement 8 and the option were added by gen-2a (ADR-007) for the catalog
+# entry tfl.rounding.rule.
 implementations: [python]
 vectors: tests/methods/display_pattern.json
 xref:
