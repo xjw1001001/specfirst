@@ -78,19 +78,29 @@ SLICE_UNITS = ("mod-treatment", "mod-populations", "mod-ae-emergence", "tfl-ae-s
 # predicted from the templates of the catalog and the house standard; gen-2
 # verifies them by mutation (`reaches` below evaluates one).
 _ROW_ANY = {"rows": ["ANY"]}
+_ROW_EVENT = {"rows": ["ANY", "SERIOUS"]}
 _BY_ACTUAL = {"all_of": [{"decision": "tfl.population", "is": ["safety"]},
                          {"decision": "pop.safety.grouping", "is": ["actual"]}]}
 _READS_PLANNED = {"any_of": [
     {"decision": "tfl.population", "is": ["randomized", "efficacy"]},
     {"decision": "pop.safety.grouping", "is": ["planned"]},
     {"decision": "trt.actual.source", "is": ["same_as_planned"]}]}
+# The analysis set of the table holds every randomized subject who was dosed, so a
+# planted subject is in it whatever else the probe did to it (an early stop, a missing
+# value). The efficacy-evaluable set and a randomized set that asks for a post-baseline
+# value leave some planted subjects out.
+_ANALYZED = {"any_of": [
+    {"decision": "tfl.population", "is": ["safety"]},
+    {"all_of": [{"decision": "tfl.population", "is": ["randomized"]},
+                {"decision": "pop.randomized.rule", "is": ["all_randomized"]}]}]}
 _WINDOW = {"decision": "ae.teae.end", "is": ["last_dose_plus_days"], "slot": "days",
            "equals": "parameters.window_days"}
 _TREATMENT_RECORD = {"decision": "disp.status.record",
                      "is": ["disposition_event_by_subcategory"], "slot": "subcategory",
                      "equals": "parameters.treatment_subcategory"}
-_ONE_EVENT = ("the alternatives differ in one planted event, mild and not serious: the "
-              "table must show the row ANY")
+_ONE_EVENT = ("the alternatives differ in one planted event, mild and not serious, of a "
+              "subject who is randomized and dosed: the table must show the row ANY, on an "
+              "analysis set that holds every such subject")
 REACHES: dict[str, dict] = {
     "trt.planned.source": {
         "when": _READS_PLANNED,
@@ -98,55 +108,69 @@ REACHES: dict[str, dict] = {
     "trt.actual.source": {
         "when": _BY_ACTUAL,
         "note": "the table reads actual treatment only on the safety set grouped by it"},
-    "trt.start.source": {"when": _ROW_ANY, "note": _ONE_EVENT},
+    "trt.start.source": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
     "trt.end.source": {
-        "when": {"all_of": [_WINDOW, {"rows": ["ANY", "SERIOUS"]}]},
+        "when": {"all_of": [_WINDOW, _ROW_EVENT, _ANALYZED]},
+        "pairs": {"last_ex_end_date|ds_date_when_ex_missing": {"none_of": [_TREATMENT_RECORD]}},
         "note": "only an emergence window reads the treatment end date, and the planted "
                 "event lies parameters.window_days + 2 days after the disposition date: a "
-                "window of exactly parameters.window_days days separates every pair"},
-    "trt.date.imputation": {"when": _ROW_ANY, "note": _ONE_EVENT},
+                "window of exactly parameters.window_days days separates every pair. The "
+                "planted subject stops early, and it has no treatment record: with the "
+                "subcategory of that record as the end-of-study record it has no "
+                "disposition date to stand in for the missing end date"},
+    "trt.date.imputation": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
     "date.studyday.origin": {
         "when": {"never": True},
         "note": "no row of the adverse event summary reads a study day; ASTDY and AENDY of "
                 "ADAE differ"},
     "pop.randomized.rule": {"when": {"decision": "tfl.population", "is": ["randomized"]}},
-    "pop.safety.rule": {"when": {"decision": "tfl.population", "is": ["safety", "efficacy"]},
-                        "note": "the efficacy-evaluable set is a part of the safety set"},
-    "pop.safety.grouping": {"when": {"decision": "tfl.population", "is": ["safety"]}},
+    "pop.safety.rule": {
+        "when": {"all_of": [_BY_ACTUAL, {"decision": "trt.actual.source",
+                                          "is": ["dm_actarm", "first_ex_treatment"]}]},
+        "note": "the subject who is dosed without being randomized has no planned "
+                "treatment: it stands in a column of the table only by actual treatment"},
+    "pop.safety.grouping": {
+        "when": {"all_of": [{"decision": "tfl.population", "is": ["safety"]},
+                            {"none_of": [{"decision": "trt.actual.source",
+                                          "is": ["same_as_planned"]}]}]}},
     "pop.efficacy.rule": {"when": {"decision": "tfl.population", "is": ["efficacy"]}},
     "disp.status.record": {
-        "when": {"any_of": [
+        "when": {"all_of": [_ROW_EVENT, _ANALYZED, {"any_of": [
             {"decision": "ae.teae.end", "is": ["end_of_study"]},
             {"all_of": [_WINDOW, {"decision": "trt.end.source",
-                                  "is": ["ds_date_when_ex_missing"]}]}]},
+                                  "is": ["ds_date_when_ex_missing"]}]}]}]},
         "note": "the last disposition event of the planted subject is its study "
                 "participation record: the two alternatives differ for the subcategory "
                 "parameters.treatment_subcategory only"},
     "ae.start.imputation": {
-        "when": _ROW_ANY,
+        "when": {"all_of": [_ROW_ANY, _ANALYZED]},
         "pairs": {"first_of_month_not_before_first_dose|first_of_month": {"none_of": [
             {"decision": "ae.teae.start", "is": ["at_or_after_first_dose_time"]}]}},
         "note": _ONE_EVENT + "; an event completed to the first day of the month of the first "
                 "dose is before the dose by date and by time alike"},
-    "ae.teae.start": {"when": _ROW_ANY, "note": _ONE_EVENT},
+    "ae.teae.start": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
     "ae.teae.end": {
-        "when": {"all_of": [{"rows": ["ANY", "SERIOUS"]}, {"any_of": [
-            {"decision": "ae.teae.end", "is": ["no_end", "end_of_study"]}, _WINDOW]}]},
+        "when": {"all_of": [_ROW_EVENT, _ANALYZED]},
         "pairs": {"no_end|end_of_study": {"none_of": [_TREATMENT_RECORD]}},
-        "note": "for a window of parameters.window_days days; a window that is longer or "
-                "shorter may leave the planted events on one side. With the subcategory "
+        "note": "a window is one of parameters.window_days days; a window that is longer "
+                "or shorter may leave the planted events on one side. With the subcategory "
                 "of the treatment record as the end-of-study record nearly no subject has "
-                "an end-of-study date"},
-    "ae.related.values": {"when": {"rows": ["RELATED"]}},
+                "an end-of-study date. Two of the planted subjects stop early"},
+    "ae.related.values": {"when": {"all_of": [{"rows": ["RELATED"]}, _ANALYZED]}},
     "tfl.output.include": {"when": {"always": True}},
     "tfl.population": {"when": {"always": True}},
-    "tfl.columns.arms": {"when": {"always": True}},
+    "tfl.columns.arms": {
+        "when": {"none_of": [{"all_of": [_BY_ACTUAL, {"decision": "trt.actual.source",
+                                                       "is": ["first_ex_treatment"]}]}]},
+        "note": "by the treatment of the first exposure record the active arms share one "
+                "column, and a protocol that lists the placebo arm first then has the "
+                "columns of the dose order"},
     "tfl.columns.total": {"when": {"always": True}},
     "tfl.percent.format": {
         "when": {"rows": ["FATAL"]},
         "note": "the zero count is the count of fatal events in one arm"},
     "tfl.rounding.rule": {
-        "when": {"all_of": [{"rows": ["ANY", "SERIOUS"]},
+        "when": {"all_of": [_ROW_EVENT,
                             {"decision": "tfl.population", "is": ["safety"]},
                             {"decision": "pop.safety.grouping", "is": ["actual"]},
                             {"decision": "trt.actual.source", "is": ["dm_actarm"]}]},

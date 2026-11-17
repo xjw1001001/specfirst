@@ -14,7 +14,7 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - `specfirst compile --decisions d.jsonl --defaults --out DIR`; `specfirst render`, `specfirst parse`: decisions to specs; decisions to a standard-form document and back
 - `scripts/clean_clone_gate.sh <wp>`: the same gate on a fresh clone with a fresh install and fetch
 - `specfirst kit assemble <kit>`, `specfirst build <kit>`, `specfirst check <kit> [--twice]`: copy a kit from the cache by pinned SHA-256; build resolved specs, ADaM, results (both engines; needs R), grids with shells and pages, and the graph into build/kits/<kit>; P2, the trace, the results, the grids (P1 first with --twice). `specfirst methods [--write]`, `make methods`, `make defects`: the method registry, its vectors, the planted defects on the pilot
-- `specfirst gen design|study|check`: sample a PG-FIX design; generate a study folder (visible SDTM, twin, probes.jsonl); check its hashes, its probes and its SDTM with CDISC CORE (`--no-core` skips CORE)
+- `specfirst gen design|study|check`: sample a PG-FIX design; generate a study folder (visible SDTM, twin, probes.jsonl); check its hashes, its probes and its SDTM with CDISC CORE (`--no-core` skips CORE). `specfirst gen kit|kits|verify`: write one kit of the slice, or kits of the set of a seed (data, decisions, gold, twin; P1 to P4); decide the properties of a written kit again
 - `make evidence`: rerun the evidence spikes (about 7 minutes). `specfirst status`, `specfirst doctor`: all state files; the environment against the locks
 - `scripts/worktree.sh <track>`: worktree ../specfirst-<track> on branch track/<track>
 - From a Windows session: `wsl -d Ubuntu-24.04 -- bash -lc "cd /mnt/d/trial_work/specfirst && make test"`
@@ -54,6 +54,6 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 - scipy.stats.fisher_exact is exact for 2 x 2 tables only (E27); specfirst.machine.methods.fisher_exact_p is exact for any table.
 - Pilot 7 names: the spec is adqsnipx.yaml, the reference file is adqsnpix.parquet.
 - Searches started in D:\trial_work reach reference/. Always work from inside the checkout.
-- `yamaa check` reads no data: a spec can pass it and fail when run. Run a changed fragment (`specfirst catalog --run`).
-- yamaa refuses to save a dataset on a Windows drive under WSL (`target_changed`). Build under /tmp.
-- standard/houses/open-default@1/STANDARD.md is rendered: after a catalog change run `specfirst house --write`.
+- `yamaa check` reads no data: a spec can pass it and fail when run. Run a changed fragment (`specfirst catalog --run`). yamaa refuses to save a dataset on a Windows drive under WSL (`target_changed`): build under /tmp.
+- standard/houses/open-default@1/STANDARD.md is rendered: after a catalog change run `specfirst house --write`. The house layout templates are draft 0: `specfirst.machine.grid` reads layout v0 only, and the grids of generated kits are built by `specfirst.gen.display` (ADR-007).
+- A generated kit is written outside the repository; dev and test kits from a seed file outside every checkout. The engines give a data-driven grouping no result for a group without records: `specfirst.gen.gold` lists the groups first. A probe claims a difference only under the decisions its `reaches` names.

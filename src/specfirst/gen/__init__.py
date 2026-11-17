@@ -9,6 +9,13 @@
     datasetjson.py, define.py   Dataset-JSON 1.1 and Define-XML 2.1 writers
     study.py      one study folder: visible data, twin, probes.jsonl, manifest
     gate.py       the checks of the gate gen-1a
+    decisions.py  the decisions of a study, sampled within the house standard (stage S1)
+    gold.py       gold from decisions: specs, ADaM, results, grid, graph (stage S5)
+    display.py    the grid of a compiled house layout (layout draft 0)
+    reference.py  the reference of a generated study: the output calculated by hand
+    verify.py     the properties P2, P3 and P4 of a kit (stage S7)
+    kits.py       one kit: data, decisions, gold, twin, manifest; P1; splits
+    gate2.py      the checks of the gate gen-2a
 
 Everything here is a pure function of the generator version, the design and
 the seed (rule R4): no clock, no unseeded randomness, sorted outputs.
@@ -16,4 +23,4 @@ the seed (rule R4): no clock, no unseeded randomness, sorted outputs.
 
 # The version of the generator. Change it whenever the same design and seed
 # would give other bytes; every generated file names it.
-GENERATOR = "gen-1a.2"
+GENERATOR = "gen-2a.1"
