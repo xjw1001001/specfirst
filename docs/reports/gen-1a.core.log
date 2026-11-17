@@ -1,0 +1,48 @@
+lock held at 2026-11-17 13:25:25
+CDISC CORE v1.0.0 at f3282a0d870b, SDTMIG V3.4, Define-XML 2.1.0, terminology sdtmct-2025-09-26; explained findings: core_findings.yaml, 18 entries
+planted defect: two events of one subject with the same AESEQ: reported by CORE and unexplained: CORE-000544 AE (issue reported, 2 issues, SFATXTPG-101-001): AESEQ must be a unique number per USUBJID per domain, or a 
+planted defect: an actual arm that no probe planted: reported by CORE and unexplained: CORE-000655 DM (issue reported, 2 issues, SFATXTPG-101-002, SFATXTPG-102-016): Values between ARMCD and ACTARMCD are not
+21 reports of CORE are kept in gatecore/ beside this log
+seed gen-1a-1 visible: 562 rules (323 passed, 191 not applicable, 10 with issues, 38 not executable); 86 findings, 0 unexplained
+seed gen-1a-1 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-2 visible: 562 rules (324 passed, 191 not applicable, 9 with issues, 38 not executable); 85 findings, 0 unexplained
+seed gen-1a-2 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-3 visible: 562 rules (323 passed, 191 not applicable, 10 with issues, 38 not executable); 86 findings, 0 unexplained
+seed gen-1a-3 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-4 visible: 562 rules (319 passed, 191 not applicable, 14 with issues, 38 not executable); 90 findings, 0 unexplained
+seed gen-1a-4 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-5 visible: 562 rules (325 passed, 191 not applicable, 8 with issues, 38 not executable); 84 findings, 0 unexplained
+seed gen-1a-5 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-6 visible: 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-6 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-7 visible: 562 rules (320 passed, 191 not applicable, 13 with issues, 38 not executable); 89 findings, 0 unexplained
+seed gen-1a-7 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-8 visible: 562 rules (316 passed, 191 not applicable, 17 with issues, 38 not executable); 93 findings, 0 unexplained
+seed gen-1a-8 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-9 visible: 562 rules (319 passed, 191 not applicable, 14 with issues, 38 not executable); 90 findings, 0 unexplained
+seed gen-1a-9 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-10 visible: 562 rules (321 passed, 191 not applicable, 12 with issues, 38 not executable); 88 findings, 0 unexplained
+seed gen-1a-10 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+findings by explanation, over all runs:
+    660  engine-invalid-operator (cannot_run)
+    280  engine-unknown-rule-type (cannot_run)
+    120  engine-unknown-operation (cannot_run)
+     40  engine-unsupported-attribute (cannot_run)
+    180  engine-join-type (cannot_run)
+     40  engine-list-startswith (cannot_run)
+    220  split-dataset-name (dataset)
+     20  sv-has-no-sequence-number (repeated_key)
+     20  no-findings-about-domain (every_record)
+     20  treatment-emergence-is-a-decision (every_record)
+     20  trial-design-domains-not-in-the-study (every_record)
+     20  define-xml-not-seen-by-the-rule (every_record)
+     40  invented-drug-has-no-code (study)
+     16  probe-randomized-never-dosed (probe)
+     48  probe-dosed-but-not-randomized (probe)
+     17  probe-first-exposure-date-differs (probe)
+     32  probe-actual-arm-differs (probe)
+     32  probe-event-after-end-of-study (probe)
+every report names the datasets handed over with their numbers of records, Define-XML 2.1.0 and the terminology sdtmct-2025-09-26
+CORE on 20 datasets (10 seeds, visible and twin): no unexplained finding; the pinned source is unchanged
+check CDISC CORE: PASS after 876 s
+studies: 510 files, SHA-256 over all their hashes b056b77b47d3672bb7a85f6a405fae4f83b4b70262d55c76c36af7790e27b0a1

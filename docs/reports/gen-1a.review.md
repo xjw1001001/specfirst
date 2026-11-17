@@ -776,3 +776,362 @@ move to gen-2a as known defects of the generator.
 For pass 2 I will read the gate log and the report, look at
 `core_findings.yaml` against real reports of CORE, and repeat the pair
 table on the commit that is to be merged.
+
+## Pass 2
+
+Commit reviewed: `39ff635c614031a89c44e9ab533f9674219b761b` on `track/gen`,
+the commit on which the gate ran. Since pass 1 (`ec07012`): `5f40ae7` the
+answers to the findings of pass 1, `11fec2c` the lessons renumbered,
+`18c23c8` the merge of `main` (catalog version 1, real-3a), `39ff635` the
+gate keeps the reports of CORE. I read the diff `ec07012..39ff635` for
+`src/specfirst/gen/`, `src/specfirst/cdisccore.py`, the gate table in
+`gates.py`, the six test files, `env/lock.sh`, ADR-006 and
+`third_party/SOURCES.md`; the 70 files that the merge brought from other
+tracks are not mine to review. Beside the code I read, as they stood in the
+worktree, not yet committed: the report `docs/reports/gen-1a.md`, the gate
+log `docs/reports/gen-1a.gate.log`, the log of the second run of the check
+"CDISC CORE" `docs/reports/gen-1a.core.log`, the handover
+`docs/state/gen.md` and lesson 39. The verdict at the end holds for the
+code of `39ff635` and for these texts as I read them.
+
+Pass 1 names two lessons by number, 9 and 15; both numbers stand. The
+lessons of gen-1a, which were 27 to 33 on the branch before the merge of
+`main`, are 32 to 38 now (real-3a took 27 to 31 first); 39 is new.
+
+The pass had three parts: A, the code and my pair table, while the gate
+ran; B1, the gate log, the report and the handover; B2, the reports of
+CORE. The author changed no code after part A, so that the code of the
+merge is the code that passed the gate; what parts A and B1 found went
+into the report and the handover, and I read them again in B2.
+
+### How pass 2 was done
+
+As pass 1: in the worktree, with Windows git and the scratch Python under
+Windows; no WSL, no network, no run of CORE by me. My scripts are in my
+scratch folder (`review1/` and `review1/pass2/`) and are not kept. Where a
+result rests on the compiled specs, it rests on my own reading of the
+templates (`refimpl.py` of pass 1, unchanged; the 22 entries and templates
+of the slice did not change with catalog version 1), not on yamaa.
+
+### What I ran
+
+```text
+$ python -m pytest tests/unit/test_gen_design.py tests/unit/test_gen_gate.py
+    tests/unit/test_gen_probes.py tests/unit/test_gen_rng.py
+    tests/unit/test_gen_subjects.py tests/unit/test_cdisccore.py -q
+133 passed in 41.87s
+$ python -m pytest tests/unit/test_gates.py tests/unit/test_layout.py
+    tests/unit/test_sources.py -q
+87 passed in 1.78s
+```
+
+- `review1/pairs.py`, unchanged, on the twins of the ten gate seeds. Its
+  output and its summary are byte for byte the files the author had made
+  with the same scripts (`pairs2.txt`, `summary2.txt`).
+- `pass2/reach.py`: every claim of the new field `reaches` of
+  `probes.jsonl` against the table, on the ten gate twins and on 200
+  further twins (`p2-0` to `p2-199`); with `--broad`, on the gate twins,
+  every pair under every single change of one other decision as well.
+  `pass2/reach2.py`, `eff.py`, `slots.py`: other values of the slots, 200
+  twins.
+- `review1/many.py`, 150 seeds, twin and visible: every study generated,
+  every logged probe found, no twin whose table on the safety set equals
+  the one on the randomized set (pass 1: 18 of 150).
+  `review1/consist.py`, 40 designs, 10466 subjects.
+- `review1/breaks.py` and `b6.py` of pass 1 again; `pass2/newcode.py`, my
+  own planted cases against `cdisccore.requirement_problems`,
+  `command.read_seed`, `gate._holds` and `gate.term_problems`;
+  `pass2/f3teeth.py`.
+- `pass2/core.py`, `ctrules.py`, `hashes.py`: the 21 reports of CORE read
+  with `cdisccore.read_report` and judged with `gate.classify` and
+  `gate.report_problems` against the ten studies generated again here
+  with `gate.generate_all`. `pass2/unchecked.py`, `taetord.py`: what the
+  rules that could not run would have looked at, in those 20 datasets.
+
+### The blocking findings of pass 1
+
+F1, settled. Lines 27 to 32 of `env/lock.sh` are six lines with a
+backslash at the end again; with my stand-in for uv the command gets the
+same 11 arguments as the one for the project lock. No test reads the
+script (F28). The report quotes `bash env/lock.sh` on a copy under WSL and
+`cmp` on the four locks, all "same"; that is the author's output, which I
+could not repeat.
+
+F2, settled. The five recipes plant the event that carries the difference
+(`probes.py`: `_zero_dose`, `_rfxstdtc`, `_partial_exposure`,
+`_no_end_date`, `_reference_start`), and each finder asks for it; the
+tests `_f9_no_event` remove the event and the finder then misses the
+probe. At the house defaults the table differs for the three pairs of
+`trt.start.source` and for `trt.date.imputation` in 10 of 10 gate twins
+and 200 of 200 further twins (pass 1: one pair of the first and the pair
+of the second in 0 of 10). last_ex_end_date | ds_date_when_ex_missing
+differs with a window of N days in 10 of 10 and 200 of 200.
+`date.studyday.origin` now differs in ADAE (ASTDY) in 10 of 10 and in no
+cell, and the log says `never`; the report hands it to the owner as
+`unseparated` in the sense of section 4.7.
+
+F3, settled, by construction: the subject who is never dosed is planned
+for the arm that the subject dosed off plan left, so that arm is short in
+the safety set whatever the third subject does. 0 of 150 and 0 of 200
+twins have equal tables. The new test has teeth: with the never-dosed
+subject in a freely drawn arm again, 10 of its 60 designs have the same
+counts in both sets (`pass2/f3teeth.py`); with the recipe of the commit,
+0 of 60.
+
+F4, settled. The list was read against real reports. Judged here, with
+the studies generated again under Windows, the 20 reports give what the
+gate log gives: 1,825 findings, each explained by exactly the entries the
+log counts, no problem of a report, no finding unexplained. Entry by
+entry (`pass2/core.py`):
+
+- The 38 rules of the six `cannot_run` entries have the status EXECUTION
+  ERROR in 20 of 20 reports, each with the error text of its entry.
+- CORE-000510: one issue per dataset and run, no record (220).
+- CORE-000544 on SV: in 20 of 20 reports the detail rows are exactly the
+  SV records of the subjects with more than one visit (twin of
+  `gen-1a-1`: 814 records, 29 subjects with one visit, 785 issues). The
+  entry of pass 1 ("every record") could not have held; this one does.
+- CORE-000757 on EX and CORE-002034, CORE-002056, CORE-002084 on AE: the
+  detail rows are the rows 1 to n of the dataset in every finding.
+  CORE-002056 lists 61 domains that the study lacks, TI, TD and TM among
+  them, as the reason says.
+- CORE-000735 and CORE-002081 on TS: one issue each, no subject.
+- The five `probe` entries: every detail row of every finding belongs to
+  a subject of a probe that the entry names. CORE-000239 reports the
+  subject of `rfxstdtc_differs_from_exposure` (15 rows) and the subject
+  of `partial_exposure_date_not_earliest` (15 rows; the report shows the
+  minimum "2020-05" against RFXSTDTC "2020-05-09T11:45"): the suspicion
+  of pass 1. CORE-000717 and CORE-002088 report the events after the end
+  of the study of two probes (12 and 15 rows).
+- In all 505 findings with issues the number of issues equals the number
+  of detail rows; the reports name no issue limit.
+
+`planted-twin.json`: against the report of the twin of `gen-1a-1`, three
+findings differ and nothing else. CORE-000544 on AE, 2 issues, rows 1 and
+2 of SFATXTPG-101-001; CORE-000655 and CORE-000656 on DM, 2 issues each,
+SFATXTPG-101-002 (planted) beside SFATXTPG-102-016 (the probe). All three
+are unexplained when judged here. That is what the gate log says, by
+rule, dataset and subject.
+
+The reports are those of a second run: the gate kept its own beside its
+log in the clean clone under `/tmp`, which the WSL instance cleared (lesson
+39; the report says so). Lines 2 to 46 of `gen-1a.core.log` equal lines
+96 to 140 of the gate log but for the name of the folder. And the
+datasets are the same ones: the last line of the core log is a SHA-256
+over the hashes of the 510 files of the Linux run; the same value comes
+out of the 510 files I generated under Windows (SHA-256 of the JSON text
+of seed, file and hash with sorted keys; I found the formula by trying,
+the log does not give it). So the ten studies are byte for byte the same
+under Linux with Python 3.12 and under Windows with Python 3.13, Parquet
+files and manifests included.
+
+### The other findings of pass 1
+
+State at `39ff635`:
+
+- F5, settled: the field `reaches`. Its claims hold in the 10 gate twins
+  and in 200 more, with the exception F21 and the narrowings F22.
+- F6: N against N + 1 days now differs in the table (10 of 10, 200 of
+  200); the rest is stated as a limit.
+- F7, settled: 32 pairs in a design without an efficacy set (34 before).
+- F8, settled: `detail.assumes` names every decision under which my broad
+  run loses a count probe.
+- F9, settled: the finders now miss every case B1a to B6 of pass 1;
+  twelve tests.
+- F10 and F11, settled: B7 and B8 of pass 1 are reported now.
+- F12, settled: a report must name the datasets with their records,
+  Define-XML 2.1.0 and the terminology (all 20 do); the second build is a
+  process of its own; the manifest is compared.
+- F13: the kind `probe` is exact; the two rules about every record are
+  bound to AE; the missing TI is stated and left to the owner.
+- F14, settled in the text of ADR-006; the doctor compares
+  `env/core-requirements.in` with the list of CORE.
+- F15 to F18, settled.
+- F19, stated: no strata, endpoints, analysis timing or TI.
+- F20, settled: a planted event outside the treatment period has the
+  action NOT APPLICABLE.
+
+Nothing is called settled in the report's table of the review that is
+not.
+
+### New findings
+
+None blocks.
+
+#### F21. Does not block: one more cancellation, in `pop.efficacy.rule`
+
+With `tfl.population` = efficacy, the condition that `reaches` names,
+baseline_and_postbaseline | attended_visit gives the same table in 4 of
+109 twins with an efficacy set when the visit is the first one after day
+1 (both tests), and in 2 of 109 for WEIGHT with the follow-up visit; 6
+twins have at least one such pair of slot values, none has it for all,
+and none of the 7 gate twins has it. In `p2-41` (two arms) four planted
+subjects without an event sit in the one active arm: two enter the set
+and two leave it. The report (Limits) and the handover state it; it is
+not fixed. The remedy of the other two cases would do: an event for one
+of the four.
+
+#### F22. Does not block: `reaches` promises less than it reads
+
+- `always` assumes a table that shows the row ANY. With the rows RELATED
+  and FATAL alone nothing differs in 10 of 10 gate twins for
+  `trt.date.imputation`, `ae.start.imputation`, `ae.teae.start`,
+  `ae.teae.end` and one pair of `trt.start.source`.
+- For `trt.end.source` the log says "an emergence window"; it needs the
+  window of N days. With N + 2, last_ex_end_date | ds_date_when_ex_missing
+  is the same in 200 of 200; with N - 1, last_ex_start_date |
+  ds_date_when_ex_missing in 99 of 200.
+- Two interplays are not in it: first_of_month_not_before_first_dose |
+  first_of_month is lost under `ae.teae.start` =
+  at_or_after_first_dose_time, and no_end | end_of_study under
+  `disp.status.record` with the subcategory of the treatment record (10
+  of 10 each).
+
+All three are in the report or the handover now, for the first commit of
+gen-2a.
+
+#### F23. Does not block: two values of one slot often give the same table
+
+The two subjects planted for the two values cancel in one arm: the test
+of `pop.randomized.rule` (SYSBP | WEIGHT, table on the randomized set) in
+125 of 200 twins, the test of `pop.efficacy.rule` in 52 of 109, its visit
+(first | second after day 1) in 5 of 97. The gate asks for pairs of
+alternatives only, and the log repeats the `varies` of the catalog. A
+wrong value of such a slot is invisible in the table of such a twin;
+gen-2a and read-1a are told so in the handover.
+
+#### F24. Does not block: what CORE did not check is not in the report
+
+From the 20 reports: 315 rules passed in every report, 191 were not
+applicable in any, 18 reported issues (8 in every report, 10 where a
+probe is), 38 could not run. The 38, by subject: MedDRA terms, codes and
+version (13; the dictionary is the generator's own, so these would report
+every event if they ran); codes of the trial summary in SRS, NDF-RT,
+MED-RT and SNOMED (10); country codes in DM and TS (3); race and
+ethnicity options, variable lengths and file tags from the Define-XML
+(4); the versions in TS (2); FDA's desired TS parameters (2); extended
+terms of extensible codelists and LOINC (2); and two that touch every
+record: CORE-002121, "Value must be a valid ISO 8601 datetime or
+interval", on all 11 datasets, and CORE-002101, TAETORD against TA, on 9.
+So "passes CORE" says nothing about the form of a date value as such,
+about TAETORD or about a country code. I looked at the three in the 20
+datasets myself (`pass2/unchecked.py`, `taetord.py`): all 199,315 date
+values have an ISO 8601 form; the six country codes are valid; SE.TAETORD
+is the order of TA for the planned arm in all 7,225 records of subjects
+with a planned arm and empty for the element of an unplanned treatment.
+One thing a rule might report if it ran: the screening element of a
+subject without an arm (342 screen failures, 12 not assigned) carries
+TAETORD 1, though no arm of TA is theirs. The evidence for all of this is
+the unit tests and not CORE; the report should name the subjects of the
+38 rules beside their number.
+
+#### F25. Does not block: the claim about controlled terms holds
+
+16 of the 562 rules name a codelist, a terminology or valid values. Over
+the 20 reports: 8 were not applicable (six on PK units, one on FDA's
+therapeutic area guides, and CORE-002123, "A new term has been added to a
+non-extensible code list", the one rule that would speak of SEX = X), 5
+could not run, 3 passed (the domain code, TSVALCD in the CT version,
+TSVCDVER). No rule that compares a value of a subject with its codelist
+ran with a result; a few rules name fixed values of one variable
+(CORE-000124, AESCONG 'Y' or 'N'). The reports name the package
+`sdtmct-2025-09-26`, so the terminology was loaded. That fits the claim
+"CORE 1.0.0, run this way, reports no value outside its codelist". The
+report now quotes a run with eight planted defects, of which SEX, AGEU
+and AESEV passed and five others were reported; that is the author's
+output from a scratch script, not repeated by me. The gate's own check
+"controlled terms" found my planted values in controlled variables
+(`pass2/newcode.py`, with a package made from the generator's table; the
+check itself needs the cache of CORE).
+
+#### F26. Does not block: a planted DM record that the v3.4 rules refuse
+
+Four rules report the subject of `dosed_but_not_randomized` in every
+dataset that has it: CORE-000192, CORE-000758, CORE-000927, CORE-002099
+("Subject is not assigned to treatment (ARMCD is not populated) but
+ACTARMCD is populated."; "RFSTDTC must not be populated when ARMNRS is
+populated with a value other than 'UNPLANNED TREATMENT'"). The list
+explains them as planted, and the report says that four rules report the
+subject. What a reader of the datasets should also know: by these rules
+the record is not an edge case of conformant data but a record that the
+rules for v3.4 do not allow, with the reason NOT ASSIGNED beside an actual
+arm and a reference period. The recipe of the catalog ("ARMCD is
+NOTASSGN") is older than v3.4. Whether the probe can be written as a
+conformant record is a question for the std track, with the two points
+the handover already has; the reason of the entry should say it in one
+sentence.
+
+#### F27. Does not block: two checks compare less than their text says
+
+- `gate._holds`, kind `repeated_key`, compares the number of issues only;
+  a finding of the right size that names one-visit subjects is explained
+  (`pass2/newcode.py`). In the 20 real reports the rows are exactly the
+  right ones (F4 above), and the report's table now says "the number,
+  not the subjects".
+- `gate.term_problems` accepts a milestone term in a disposition event
+  (it joins the two codelists of DSDECOD) and does not look at COUNTRY or
+  at the codelists of the study (AEREL, EXTRT, ARMCD).
+
+Both are in the handover.
+
+#### F28. Does not block: small things
+
+- `GENERATOR` is still "gen-1a.1" although the same design and seed give
+  other bytes than at `ec07012`; its own comment asks for a new name. No
+  study of the old recipe was kept. In the handover.
+- The new event of `no_exposure_end_date` is dated N + 2 days after the
+  subject was lost to follow-up, after DM.RFPENDTC, with the epoch
+  TREATMENT. CORE reports it as an event after the end of the study and
+  says nothing about the epoch. In the handover.
+- No test or gate check would see `env/lock.sh` break again; `bash -n`
+  passed the broken script of pass 1 too.
+- `scripts/clean_clone_gate.sh` still prints "clone kept ... until /tmp
+  is cleared" (lesson 39 says so).
+
+### The gate log, the report and the handover
+
+The gate: `scripts/clean_clone_gate.sh gen-1a` on a clean clone of
+`39ff635`, fresh install and fetch, 8 of 8 checks PASS, 908 tests passed
+and none skipped, ten lines "planted defect" inside checks 4 to 7. The
+three clauses of the gate text of PLAN.md section 13.5 are checks 5, 4 and
+7; the environment check is first. Nothing the plan or ADR-005 asks of
+gen-1a is missing from the eight checks. Two things pass in a weaker sense
+than the words suggest, and the report says both: 38 of 562 rules of CORE
+never ran (F24), and there is no TI dataset (for the owner).
+
+The report against the log: all 91 lines that the section "The gate"
+quotes are in the log; 1,825 findings (885 in the visible data, 940 in
+the twins), 84 to 94 per dataset; 1,320, 220, 20, 80, 40 and 145 by kind;
+18 rules with issues in every twin and 8 to 18 in the visible data; 510
+files and 2,799 subjects per build; 32 or 35 pairs; 5,250 lines of
+Python. All agree. The table "What the probes prove" is my own rerun.
+"Limits" and the handover state F21 to F23 with my numbers, the open
+reading of `not_before` of pass 1, and what the gate does not prove: that
+both alternatives were built. A session that starts gen-2a from
+`docs/state/gen.md` is told what it must not assume.
+
+### What I could not check
+
+- Anything under WSL: the gate run itself, `make lock`, the doctor, the
+  second run of CORE and the run with eight planted defects. I read their
+  logs and, for CORE, the 21 reports.
+- The reports of the gate run proper, which are gone. The second run is
+  held to it by its 45 lines, equal but for one folder name, and by the
+  hash above.
+- The CI runs on GitHub, the times of the lock, and the author's scratch
+  run of 1,500 seeds.
+- The engine. Whether a table differs is my reading of the templates;
+  gen-2a decides by mutation. The reading of `not_before` named in pass 1
+  is still open, and the handover says so.
+- `terms_check` against the real terminology package; the gate log shows
+  its result (95 terms, 709,791 values, 0 problems).
+
+Verdict of pass 2: SIGNED. The gate passed on a clean clone of `39ff635`;
+the four blocking findings of pass 1 are settled in that code; the list
+of explained CORE findings holds on the 20 reports as its reasons say;
+the report says what the logs show. Eight new findings (F21 to F28), none
+blocking: all but F24, F26 and one point of F28 (no test for
+`env/lock.sh`) are already in the report, the handover or a lesson; those
+three are for the report, the std track and the first commit of gen-2a.
+The two markers that the report keeps for this verdict were still open
+when I read it.
