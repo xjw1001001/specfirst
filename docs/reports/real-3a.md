@@ -21,11 +21,24 @@ lines; the section "The gate" quotes that run in full). `9730843` adds
 this report and two gate logs to `0938fe4` and changes nothing else. The
 two runs built the same bytes: all 30 file hashes of P1 are equal.
 
+The independent review (rule R7) is a PASS with nine findings that do not
+block (section "Review"). One of them, F1, is a statement of fact in
+ADR-003 and in this report that was wrong, and it is corrected: the table
+shell the example names is in the pinned repository.
+
+After the review `main` was merged into `track/real` (commit `26667ed`:
+`catalog@1` of std-1, 10 files, none that real-3a changed), and
+`scripts/clean_clone_gate.sh real-3a` exited 0 again on a clean clone of
+that commit, 16 of 16 (`docs/reports/real-3a.merged.gate.log`, 455
+lines; the section "The gate after the merge of main"). What follows
+`26667ed` on the branch is documents only: the review, the corrections it
+asked for, this report and the state file.
+
 - 27 cells of the grid show 51 results. Every cell text equals the
   formatted values the example embeds; no difference had to be classified.
 - All 27 cells print a number, and all 27 have a complete path to SDTM
-  columns: through 51 ARD rows, 9 analyses and 15 ADaM columns to 15 SDTM
-  columns.
+  columns: through 51 ARD rows, 9 analyses and 15 ADaM columns (the 9 the
+  analyses read and 6 behind them) to 15 SDTM columns.
 - P1: 30 of 30 built files have the same SHA-256 in two builds; the grid,
   its mock shell, the two pages and the three graph files are among them.
 - Everything the gate of real-2 checks is checked again: both engines
@@ -40,8 +53,9 @@ our own format and tfrmt was read, not run; a count under a column header
 is a cell of a row with the section `@header`, within grid schema version
 0; the new registry entry `display.pattern` follows what the example's
 formatted values show; the kit layout of section 8 has grown again; and
-the comparison of grid text is per result, because the example formats
-results, not cells.
+the comparison of grid text is per result, with the formatted values of the
+example's ARS file; the example's table shell, which shows the cells, is
+not yet held against the grid (review, F1).
 
 ## What real-3a asks for, and where it stands
 
@@ -59,7 +73,8 @@ the SHA-256 `234a642a...2e4c`, as in the report of real-2). Nothing of the
 rest of real-3 is started. The folder of the track gen was not touched. In
 the files both tracks edit, the changes are: one gate and two constants in
 `gates.py`, three texts in `cli.py`, two lines of `CLAUDE.md` (59 lines),
-four rows at the end of `docs/lessons.md`.
+five rows at the end of `docs/lessons.md` (the fifth, lesson 31, after the
+review).
 
 ## The first commit: the findings F2 to F12
 
@@ -68,7 +83,7 @@ Commit `bd34260`. `docs/reports/real-2.review.md` has each finding in full.
 | # | What was done | Where it is tested |
 | --- | --- | --- |
 | F2 | The check of the proofs is narrowed. `value_of_other_result`: the same analysis and operation in one other group of one grouping, and the exchange must hold in both directions. `same_under_every`, `no_alternative`: only for an option that changes some result of the same operation. `no_records`: one count of the cell's own groups for every group the test compares. New proof `between_equal_values`. | `tests/unit/test_results.py` (A3, A8 to A11 on the made-up study); `tests/defects` D6 on the kit's own entries |
-| F3 | The R Fisher test gives a 2 x 2 table to `fisher.test` and sums over every table itself for a larger one; statements 5 and 6 say what holds for both implementations, statement 8 what `fisher.test` does. Two of the reviewer's tables are vectors with the sum in exact fractions. The build catches `MethodError`. | `tests/methods`: `fisher-r`, `fisher-limit` |
+| F3 | The R Fisher test gives a 2 x 2 table to `fisher.test` and sums over every table itself for a larger one; statements 5 and 6 say what holds for both implementations, statement 8 what `fisher.test` does. Two of the reviewer's tables are vectors; their expected values are those of the Python implementation, 9.2e-14 and 2.1e-13 from the sum in exact fractions and inside the 1e-12 of the test (the vectors' own note says "the sum in exact fractions": review of real-3a, F9). The build catches `MethodError`. | `tests/methods`: `fisher-r`, `fisher-limit` |
 | F4 | The standard deviation of equal values is 0, decided by comparing the values, in both engines; statement 10 and two vectors. | `tests/methods` |
 | F5 | R reads the hand-over without jsonlite's simplification; `json_string` escapes every control character; one rule for a number as a group value (rule I9) in both engines; a number in a condition is written as in JSON, and a value that is not text is a problem of the event (rule I3). | `tests/unit/test_rengine.py` |
 | F6 | Test A6 asserts the rows of each of the 31 analyses. | `tests/pilot` A6 |
@@ -317,8 +332,12 @@ Output. Lines are quoted as printed from `docs/reports/real-3a.gate.log`
 of `specfirst doctor`, the pin listings, the registry listing, pytest's
 progress dots, the ten lines of the test `fisher-r` for its ten tables (the
 last two are quoted above), 23 of the 30 hash lines of P1, the per-dataset lines of P2, of the trace
-and of the claims, the tests A1 to A4, and the tests D2 to D6 (D6 is quoted
-above).
+and of the claims, 16 lines of check 11 (for each engine the lines on the
+result that agrees only as printed and on the two results at the edge; the
+four `explained` lines of the R engine, which are those of the Python
+engine; the line on the 504 results the reference does not list and the
+line on the ARS file with our results), the tests A1 to A4, and the tests
+D2 to D6 (D6 is quoted above).
 
 ```text
 gate real-3a at commit 0938fe4e3bef90b0a47762acc9b4c1ea9b731123 (clean)
@@ -629,6 +648,98 @@ The 30 hash lines of P1 in this log are those of the first run, file by
 file: a fresh environment and a fresh fetch give the same grid, shell,
 pages and graph.
 
+## The gate after the merge of main
+
+`main` moved while the review ran: std-1 merged `catalog@1` (`f560171`).
+It was merged into `track/real` as `26667ed`. The merge changes 10 files:
+the catalog and its README, two files of the house standard, two lines of
+`src/specfirst/compile/overview.py`, and five documents of std-1. None is a
+file that real-3a changed. Because the unit tests of the gate read the
+catalog, the gate was run again on the result, as before:
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh real-3a /mnt/d/trial_work/specfirst/.git 26667ed
+```
+
+Output, from `docs/reports/real-3a.merged.gate.log` (455 lines);
+`[...]` marks where lines are left out, the same kinds of lines as in the
+section before:
+
+```text
+clean clone gate real-3a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     26667ed
+clone:      /tmp/specfirst-clean-dl9nUb/specfirst
+environment and cache: /tmp/specfirst-clean-dl9nUb/env
+[...]
+$ bash env/install.sh
+[...]
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-dl9nUb/env/r-lib
+[...]
+doctor: ok
+
+$ specfirst fetch
+[...]
+fetch: every pin verified
+
+$ specfirst gate real-3a --clean
+gate real-3a at commit 26667edce111e257b17e16ee349bc706e723be48 (clean)
+[...]
+775 passed, 22 deselected in 41.52s
+[...]
+P1 determinism: 30 of 30 files have the same SHA-256 in both builds
+[...]
+TOTAL cells=9119605 mismatched=0
+[...]
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+  through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
+trace: complete
+[...]
+results common-safety-displays, Python engine: 0 unexplained
+[...]
+results common-safety-displays, R engine: 0 unexplained
+[...]
+results common-safety-displays, engines: 4238 results in both, 0 disagree; largest relative difference 2.4e-13 (allowed 1e-09)
+results: pass
+[...]
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+grid Out14-3-1-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grids: 1 outputs, pass
+[...]
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+[...]
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+  through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
+[...]
+59 passed in 54.09s
+[...]
+ASCII check: 392 files checked, 0 with non-ASCII bytes
+[...]
+PASS  environment          0.2 s
+PASS  pins                 0.7 s
+PASS  lint                 0.0 s
+PASS  registry             0.0 s
+PASS  unit tests          41.8 s
+PASS  method vectors       1.1 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      31.3 s
+PASS  P2 reproduction      0.3 s
+PASS  trace                0.8 s
+PASS  results              2.7 s
+PASS  grids                1.9 s
+PASS  pilot tests         45.2 s
+PASS  planted defects     54.3 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-3a: PASS
+
+clean clone gate real-3a: PASS (clone kept in /tmp/specfirst-clean-dl9nUb/specfirst until /tmp is cleared)
+```
+
+Of the 30 hash lines of P1 in this log, 30 are those of the run at `9730843`: the merge
+changed nothing that a build of the pilot reads.
+
 ## One cell, end to end
 
 `cell:Out14-3-1-1/r2/c1`, the row "TEAE" under "Placebo", walked from
@@ -678,11 +789,26 @@ row of the ARD file, the percent the 153rd.
 
 ## What the checks do not cover
 
-- The comparison of grid text is per result. The example formats results,
-  not cells, and the shell it names (`AE_Summary_Table_Shell.pdf`) is not in
-  its repository. That a count and its percent share a cell, in this order,
-  with one blank between them, is the layout's alone. Test D7 plants the
-  percent before the count and prints that it passes (lesson 29).
+- The comparison of grid text is per result. The ARS file of the example
+  formats results, not cells, and the expected text of a cell is built with
+  the layout's own template. So that a count and its percent share a cell,
+  in this order, with one blank between them, is held against nothing
+  here. Test D7 plants the percent before the count and prints that it
+  passes (lesson 29).
+- The first version of this report said that the shell the example names
+  (`AE_Summary_Table_Shell.pdf`) is not in its repository. That was wrong
+  (review, F1; lesson 31). The shell is next to the example in the pinned
+  repository. It shows the cell as the layout has it (count, blank,
+  percent), and one line of the row axis that the grid does not have,
+  "Number of subjects with at least one event" above the eight rows.
+  ADR-003, "The example's table shell", lists every difference. Nothing
+  holds the mock shell against the shell yet.
+- What else the review found to pass (F3, F4, F6): a body cell that pairs
+  the count of one row with the percent of another; another title,
+  footnote, section or indent in a layout; a page whose cells or rows
+  stand in another place. With a data-driven column grouping, an arm
+  without a record of an analysis stops the build (F2); the pilot has
+  defined groups.
 - The column labels and the row labels are taken from the ARS file. A
   layout may override them; nothing holds an overridden label against the
   reference.
@@ -697,8 +823,12 @@ row of the ARD file, the percent the 153rd.
   against the engine, on this grid and its 9 analyses only.
 - The `reads` edges come from what the ARS file names. Both engines are
   handed exactly those columns, so a column that the ARS file does not name
-  cannot reach a result; D8 tests, per analysis, the columns the other
-  analyses read.
+  cannot reach a result. D8 runs an analysis together with the analyses
+  its results are computed from and empties the columns none of them
+  reads. So a `reads` edge to a column that the analysis of the denominator
+  also reads is not tested, and neither is the `computes` edge of a single
+  percent to that analysis (review, F4). No cell of this grid loses a
+  column by it.
 - The citations of the analyses (ARS `documentRefs`) and the viewer are not
   part of real-3a.
 - tfrmt was not run (ADR-003).
@@ -748,18 +878,47 @@ the cause.
 
 ## Review
 
-The independent review (rule R7) is in `docs/reports/real-3a.review.md`. It
-was asked for after this report was written, of a fresh-context agent that
-did not write the work, and it reads this report as it stood then. Its
-verdict and its findings are in that file; `docs/state/real.md` lists what
-it leaves open.
+The independent review (rule R7) is `docs/reports/real-3a.review.md`. A
+fresh-context agent that did not write the work read this report as it
+stood at `9730843` and at `f55f40d`. Verdict: PASS. It ran the gate
+itself on a clone of `9730843` (16 of 16), counted the grid again without
+any code of specfirst (27 cells, 51 results, 27 equal), walked the 27
+cells to SDTM itself, built three more times under other settings (the
+same 30 hashes), and planted 44 changes of the display and 22 gaps of the
+trace.
+
+Nine findings, none blocking:
+
+| # | Finding | State |
+| --- | --- | --- |
+| F1 | ADR-003 and this report said that the table shell the example names is not in its repository. It is. | The sentences are corrected: ADR-003, this report, the state file, lesson 31. Holding the mock shell against the shell, and the line of the row axis the grid lacks, are open. |
+| F2 | With a data-driven column grouping, an arm without a record of an analysis stops the build. | Open. Named in ADR-003 and, for gen-2a, in the state file. |
+| F3 | The comparison passes a cell that pairs results of two rows, and another title, footnote, section or indent. | Open. Named under "What the checks do not cover". |
+| F4 | A single `reads` or `computes` edge can be left out unseen when the analysis of the denominator covers for it. | Open. The sentence on D8 is corrected. |
+| F5 | `between_equal_values` and `same_under_every` still hold when our own cell is wrong. | Open. |
+| F6 | The check of a page does not see where a text stands. | Open. |
+| F7 | `registry.json` loses a blank in statement 3 of `display.pattern`. | Open. |
+| F8 | One sentence of rule I9 holds in R only. | Open. |
+| F9 | Small things in the texts. | Corrected: the state file, the list of the lines left out of the long quote, the 15 ADaM columns, the row of F3 above, the sentence on the padding in ADR-003. Open: the note of the two vectors, `fisher-limit` among the tests the gate requires, cells without a formatted value in `specfirst check`. |
+
+"Open" means that the fix changes code or a built file. It is the first
+commit of the rest of real-3, with a gate run of its own, as the findings
+of the review of real-2 were the first commit of this part;
+`docs/state/real.md` lists each. What was corrected now is documents only,
+so the gate evidence stands, as the review says.
+
+What the review could not check: the source of tfrmt (no network at the
+time), so every row of the table "tfrmt, read" in ADR-003 rests on the
+author's reading; and it did not run the clean-clone gate again, but
+compared the committed log with the log in the clean clone, byte for byte.
 
 ## GitHub and CI
 
 `track/real` is pushed to the owner's private repository. CI
 (`.github/workflows/ci.yml`: the ASCII check, lint, the unit tests, on
-GitHub's runner, which has no R and no fetch cache) ran on `faa8a5f`, the
-last commit that changes code:
+GitHub's runner, which has no R and no fetch cache) ran on every pushed
+commit of the branch. On `faa8a5f`, the last commit of real-3a that changes
+code:
 
 ```text
 run 44126884475 on track/real at faa8a5f: completed, success
@@ -769,6 +928,15 @@ All checks passed!
 ```
 
 The 19 skipped tests need R. In the gate, where R is installed, the same
-selection gives 775 passed and none skipped. The runs on the commits after
-it, which change documents only, and on `main` after the merge are in the
-git history and in `docs/state/real.md`.
+selection gives 775 passed and none skipped. The later runs:
+
+```text
+run 44128018115 on track/real at 0938fe4: completed, success
+run 44130810840 on track/real at 9730843: completed, success
+run 44133080945 on track/real at f55f40d: completed, success
+run 44139428759 on track/real at 26667ed: completed, success
+```
+
+The runs on the commit that holds this report and on `main` after the
+merge cannot be in it; they are in GitHub, and the session reports them
+when it hands the work back.

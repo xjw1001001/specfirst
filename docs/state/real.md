@@ -15,58 +15,19 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   docs/reports/real-2.review.md (PASS, twelve findings that do not block).
   Decisions: docs/decisions/ADR-002.md. The findings F2 to F12 are fixed in
   commit `bd34260` (2026-11-17), and `specfirst gate real-2 --clean` exited
-  0 on a clone of it (the report of real-3a will hold the log).
-
-## In progress: real-3a (ADR-005, decision 1)
-
-The work is on `track/real` at `faa8a5f`, pushed, three commits on top of
-`main` (`f42a3fa`). It is not merged and has not passed its gate.
-
-Done, and how it is known:
-
-- `bd34260`: the findings F2 to F12 of the review of real-2.
-  `specfirst gate real-2 --clean` exited 0 on a clone of this commit, 15 of
-  15 checks, with the installed environment and the existing fetch cache
-  (2026-11-17, 10:57).
-- `4f7e581`, `faa8a5f`: ADR-003, layout spec v0, the grid builder, the mock
-  shell, the page, the comparison with the example's formatted values, the
-  trace of the cells, the gate `real-3a`, the planted defects D6 to D8.
-  `specfirst check cdiscpilot01` on a build of the working tree before
-  these commits: 27 cells show 51 results, all 27 equal the example's
-  formatted values, and 27 of 27 cells reach SDTM columns. The tests D6 and
-  D8 passed in the worktree. D7 saw every planted case but one (the cells
-  of a row in another order, which the check of the form of a grid sees and
-  the comparison of texts does not); the test now judges a grid file as the
-  gate does, and has not run since.
-- CI on `faa8a5f` (run 44126884475): 756 passed, 19 skipped (no R on the
-  runner), 22 deselected; lint clean; ASCII check on 387 files.
-
-Not done:
-
-- `specfirst gate real-3a` has not run to its end on any commit, and
-  `scripts/clean_clone_gate.sh real-3a` has not been started. From 11:16 on
-  2026-11-17 the Ubuntu instance of WSL was terminated every 30 to 120
-  seconds, after the virtual machine had run out of memory with three
-  sessions testing at once; from about 10:35 it reached no network. Both
-  are for the owner to repair: a session may not restart WSL or change a
-  system setting.
-- The report docs/reports/real-3a.md, the review (rule R7), the merge to
-  `main`.
-
-To go on, once WSL is stable (one heavy run at a time: wrap it in
-`flock /run/lock/specfirst-heavy.lock`; at most four worker processes):
-
-1. Merge `main` into `track/real` again (std-1 freezes `catalog@1`).
-2. `scripts/clean_clone_gate.sh real-3a` needs the network. Without it,
-   the gate can be run on a clone with the installed environment
-   (`git clone --no-local`, check out the commit, source the worktree's
-   `scripts/env.sh`, then in the clone
-   `PYTHONPATH=<clone>/src python -m specfirst gate real-3a --clean`), so
-   that report and review can go on; whether that may stand for the
-   clean-clone gate is the owner's decision (PLAN.md section 2.3). No merge
-   before that.
-3. Report with the gate log, review by a fresh-context agent, this file,
-   merge, push, CI.
+  0 on a clone of it (docs/reports/real-3a.md has the run, and
+  real-3a.real-2.gate.log the log).
+- real-3a Layout, grid and trace for the adverse event summary (ADR-005,
+  decision 1: the unit `tfl-ae-summary`, output `Out14-3-1-1` of CDISC's
+  ARS example). Gate: `scripts/clean_clone_gate.sh real-3a` exited 0 on a
+  clean clone of commit `9730843`, and again on a clean clone of `26667ed`,
+  which is that work with `main` merged into it (`catalog@1` of std-1), 16
+  of 16 checks both times (2026-11-17). Evidence: docs/reports/real-3a.md,
+  real-3a.clean-clone.gate.log and real-3a.merged.gate.log;
+  real-3a.gate.log is an earlier run on a clone of `0938fe4` with the
+  installed environment, which built the same bytes. Review:
+  docs/reports/real-3a.review.md (PASS, nine findings that do not block;
+  they are listed under "Open"). Decisions: docs/decisions/ADR-003.md.
 
 ## Open
 
@@ -87,9 +48,18 @@ in full):
 - The kit layout of section 8 has grown again: `gold/layout/` in the kit
   folder and in the build, `outputs` under a result set in kit.yaml, and the
   mock shell next to the grid in `gold/grid/` (decision 7).
-- The comparison of grid text is per result: the example formats results,
-  not cells. The order of the parts of a cell is the layout's alone, and no
-  check can hold it against this reference (decision 5).
+- The comparison of grid text is per result, with the formatted values of
+  the example's ARS file. The expected text of a cell is built with the
+  layout's own template, so the order of the parts of a cell is held
+  against nothing yet (decision 5). The example's table shell shows the
+  cells, and it is in the pinned repository; ADR-003 first said it was not
+  (finding F1 of the review, corrected in the documents). The grid differs
+  from that shell by one line of the row axis; see F1 below.
+- The report of real-3a quotes the whole grid of this output as text: its
+  titles, row labels, footnotes and the 27 cell texts, which are our
+  results and equal the example's formatted values. The review lists this
+  for the owner: it is more of one output than an earlier report holds; the
+  repository is private and the example's repository is MIT.
 - The median of height had a proof of the kind the review of real-2 found
   (F2), although the review said no entry had one. It has a new kind of
   proof now, `between_equal_values`. The class is unchanged.
@@ -130,6 +100,65 @@ What the fixes of F2 to F12 left as it was:
   rule R11 stops the build; nothing is silent.
 - F1, F8 (the choice itself) and F9 (the classes) are the owner's.
 
+What the review of real-3a leaves open (docs/reports/real-3a.review.md has
+each in full; none blocks). Each changes code or a built file, so they are
+the first commit of the rest of real-3, with a gate run of its own, as F2
+to F12 of real-2 were for real-3a:
+
+- F1: the example's table shell
+  (`workfiles/examples/ARS v1/AE_Summary_Table_Shell.pdf` in the pinned ARS
+  repository) is not pinned in kit.yaml, and nothing holds the mock shell
+  against it. Against the grid it has: one more line of the row axis
+  ("Number of subjects with at least one event", above the eight rows,
+  which are indented under it; the ARS list of contents has the same text
+  and `ars.listed_analyses` drops it); the count under the mask `XX`,
+  where the mock shell follows the operation's `XXX`; "Table 14.3.1.1"
+  where the ARS file and the grid have "Table 14.3.1.<x>.<y>"; the note on
+  the abbreviation without its final point. Once the mock shell is held
+  against the shell's text, the planted layouts that pass today (the
+  percent before the count, another text between the parts, another
+  header) must fail. D7, `tests/defects/README.md` and two comments of
+  `grid.py` still give the old reason for their passing.
+- F2: with a data-driven column grouping, an arm that has subjects and no
+  record of an analysis stops the build (`GridError`: rule I9 gives it no
+  group, so the ARD has no row). Defined groups give "0 (  0.0)" on the
+  same data. What such a cell shows needs a decision, a statement and a
+  planted defect.
+- F3: `grid.compare_reference` passes a body cell with a part that names
+  another analysis than that of its row (the percent of one row in
+  another), and another title, footnote, section or indent. Outside the
+  gate, `specfirst check` passes a row of another output and an analysis
+  that stands in two blocks; the gate stops these by its counts only.
+- F4: neither `graph.check_cells` nor D8 sees a single `reads` edge to a
+  column that the analysis of the denominator also reads (24 of the 52
+  `reads` edges by the construction of the test; the review ran one
+  analysis), or the `computes` edge of one percent to that analysis. The
+  roles in coverage.json are held against nothing.
+- F5: `between_equal_values` and `same_under_every` do not ask whether our
+  own cell is right: with a wrong population planted, 36 wrong quartiles
+  and medians of ours were accepted as errors of the reference. The
+  committed entry is sound. Fix: ask that the n, the minimum and the
+  maximum of the cell are reproduced; plant the population in D6.
+- F6: `render.projection_problems` does not see where a text stands (two
+  cells or rows exchanged, the header row in the body), nor an `onload`
+  handler, a style that imports, a `meta` refresh, a comment or text in
+  `title`. It matters for the viewer, whose gate asks for no network.
+- F7: `registry.load` joins the words of a statement with one blank, so
+  registry.json has "( 9.5)" where statement 3 of `display.pattern` has two
+  blanks.
+- F8: Python's `ard._number_text` writes a group value that is not finite
+  (`=inf`), against the last sentence of rule I9; the hand-over to R then
+  ends in a `ValueError` that the build does not catch.
+- F9, the parts in code and tests: the two new Fisher vectors call their
+  expected value the sum in exact fractions, and it is the value of the
+  Python implementation (within 2.1e-13 of it); `fisher-limit` is not among
+  the tests the gate requires to have run; `specfirst check` passes a cell
+  whose result has no formatted value in the reference (the gate does not).
+
+The review could not read the source of tfrmt (no network at the time):
+every row of the table "tfrmt, read" in ADR-003 rests on the author's
+reading.
+
 Other open points:
 
 - Layout spec v0 has two kinds of block (`header`, `analyses`). The other
@@ -169,6 +198,8 @@ Other open points:
 
 ## Next
 
+- First, the findings F1 to F9 of the review of real-3a ("Open" above),
+  as one commit with a gate run.
 - The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it:
   the other four outputs of the example as grids, the citations through the
   ARS `documentRefs`, the viewer. It runs the code of real-3a on more
@@ -225,8 +256,17 @@ for 3,580 of them):
 - A reference can only show what it holds (lesson 29): sort a planted
   defect that passes by what the reference could have shown.
 - Gates of a commit are run in a clone (lesson 28). On this machine a clone
-  on the Linux file system ran the gate of real-2 in about 5 minutes; the
+  on the Linux file system runs the gate of real-3a in about 5 minutes; the
   worktree on the Windows drive takes several times as long.
+- The Linux virtual machine is shared by the sessions of all tracks. On
+  2026-11-17 it ran out of memory with three test runs at once, and the
+  instance was terminated again and again until WSL was restarted. One
+  heavy run at a time: `flock /run/lock/specfirst-heavy.lock <command>`
+  around a gate, a test suite or a build, and at most four worker
+  processes. A session never restarts WSL itself and never stops a process
+  there by a name pattern: other sessions run in the same machine.
+- That a pinned source lacks a file is a claim to be run (lesson 31): list
+  the folder of the pin and record the output.
 
 ## For other tracks
 
@@ -241,7 +281,11 @@ for 3,580 of them):
   texts of a grid are what section 9.2 scores as structure and values. The
   builder shows an analysis whose only grouping is the column grouping; the
   compiled adverse event summary fits that (one analysis per row, the
-  treatment grouping, and `An_AESUM_N` for the header).
+  treatment grouping, and `An_AESUM_N` for the header). One limit, found by
+  the review of real-3a (F2): with a data-driven treatment grouping, an arm
+  without a record of an analysis has no ARD row, and the builder stops
+  with `GridError`. Until that is decided, a compiled summary builds only
+  when every arm has a record in every row it shows.
 - std: the ARS file compiled from the base decision vector of std-1 (44
   analyses) has no problem for `specfirst.machine.ars.index` and binds
   completely: `Mth_Count` and `Mth_ContSumm` by their description
