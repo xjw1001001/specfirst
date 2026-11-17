@@ -129,8 +129,12 @@ def test_a_report_of_another_engine_or_standard_does_not_count(root):
 def test_parallel_runs_of_core_stay_within_the_memory(monkeypatch):
     """Lesson 27: too many runs at once exhausted the memory of the machine."""
     need = gate.CORE_RUN_MEMORY_MB
-    assert gate.core_workers(available_mb=64000, processors=32) == 4
-    assert gate.core_workers(available_mb=4 * need, processors=32) == 2
+    most = gate.MAX_WORKERS // cdisccore.POOL_SIZE
+    assert gate.MAX_WORKERS == 4 and 1 <= most <= 4
+    # However much memory and however many processors: never more workers than the rule.
+    assert gate.core_workers(available_mb=640000, processors=128) == most
+    assert gate.core_workers(available_mb=640000, processors=128) * cdisccore.POOL_SIZE <= 4
+    assert gate.core_workers(available_mb=4 * need, processors=32) == min(2, most)
     assert gate.core_workers(available_mb=need, processors=32) == 1
     assert gate.core_workers(available_mb=64000, processors=2) == 1
     assert gate.core_workers(available_mb=0, processors=1) == 1
@@ -157,27 +161,34 @@ def test_two_builds_of_a_study_have_identical_hashes(root, catalog, tmp_path):
 
 
 def test_everything_generated_names_the_catalog_version(root, catalog, tmp_path):
+    # As the standard form names it: "Catalog: <name> <version>". A freeze changes the
+    # version, and with it every generated file: that shows what must be generated again.
     label = study.catalog_label(catalog)
-    assert label == "specfirst-m1 draft-1"  # the draft of std-1; N1 is open
-    design = pgfix.sample("names", label)
-    manifest = study.generate(root, design, "names", tmp_path)
-    assert manifest["catalog"] == {"name": "specfirst-m1", "version": "draft-1"}
+    assert label == f"{catalog.name} {catalog.version}" and catalog.name == "specfirst-m1"
+    seed = "zq-seed-7719"
+    design = pgfix.sample(seed, label)
+    manifest = study.generate(root, design, seed, tmp_path)
+    assert manifest["catalog"] == {"name": catalog.name, "version": catalog.version}
     assert manifest["generator"] == GENERATOR
     text_files = [p for p in tmp_path.rglob("*") if p.suffix in (".json", ".jsonl", ".yaml",
                                                                  ".xml")]
     assert len(text_files) >= 28
     for path in text_files:
-        assert "draft-1" in path.read_text(encoding="ascii"), path.name
+        text = path.read_text(encoding="ascii")
+        if path.name == "study.json":
+            assert f'"version": "{catalog.version}"' in text
+        else:
+            assert label in text, path.name
     assert len(list(tmp_path.rglob("*.parquet"))) == 22  # their schema names it: see sdtm tests
     # The manifest lists every other file, and holds the hash of the seed, never the seed.
     assert set(manifest["files"]) == set(study.file_hashes(tmp_path))
-    assert "names" not in json.dumps(manifest["seed_sha256"])
     everything = b"".join(p.read_bytes() for p in tmp_path.rglob("*") if p.is_file())
-    assert b"draft-1" in everything and manifest["seed_sha256"].encode() in everything
+    assert manifest["seed_sha256"].encode() in everything
+    assert seed.encode() not in everything and seed not in json.dumps(manifest)
 
 
 def test_a_design_of_another_catalog_version_is_refused(root, catalog, tmp_path):
-    design = pgfix.sample("old", "specfirst-m1 draft-0")
+    design = pgfix.sample("old", "specfirst-m1 some-earlier-version")
     with pytest.raises(study.StudyError, match="Sample the design again"):
         study.generate(root, design, "old", tmp_path)
 
@@ -236,7 +247,7 @@ def test_the_command_line_generates_and_checks_a_study(root, tmp_path, monkeypat
     out = tmp_path / "study"
     assert cli.main(["gen", "study", "--design", str(design), "--seed", "cli",
                      "--out", str(out)]) == 0
-    assert "for the catalog specfirst-m1 draft-1" in capsys.readouterr().out
+    assert "for the catalog specfirst-m1 " in capsys.readouterr().out
     assert (out / "inputs" / "data" / "sdtm" / "dm.parquet").is_file()
     assert (out / "twin" / "data" / "sdtm" / "define.xml").is_file()
     assert cli.main(["gen", "check", str(out), "--no-core"]) == 0

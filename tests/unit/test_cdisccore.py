@@ -108,7 +108,7 @@ def test_the_runner_limits_the_worker_pool_of_core(tmp_path):
         tmp_path / "report", tmp_path / "define.xml", "sdtmig", "3-4")
     assert argv[:4] == [str(tmp_path / "python"), "-B", str(tmp_path / "src" / "core.py"),
                         "validate"]
-    assert argv[argv.index("-ps") + 1] == str(cdisccore.POOL_SIZE) and cdisccore.POOL_SIZE <= 4
+    assert argv[argv.index("-ps") + 1] == str(cdisccore.POOL_SIZE) and cdisccore.POOL_SIZE <= 2
     assert argv.count("-dp") == 2 and argv[argv.index("-dxp") + 1].endswith("define.xml")
     assert argv[argv.index("-of") + 1] == "JSON"
     without = cdisccore.command_line(tmp_path / "python", tmp_path / "src", [], tmp_path / "r",

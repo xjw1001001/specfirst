@@ -329,7 +329,7 @@ def read_report(path: Path) -> Report:
 # CORE starts one worker process per processor unless told otherwise, and each
 # worker loads the rule cache. On a machine with many processors several runs at
 # once need more memory than the machine has (docs/lessons.md, lesson 27).
-POOL_SIZE = 2
+POOL_SIZE = 1
 
 
 def command_line(python: Path, source: Path, datasets: list[Path], out: Path,

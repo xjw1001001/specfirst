@@ -46,7 +46,7 @@ def test_the_sampler_is_a_function_of_the_seed(catalog):
     assert pgfix.sample("x", label) != pgfix.sample("y", label)
     design = pgfix.sample("x", label)
     assert designs.dump(design) == designs.dump(copy.deepcopy(design))
-    assert design["catalog"] == label and "draft" in label  # named in everything generated
+    assert design["catalog"] == label  # named in everything generated
 
 
 def test_the_sampler_uses_its_ranges(sampled):

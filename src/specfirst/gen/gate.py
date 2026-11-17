@@ -175,21 +175,27 @@ def classify(report: cdisccore.Report, explained: dict, tables: dict[str, list[d
 
 # A run of CORE needs up to this much memory with the pool size of the runner.
 CORE_RUN_MEMORY_MB = 3000
+# The machine is shared: no more than this many worker processes at once, over
+# all runs of CORE that the gate has started.
+MAX_WORKERS = 4
 
 
 def core_workers(available_mb: int | None = None, processors: int | None = None) -> int:
-    """How many runs of CORE the gate starts at once: within half of the free memory.
+    """How many runs of CORE the gate starts at once.
 
-    Other sessions share the machine. Too many runs at once once exhausted
-    its memory and the kernel ended their processes (docs/lessons.md).
+    At most MAX_WORKERS worker processes in all, and within half of the free
+    memory. Other sessions share the machine: too many runs at once once
+    exhausted its memory, and the kernel ended processes of every session
+    (docs/lessons.md, lesson 27).
     """
     if available_mb is None:
         available_mb = available_memory_mb()
     if processors is None:
         processors = os.cpu_count() or 1
+    by_rule = MAX_WORKERS // cdisccore.POOL_SIZE
     by_memory = (available_mb // 2) // CORE_RUN_MEMORY_MB
     by_processors = processors // (2 * cdisccore.POOL_SIZE)
-    return max(1, min(4, by_memory, by_processors))
+    return max(1, min(by_rule, by_memory, by_processors))
 
 
 def available_memory_mb() -> int:
