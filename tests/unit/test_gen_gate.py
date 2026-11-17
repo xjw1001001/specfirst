@@ -211,9 +211,11 @@ def test_the_probe_check_fails_on_a_study_whose_twin_lost_a_probe(root, catalog,
     seeds = ("unit-gate",)
     gate.generate_all(root, tmp_path / "first", seeds)
     path = tmp_path / "first" / seeds[0] / "gold" / "probes.jsonl"
-    lines = [line for line in path.read_text(encoding="ascii").splitlines()
-             if '"probe": "partial_exposure_date"' not in line or '"data": "visible"' in line]
-    path.write_text("\n".join(lines) + "\n", encoding="ascii", newline="\n")
+    records = [json.loads(line) for line in path.read_text(encoding="ascii").splitlines()]
+    kept = [r for r in records
+            if (r["probe"], r["data"]) != ("partial_exposure_date", "twin")]
+    assert len(kept) == len(records) - 1
+    path.write_text("".join(json.dumps(r) + "\n" for r in kept), encoding="ascii", newline="\n")
     said: list[str] = []
     assert gate.probes_check(root, said.append, tmp_path, seeds) is False
     assert any("trt.date.imputation: no probe in the twin separates" in line for line in said)
