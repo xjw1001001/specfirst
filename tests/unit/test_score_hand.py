@@ -51,8 +51,9 @@ def test_the_study_states_two_decisions_of_the_slice_and_takes_19_defaults(case)
     assert sorted(r["id"] for r in scoped if r["status"] == "stated") == [
         "ae.related.values", "ae.teae.end"]
     assert {r["class"] for r in scoped} == {"document_rule", "house_default"}
-    assert sorted(r["id"] for r in scoped if r["identifiable"] == "unseparated") == [
-        "date.studyday.origin", "tfl.rounding.rule"]
+    assert tuple(r["id"] for r in scoped if r["identifiable"] == "unseparated") == (
+        hand.UNSEPARATED)
+    assert len(hand.UNSEPARATED) == 9
     assert "[1/s1] " in case.documents.texts["sap"]
 
 
@@ -242,6 +243,23 @@ def test_the_candidate_and_gold_differ_only_where_the_decisions_do(machine, case
                for one, two in zip(made, case.gold_vector(), strict=True))
 
 
+def test_the_unseparated_decisions_are_those_no_other_value_shows(machine, case):
+    """`identifiable` is filled by the machine, never by the author (section 4.3): the
+    first version of the study marked two decisions; mutation finds nine."""
+    found = scorer.separation(machine, case, first_only=True)
+    assert len(found) == 21
+    silent = tuple(key[0] for key, values in found.items()
+                   if not any(any(changed.values()) for _, changed in values))
+    assert silent == hand.UNSEPARATED
+    # A separated decision is shown by at least one value; a value need not show.
+    window = found[("ae.teae.end", "mod-ae-emergence")]
+    assert window[0][0] == {"rule": "no_end"} and window[0][1] == {"visible": 0, "twin": 2}
+    # The twin of a hand-made study is no superset of its visible data: the source of
+    # the treatment end date is shown by the visible data only.
+    end = found[("trt.end.source", "mod-treatment")]
+    assert end[0][0] == {"rule": "last_ex_start_date"} and end[0][1] == {"visible": 4, "twin": 0}
+
+
 def test_the_command_scores_an_arm(root, capsys):
     assert command.main(root, ["hand", "--arm", "C", "--stage", "T"]) == 0
     text = capsys.readouterr().out
@@ -252,7 +270,8 @@ def test_the_command_scores_an_arm(root, capsys):
 def test_the_gate_of_the_part_cannot_pass_before_the_kits_are_scored(root):
     names = [check.name for check in gates.GATES["read-1a"]]
     assert names[0] == "environment" and "kits of gen-2a" in names
-    assert {"hand-made study", "parser control", "planted defects", "pilot"} <= set(names)
+    assert {"hand-made study", "separation", "parser control", "planted defects",
+            "pilot"} <= set(names)
     lines: list[str] = []
     assert gate.kits(root, lines.append) is False
     assert "read-1a is not done" in lines[-1]

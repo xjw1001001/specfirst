@@ -425,6 +425,8 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
         Check("hand-made study", "specfirst.score.gate.hand_table: HAND01 against the table "
               "worked out by hand", _score("hand_table")),
+        Check("separation", "specfirst.score.gate.separated: every other value of every "
+              "decision, alone on gold", _score("separated")),
         Check("parser control", "specfirst score hand --arm C (both stages)", _score("control")),
         Check("standard alone", "specfirst score hand --arm S (both stages)", _score("arms")),
         Check("planted defects", "specfirst score defects", _score("planted_defects")),

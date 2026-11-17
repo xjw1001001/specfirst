@@ -8,6 +8,7 @@ counted, so the gate log is the evidence of the report (rule R8).
 
     hand_table   the gold decisions of HAND01 build the table worked out by
                  hand, on the visible data and on the twin
+    separated    which decisions of the slice HAND01 can show, by mutation
     control      the parser control scores 100% on HAND01, in both stages;
                  and it does not when a statement of the document is changed
     defects      the planted defects on HAND01
@@ -61,6 +62,34 @@ def hand_table(root: Path, out: Out) -> bool:
         out(f"HAND01, {which}: {len(wanted) - len(differing)} of {len(wanted)} cells are the "
             "cells worked out by hand")
     return problems == 0
+
+
+def separated(root: Path, out: Out) -> bool:
+    """Which decisions HAND01 can show at all: every other value of every decision of
+    the slice, alone on gold. The gold records must mark exactly the others as
+    `unseparated`."""
+    import json
+
+    machine = machine_of(root)
+    case = hand.case(machine.catalog, machine.house)
+    found = scorer.separation(machine, case)
+    silent = []
+    out("decision: other value -> cells or axes changed on the visible data / on the twin")
+    for key, values in found.items():
+        where = [name for name in case.data if any(changed[name] for _, changed in values)]
+        if not where:
+            silent.append(key[0])
+        state = "separated on " + " and ".join(where) if where else "UNSEPARATED"
+        out(f"  {key[0]} ({state}): " + "; ".join(
+            f"{json.dumps(value, sort_keys=True)} -> {changed['visible']}/{changed['twin']}"
+            for value, changed in values))
+    marked = [r["id"] for r in case.gold if r.get("identifiable") == "unseparated"]
+    out(f"HAND01 separates {len(found) - len(silent)} of {len(found)} decisions of the slice "
+        f"on one of its two datasets; unseparated on both: {', '.join(silent)}")
+    same = marked == silent
+    out(f"the gold records mark the same {len(marked)} as unseparated: "
+        + ("yes" if same else "NO: " + ", ".join(marked)))
+    return same
 
 
 def _changed_document(machine: Machine, case: scorer.Case) -> tuple[str, scorer.Result | str]:

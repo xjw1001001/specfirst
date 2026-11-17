@@ -160,6 +160,38 @@ def _alone(machine: Machine, case: Case, key: Key, value: object) -> dict[str, i
     return changed
 
 
+def separation(machine: Machine, case: Case, datasets: tuple[str, ...] | None = None,
+               first_only: bool = False) -> dict[Key, list[tuple[dict, dict[str, int]]]]:
+    """What every other value of every decision of the scope changes, alone, on gold.
+
+    The other values are those of `compiler.other_values`: each alternative
+    of the entry with the examples of its slots, and each list of the gold
+    value with one item left out. This is the identifiability matrix of
+    section 6.5, by mutation (property P4), for the outputs of the case. A
+    decision is separated on a dataset when one of these values changes a
+    cell or an axis there; a value under which the build stops changes
+    every cell. With `first_only` the walk of a decision ends at the first
+    value that changes something.
+    """
+    from specfirst.compile import compiler
+
+    wanted = case if datasets is None else Case(
+        case.id, case.units, case.gold, case.arms,
+        {name: case.data[name] for name in datasets}, case.documents, case.stage)
+    found: dict[Key, list[tuple[dict, dict[str, int]]]] = {}
+    for record in case.gold:
+        if record.get("unit") not in case.units or record.get("value") is None:
+            continue
+        key = (record["id"], record["unit"])
+        found[key] = []
+        for value in compiler.other_values(machine.catalog, record["id"], record["value"]):
+            changed = _alone(machine, wanted, key, value)
+            found[key].append((value, changed))
+            if first_only and any(changed.values()):
+                break
+    return found
+
+
 def standard_alone(machine: Machine, case: Case, prove: bool = True) -> Result:
     """Arm S: the house standard alone. No decision is given."""
     return run(machine, case, [], arm="S", prove=prove)

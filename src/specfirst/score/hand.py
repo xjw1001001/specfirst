@@ -40,6 +40,9 @@ Twin
     X1  dosed with High Dose from 01-16 to 02-14 without being randomized.
         Headache on 01-30.
 
+What the study cannot show is listed in `UNSEPARATED`: nine of the 21
+decisions of the slice change no cell of either table under any other value.
+
 Gold decisions: the house defaults, and two stated decisions. An adverse
 event is related when its causality is POSSIBLE or PROBABLE
 (ae.related.values has no default). Treatment emergence ends 30 days after
@@ -271,8 +274,8 @@ def documents(catalog: Catalog, house: houses.House) -> Documents:
 
 def gold_records(catalog: Catalog, house: houses.House) -> list[dict]:
     """The gold decision records: stated decisions cite the plan, defaults the house
-    standard. Every one is marked as the machine would mark it: `separated`, but
-    for the two decisions no record of this study can show."""
+    standard. A decision of the scope is marked `separated` or `unseparated` as
+    mutation on the two datasets finds it (`UNSEPARATED`)."""
     form = StandardForm(catalog)
     _, stated = form.parse_document(sap(catalog, house))
     by_key = {(item["id"], item["unit"]): decision_record(item, "sap", "stated", "document_rule")
@@ -290,11 +293,19 @@ def gold_records(catalog: Catalog, house: houses.House) -> list[dict]:
     return found
 
 
-# Decisions of the scope whose alternatives give the same adverse event summary on
-# both datasets of this study, whatever the candidate chooses: the study day is on
-# no table of the slice (docs/state/gen.md), and no percent of these 16 subjects
-# lies on a half at one decimal.
-UNSEPARATED = ("date.studyday.origin", "tfl.rounding.rule")
+# The decisions of the scope that this study cannot show: under every other value
+# the catalog offers (each alternative with the examples of its slots), the gold
+# vector builds the gold table on the visible data and on the twin (section 9.3:
+# "If the twin cannot separate it either"). Nine of 21. The study has no partial
+# date, no dose time, one exposure record and one disposition event per subject,
+# no percent on a half, and its table is on the safety set by actual treatment.
+# The list is what mutation gives (`scorer.separation`), not what the author
+# expected: tests/unit/test_score_hand.py builds every value and holds it.
+UNSEPARATED = (
+    "trt.planned.source", "trt.start.source", "trt.date.imputation", "date.studyday.origin",
+    "pop.randomized.rule", "disp.status.record", "ae.start.imputation", "ae.teae.start",
+    "tfl.rounding.rule",
+)
 
 
 def case(catalog: Catalog, house: houses.House, stage: str = "C"):
