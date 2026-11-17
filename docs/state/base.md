@@ -14,6 +14,10 @@ Result: repository, environment, pins, shared formats (PLAN.md section 13.2).
 - ADR-000 is a proposal until the owner has read it. Four schema points in
   its item 7 need the owner's word, at N1 at the latest. One of them is
   review finding N1: which decision records must cite (std-1 owns it).
+- ADR-005 (adverse event summary first: a slice through real-3, gen and
+  read, with interim gates) was approved by the owner on 2026-11-17. The
+  tracks real, gen and read follow it: real-3a and gen-1a come first.
+  Items 2 to 4 of its last section are open questions for the owner.
 - Review finding N2: `scripts/clean_clone_gate.sh` should ignore a
   caller's `SPECFIRST_ROOT` when it looks up the repository and commit.
   Fix it with the next change to that script, then rerun a gate with it.

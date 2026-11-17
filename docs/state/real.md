@@ -144,7 +144,11 @@ Other open points:
 
 ## Next
 
-- real-3 Grid, trace, viewer. Needs real-2. First commit: the findings F2
+- real-3a first (ADR-005, decision 1): layout spec v0 and ADR-003, then
+  grid, mock shell, HTML and trace for the adverse event summary output of
+  the ARS example. It has its own gate and review and merges to `main`.
+- Then the rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives
+  it. Needs real-2. First commit of real-3a: the findings F2
   to F12 of the review of real-2 (above), then `specfirst gate real-2`
   again. Decide ADR-003 first: own layout format or tfrmt JSON.
 - Then real-4 (D1, node N2), real-5 (D2, node N2), in order.
