@@ -19,13 +19,20 @@ semantics:
     totals of the observed table whose probability is not larger than that of
     the observed table. The test is two-sided for every size of table.
   - >-
-    "Not larger" allows a relative excess of 1e-7, as R's fisher.test does, so
-    that tables of the same probability count whatever the rounding.
+    "Not larger" allows a relative excess of 1e-7, so that tables of the same
+    probability count whatever the rounding. This is the allowance of R's
+    fisher.test for a 2 x 2 table; for a larger table see statement 8.
   - >-
     The sum is over every such table: no sampling and no approximation, for a
     2 x 2 table and for a larger one. A table with more than 10,000,000 tables
-    to sum is refused with an error.
+    to sum is refused with an error, by both implementations.
   - A sum above 1 by rounding gives 1.
+  - >-
+    Implementations. Python sums over every table, for every size. R gives a
+    2 x 2 table to fisher.test and sums over every table itself for a larger
+    one: there fisher.test allows a wider excess than statement 5 and counts a
+    table that is more probable than the observed one by a relative 2.7e-7 or
+    3.2e-7, which changes the p-value by several percent.
 options:
   alternative:
     values: [two_sided]

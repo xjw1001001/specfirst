@@ -8,17 +8,31 @@
 #   embedded  the raw value the reference carries, as it prints it
 #   class     rule_choice, reference_error or data_difference
 #   proof     a kind the check knows, with what it needs:
-#               value_of_other_result  the embedded value is our value of `result`
-#               same_under_every       our value is the same under every value of
-#                                      the option `option` of the method `method`,
-#                                      and never the embedded one
+#               value_of_other_result  two results are exchanged: the embedded value
+#                                      is our value of `result`, which is the same
+#                                      analysis and operation in one other group of
+#                                      one grouping, and the reference's value of
+#                                      `result` is our value of this one
+#               same_under_every       our value is the same under every value the
+#                                      registry lists for the option `option` of
+#                                      the method `method`, and never the embedded
+#                                      one; the option must change some result of
+#                                      the same operation
 #               no_alternative         the other statistics of the same cell are
-#                                      reproduced, and under no value of `option`
-#                                      is our value the embedded one
+#                                      reproduced, and under no value the registry
+#                                      lists for `option` is our value the embedded
+#                                      one; the option must change some result of
+#                                      the same operation
 #               alternative            with `option` = `value` our value is the
 #                                      embedded one (the proof of a rule_choice)
+#               between_equal_values   our value is a quartile or a median, and the
+#                                      sorted values of the cell between which
+#                                      every definition of a sample quantile puts
+#                                      it are all our value
 #               no_records             the reference embeds no value, we give no
-#                                      result, and the counts in `zero` are 0
+#                                      result, and the counts in `zero` are 0: one
+#                                      count of the cell's own groups for every
+#                                      group the test compares
 #   sources   what else supports the class, for a reader; not checked
 #
 # common-safety-displays: 25 results of CDISC's example "Common Safety
@@ -42,6 +56,7 @@ results:
         - "The high dose arm has 84 subjects. By the SAS default the first quartile is the mean of the 21st and the 22nd age, which are 70 and 71: 70.5. By the R default it is 70.75. The embedded 70 is the 21st age alone."
         - "The example's other quartiles follow the SAS default. In the same arm its third quartile of height, 172.85, is the mean of the 63rd and the 64th value, 172.7 and 173.0."
         - "The example prints the raw value 70 and the formatted value 70.0. Evidence E3 counted this result as reproduced, because 70.5 is within half a unit of a value printed without decimals."
+        - "A third definition, which the registry does not list, gives exactly 70: no averaging when n * p is whole (SAS QNTLDEF=3, R type 1). The example does not follow it: of its 69 embedded quartiles and medians for which n * p is whole and the two neighbouring values differ, 68 are the average and this one is the lower value. So the example is at odds with itself (review of real-2, finding F9; counted again in real-3a)."
     - result: "ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/AnlsGrouping_05_Ethnic_1"
       embedded: "3"
       class: reference_error
@@ -244,10 +259,9 @@ results:
       embedded: "162.2"
       class: reference_error
       proof:
-        kind: same_under_every
-        method: summary.continuous
-        option: quantile_definition
+        kind: between_equal_values
       sources:
+        - "The low dose arm has 84 heights. Sorted, the 41st to the 43rd are all 162.6, so every definition of a median gives 162.6. Until real-3a the proof was same_under_every on the quantile definition; the two definitions of the registry never differ on a median, so that proof said nothing (review of real-2, finding F2)."
         - "The ADSL this kit builds, which equals the pilot's reference ADSL cell by cell (P2), gives our value in the Python and in the R engine."
         - "CSR Table 14-2.01 prints the mean height 163.4 for low dose and 165.8 for high dose, and the median 162.6 for low dose (E24)."
     - result: "ard:An07_10_SocPt_Comp_ByTrt_PlacLow/Mth03_CatVar_Comp_FishEx_1_pval/*/=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE"

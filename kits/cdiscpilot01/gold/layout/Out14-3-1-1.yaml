@@ -1,0 +1,33 @@
+# Layout of the output Out14-3-1-1 of CDISC's ARS example "Common Safety
+# Displays": Overall Summary of Treatment-Emergent Adverse Events.
+#
+# Layout spec v0: specfirst.machine.layout, ADR-003. This file is our own. It
+# holds what the ARS file does not: which analysis stands in which row, that
+# the count of the safety set stands under each column header, and that a
+# count and its percent share a cell. What the ARS file holds is taken from
+# it: the titles and footnotes of the display, the header of the row labels,
+# the label of every analysis, the names of the treatment groups and the
+# result pattern of every operation ("(N=XX)", "XXX", "( XX.X)").
+layout: 0
+output: Out14-3-1-1
+columns:
+  grouping: AnlsGrouping_01_Trt
+rows:
+  - kind: header
+    cell: "{N}"
+    parts:
+      N: {analysis: An01_05_SAF_Summ_ByTrt, operation: Mth01_CatVar_Count_ByGrp_1_n}
+  - kind: analyses
+    cell: "{n} {pct}"
+    parts:
+      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+      pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
+    analyses:
+      - An07_01_TEAE_Summ_ByTrt
+      - An07_02_RelTEAE_Summ_ByTrt
+      - An07_03_SerTEAE_Summ_ByTrt
+      - An07_04_RelSerTEAE_Summ_ByTrt
+      - An07_05_TEAELd2Dth_Summ_ByTrt
+      - An07_06_RelTEAELd2Dth_Summ_ByTrt
+      - An07_07_TEAELd2DoseMod_Summ_ByTrt
+      - An07_08_TEAELd2TrtDsc_Summ_ByTrt

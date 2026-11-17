@@ -12,11 +12,13 @@
                 it holds one value; filled when it is all missing), the build
                 gives the same ADaM
     A5-adapted  no Python file of ours shares more than a few lines with a
-                Python file of a cached source, unless third_party/SOURCES.md
-                records it as adapted code
+                Python file of a cached source, and no R file of ours with an
+                R file of one, unless third_party/SOURCES.md records it as
+                adapted code
     A6-engine   the Python result engine runs the 31 analyses of the ARS
-                example on the built ADaM in under 10 seconds and reproduces
-                3,711 of its 3,735 embedded results (real-2; E2)
+                example on the built ADaM in under 10 seconds, reproduces
+                3,711 of its 3,735 embedded results (real-2; E2) and gives
+                the expected number of rows for every analysis
 
 A4 is the check the trace check cannot make by itself: a reference that the
 dependency analysis misses leaves graph files that agree with each other.
@@ -38,6 +40,7 @@ import os
 import re
 import shutil
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -59,7 +62,7 @@ ENGINE_PIN = "cdiscpilot01/program/adam/python/requirements.txt"
 COMPARED_SOURCES = ("p7", "yamaa", "p6", "ars")
 SHARED_LINES_ALLOWED = 2
 IDIOMS = (".mkdir(",)  # lines every Python program has; they are not counted
-ADAPTED_ROW = re.compile(r"^\| `([^`|]+\.py)` \| https://github\.com/", re.MULTILINE)
+ADAPTED_ROW = re.compile(r"^\| `([^`|]+\.(?:py|R))` \| https://github\.com/", re.MULTILINE)
 
 
 class Missing(RuntimeError):
@@ -310,10 +313,77 @@ def a5_adapted(pilot: Pilot) -> list[str]:
     print(f"compared {len(ours)} Python files of ours with {files} of "
           f"{', '.join(COMPARED_SOURCES)}; the most lines a file that is not recorded shares: "
           f"{most} (allowed: {SHARED_LINES_ALLOWED})")
+    # The same for the R engine, against the R files of every cached source (review of
+    # real-2, finding F7: siera, cards and cardx were tried before the engine was written).
+    theirs, files, most = {}, 0, 0
+    sources = sorted(path.name for path in pilot.cache.iterdir() if (path / ".git").exists())
+    for source in sources:
+        folder = pilot.cache / source
+        for path in sorted([*folder.rglob("*.R"), *folder.rglob("*.r")]):
+            if ".git" in path.relative_to(pilot.cache).parts or not path.is_file():
+                continue
+            files += 1
+            for line in _code_lines(path):
+                theirs.setdefault(line, f"{source}:{path.relative_to(pilot.cache / source)}")
+    ours = sorted((pilot.root / "r").rglob("*.R"))
+    for path in ours:
+        name = path.relative_to(pilot.root).as_posix()
+        shared = sorted(_code_lines(path) & set(theirs))
+        if name in recorded:
+            print(f"recorded as adapted: {name} shares {len(shared)} lines with cached sources")
+        elif len(shared) > SHARED_LINES_ALLOWED:
+            problems.append(f"{name}: shares {len(shared)} lines with cached sources, for "
+                            f"example with {theirs[shared[0]]}, and is not in SOURCES.md")
+        else:
+            most = max(most, len(shared))
+    print(f"compared {len(ours)} R files of ours with {files} of {len(sources)} cached sources; "
+          f"the most lines a file that is not recorded shares: {most} (allowed: "
+          f"{SHARED_LINES_ALLOWED})")
+    if not ours or not files:
+        problems.append("no R file was compared: the test would prove nothing")
     for name in sorted(recorded):
         if not (pilot.root / name).is_file():
             problems.append(f"{name}: recorded in SOURCES.md, but there is no such file")
     return problems
+
+
+# A6: the results every analysis of the ARS example gives on the pilot data. 504 of
+# the 4,238 are not listed by the reference (F6 of the review of real-2): for them
+# the agreement of the two engines is the only check, and it cannot see a result
+# that both lack. These numbers can: a result lost in the engine changes one.
+ROWS_PER_ANALYSIS = {
+    "An01_05_SAF_Summ_ByTrt": 3,
+    "An03_01_Age_Summ_ByTrt": 24,
+    "An03_01_Age_Comp_ByTrt": 1,
+    "An03_02_AgeGrp_Summ_ByTrt": 12,
+    "An03_02_AgeGrp_Comp_ByTrt": 1,
+    "An03_03_Sex_Summ_ByTrt": 12,
+    "An03_03_Sex_Comp_ByTrt": 1,
+    "An03_04_Ethnic_Summ_ByTrt": 12,
+    "An03_04_Ethnic_Comp_ByTrt": 1,
+    "An03_05_Race_Summ_ByTrt": 54,
+    "An03_05_Race_Comp_ByTrt": 1,
+    "An03_06_Height_Summ_ByTrt": 24,
+    "An03_06_Height_Comp_ByTrt": 1,
+    "An07_01_TEAE_Summ_ByTrt": 6,
+    "An07_01_TEAE_Comp_ByTrt_PlacLow": 1,
+    "An07_01_TEAE_Comp_ByTrt_PlacHigh": 1,
+    "An07_02_RelTEAE_Summ_ByTrt": 6,
+    "An07_03_SerTEAE_Summ_ByTrt": 6,
+    "An07_04_RelSerTEAE_Summ_ByTrt": 6,
+    "An07_05_TEAELd2Dth_Summ_ByTrt": 6,
+    "An07_06_RelTEAELd2Dth_Summ_ByTrt": 6,
+    "An07_07_TEAELd2DoseMod_Summ_ByTrt": 6,
+    "An07_08_TEAELd2TrtDsc_Summ_ByTrt": 6,
+    "An07_09_Soc_Summ_ByTrt": 138,
+    "An07_09_Soc_Comp_ByTrt_PlacLow": 22,
+    "An07_09_Soc_Comp_ByTrt_PlacHigh": 22,
+    "An07_10_SocPt_Summ_ByTrt": 1380,
+    "An07_10_SocPt_Comp_ByTrt_PlacLow": 180,
+    "An07_10_SocPt_Comp_ByTrt_PlacHigh": 187,
+    "An08_01_Obs_Summ_ByTrt": 1056,
+    "An08_02_ChgBl_Summ_ByTrt": 1056,
+}
 
 
 def a6_engine(pilot: Pilot) -> list[str]:
@@ -352,6 +422,13 @@ def a6_engine(pilot: Pilot) -> list[str]:
     if (comparison.total, comparison.reproduced) != (3735, 3711):
         problems.append(f"{comparison.reproduced} of {comparison.total} reproduced; E2 says "
                         "3711 of 3735")
+    per_analysis = Counter(row["analysis_id"] for row in rows)
+    print(f"rows per analysis: {len(per_analysis)} analyses, {sum(per_analysis.values())} rows; "
+          f"expected {len(ROWS_PER_ANALYSIS)} analyses, {sum(ROWS_PER_ANALYSIS.values())} rows")
+    for name in sorted(set(per_analysis) | set(ROWS_PER_ANALYSIS)):
+        if per_analysis.get(name, 0) != ROWS_PER_ANALYSIS.get(name, 0):
+            problems.append(f"{name}: {per_analysis.get(name, 0)} rows, expected "
+                            f"{ROWS_PER_ANALYSIS.get(name, 0)}")
     return problems
 
 

@@ -16,9 +16,9 @@ engine tests have those.
 
 | File | Content |
 | --- | --- |
-| `*.json` | the vectors: 77 cases for 7 entries |
+| `*.json` | the vectors: 99 cases for 8 entries |
 | `oracle.py` | the expected values computed again, with fractions and closed forms; used by no engine |
-| `test_methods.py` | the Python implementations, the R implementations and the oracle against the vectors; the Fisher enumeration against R's `fisher.test` on tables larger than 2 x 2 (E27) |
+| `test_methods.py` | the Python implementations, the R implementations and the oracle against the vectors; both Fisher sums against R's own `fisher.test` on tables larger than 2 x 2 (E27), and against exact fractions on the two tables where `fisher.test` is looser than statement 5; the limit of statement 6 in R |
 
 Numbers must agree within a relative 1e-12. The tests that need R are
 skipped where R is not installed, except in a gate.

@@ -56,6 +56,14 @@ class Document:
 
 
 @dataclass(frozen=True)
+class Display:
+    """One output of a reporting event that the kit builds as a grid (PLAN.md section 7.4)."""
+
+    output: str  # the ID of the ARS output
+    layout: str  # its layout: a file of our own in the kit folder
+
+
+@dataclass(frozen=True)
 class ResultSet:
     """One ARS reporting event of the kit, for the result engines (PLAN.md section 7.1)."""
 
@@ -64,6 +72,9 @@ class ResultSet:
     schema: str | None  # the JSON Schema generated from the ARS model: a pinned file
     subject_key: str  # the column that says which records of two datasets belong together
     binding: dict  # ARS operations bound to the method registry, and method options
+    # The outputs that are built as grids. This list is the limit of the display
+    # checks: an output that is not listed is not built and not compared.
+    displays: tuple[Display, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -86,6 +97,11 @@ class Kit:
 
     def paths(self) -> set[str]:
         return {entry.path for entry in self.files}
+
+    def own_files(self) -> list[str]:
+        """The files of our own that the kit folder holds next to the manifest."""
+        layouts = [display.layout for spec in self.results for display in spec.displays]
+        return sorted({*layouts, *([self.exceptions] if self.exceptions else [])})
 
     def document(self, cited_as: str) -> Document | None:
         for document in self.documents:
@@ -214,11 +230,13 @@ def parse_kit(data: object) -> Kit:
         problems.append("trace_gaps: must map a column ID to the reason, as text")
         gaps = {}
 
+    def own(path: object) -> bool:
+        """A file of our own: under gold/, and outside what only the manifest may fill."""
+        return (_relative(path) and path.startswith("gold/") and path not in seen
+                and not any(path.startswith(area + "/") for area in PINNED_AREAS))
+
     exceptions = build.get("exceptions")
-    if exceptions is not None and (
-        not _relative(exceptions) or not exceptions.startswith("gold/") or exceptions in seen
-        or any(exceptions.startswith(area + "/") for area in PINNED_AREAS)
-    ):
+    if exceptions is not None and not own(exceptions):
         problems.append("build.exceptions: must be a file of our own under gold/, outside "
                         f"{', '.join(PINNED_AREAS)}")
         exceptions = None
@@ -229,9 +247,23 @@ def parse_kit(data: object) -> Kit:
         if not isinstance(entry, dict):
             problems.append(f"{where}: expected a mapping")
             continue
-        unknown = sorted(set(entry) - {"id", "ars", "schema", "subject_key", "binding"})
+        unknown = sorted(set(entry) - {"id", "ars", "schema", "subject_key", "binding",
+                                       "outputs"})
         if unknown:
             problems.append(f"{where}: unknown key {', '.join(unknown)}")
+        displays: list[Display] = []
+        for item in entry.get("outputs") or []:
+            if not isinstance(item, dict) or set(item) != {"id", "layout"} or not isinstance(
+                    item["id"], str) or not item["id"]:
+                problems.append(f"{where}: an output needs exactly its 'id' and its 'layout'")
+                continue
+            if not own(item["layout"]) or item["layout"] == exceptions:
+                problems.append(f"{where}, output '{item['id']}': the layout must be a file of "
+                                f"our own under gold/, outside {', '.join(PINNED_AREAS)}")
+                continue
+            if any(known.output == item["id"] for known in displays):
+                problems.append(f"{where}: output '{item['id']}' is listed twice")
+            displays.append(Display(item["id"], item["layout"]))
         set_id = text(entry, "id", where)
         ars_file = text(entry, "ars", where)
         schema = entry.get("schema")
@@ -251,7 +283,11 @@ def parse_kit(data: object) -> Kit:
             problems.append(f"{where}: 'binding' may hold 'operations' and 'options', each a "
                             "mapping")
             binding = {}
-        result_sets.append(ResultSet(set_id, ars_file, schema, str(subject_key), binding))
+        result_sets.append(ResultSet(set_id, ars_file, schema, str(subject_key), binding,
+                                     tuple(displays)))
+    layouts = [display.layout for spec in result_sets for display in spec.displays]
+    if len(set(layouts)) != len(layouts):
+        problems.append("results: two outputs name the same layout file")
 
     if problems:
         raise KitError("; ".join(problems))
@@ -351,12 +387,12 @@ def assemble(root: Path, kit: Kit, dest: Path | None = None) -> list[str]:
         return problems
     dest.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(manifest_path(root, kit.id), dest / "kit.yaml")
-    if kit.exceptions:  # our own file of the kit folder, kept next to the manifest
-        own = manifest_path(root, kit.id).parent / kit.exceptions
+    for name in kit.own_files():  # our own files of the kit folder, kept next to the manifest
+        own = manifest_path(root, kit.id).parent / name
         if not own.is_file():
-            return [f"{kit.exceptions}: named by build.exceptions, but not in kits/{kit.id}/"]
-        (dest / kit.exceptions).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(own, dest / kit.exceptions)
+            return [f"{name}: named by the manifest, but not in kits/{kit.id}/"]
+        (dest / name).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(own, dest / name)
     return verify_assembled(kit, dest)
 
 
@@ -438,14 +474,15 @@ def tracked_data_problems(root: Path, names: list[str]) -> list[str]:
                 try:
                     kit = load_kit(root, kit_id)
                     tiers[kit_id] = kit.tier
-                    own[kit_id] |= {kit.exceptions} if kit.exceptions else set()
+                    own[kit_id] |= set(kit.own_files())
                 except (KitError, OSError, yaml.YAMLError) as error:
                     tiers[kit_id] = "?"
                     problems.append(f"kits/{kit_id}: no usable kit.yaml ({error})")
             tier = tiers[kit_id]
             if tier != "A" and "/".join(parts[2:]) not in own[kit_id]:
                 problems.append(f"{name}: a tier {tier} kit folder holds kit.yaml, README.md "
-                                "and the exceptions file its manifest names, nothing else")
+                                "and the files of our own its manifest names (the exceptions, "
+                                "the layouts), nothing else")
                 continue
         if tier == "A":
             continue

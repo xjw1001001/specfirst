@@ -15,8 +15,10 @@ its source data and the sentence that justified it.
 
 Passed so far: base-0 (repository, environment, pinned sources, evidence
 tests, shared formats), real-1 (the pilot kit, its ADaM proof and the SDTM
-to ADaM part of the trace graph) and real-2 (method registry, the Python
-and the R result engine, classified differences from a reference).
+to ADaM part of the trace graph), real-2 (method registry, the Python and
+the R result engine, classified differences from a reference) and std-1
+(decision catalog, standard form, compiler and house standard; a draft
+until the owner approves it at node N1).
 `specfirst status` prints the state of every track; the reports are in
 `docs/reports/`.
 

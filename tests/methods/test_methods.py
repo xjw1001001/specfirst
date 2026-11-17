@@ -3,8 +3,11 @@
     python-vectors    every case of every vector file through specfirst.machine.methods
     r-vectors         the same cases through r/specfirstr (needs Rscript)
     exact-arithmetic  the expected values of the files, computed again by oracle.py
-    fisher-r          the Fisher exact test on tables larger than 2 x 2: our
-                      enumeration against R's fisher.test, case by case (E27)
+    fisher-r          the Fisher exact test on tables larger than 2 x 2: both
+                      implementations against R's own fisher.test, case by
+                      case (E27), and against exact fractions where
+                      fisher.test is looser than statement 5
+    fisher-limit      the R implementation refuses more tables than its limit
 
 Numbers must agree within a relative 1e-12, well inside the 1e-9 of rule R11.
 A test that needs R is skipped where R is not installed, except under
@@ -16,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+from fractions import Fraction
 from pathlib import Path
 
 import oracle
@@ -55,6 +59,9 @@ def python_result(method: str, case: dict) -> dict:
         return {"p_value": methods.fisher_exact_p(given["table"])}
     if method == "display.round.half_away_from_zero":
         return {"text": methods.round_half_away(given["value"], given["decimals"])}
+    if method == "display.pattern":
+        return {"text": methods.pattern_text(given["value"], given["pattern"],
+                                             mock=given.get("mock", False))}
     raise AssertionError(f"no Python implementation of {method}")
 
 
@@ -120,33 +127,85 @@ def exact_arithmetic(tmp_path) -> list[str]:
             problems += [f"{file['method']}, {case['name']}: the file says {problem}"
                          for problem in differences(expected, case["expected"])]
     print(f"expected values computed again in exact arithmetic: {covered} cases, {len(problems)} "
-          f"differences; written by hand: {by_hand} cases (the display rule)")
+          f"differences; written by hand: {by_hand} cases (the display rules)")
     return problems
 
 
 def fisher_r(tmp_path) -> list[str]:
-    """Tables larger than 2 x 2: our enumeration against R's fisher.test (E27)."""
+    """Tables larger than 2 x 2: our sums against R's fisher.test (E27).
+
+    fisher.test is R's own function here, not the R implementation of the
+    registry. The two must agree, except where a table with the same margins
+    is more probable than the observed one by a relative 1e-7 to 1e-6: by
+    statement 5 it does not count, and fisher.test counts it (statement 8).
+    There the registry implementations must give the sum in exact fractions,
+    and fisher.test must be seen to differ, or statement 8 says too much.
+    """
     need_r()
     with open(ROOT / "tests/methods/test_fisher_exact.json", encoding="ascii") as handle:
         file = json.load(handle)
     larger = [case for case in file["cases"]
               if len(case["input"]["table"]) > 2 or len(case["input"]["table"][0]) > 2]
-    assert len(larger) >= 6
-    found = rengine.run_vectors(ROOT, tmp_path, [{"method": file["method"], "cases": larger}])
-    problems = []
+    assert len(larger) >= 8
+    theirs = rengine.run_vectors(ROOT, tmp_path / "fisher.test",
+                                 [{"method": "stats::fisher.test", "cases": larger}])
+    in_r = rengine.run_vectors(ROOT, tmp_path / "registry",
+                               [{"method": file["method"], "cases": larger}])
+    problems, looser = [], 0
     for index, case in enumerate(larger):
-        ours = methods.fisher_exact_p(case["input"]["table"])
-        theirs = found[(file["method"], index)]["p_value"]
-        rows, columns = len(case["input"]["table"]), len(case["input"]["table"][0])
-        print(f"{rows} x {columns} {case['name']:55s} enumeration {ours!r:22} fisher.test "
-              f"{theirs!r}")
-        problems += [f"{case['name']}: {problem}"
-                     for problem in differences({"p_value": theirs}, {"p_value": ours})]
+        table = case["input"]["table"]
+        ours = methods.fisher_exact_p(table)
+        ours_in_r = in_r[(file["method"], index)]["p_value"]
+        r_own = theirs[("stats::fisher.test", index)]["p_value"]
+        above = oracle.fisher_just_above(table, Fraction(1, 10**7), Fraction(1, 10**6))
+        print(f"{len(table)} x {len(table[0])} {case['name'][:55]:55s} Python {ours!r:22} R "
+              f"{ours_in_r!r:22} fisher.test {r_own!r}"
+              + (f"  (a table {above[0]:.3e} more probable)" if above else ""))
+        problems += [f"{case['name']}: Python against R: {problem}"
+                     for problem in differences({"p_value": ours_in_r}, {"p_value": ours})]
+        if not above:
+            problems += [f"{case['name']}: against fisher.test: {problem}"
+                         for problem in differences({"p_value": r_own}, {"p_value": ours})]
+            continue
+        looser += 1
+        exact = oracle.fisher_exact_p(table)
+        problems += [f"{case['name']}: against exact fractions: {problem}"
+                     for problem in differences({"p_value": exact}, {"p_value": ours})]
+        if ours is None or r_own is None or abs(r_own - ours) <= 1e-9 * ours:
+            problems.append(f"{case['name']}: fisher.test gives {r_own!r}, the sum of statement "
+                            f"5 is {ours!r}: statement 8 says they differ")
+    print(f"tables larger than 2 x 2: {len(larger)}; with a table just above the observed "
+          f"probability, where fisher.test is looser: {looser}")
+    if looser < 2:
+        problems.append("no vector shows what statement 8 says of fisher.test")
+    return problems
+
+
+def fisher_limit(tmp_path) -> list[str]:
+    """Statement 6 in R: more tables than the limit are refused, not approximated."""
+    need_r()
+    table = [[3, 1, 2], [4, 0, 5], [1, 2, 6]]
+    case = {"name": "limit", "input": {"table": table}}
+    found = rengine.run_vectors(ROOT, tmp_path / "under", [
+        {"method": "test.fisher.exact", "cases": [case]}])
+    problems = differences({"p_value": methods.fisher_exact_p(table)},
+                           found[("test.fisher.exact", 0)])
+    try:
+        rengine.run_vectors(ROOT, tmp_path / "over", [{"method": "test.fisher.exact", "cases": [
+            {"name": "limit", "input": {"table": table, "max_tables": 50}}]}])
+    except rengine.REngineError as error:
+        said = [line for line in str(error).splitlines() if "tables to sum" in line]
+        print(f"R, with a limit of 50 tables: {said[0] if said else error}")
+        if "more than 50 tables to sum" not in str(error):
+            problems.append(f"the R implementation fails for another reason: {error}")
+    else:
+        problems.append("the R implementation sums more tables than its limit")
     return problems
 
 
 CASES = {"python-vectors": python_vectors, "r-vectors": r_vectors,
-         "exact-arithmetic": exact_arithmetic, "fisher-r": fisher_r}
+         "exact-arithmetic": exact_arithmetic, "fisher-r": fisher_r,
+         "fisher-limit": fisher_limit}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

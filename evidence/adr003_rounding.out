@@ -1,0 +1,8 @@
+results of the pilot with a value and a pattern with decimals: 2537 of 4238
+R 4.6.2 : format(round(x, digits), nsmall = digits) on 2537 values
+values that lie exactly on a half at their displayed decimals: 3
+values that R's round shows as another number than half away from zero: 2
+  of them the example formats: 2; its text is ours for 2, R's for 0
+  ard:An03_06_Height_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_6_Q3/AnlsGrouping_01_Trt_3: value 172.85: half away 172.9, R 172.8, the example '172.9'
+  ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_6_Q3/AnlsGrouping_01_Trt_3/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_05: value 0.25: half away 0.3, R 0.2, the example ' 0.3'
+not counted: 4 small values that format() writes with an exponent when it is given one value at a time

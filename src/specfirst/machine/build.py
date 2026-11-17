@@ -27,7 +27,19 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from specfirst import kit as kits
-from specfirst.machine import ard, ars, compare, graph, rengine, results, runner
+from specfirst.machine import (
+    ard,
+    ars,
+    compare,
+    graph,
+    grid,
+    methods,
+    render,
+    rengine,
+    results,
+    runner,
+)
+from specfirst.machine import layout as layouts
 from specfirst.machine import registry as registries
 from specfirst.machine.canonical import read_jsonl, sha256_file, write_json, write_parquet
 from specfirst.paths import build_dir
@@ -37,6 +49,9 @@ Out = Callable[[str], None]
 RESOLVED, ADAM, GRAPH, MANIFEST = "gold/resolved", "gold/data/adam", "gold/graph", "gold/build.json"
 # The results of real-2: the ARD of each engine and the ARS file with regenerated results.
 ARD, ARS_OUT = "gold/ard", "gold/ars"
+# The displays of real-3: per output <id>.json, the grid, and <id>.shell.json, its mock
+# shell; and the pages that show them, <id>.html and <id>.shell.html.
+GRID, PAGES = "gold/grid", "gold/out"
 # Working files of a build (what is handed to the R engine); not part of what was built.
 WORK = "work"
 # How many unexplained differences a check prints one by one.
@@ -78,7 +93,7 @@ def build(root: Path, kit_id: str, into: Path | None = None, out: Out = print) -
         out(f"build {kit_id}: FAIL (the kit pins {runner.ENGINE} {wanted}, "
             f"{installed} is installed)")
         return 1
-    for stale in (RESOLVED, ADAM, GRAPH, ARD, ARS_OUT, WORK, MANIFEST):
+    for stale in (RESOLVED, ADAM, GRAPH, ARD, ARS_OUT, GRID, PAGES, WORK, MANIFEST):
         target = into / stale
         if target.is_dir():
             shutil.rmtree(target)
@@ -98,7 +113,6 @@ def build(root: Path, kit_id: str, into: Path | None = None, out: Out = print) -
         written += [into / RESOLVED / f"{stem}.json", into / ADAM / f"{stem}.parquet"]
         out(f"built {plan.name:9s} {plan.table.num_rows:6d} rows x {plan.table.num_columns:3d} "
             f"columns from {', '.join(source.dataset for source in plan.inputs)}")
-    written += graph.write_graph(into / GRAPH, trace)
     record = {
         "kit": kit.id,
         "kit_manifest_sha256": sha256_file(kits.manifest_path(root, kit.id)),
@@ -106,12 +120,19 @@ def build(root: Path, kit_id: str, into: Path | None = None, out: Out = print) -
         "datasets": [plan.name for plan in plans],
     }
     if kit.results:
+        displays: list[graph.Display] = []
         try:
-            written += build_results(root, kit, into, record, out)
+            written += build_results(root, kit, into, record, out, displays)
         except (ars.ArsError, ard.EngineError, rengine.REngineError, results.ResultsError,
-                registries.RegistryError) as error:
+                registries.RegistryError, methods.MethodError, layouts.LayoutError,
+                grid.GridError) as error:
+            # A method that refuses its input (a Fisher table too large to sum) ends the
+            # build like any other input that cannot be run.
             out(f"build {kit_id}: FAIL ({error})")
             return 1
+        # The trace from the cells of the grids to the ADaM columns (real-3).
+        graph.add_displays(trace, dest, displays)
+    written += graph.write_graph(into / GRAPH, trace)
     files = {path.relative_to(into).as_posix(): sha256_file(path) for path in sorted(written)}
     write_json(into / MANIFEST, {**record, "files": files})
     out(f"build {kit_id}: {len(plans)} datasets, {len(trace.nodes)} nodes, "
@@ -156,8 +177,49 @@ def result_inputs(root: Path, folder: Path, spec: kits.ResultSet,
     return ResultInputs(spec, event, registry, bound, tables)
 
 
-def build_results(root: Path, kit: kits.Kit, into: Path, record: dict, out: Out) -> list[Path]:
-    """Run both engines on every result set of the kit; write the two ARDs and the gold ARS."""
+def build_displays(root: Path, into: Path, spec: kits.ResultSet, event: ars.Event,
+                   rows: list[dict], displays: list[graph.Display], out: Out) -> list[Path]:
+    """Build the grid, the mock shell and their pages for every output the kit lists.
+
+    The grid is built from the rows of the Python engine: the gold ARD.
+    """
+    written: list[Path] = []
+    by_id = results.by_id(rows)
+    for display in spec.displays:
+        layout = layouts.read(into / display.layout)
+        if layout.output != display.output:
+            raise layouts.LayoutError(f"{display.layout} is the layout of the output "
+                                      f"'{layout.output}', the kit lists it for "
+                                      f"'{display.output}'")
+        made = {"": grid.build(event, layout, by_id), ".shell": grid.shell(event, layout)}
+        for kind, value in made.items():
+            problems = grid.grid_problems(value, root)
+            if problems:
+                raise grid.GridError(f"the grid of {display.output} is not valid: "
+                                     + "; ".join(problems[:5]))
+            path = into / GRID / f"{display.output}{kind}.json"
+            write_json(path, value)
+            page = into / PAGES / f"{display.output}{kind}.html"
+            page.parent.mkdir(parents=True, exist_ok=True)
+            page.write_bytes(render.html(value).encode("utf-8"))
+            written += [path, page]
+        displays.append(graph.Display(
+            grid=made[""], grid_file=f"{GRID}/{display.output}.json", event=event,
+            ars_file=spec.ars, ard_file=f"{ARD}/{spec.id}.jsonl", rows=rows,
+            subject_key=spec.subject_key))
+        cells = sum(len(row["cells"]) for row in made[""]["rows"])
+        out(f"display {display.output}: {len(made['']['rows'])} rows x "
+            f"{len(made['']['columns'])} columns, {cells} cells; its mock shell; a page for each")
+    return written
+
+
+def build_results(root: Path, kit: kits.Kit, into: Path, record: dict, out: Out,
+                  displays: list[graph.Display] | None = None) -> list[Path]:
+    """Run both engines on every result set of the kit; write the two ARDs and the gold ARS.
+
+    With `displays`, also build the grids of the outputs the kit lists, and
+    add what the trace needs of each to that list.
+    """
     written: list[Path] = []
     record["registry_sha256"] = sha256_file(registries.json_path(root))
     for spec in kit.results:
@@ -189,12 +251,17 @@ def build_results(root: Path, kit: kits.Kit, into: Path, record: dict, out: Out)
         write_json(into / ARS_OUT / f"{spec.id}.json", gold)
         written += [into / ARD / f"{spec.id}.jsonl", into / ARD / f"{spec.id}.r.jsonl",
                     into / ARS_OUT / f"{spec.id}.json"]
+        if displays is not None:
+            written += build_displays(root, into, spec, inputs.event, rows, displays, out)
     return written
 
 
-def alternatives(root: Path, folder: Path, spec: kits.ResultSet) -> results.Alternative:
-    """Our results under another value of a method option: what a proof may ask for."""
+def proof_evidence(root: Path, folder: Path, spec: kits.ResultSet) -> results.Evidence:
+    """What a proof may ask for: our results under another value of a method option,
+    and, from the Python engine on the built data, the values of a cell and the
+    groups a test compares. Each is made when it is first asked for."""
     made: dict[tuple, results.Rows] = {}
+    engines: list[ard.Engine] = []
 
     def build_with(method_id: str, option: str, value: object) -> results.Rows:
         key = (method_id, option, value)
@@ -206,15 +273,23 @@ def alternatives(root: Path, folder: Path, spec: kits.ResultSet) -> results.Alte
                                               inputs.tables, spec.subject_key))
         return made[key]
 
-    return build_with
+    def engine() -> ard.Engine:
+        if not engines:
+            inputs = result_inputs(root, folder, spec)
+            engines.append(ard.Engine(inputs.event, inputs.registry, inputs.binding,
+                                      inputs.tables, spec.subject_key))
+        return engines[0]
+
+    return results.Evidence(build_with, lambda key: engine().cell_values(key),
+                            lambda analysis_id: engine().compared_groups(analysis_id))
 
 
 def judge(label: str, event: ars.Event, registry: registries.Registry, rows: results.Rows,
-          entries: list[dict], alternative: results.Alternative,
+          entries: list[dict], evidence: results.Evidence | results.Alternative,
           out: Out) -> tuple[bool, results.Comparison]:
     """P2 for the results of one engine: reproduced, or a difference with one class and a proof."""
     comparison = results.compare_reference(event, rows)
-    lines, problems = results.check_exceptions(comparison, entries, rows, registry, alternative)
+    lines, problems = results.check_exceptions(comparison, entries, rows, registry, evidence)
     out(f"{label}: {comparison.total} embedded results, {comparison.reproduced} reproduced as "
         f"printed, {len(comparison.differing)} with another value, {len(comparison.absent)} "
         "without a result of ours")
@@ -277,13 +352,13 @@ def result_checks(root: Path, kit_id: str, folder: Path | None = None,
                 "Python": read_jsonl(folder / ARD / f"{spec.id}.jsonl"),
                 "R": read_jsonl(folder / ARD / f"{spec.id}.r.jsonl"),
             }
-            alternative = alternatives(root, folder, spec)
+            evidence = proof_evidence(root, folder, spec)
             comparisons = {}
             for engine, lines in rows.items():
                 problems += [f"{engine} ARD: {p}" for p in results.ard_problems(lines, root)]
                 ok, comparison = judge(
                     f"results {spec.id}, {engine} engine", inputs.event, inputs.registry,
-                    results.by_id(lines), listed.get(spec.id, []), alternative, out)
+                    results.by_id(lines), listed.get(spec.id, []), evidence, out)
                 passed &= ok
                 comparisons[engine] = comparison
                 counts.append({
@@ -318,6 +393,107 @@ def result_checks(root: Path, kit_id: str, folder: Path | None = None,
         out(f"results: {error}")
         passed = False
     out(f"results: {'pass' if passed else 'FAIL'}")
+    return passed, counts
+
+
+def _read_json(path: Path) -> object:
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def display_problems(root: Path, event: ars.Event, layout: layouts.Layout, made: object,
+                     shell: object, pages: dict[str, str], rows: results.Rows,
+                     other_rows: results.Rows,
+                     classes: dict[str, str]) -> tuple[grid.DisplayComparison, list[str]]:
+    """What is wrong with the built display of one output: `display_checks` has the list.
+
+    `pages` holds the page of the grid under "" and that of the mock shell
+    under ".shell". `rows` are the gold ARD, `other_rows` those of the second
+    engine. `classes` gives the class of every result whose difference from
+    the reference is explained.
+    """
+    problems = [f"grid: {p}" for p in grid.grid_problems(made, root)]
+    problems += [f"shell: {p}" for p in grid.grid_problems(shell, root)]
+    if problems:
+        return grid.DisplayComparison(layout.output), problems
+    compared = grid.compare_reference(event, layout, made, rows, classes)
+    problems += compared.problems
+    try:
+        if grid.build(event, layout, other_rows) != made:
+            problems.append("the rows of the second engine give another grid: a value at "
+                            "the edge of a rounding, or a result one engine lacks")
+        if grid.shell(event, layout) != shell:
+            problems.append("the mock shell is not what the layout gives")
+    except grid.GridError as error:
+        problems.append(str(error))
+    problems += [f"{cell['id']}: the mock shell shows a number: {cell['text']!r}"
+                 for row in shell["rows"] for cell in row["cells"] if grid.numeric(cell)]
+    for kind, value in (("", made), (".shell", shell)):
+        problems += [f"page {layout.output}{kind}.html: {p}"
+                     for p in render.projection_problems(value, pages[kind])]
+    return compared, problems
+
+
+def display_checks(root: Path, kit_id: str, folder: Path | None = None,
+                   out: Out = print) -> tuple[bool, list[dict]]:
+    """P2 for grid text, on a build. Returns whether all holds, and the counts per output.
+
+    For every output the kit lists: the grid fits its schema and is what the
+    layout and the ARD give; every cell text is the reference's formatted
+    value, or its difference has one class (specfirst.machine.grid); the rows
+    of the R engine give the same grid; the mock shell is what the layout
+    gives without results and shows no number; each page is a projection of
+    its grid.
+    """
+    found = _built(root, kit_id, folder, out)
+    if found is None:
+        return False, []
+    kit, folder = found
+    passed, counts = True, []
+    try:
+        listed = results.load_exceptions(folder / kit.exceptions) if kit.exceptions else {}
+        for spec in kit.results:
+            if not spec.displays:
+                continue
+            inputs = result_inputs(root, folder, spec)
+            rows = {name: results.by_id(read_jsonl(folder / ARD / f"{spec.id}{suffix}.jsonl"))
+                    for name, suffix in (("Python", ""), ("R", ".r"))}
+            comparison = results.compare_reference(inputs.event, rows["Python"])
+            explained, _ = results.judge_entries(
+                comparison, listed.get(spec.id, []), rows["Python"], inputs.registry,
+                proof_evidence(root, folder, spec))
+            classes = {key: entry["class"] for key, entry in explained.items()}
+            for display in spec.displays:
+                layout = layouts.read(folder / display.layout)
+                made = _read_json(folder / GRID / f"{display.output}.json")
+                shell = _read_json(folder / GRID / f"{display.output}.shell.json")
+                pages = {kind: (folder / PAGES / f"{display.output}{kind}.html").read_text(
+                    encoding="utf-8") for kind in ("", ".shell")}
+                compared, problems = display_problems(
+                    root, inputs.event, layout, made, shell, pages, rows["Python"], rows["R"],
+                    classes)
+                for line in compared.lines():
+                    out(line)
+                for problem in problems[:UNEXPLAINED_SHOWN]:
+                    out(f"  grid {display.output}: {problem}")
+                if len(problems) > UNEXPLAINED_SHOWN:
+                    out(f"  grid {display.output}: and {len(problems) - UNEXPLAINED_SHOWN} more")
+                out(f"grid {display.output}: the R engine's rows give the same grid; the mock "
+                    f"shell and the two pages hold; {len(problems)} problems"
+                    if not problems else f"grid {display.output}: {len(problems)} problems")
+                passed &= not problems
+                counts.append({
+                    "set": spec.id, "output": display.output, "cells": compared.cells,
+                    "results": compared.results, "equal": compared.equal,
+                    "differing": len(compared.differing),
+                    "classified": sum(compared.classified.values()),
+                    "no_reference": len(compared.no_reference), "problems": len(problems),
+                })
+    except (ars.ArsError, ard.EngineError, results.ResultsError, registries.RegistryError,
+            layouts.LayoutError, OSError, ValueError) as error:
+        out(f"grids: {error}")
+        passed = False
+    out(f"grids: {len(counts)} outputs, {'pass' if passed else 'FAIL'}")
     return passed, counts
 
 
@@ -479,6 +655,14 @@ def trace(root: Path, kit_id: str, folder: Path | None = None, out: Out = print)
             f"{summary['cites_edges']:3d} cites edges (one per column and span); "
             f"{skipped} citations of programs or other files, not imported; "
             f"{len(summary['variables_not_output_columns'])} variables that are not output columns")
+    # From the cells of the grids to SDTM columns (real-3).
+    grids = {display.output: _read_json(folder / GRID / f"{display.output}.json")
+             for spec in kit.results for display in spec.displays}
+    if grids:
+        lines, behind = graph.check_cells(folder / GRAPH, grids)
+        for line in lines:
+            out(line)
+        problems += behind
     for problem in problems:
         out(f"trace: {problem}")
     out(f"trace: {'complete' if not problems else f'{len(problems)} problems'}")
@@ -495,4 +679,5 @@ def check(root: Path, kit_id: str, folder: Path | None = None, twice: bool = Fal
     passed.append(reproduction(root, kit_id, folder, out))
     passed.append(trace(root, kit_id, folder, out))
     passed.append(result_checks(root, kit_id, folder, out)[0])
+    passed.append(display_checks(root, kit_id, folder, out)[0])
     return 0 if all(passed) else 1

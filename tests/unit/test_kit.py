@@ -222,7 +222,8 @@ def test_study_data_and_documents_may_not_be_in_git(toy, root):
     )
     assert problems == [
         "kits/toy/inputs/data/sdtm/dm.parquet: a tier C kit folder holds kit.yaml, README.md "
-        "and the exceptions file its manifest names, nothing else",
+        "and the files of our own its manifest names (the exceptions, the layouts), nothing "
+        "else",
         "docs/CSR.pdf: study data or a study document in git",
     ]
 
@@ -242,7 +243,7 @@ def test_a_kit_folder_may_hold_the_exceptions_file_its_manifest_names(toy, root)
     # Assembling copies it next to the manifest, and fails when it is not there.
     kit = kits.load_kit(real, "toy")
     assert kits.assemble(real, kit) == [
-        "gold/exceptions.yaml: named by build.exceptions, but not in kits/toy/"]
+        "gold/exceptions.yaml: named by the manifest, but not in kits/toy/"]
     (real / "kits/toy/gold").mkdir()
     (real / "kits/toy/gold/exceptions.yaml").write_text("exceptions: 0\nresults: {}\n", "ascii")
     assert kits.assemble(real, kit) == []

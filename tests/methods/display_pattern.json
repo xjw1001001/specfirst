@@ -1,0 +1,23 @@
+{
+  "method": "display.pattern",
+  "cases": [
+    {"name": "a count in a header", "statements": [1, 2, 4], "input": {"value": 86, "pattern": "(N=XX)"}, "expected": {"text": "(N=86)"}},
+    {"name": "a count is not padded", "statements": [4], "input": {"value": 8, "pattern": "XXX"}, "expected": {"text": "8"}},
+    {"name": "a count longer than its mask is not cut", "statements": [4], "input": {"value": 255, "pattern": "XX"}, "expected": {"text": "255"}},
+    {"name": "a percent with one decimal, padded to the mask", "statements": [1, 2, 3], "input": {"value": 9.52, "pattern": "( XX.X)"}, "expected": {"text": "(  9.5)"}},
+    {"name": "a percent that fills the mask", "statements": [3], "input": {"value": 32.64, "pattern": "( XX.X)"}, "expected": {"text": "( 32.6)"}},
+    {"name": "a percent of zero", "statements": [3, 5], "input": {"value": 0, "pattern": "( XX.X)"}, "expected": {"text": "(  0.0)"}},
+    {"name": "a percent of 100 is longer than the mask", "statements": [3], "input": {"value": 100.0, "pattern": "( XX.X)"}, "expected": {"text": "( 100.0)"}},
+    {"name": "two decimals", "statements": [2, 3], "input": {"value": 8.587, "pattern": "(XX.XX)"}, "expected": {"text": "( 8.59)"}},
+    {"name": "a whole number under a mask with a decimal", "statements": [2, 3], "input": {"value": 4, "pattern": "XX.X"}, "expected": {"text": " 4.0"}},
+    {"name": "a half goes away from zero", "statements": [2], "input": {"value": 70.25, "pattern": "XX.X"}, "expected": {"text": "70.3"}},
+    {"name": "the minus sign stands before the padding", "statements": [5], "input": {"value": -3.3012, "pattern": "XX.X"}, "expected": {"text": "- 3.3"}},
+    {"name": "a negative number that fills the mask", "statements": [5], "input": {"value": -12, "pattern": "XX.X"}, "expected": {"text": "-12.0"}},
+    {"name": "a negative number that rounds to zero has no sign", "statements": [5], "input": {"value": -0.04, "pattern": "XX.X"}, "expected": {"text": " 0.0"}},
+    {"name": "a negative count", "statements": [4, 5], "input": {"value": -38, "pattern": "XX"}, "expected": {"text": "-38"}},
+    {"name": "a p-value with four decimals", "statements": [2, 3], "input": {"value": 0.59344, "pattern": "X.XXXX"}, "expected": {"text": "0.5934"}},
+    {"name": "a missing number", "statements": [6], "input": {"value": null, "pattern": "XX.X"}, "expected": {"text": null}},
+    {"name": "a mock shell shows the mask", "statements": [7], "input": {"value": null, "pattern": "( XX.X)", "mock": true}, "expected": {"text": "( xx.x)"}},
+    {"name": "a mock shell of a header count", "statements": [7], "input": {"value": 86, "pattern": "(N=XX)", "mock": true}, "expected": {"text": "(N=xx)"}}
+  ]
+}

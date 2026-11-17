@@ -10,13 +10,20 @@ sha256_text <- function(text) {
   unname(tools::sha256sum(bytes = charToRaw(enc2utf8(text))))
 }
 
-json_string <- function(x) {
-  x <- gsub("\\", "\\\\", enc2utf8(x), fixed = TRUE)
-  x <- gsub("\"", "\\\"", x, fixed = TRUE)
-  x <- gsub("\n", "\\n", x, fixed = TRUE)
-  x <- gsub("\r", "\\r", x, fixed = TRUE)
-  x <- gsub("\t", "\\t", x, fixed = TRUE)
-  paste0("\"", x, "\"")
+# One text as a JSON string. What JSON does not allow inside a string is
+# escaped by code point: the quotation mark (34), the backslash (92) and every
+# control character below 32. Everything else is written as it is, in UTF-8.
+json_string <- function(text) {
+  if (length(text) != 1 || is.na(text)) fail("a JSON string is made from one text")
+  codes <- utf8ToInt(enc2utf8(text))
+  if (anyNA(codes)) fail("a text is not valid UTF-8")
+  if (length(codes) == 0) return(strrep(intToUtf8(34L), 2))
+  parts <- intToUtf8(codes, multiple = TRUE)
+  special <- codes == 34L | codes == 92L
+  parts[special] <- paste0(intToUtf8(92L), parts[special])
+  control <- codes < 32L
+  parts[control] <- sprintf("%su%04x", intToUtf8(92L), codes[control])
+  paste0(intToUtf8(34L), paste(parts, collapse = ""), intToUtf8(34L))
 }
 
 # One scalar as JSON. Whole numbers of a count are written without a decimal point.
@@ -57,22 +64,51 @@ encode_part <- function(text) {
   paste(out, collapse = "")
 }
 
-# A number as the text of a group value: 8 for 8.0, otherwise 17 significant
-# digits cut to the shortest text that reads back as the same number.
+# Numbers read from their decimal text. jsonlite rounds correctly; R's own
+# as.numeric does not always, for a text of 17 digits.
+numbers_of <- function(texts) {
+  as.numeric(jsonlite::fromJSON(paste0("[", paste(texts, collapse = ","), "]")))
+}
+
+# A number as the text of a group value (standard/methods/README.md, rule I9):
+# zero is "0"; any other whole number has all its digits and neither a decimal
+# point nor an exponent; any other number is the shortest decimal that reads
+# back as the same number, written as Python writes it.
 number_text <- function(x) {
   out <- rep("", length(x))
   ok <- !is.na(x)
-  whole <- ok & x == round(x) & abs(x) < 1e15
+  if (any(ok & !is.finite(x))) fail("a number that is not finite cannot be a group value")
+  whole <- ok & x == round(x)
   out[whole] <- sprintf("%.0f", x[whole])
-  rest <- which(ok & !whole)
-  for (i in rest) {
-    for (digits in 15:17) {
-      text <- sprintf("%.*g", digits, x[i])
-      if (jsonlite::fromJSON(paste0("[", text, "]")) == x[i]) break
-    }
-    out[i] <- text
+  out[ok & x == 0] <- "0"
+  todo <- which(ok & !whole)
+  for (digits in 1:17) {
+    if (length(todo) == 0) break
+    texts <- sprintf("%.*g", digits, x[todo])
+    found <- numbers_of(texts) == x[todo]
+    out[todo[found]] <- texts[found]
+    todo <- todo[!found]
   }
+  if (length(todo) > 0) fail("a number has no decimal text of 17 digits that reads back")
   out
+}
+
+# The numbers a condition compares a number column with (rule I3). ARS writes
+# every value as text; a number is written as in JSON: an optional minus sign,
+# digits without a leading zero, an optional fraction, an optional exponent.
+NUMBER_TEXT <- "^-?(0|[1-9][0-9]*)([.][0-9]+)?([eE][+-]?[0-9]+)?$"
+
+condition_numbers <- function(wanted) {
+  if (length(wanted) == 0 || !is.character(wanted) || !all(grepl(NUMBER_TEXT, wanted))) {
+    fail("a number column is compared with ", paste(wanted, collapse = ", "),
+         "; a number is written as in JSON")
+  }
+  numbers <- numbers_of(wanted)
+  if (!all(is.finite(numbers))) {
+    fail("a number column is compared with ", paste(wanted, collapse = ", "),
+         ", which is not a finite number")
+  }
+  numbers
 }
 
 # The fingerprint of a column as this engine read it: the values as text,

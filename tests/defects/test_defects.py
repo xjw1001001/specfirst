@@ -6,12 +6,23 @@ pins, run by the real engines on the ADaM datasets the kit builds, and
 judged by the functions the gate itself calls (`build.judge` for P2 with
 the kit's exceptions, `results.agreement` for rule R11).
 
-    D1-arms      the low dose and the high dose group exchange their conditions (E3)
+    D1-arms      the low dose and the high dose group exchange their conditions
+                 (E3); and the values of the two arms are exchanged in one
+                 analysis only, the case of E3 as it happened
     D2-set       the analysis set reads another population flag
     D3-quantile  the quantile definition is R's default, not SAS's (E4)
     D4-subset    an analysis loses its data subset
     D5-engines   each of the four planted in the R engine's input alone: the
                  two engines must be seen to disagree
+    D6-proofs    proofs that prove nothing, planted in the kit's exceptions:
+                 each passed the check of real-2 and must fail (review of
+                 real-2, finding F2)
+    D7-display   the grid of the adverse event summary against the formatted
+                 values of the example: defects planted in the layout, in
+                 the results and in the grid file (real-3a)
+    D8-trace     the trace of its cells: the shows edges against the grid
+                 builder, the reads edges against the engine, and gaps
+                 planted in the graph files (real-3a)
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -29,14 +40,17 @@ from __future__ import annotations
 import copy
 import json
 import os
+import shutil
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+import yaml
 
 from specfirst import kit as kits
-from specfirst.machine import ard, ars, build, registry, rengine, results
+from specfirst.machine import ard, ars, build, graph, grid, methods, registry, rengine, results
+from specfirst.machine import layout as layouts
 from specfirst.paths import cache_dir, repo_root
 
 pytestmark = pytest.mark.evidence
@@ -45,6 +59,20 @@ KIT = "cdiscpilot01"
 TREATMENT, LOW, HIGH = "AnlsGrouping_01_Trt", "AnlsGrouping_01_Trt_2", "AnlsGrouping_01_Trt_3"
 SAFETY, ITT = "AnalysisSet_02_SAF", "AnalysisSet_01_ITT"
 OVERVIEW = "An07_01_TEAE_Summ_ByTrt"
+# D1, the exchange in one analysis: counts, a continuous summary, events, vital signs,
+# and the analysis in which the reference itself has the two arms exchanged.
+ETHNICITY = "An03_04_Ethnic_Summ_ByTrt"
+ONE_ANALYSIS = ("An03_03_Sex_Summ_ByTrt", "An03_01_Age_Summ_ByTrt", "An07_03_SerTEAE_Summ_ByTrt",
+                "An08_01_Obs_Summ_ByTrt", ETHNICITY)
+# D6: results of the kit's exceptions file, by what their entry proves.
+_SUMMARY = "Mth02_ContVar_Summ_ByGrp"
+ETHNIC_N_LOW = (f"ard:{ETHNICITY}/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/"
+                "AnlsGrouping_05_Ethnic_1")
+AGE_Q1_HIGH = f"ard:An03_01_Age_Summ_ByTrt/{_SUMMARY}_5_Q1/AnlsGrouping_01_Trt_3"
+HEIGHT_MEAN_HIGH = f"ard:An03_06_Height_Summ_ByTrt/{_SUMMARY}_2_Mean/AnlsGrouping_01_Trt_3"
+HEIGHT_MEDIAN_LOW = f"ard:An03_06_Height_Summ_ByTrt/{_SUMMARY}_4_Median/AnlsGrouping_01_Trt_2"
+NO_P_VALUE = ("ard:An07_10_SocPt_Comp_ByTrt_PlacLow/Mth03_CatVar_Comp_FishEx_1_pval/*/"
+              "=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE")
 
 
 class Missing(RuntimeError):
@@ -60,6 +88,7 @@ class Pilot:
     reference: ars.Event  # the example as pinned: its embedded results are the reference
     registry: registry.Registry
     gold: results.Rows  # what the Python engine gives on the unchanged inputs
+    evidence: results.Evidence | None = None  # what a proof may ask for; made once
 
     def data(self) -> dict:
         return copy.deepcopy(self.reference.data)
@@ -87,12 +116,15 @@ class Pilot:
         assert rengine.data_problems(meta, tables) == []
         return results.by_id(rows)
 
-    def judge(self, rows: results.Rows) -> tuple[bool, results.Comparison, list[str]]:
+    def judge(self, rows: results.Rows,
+              entries: list[dict] | None = None) -> tuple[bool, results.Comparison, list[str]]:
         """P2 for results, as the gate judges it: against the pinned example and its exceptions."""
         lines: list[str] = []
+        if self.evidence is None:
+            self.evidence = build.proof_evidence(self.root, self.folder, self.spec)
         ok, comparison = build.judge(
-            "planted", self.reference, self.registry, rows, self.entries,
-            build.alternatives(self.root, self.folder, self.spec), lines.append)
+            "planted", self.reference, self.registry, rows,
+            self.entries if entries is None else entries, self.evidence, lines.append)
         return ok, comparison, lines
 
 
@@ -138,6 +170,19 @@ def changed(pilot: Pilot, rows: results.Rows) -> list[str]:
     return sorted(key for key in set(rows) | set(pilot.gold)
                   if key not in rows or key not in pilot.gold
                   or not results.same(rows[key]["raw_value"], pilot.gold[key]["raw_value"]))
+
+
+def exchanged_in(rows: results.Rows, analysis_id: str) -> results.Rows:
+    """The rows with the values of the low and the high dose arm exchanged in one analysis."""
+    found = {key: dict(row) for key, row in rows.items()}
+    for key, row in rows.items():
+        parts = key.split("/")
+        if row["analysis_id"] == analysis_id and LOW in parts:
+            other = "/".join(HIGH if part == LOW else part for part in parts)
+            assert other in rows, f"{key} has no result in the high dose arm"
+            found[key]["raw_value"], found[other]["raw_value"] = (
+                rows[other]["raw_value"], row["raw_value"])
+    return found
 
 
 def exchange_arms(data: dict) -> dict:
@@ -190,6 +235,29 @@ def d1_arms(pilot: Pilot, tmp_path) -> list[str]:
           f"{len(reproduced_now)} of 22")
     if len(reproduced_now) != 22:
         problems.append(f"{len(reproduced_now)} of the 22 exchanged results agree, expected 22")
+    # The case of E3 as it happened: the two arms exchanged in one analysis only
+    # (review of real-2, finding F11). In the analysis of ethnicity the exchange is
+    # the reference's own error, so there the entries of the kit become stale.
+    for analysis_id in ONE_ANALYSIS:
+        rows = exchanged_in(pilot.gold, analysis_id)
+        moved = changed(pilot, rows)
+        ok, comparison, lines = pilot.judge(rows)
+        unexplained = [line for line in lines if line.startswith("  unexplained:")]
+        stale = sum("listed as an exception, but it is reproduced" in line for line in unexplained)
+        _, disagreements = results.agreement(pilot.gold, rows)
+        print(f"low and high dose exchanged in {analysis_id} only: {len(moved)} values change; "
+              f"check passes: {ok}; unexplained {len(unexplained)}, of which stale entries "
+              f"{stale}; against the other engine {len(disagreements)} disagree")
+        if not moved:
+            problems.append(f"{analysis_id}: exchanging the arms changes nothing; use another")
+        if ok or not unexplained:
+            problems.append(f"{analysis_id}: arms exchanged in this analysis alone pass the check")
+        if len(disagreements) != len(moved):
+            problems.append(f"{analysis_id}: {len(moved)} values change, the engines are said "
+                            f"to disagree on {len(disagreements)}")
+        if analysis_id == ETHNICITY and stale != 8:
+            problems.append(f"{analysis_id}: {stale} stale entries; the kit has 8 entries for "
+                            "the values the reference has exchanged there")
     return problems
 
 
@@ -309,8 +377,389 @@ def d5_engines(pilot: Pilot, tmp_path) -> list[str]:
     return problems
 
 
+def d6_proofs(pilot: Pilot, tmp_path) -> list[str]:
+    """Proofs that prove nothing, planted in the kit's own exceptions (review of real-2, F2).
+
+    The reviewer's cases A3 and A8 to A11, each on the entry it was found
+    on, and the proof the median of height had until real-3a. Every one
+    passed the check of real-2. Each must fail now, for the reason given.
+    """
+    problems = control(pilot)
+    option = {"method": "summary.continuous", "option": "quantile_definition"}
+    race = "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/"
+    zero_of_race = sorted(key for key, row in pilot.gold.items()
+                          if key.startswith(race) and row["raw_value"] == 0)
+    if not zero_of_race:
+        return [*problems, "no count of 0 among the race counts of the placebo arm: A11 "
+                           "cannot be planted"]
+    placebo = ETHNIC_N_LOW.replace(LOW, "AnlsGrouping_01_Trt_1")
+    planted = {
+        "A3 an exchanged count, proven by the placebo arm, which has the same value": (
+            ETHNIC_N_LOW, {"kind": "value_of_other_result", "result": placebo},
+            "the two are not exchanged"),
+        "A8 the quartile of age, by an option with one value": (
+            AGE_Q1_HIGH, {"kind": "no_alternative", "method": "summary.continuous",
+                          "option": "sd_denominator"},
+            "no value of sd_denominator changes a result of the operation"),
+        "A9 an exchanged mean, as the same under every quantile definition": (
+            HEIGHT_MEAN_HIGH, {"kind": "same_under_every", **option},
+            "no value of quantile_definition changes a result of the operation"),
+        "A10 the same mean, as given by no quantile definition": (
+            HEIGHT_MEAN_HIGH, {"kind": "no_alternative", **option},
+            "no value of quantile_definition changes a result of the operation"),
+        "A11 no records, by a count of 0 of another analysis": (
+            NO_P_VALUE, {"kind": "no_records", "zero": zero_of_race[:1]},
+            "is not a count of the cell's own groups"),
+        "no records, by the count of one of the two compared arms": (
+            NO_P_VALUE, {"kind": "no_records", "zero": [
+                "ard:An07_10_SocPt_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/"
+                "=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE"]},
+            "one count per compared group is needed"),
+        "the median of height, as the same under every quantile definition": (
+            HEIGHT_MEDIAN_LOW, {"kind": "same_under_every", **option},
+            "no value of quantile_definition changes a result of the operation"),
+    }
+    by_result = {entry["result"]: entry for entry in pilot.entries}
+    if pilot.gold[placebo]["raw_value"] != 3 or by_result[ETHNIC_N_LOW]["embedded"] != "3":
+        problems.append("A3 needs a placebo count equal to the embedded count of the low dose arm")
+    for name, (key, proof, message) in planted.items():
+        entries = [dict(entry, proof=proof) if entry["result"] == key else entry
+                   for entry in pilot.entries]
+        ok, _, lines = pilot.judge(pilot.gold, entries)
+        unexplained = [line for line in lines if line.startswith("  unexplained:")]
+        print(f"{name}: check passes: {ok}"
+              + (f"; {unexplained[0].split(': ', 2)[-1]}" if unexplained else ""))
+        if ok or len(unexplained) != 1 or key not in unexplained[0]:
+            problems.append(f"{name}: the proof passes, or more than this entry fails")
+        elif message not in unexplained[0]:
+            problems.append(f"{name}: fails for another reason: {unexplained[0]}")
+    return problems
+
+
+# ---- real-3a: the grid and the trace of its cells (ADR-005) ---------------------------
+
+
+def _display(pilot: Pilot):
+    """The first output the kit builds as a grid: its layout, its built grid, the classes."""
+    shown = pilot.spec.displays[0]
+    spec = layouts.read(pilot.folder / shown.layout)
+    with open(pilot.folder / build.GRID / f"{shown.output}.json", encoding="ascii") as handle:
+        made = json.load(handle)
+    comparison = results.compare_reference(pilot.reference, pilot.gold)
+    if pilot.evidence is None:
+        pilot.evidence = build.proof_evidence(pilot.root, pilot.folder, pilot.spec)
+    explained, _ = results.judge_entries(comparison, pilot.entries, pilot.gold, pilot.registry,
+                                         pilot.evidence)
+    return shown, spec, made, {key: entry["class"] for key, entry in explained.items()}
+
+
+def d7_display(pilot: Pilot, tmp_path) -> list[str]:
+    """P2 for grid text: what the comparison with the formatted values must see.
+
+    Planted in the layout (another pattern, a row or the header left out,
+    rows in another order), in the results (the arms exchanged in one
+    analysis, a percent of another denominator) and in the grid file (a
+    text, an ARD row). Each must fail. What the example cannot show is
+    printed, not counted as caught: it formats results, not cells, so the
+    order of the parts of a cell is the layout's alone; and no result of
+    this output lies on a half, so the rounding rule cannot be told apart.
+    """
+    shown, spec, made, classes = _display(pilot)
+    event, rows = pilot.reference, pilot.gold
+    found = grid.compare_reference(event, spec, made, rows, classes)
+    print(found.lines()[0])
+    problems = [f"the unchanged grid does not pass: {p}" for p in found.problems[:3]]
+    if made != grid.build(event, spec, rows):
+        problems.append("the grid of the build is not what the layout and the ARD give")
+    if (found.cells, found.results, found.equal) != (27, 51, 27) or found.no_reference:
+        problems.append(f"expected 27 cells that show 51 results, all equal: {found.lines()[0]}")
+    with open(pilot.folder / shown.layout, encoding="ascii") as handle:
+        given = yaml.safe_load(handle)
+
+    def with_layout(change) -> grid.DisplayComparison:
+        data = copy.deepcopy(given)
+        change(data)
+        other = layouts.parse(data)
+        return grid.compare_reference(event, other, grid.build(event, other, rows), rows,
+                                      classes)
+
+    def exchanged_rows(data: dict) -> None:
+        listed = data["rows"][1]["analyses"]
+        listed[0], listed[1] = listed[1], listed[0]
+
+    body = given["rows"][1]["parts"]
+    in_layout = {
+        "the percent under the pattern (XX.X), without the blank":
+            lambda d: d["rows"][1]["parts"]["pct"].update(pattern="(XX.X)"),
+        "the percent with two decimals":
+            lambda d: d["rows"][1]["parts"]["pct"].update(pattern="( XX.XX)"),
+        "the count with one decimal":
+            lambda d: d["rows"][1]["parts"]["n"].update(pattern="XX.X"),
+        "the header count without its brackets":
+            lambda d: d["rows"][0]["parts"]["N"].update(pattern="N=XX"),
+        "the percent in place of the count":
+            lambda d: d["rows"][1]["parts"]["n"].update(operation=body["pct"]["operation"],
+                                                        pattern="XXX"),
+        "the last row left out": lambda d: d["rows"][1]["analyses"].pop(),
+        "the header left out": lambda d: d["rows"].pop(0),
+        "the first two rows in the other order": exchanged_rows,
+    }
+    for name, change in in_layout.items():
+        other = with_layout(change)
+        print(f"layout, {name}: {len(other.differing)} cells differ, {len(other.problems)} "
+              "problems")
+        if not other.problems:
+            problems.append(f"layout, {name}: passes")
+
+    def with_rows(changed: results.Rows) -> grid.DisplayComparison:
+        comparison = results.compare_reference(event, changed)
+        explained, _ = results.judge_entries(comparison, pilot.entries, changed, pilot.registry,
+                                             pilot.evidence)
+        return grid.compare_reference(
+            event, spec, grid.build(event, spec, changed), changed,
+            {key: entry["class"] for key, entry in explained.items()})
+
+    of_others = {key: dict(row) for key, row in rows.items()}
+    for key, row in rows.items():  # the percent of every arm with the placebo arm below it
+        if row["analysis_id"] == OVERVIEW and row["operation_id"].endswith("_pct"):
+            count = rows[key.replace("_2_pct", "_1_n")]["raw_value"]
+            of_others[key]["raw_value"] = 100.0 * count / 86
+    in_rows = {
+        f"low and high dose exchanged in {OVERVIEW}": exchanged_in(rows, OVERVIEW),
+        "every percent of the first row with the placebo arm as its denominator": of_others,
+    }
+    for name, changed_rows in in_rows.items():
+        other = with_rows(changed_rows)
+        print(f"results, {name}: {len(other.differing)} cells differ, {len(other.problems)} "
+              "problems")
+        if not other.problems or not other.differing:
+            problems.append(f"results, {name}: passes")
+
+    def with_grid(change) -> list[str]:
+        """What the check of a build says of a grid file: its form, then its content."""
+        value = copy.deepcopy(made)
+        change(value)
+        return grid.grid_problems(value, pilot.root) or grid.compare_reference(
+            event, spec, value, rows, classes).problems
+
+    def exchanged_texts(value: dict) -> None:
+        cells = value["rows"][1]["cells"]
+        cells[0]["text"], cells[2]["text"] = cells[2]["text"], cells[0]["text"]
+
+    in_grid = {
+        "a text changed": lambda g: g["rows"][1]["cells"][0].update(text="66 ( 76.7)"),
+        "the texts of two cells of a row exchanged": exchanged_texts,
+        "the cells of a row in another order": lambda g: g["rows"][1]["cells"].reverse(),
+        "the ARD rows of a cell taken from the next row":
+            lambda g: g["rows"][1]["cells"][0].update(ard=g["rows"][2]["cells"][0]["ard"]),
+    }
+    for name, change in in_grid.items():
+        said = with_grid(change)
+        print(f"grid file, {name}: {len(said)} problems"
+              + (f", for example: {said[0][:110]}" if said else ""))
+        if not said:
+            problems.append(f"grid file, {name}: passes")
+    # What these 51 results cannot show.
+    for name, change in {"the percent before the count": lambda d: d["rows"][1].update(
+            cell="{pct} {n}")}.items():
+        other = with_layout(change)
+        print(f"not separable by this reference: {name}: {len(other.problems)} problems (it "
+              "formats results, not cells)")
+        if other.problems:
+            problems.append(f"{name} is seen after all: count it among the planted defects")
+    planned = grid.plan(event, spec, rows)
+    on_a_half = [item.ard for row in planned.rows for cell in row.cells for item in cell.shown
+                 if _on_a_half(rows[item.ard]["raw_value"], item.pattern)]
+    print(f"not separable on these data: the rounding rule; results of the output that lie on "
+          f"a half at their displayed decimals: {len(on_a_half)} of {found.results}")
+    if on_a_half:
+        problems.append("a result lies on a half: plant another rounding rule for it")
+    return problems
+
+
+def _on_a_half(value: float | int | None, pattern: str) -> bool:
+    """Whether a value is exactly halfway between two texts of its pattern."""
+    from decimal import Decimal
+
+    if value is None:
+        return False
+    decimals = len(methods.pattern_mask(pattern)[1].partition(".")[2])
+    scaled = Decimal(repr(value)) * (Decimal(10) ** decimals)
+    return scaled % 1 == Decimal("0.5")
+
+
+def _graph_of(pilot: Pilot) -> tuple[list[dict], list[dict]]:
+    folder = pilot.folder / build.GRAPH
+    with open(folder / "nodes.jsonl", encoding="ascii") as nodes, \
+            open(folder / "edges.jsonl", encoding="ascii") as edges:
+        return [json.loads(line) for line in nodes], [json.loads(line) for line in edges]
+
+
+def shows_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
+    """The `shows` edges against the grid builder (lesson 16).
+
+    A result that a cell shows is changed: exactly the cells with a `shows`
+    edge to it must get another text. Then every result that no cell shows
+    is changed at once: the grid must stay as it is.
+    """
+    _, spec, made, _ = _display(pilot)
+    event, rows = pilot.reference, pilot.gold
+    cells_of: dict[str, set[str]] = {}
+    for edge in edges:
+        if edge["type"] == "shows":
+            cells_of.setdefault(edge["to"], set()).add(edge["from"])
+    texts = {cell["id"]: cell["text"] for row in made["rows"] for cell in row["cells"]}
+    problems = []
+    planned = grid.plan(event, spec, rows)
+    used = sorted({item.ard for row in planned.rows for cell in row.cells for item in cell.shown})
+    for key in used:
+        changed = dict(rows)
+        changed[key] = dict(rows[key], raw_value=rows[key]["raw_value"] + 1)
+        other = grid.build(event, spec, changed)
+        moved = {cell["id"] for row in other["rows"] for cell in row["cells"]
+                 if cell["text"] != texts[cell["id"]]}
+        if moved != cells_of.get(key, set()):
+            problems.append(f"{key}: changing it changes the cells {sorted(moved)}; its shows "
+                            f"edges come from {sorted(cells_of.get(key, set()))}")
+    others = {key: (row if key in cells_of else dict(
+        row, raw_value=None if row["raw_value"] is None else row["raw_value"] + 1))
+        for key, row in rows.items()}
+    if grid.build(event, spec, others) != made:
+        problems.append("with every result that no cell shows changed, the grid is another one")
+    print(f"shows: {len(used)} results changed one at a time, {len(rows) - len(cells_of)} "
+          f"results without a shows edge changed at once; {len(problems)} problems")
+    return problems
+
+
+def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
+    """The `reads` edges against the engine (lesson 16).
+
+    For every analysis behind the grid, the engine runs it, and the analyses
+    its results are computed from, on changed data. First every column the
+    engine is handed and these analyses have no `reads` edge to is emptied,
+    then rolled by one row: the results of the analysis must stay the same.
+    Then every column they do read is emptied: a result must change, or the
+    change would prove nothing. (A roll alone would not do for that: a count
+    by arm is the same when the arms are rolled over the subjects.)
+    """
+    import numpy as np
+
+    event = pilot.reference
+    tables = ard.load_tables(pilot.folder / build.ADAM,
+                             ars.columns(event, pilot.spec.subject_key))
+    reads: dict[str, set[str]] = {}
+    from_results: dict[str, set[str]] = {}
+    for edge in edges:
+        if edge["type"] == "reads":
+            reads.setdefault(edge["from"], set()).add(edge["to"])
+        elif edge["type"] == "computes":
+            own = graph.ars_id(pilot.gold[edge["from"]]["analysis_id"])
+            from_results.setdefault(own, set()).add(edge["to"])
+
+    def empty(values):
+        if values.dtype == object:
+            made = np.empty(len(values), dtype=object)
+            made[:] = ""
+            return made
+        return np.full(len(values), np.nan)
+
+    problems = []
+    changed_columns = 0
+    for analysis in sorted(from_results):
+        needed = from_results[analysis] | {analysis}
+        columns = set().union(*(reads.get(name, set()) for name in needed))
+        data = pilot.data()
+        data["analyses"] = [a for a in data["analyses"] if graph.ars_id(a["id"]) in needed]
+        only = ars.index(data)
+        bound = ars.bind(only, pilot.registry, pilot.spec.binding)
+        gold = {key: row for key, row in pilot.gold.items()
+                if graph.ars_id(row["analysis_id"]) == analysis}
+
+        def moved(change, read: bool, only=only, bound=bound, columns=columns,
+                  gold=gold) -> tuple[list[str], int]:
+            """The results of the analysis that change, and how many columns were changed."""
+            other, count = {}, 0
+            for name, table in tables.items():
+                values = dict(table.columns)
+                for column in table.columns:
+                    if (graph.adam_id(name, column) in columns) == read:
+                        values[column] = change(table.columns[column])
+                        count += 1
+                other[name] = ard.Table(name, table.rows, values, table.kinds)
+            try:
+                found = results.by_id(ard.run(only, pilot.registry, bound, other,
+                                              pilot.spec.subject_key))
+            except ard.EngineError:
+                return sorted(gold), count
+            return [key for key, row in gold.items() if key not in found or not results.same(
+                found[key]["raw_value"], row["raw_value"])], count
+
+        for name, change in (("emptied", empty), ("rolled", lambda v: np.roll(v, 1))):
+            differing, count = moved(change, read=False)
+            changed_columns += count
+            if differing:
+                problems.append(f"{analysis}: with the {count} columns it has no reads edge to "
+                                f"{name}, {len(differing)} of its {len(gold)} results change, "
+                                f"for example {differing[0]}")
+        differing, count = moved(empty, read=True)
+        if not differing:
+            problems.append(f"{analysis}: emptying the {count} columns it reads changes none of "
+                            "its results: the change proves nothing")
+    print(f"reads: {len(from_results)} analyses; for each, the columns without a reads edge "
+          f"emptied and rolled ({changed_columns} changes of a column in all), then the columns "
+          f"it reads emptied; {len(problems)} problems")
+    return problems
+
+
+def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
+    """P3 for the cells of the grid: complete paths, held against the builder and the engine."""
+    shown, _, made, _ = _display(pilot)
+    nodes, edges = _graph_of(pilot)
+    lines, problems = graph.check_cells(pilot.folder / build.GRAPH, {shown.output: made})
+    for line in lines:
+        print(line)
+    problems = [f"the unchanged graph does not pass: {p}" for p in problems[:3]]
+    problems += shows_problems(pilot, edges)
+    problems += reads_problems(pilot, edges)
+    # Planted: an edge the builder or the ARS reading would have missed. The files
+    # still agree with each other; only the engine and the builder can tell.
+    subset = ("ars:" + OVERVIEW, "adam:ADAE.TRTEMFL")
+    without_read = [e for e in edges if (e["from"], e["to"]) != subset]
+    cell = f"cell:{shown.output}/r2/c1"
+    without_show = [e for e in edges if not (e["type"] == "shows" and e["from"] == cell)]
+    planted = {
+        f"the reads edge from {OVERVIEW} to ADAE.TRTEMFL left out":
+            (lambda: reads_problems(pilot, without_read), len(edges) - len(without_read)),
+        f"the shows edges of {cell} left out":
+            (lambda: shows_problems(pilot, without_show), len(edges) - len(without_show)),
+    }
+    for name, (check, removed) in planted.items():
+        found = check()
+        print(f"planted, {name} ({removed} edges): {len(found)} problems"
+              + (f", for example: {found[0][:150]}" if found else ""))
+        if not found or not removed:
+            problems.append(f"{name}: not seen")
+    # Planted in the files: gaps the static check itself must see, on the real graph.
+    copied = tmp_path / "graph"
+    for name, keep in {
+        "a result node left out": lambda r: r.get("id") != made["rows"][1]["cells"][0]["ard"][0],
+        "every computes edge left out": lambda r: r.get("type") != "computes",
+        "every reads edge left out": lambda r: r.get("type") != "reads",
+    }.items():
+        shutil.copytree(pilot.folder / build.GRAPH, copied, dirs_exist_ok=True)
+        for file in ("nodes.jsonl", "edges.jsonl"):
+            records = [r for r in (nodes if file == "nodes.jsonl" else edges) if keep(r)]
+            (copied / file).write_text("".join(json.dumps(r) + "\n" for r in records), "ascii")
+        _, found = graph.check_cells(copied, {shown.output: made})
+        print(f"planted in the files, {name}: {len(found)} problems")
+        if not found:
+            problems.append(f"{name}: the check of the files passes")
+    return problems
+
+
 CASES = {"D1-arms": d1_arms, "D2-set": d2_set, "D3-quantile": d3_quantile,
-         "D4-subset": d4_subset, "D5-engines": d5_engines}
+         "D4-subset": d4_subset, "D5-engines": d5_engines, "D6-proofs": d6_proofs,
+         "D7-display": d7_display, "D8-trace": d8_trace}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))
