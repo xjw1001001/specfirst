@@ -23,8 +23,9 @@ second on `4002fc1`. What the second pass still found was fixed in
 `f86fe0f`, the commit of the gate; the reviewer did not see those last
 fixes (section "Review").
 
-Nothing is frozen. The catalog has the version `draft-1`; the owner
-approves it at N1 and only then is it `catalog@1`. std-2 was not started.
+At the date of this report nothing was frozen: the catalog had the version
+`draft-1`. The section "After node N1" at the end tells what happened
+since. std-2 was not started.
 
 ## What std-1 asks for, and where it stands
 
@@ -364,3 +365,62 @@ lines added: 43 entries with their templates, phrasings and notes (172
 files), the house standard, eleven Python modules of
 `src/specfirst/compile/` and their tests. One session, within the estimate
 of two to three (section 13.1).
+
+## After node N1
+
+Added on 2026-11-17. The sections above are the report of 2026-11-11; nothing
+in them was changed except the pointer to this section in the verdict.
+
+- The owner answered the 14 questions on 2026-11-17: "as delivered" for
+  every one, and provisional. Asked separately, the owner confirmed the
+  freeze the same day. The record, with the owner's words in translation
+  and what the answer does not cover, is in `docs/decisions/ADR-004.md`,
+  section "Node N1: the owner's answer".
+- No entry, alternative, default or statement changed. `catalog.yaml` says
+  that the three alternatives without a public source of their own are
+  kept as the plan's own.
+- `main` with real-2 and ADR-005 was merged into the branch first.
+- The catalog is version 1 and the tag `catalog@1` marks it. STANDARD.md
+  and `docs/reports/std-1.catalog.md` were rendered again; only the
+  version in their head lines changed.
+- Schema point 3 (which records must cite) was not applied: std-2 does it.
+  std-2 was not started.
+
+The gate on the frozen catalog: a clean clone of commit `12d0ce3`,
+a fresh install and a fresh fetch. It ran inside the lock that the
+sessions on the owner's machine share for heavy runs, on four processors.
+The lines below are the commands and the checks; the complete output is
+in `docs/reports/std-1.n1.gate.log`.
+
+```
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh std-1
+clean clone gate std-1
+commit:     12d0ce3cb05705f5284556178263b3a4cfe74a53
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-RwjDWq/specfirst
+$ git -C /tmp/specfirst-clean-RwjDWq/specfirst checkout --quiet --detach 12d0ce3cb05705f5284556178263b3a4cfe74a53
+$ git -C /tmp/specfirst-clean-RwjDWq/specfirst log -1 --format=%H %s
+12d0ce3cb05705f5284556178263b3a4cfe74a53 std-1: catalog frozen as catalog@1 (version 1) on the owner's word at node N1
+$ bash env/install.sh
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-RwjDWq/env/r-lib
+doctor: ok
+$ specfirst fetch
+$ specfirst gate std-1 --clean
+gate std-1 at commit 12d0ce3cb05705f5284556178263b3a4cfe74a53 (clean)
+doctor: ok
+-- PASS environment (0.2 s)
+-- PASS pins (0.8 s)
+-- PASS lint (0.0 s)
+674 passed, 19 deselected in 37.77s
+-- PASS unit tests (38.1 s)
+-- PASS catalog (0.5 s)
+-- PASS public sources (0.0 s)
+-- PASS round trip (0.0 s)
+-- PASS yamaa check (7.7 s)
+-- PASS yamaa run (5.2 s)
+-- PASS ARS schema (0.6 s)
+-- PASS house standard (0.0 s)
+-- PASS ASCII (0.0 s)
+GATE std-1: PASS
+clean clone gate std-1: PASS (clone kept in /tmp/specfirst-clean-RwjDWq/specfirst until /tmp is cleared)
+```
