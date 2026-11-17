@@ -311,7 +311,7 @@ def core_workers(available_mb: int | None = None, processors: int | None = None)
     At most MAX_WORKERS worker processes in all, and within half of the free
     memory. Other sessions share the machine: too many runs at once once
     exhausted its memory, and the kernel ended processes of every session
-    (docs/lessons.md, lesson 27).
+    (docs/lessons.md, lesson 32).
     """
     if available_mb is None:
         available_mb = available_memory_mb()

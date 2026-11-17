@@ -102,7 +102,7 @@ def test_doctor_fails_when_core_is_not_installed(root, tmp_path, monkeypatch):
 
 
 def test_the_runner_limits_the_worker_pool_of_core(tmp_path):
-    """Lesson 27: without a pool size CORE starts one worker per processor."""
+    """Lesson 32: without a pool size CORE starts one worker per processor."""
     argv = cdisccore.command_line(
         tmp_path / "python", tmp_path / "src", [tmp_path / "dm.json", tmp_path / "ae.json"],
         tmp_path / "report", tmp_path / "define.xml", "sdtmig", "3-4")

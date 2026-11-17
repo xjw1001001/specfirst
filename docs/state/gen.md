@@ -41,7 +41,7 @@ restart of the owner's machine:
 How the day went wrong, for whoever resumes: WSL lost its outbound TCP at
 about 10:20; at 11:16 a scratch loop of this session started eight CORE
 runs at once and the machine ran out of memory (docs/lessons.md, lesson
-27); afterwards the WSL instance was stopped every minute or two until the
+32); afterwards the WSL instance was stopped every minute or two until the
 owner restarted WSL at 11:40.
 
 ## Next

@@ -198,7 +198,7 @@ def test_a_report_counts_only_for_the_datasets_that_were_handed_over(root):
 
 
 def test_parallel_runs_of_core_stay_within_the_memory(monkeypatch):
-    """Lesson 27: too many runs at once exhausted the memory of the machine."""
+    """Lesson 32: too many runs at once exhausted the memory of the machine."""
     need = gate.CORE_RUN_MEMORY_MB
     most = gate.MAX_WORKERS // cdisccore.POOL_SIZE
     assert gate.MAX_WORKERS == 4 and 1 <= most <= 4
@@ -213,7 +213,7 @@ def test_parallel_runs_of_core_stay_within_the_memory(monkeypatch):
 
 def test_a_planted_defect_counts_only_with_its_rule_dataset_and_subject(root, catalog, tmp_path,
                                                                         monkeypatch):
-    """Lesson 31: a finding that merely lists the subject somewhere is not the planted one."""
+    """Lesson 36: a finding that merely lists the subject somewhere is not the planted one."""
     seeds = ("unit-planted",)
     label = study.catalog_label(catalog)
     gate.generate_all(root, tmp_path / "first", seeds)
