@@ -25,10 +25,11 @@ house standard, the seed and the split. No file holds a seed, a clock or a
 path of the machine it was made on.
 
 `generate` writes a kit only when it has the properties P2 to P4 and its two
-result engines agree. A decision vector whose kit leaves a decision that
-the output reads unseparated on the twin is drawn again, up to
-`MAX_ATTEMPTS` times; the manifest says how often. `generate_checked` builds
-the kit a second time in a process of its own and compares every hash (P1).
+result engines agree. A decision vector whose kit leaves a pair of
+alternatives that the log of probes claims unseparated on the twin is drawn
+again, up to `MAX_ATTEMPTS` times; the manifest says how often. A kit that
+cannot be written leaves no folder. `generate_checked` builds the kit a
+second time in a process of its own and compares every hash (P1).
 
 Splits. A set of kits is generated from one seed; kit n has the seed
 "<seed>/kit-<n>" and the split `SPLIT_PLAN` gives its place. The seed of a
@@ -227,18 +228,28 @@ def generate(root: Path, seed: str, out: Path, split: str = "train", with_r: boo
     """Write one kit into `out` and return its manifest. Raises `KitError`.
 
     `number` is the number of the kit in a set; it gives the scenario of the
-    kit. A kit of its own draws its scenario from its seed.
+    kit. A kit of its own draws its scenario from its seed. A kit that
+    cannot be written leaves nothing behind: the folder is removed.
     """
     if split not in decisions.SPLITS:
         raise KitError(f"a split is one of {', '.join(decisions.SPLITS)}, not '{split}'")
+    if out.exists() and any(out.iterdir()):
+        raise KitError(f"{out} is not empty")
+    try:
+        return _generate(root, seed, out, split, with_r, say, number)
+    except Exception:
+        shutil.rmtree(out, ignore_errors=True)
+        raise
+
+
+def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: Out,
+              number: int | None) -> dict:
     catalog = catalogs.load(catalogs.default_dir(root))
     house = houses.load(houses.default_dir(root))
     label = study.catalog_label(catalog)
     scenario_number = scenario_of(seed, number)
     scenario = decisions.SCENARIOS[scenario_number]
     design, designs_drawn = sample_design(seed, label, split, scenario)
-    if out.exists() and any(out.iterdir()):
-        raise KitError(f"{out} is not empty")
     generated = study.generate(root, design, seed, out)
     gold.copy_house(house, out)
     log = study.read_probes(out)
@@ -262,8 +273,8 @@ def generate(root: Path, seed: str, out: Path, split: str = "train", with_r: boo
             + "; ".join(unfit))
     else:
         raise KitError(f"study {designs.study_id(design)}: no decision vector of "
-                       f"{MAX_ATTEMPTS} separates every decision the output reads: "
-                       + "; ".join(rejected[-1]["reasons"]))
+                       f"{MAX_ATTEMPTS} separates every pair of alternatives that the log "
+                       "of probes claims: " + "; ".join(rejected[-1]["reasons"]))
     shutil.rmtree(out / "work", ignore_errors=True)
     import pyarrow
 
@@ -297,10 +308,14 @@ def generate(root: Path, seed: str, out: Path, split: str = "train", with_r: boo
         "properties": properties,
         "files": all_files(out),
     }
-    (out / MANIFEST).write_text(
+    write_manifest(out, manifest)
+    return manifest
+
+
+def write_manifest(kit_dir: Path, manifest: dict) -> None:
+    (kit_dir / MANIFEST).write_text(
         yaml.safe_dump(manifest, sort_keys=False, default_flow_style=False, width=10_000,
                        allow_unicode=False), encoding="ascii", newline="\n")
-    return manifest
 
 
 # ---- a written kit, checked again ----------------------------------------------------------

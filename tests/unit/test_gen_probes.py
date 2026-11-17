@@ -524,6 +524,15 @@ def test_reaches_is_evaluated_on_a_decision_vector(catalog, full):
                   disp__status__record=study)
     assert _reach("ae.teae.end", "no_end", "last_dose_plus_days", parameters,
                   disp__status__record=treatment)
+    # The end-of-study record: its two alternatives pick the same record of the planted
+    # subject when the subcategory is that of the study participation (review of gen-2a,
+    # finding G8).
+    pair = ("disposition_event", "disposition_event_by_subcategory")
+    to_end = {"rule": "end_of_study"}
+    assert not _reach("disp.status.record", *pair, parameters)
+    assert _reach("disp.status.record", *pair, parameters, ae__teae__end=to_end)
+    assert not _reach("disp.status.record", *pair, parameters, ae__teae__end=to_end,
+                      disp__status__record=study)
     # The table reads actual treatment on the safety set grouped by it, planned otherwise.
     planned = {"rule": "planned"}
     pair = ("dm_actarm", "first_ex_treatment")

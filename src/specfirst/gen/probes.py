@@ -98,6 +98,9 @@ _WINDOW = {"decision": "ae.teae.end", "is": ["last_dose_plus_days"], "slot": "da
 _TREATMENT_RECORD = {"decision": "disp.status.record",
                      "is": ["disposition_event_by_subcategory"], "slot": "subcategory",
                      "equals": "parameters.treatment_subcategory"}
+_STUDY_RECORD = {"decision": "disp.status.record",
+                 "is": ["disposition_event_by_subcategory"], "slot": "subcategory",
+                 "equals": "parameters.study_subcategory"}
 _ONE_EVENT = ("the alternatives differ in one planted event, mild and not serious, of a "
               "subject who is randomized and dosed: the table must show the row ANY, on an "
               "analysis set that holds every such subject")
@@ -135,13 +138,14 @@ REACHES: dict[str, dict] = {
                                           "is": ["same_as_planned"]}]}]}},
     "pop.efficacy.rule": {"when": {"decision": "tfl.population", "is": ["efficacy"]}},
     "disp.status.record": {
-        "when": {"all_of": [_ROW_EVENT, _ANALYZED, {"any_of": [
+        "when": {"all_of": [_ROW_EVENT, _ANALYZED, {"none_of": [_STUDY_RECORD]}, {"any_of": [
             {"decision": "ae.teae.end", "is": ["end_of_study"]},
             {"all_of": [_WINDOW, {"decision": "trt.end.source",
                                   "is": ["ds_date_when_ex_missing"]}]}]}]},
         "note": "the last disposition event of the planted subject is its study "
                 "participation record: the two alternatives differ for the subcategory "
-                "parameters.treatment_subcategory only"},
+                "parameters.treatment_subcategory only, and a study whose end-of-study "
+                "record is the one with parameters.study_subcategory has no probe"},
     "ae.start.imputation": {
         "when": {"all_of": [_ROW_ANY, _ANALYZED]},
         "pairs": {"first_of_month_not_before_first_dose|first_of_month": {"none_of": [

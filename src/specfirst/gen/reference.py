@@ -6,19 +6,29 @@ so this module is one: it calculates the output of the slice from the SDTM
 rows and the decision values, by the words of the catalog entries, the way
 a statistician would check a table with a second program.
 
-It shares nothing with the machine: no compiler, no template, no yamaa, no
+It shares no code with the machine: no compiler, no template, no yamaa, no
 result engine, no grid builder, no method registry. It reads SDTM as rows
 (Dataset-JSON), works with dates and whole numbers, and rounds exact
 fractions. Where the two agree, two independent readings of the catalog
 agree; where they differ, one of them is wrong, or the catalog can be read
 in two ways. `verify` holds every build against it.
 
-What it takes from elsewhere, and says so: the text of a cell (`cell_text`
-and `header_text` follow the display of specfirst.gen.display: a count, and
-a percentage with one decimal in brackets), and the order of the arms, which
-no decision carries (`Arm`, from the design).
+What it takes from elsewhere, and says so:
 
-Readings where the words of an entry leave a choice are marked READING.
+- The text of a cell: `cell_text` and `header_text` follow the display of
+  specfirst.gen.display (a count, and a percentage with one decimal in
+  brackets).
+- The arms of the protocol, which no decision carries (`Arm`): their order,
+  their doses, and the texts that can name each arm in a treatment column.
+  The caller makes them with `gold.arms_of`, the function the machine uses,
+  so the two share that input. `column_order` is the rule of
+  `gold.order_values` written a second time, not a second reading: an arm
+  that `arms_of` names wrongly stands last in both.
+- The labels of the rows and of the total column (`ROW_LABELS`,
+  `TOTAL_LABEL`): copied from the layout template of the house standard.
+
+Readings where the words of an entry leave a choice are marked READING. A
+reading that the machine shares does not show as a difference.
 """
 
 from __future__ import annotations
@@ -286,6 +296,11 @@ def _emergent(person: Person, event: dict, start: Date | None, values: Values) -
     """TRTEMFL of one event (ae.teae.start with its notes, ae.teae.end)."""
     if person.start is None:
         return False
+    # READING: "an event that ends before the treatment start date" needs a complete
+    # end date; a partial end date is no end. And when an event has no analysis start
+    # date and a complete end date before the treatment start, two notes of the entry
+    # apply (not emergent because it ended; emergent because the start is missing): the
+    # end decides.
     ended = full_date(event.get("AEENDTC"))
     if ended is not None and ended < person.start:
         return False
@@ -422,6 +437,10 @@ def table(tables: Tables, values: Values, arms: list[Arm]) -> Table | None:
     by_actual = population == "safety" and values["pop.safety.grouping"]["rule"] == "actual"
     members = [(person, person.actual if by_actual else person.planned)
                for person in people(tables, values) if getattr(person, flag)]
+    # READING: a subject of the analysis set without a treatment in the grouping stands
+    # in no column, the total column included ("pools all treatment arms"); and an arm
+    # without a subject in the analysis set has no column. So a subject who is dosed
+    # without being randomized is in no table by planned treatment.
     members = [(person, group) for person, group in members if group]
     if not members:
         raise CannotCalculate("no subject of the analysis set has a treatment: the table "

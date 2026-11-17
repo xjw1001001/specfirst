@@ -169,6 +169,37 @@ def test_planted_defects_of_the_gate_are_seen(root, kit, catalog):
     assert any("ae.teae.start is unseparated" in line for line in planted)
 
 
+def test_planted_defects_of_the_splits_and_of_the_matrix_are_seen(root, kit):
+    """Review finding G4: a kit that holds its seed, has another split than its place
+    gives or names another seed; and a matrix that calls an unseparated decision
+    separated, with the hashes written again."""
+    out, _, _ = kit
+    assert gate2.split_problems(out, NUMBER, SEED) == []
+    # The same kit at another place of the set: another seed, and here another split.
+    found = gate2.split_problems(out, NUMBER + 1, SEED)
+    assert any("seed_sha256" in problem for problem in found)
+    assert any("the plan gives" in problem for problem in found)
+    said: list[str] = []
+    assert gate2.planted_splits(said.append, out, SEED, NUMBER) is True
+    assert gate2.planted_matrix(root, said.append, out, engines=False) is True
+    planted = [line for line in said if line.startswith("planted defect:")]
+    assert len(planted) == 4, said
+    assert "gold/docs/sap.md holds the seed" in planted[0]
+    assert "date.studyday.origin" in planted[3] and "a new mutation 3" in planted[3]
+    # A kit that is not sound itself is no ground for a planted defect.
+    assert gate2.planted_splits(said.append, out, SEED, NUMBER + 1) is False
+
+
+def test_a_kit_that_cannot_be_written_leaves_nothing(root, tmp_path, monkeypatch):
+    """Review finding G7: a kit that fails a property is not written, folder included."""
+    monkeypatch.setattr(kits, "_attempt",
+                        lambda *args, **options: ({}, ["twin: P2: a planted difference"], []))
+    with pytest.raises(kits.KitError, match="1 defects: twin: P2: a planted difference"):
+        kits.generate(root, kits.kit_seed(SEED, NUMBER), tmp_path / "failed", with_r=False,
+                      number=NUMBER)
+    assert not (tmp_path / "failed").exists()
+
+
 def test_a_changed_kit_fails_its_check(root, kit, tmp_path):
     out, _, _ = kit
     copy_of = tmp_path / "kit"

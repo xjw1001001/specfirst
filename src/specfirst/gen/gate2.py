@@ -65,7 +65,9 @@ def write_all(root: Path, folder: Path, numbers: range, seed: str = SEED) -> dic
     gate; the second has the hash seed 2, another time zone and the C
     locale. Each has a working folder of its own.
     """
-    jobs = [(number, build) for number in numbers for build in ("first", "second")]
+    # Every first build ends before a second build starts: two builds of a kit never
+    # run at the same moment, so a build that read a clock would not get the same time.
+    jobs = [(number, build) for build in ("first", "second") for number in numbers]
 
     def run(job: tuple[int, str]) -> str:
         number, build = job
@@ -78,8 +80,10 @@ def write_all(root: Path, folder: Path, numbers: range, seed: str = SEED) -> dic
             return str(error)
         return ""
 
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        failed = list(pool.map(run, jobs))
+    failed: list[str] = []
+    for build in ("first", "second"):
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            failed += list(pool.map(run, [job for job in jobs if job[1] == build]))
     return {job: problem for job, problem in zip(jobs, failed, strict=True) if problem}
 
 
@@ -409,7 +413,8 @@ def separation_check(root: Path, out: Out, folder: Path, count: int = COUNT) -> 
     """Every applicable decision of the slice is separated on the twin, in every kit; and
     over the ten kits the matrix has no hole."""
     catalog = catalogs.load(catalogs.default_dir(root))
-    if not planted_separation(root, out, kit_folder(folder, min(PLANTED, count))):
+    planted = kit_folder(folder, min(PLANTED, count))
+    if not (planted_separation(root, out, planted) and planted_matrix(root, out, planted)):
         return False
     matrices = _matrices(folder, count)
     ok = True
@@ -512,24 +517,12 @@ def splits_check(root: Path, out: Out, folder: Path, seed: str = SEED,
     tally: dict[str, int] = {}
     for number in range(1, count + 1):
         kit_dir = kit_folder(folder, number)
-        manifest = kits.read_manifest(kit_dir)
-        tally[manifest["split"]] = tally.get(manifest["split"], 0) + 1
-        if manifest["split"] != kits.split_of(number):
-            problems.append(f"kit {number}: split {manifest['split']}, the plan gives "
-                            f"{kits.split_of(number)}")
-        design = designs.load(kit_dir / "gold" / "design.yaml")
-        values = decisions.as_values(kits.read_decisions(kit_dir))
-        if kits.held_out(design, values):
-            problems.append(f"kit {number}: a {manifest['split']} kit with a held-out factor")
-        secrets = [kits.kit_seed(seed, number).encode("ascii")]
-        for path in sorted(kit_dir.rglob("*")):
-            if path.is_file() and any(secret in path.read_bytes() for secret in secrets):
-                problems.append(f"kit {number}: {path.relative_to(kit_dir)} holds the seed")
-        from specfirst.gen.rng import seed_sha256
-
-        if manifest["seed_sha256"] != seed_sha256(kits.kit_seed(seed, number)):
-            problems.append(f"kit {number}: seed_sha256 is not the hash of its seed")
-    # Planted: a seed in a file, and a vector that an exam holds out.
+        split = kits.read_manifest(kit_dir)["split"]
+        tally[split] = tally.get(split, 0) + 1
+        problems += split_problems(kit_dir, number, seed)
+    if not planted_splits(out, kit_folder(folder, 1), seed):
+        return False
+    # Planted: a vector that an exam holds out.
     kit_dir = kit_folder(folder, 1)
     design = designs.load(kit_dir / "gold" / "design.yaml")
     values = decisions.as_values(kits.read_decisions(kit_dir))
@@ -560,6 +553,121 @@ def splits_check(root: Path, out: Out, folder: Path, seed: str = SEED,
         + f"; held out for an exam: {decisions.HELD_OUT['design']}, and the combination "
         f"{decisions.HELD_OUT['combination']}; {len(problems)} problems")
     return not problems
+
+
+def split_problems(kit_dir: Path, number: int, seed: str) -> list[str]:
+    """Why kit `number` of the set of a seed does not have the split of its place, holds
+    its seed, or has what an exam holds out."""
+    from specfirst.gen.rng import seed_sha256
+
+    problems = []
+    manifest = kits.read_manifest(kit_dir)
+    if manifest["split"] != kits.split_of(number):
+        problems.append(f"kit {number}: split {manifest['split']}, the plan gives "
+                        f"{kits.split_of(number)}")
+    design = designs.load(kit_dir / "gold" / "design.yaml")
+    values = decisions.as_values(kits.read_decisions(kit_dir))
+    if kits.held_out(design, values):
+        problems.append(f"kit {number}: a {manifest['split']} kit with a held-out factor")
+    secret = kits.kit_seed(seed, number).encode("ascii")
+    for path in sorted(kit_dir.rglob("*")):
+        if path.is_file() and secret in path.read_bytes():
+            problems.append(f"kit {number}: {path.relative_to(kit_dir).as_posix()} holds the "
+                            "seed")
+    if manifest["seed_sha256"] != seed_sha256(kits.kit_seed(seed, number)):
+        problems.append(f"kit {number}: seed_sha256 is not the hash of its seed")
+    return problems
+
+
+def planted_splits(out: Out, kit_dir: Path, seed: str, number: int = 1) -> bool:
+    """A kit that holds its seed, has another split than its place gives, or names
+    another seed must be seen. Each defect is planted in a copy of the kit."""
+    def with_manifest(change: Callable[[dict], None]) -> Callable[[Path], None]:
+        def apply(copy_of: Path) -> None:
+            manifest = kits.read_manifest(copy_of)
+            change(manifest)
+            kits.write_manifest(copy_of, manifest)
+        return apply
+
+    def seed_in_document(copy_of: Path) -> None:
+        with open(copy_of / kits.DOCUMENT, "a", encoding="ascii", newline="\n") as handle:
+            handle.write(f"Generated from the seed {kits.kit_seed(seed, number)}.\n")
+
+    other = next(split for split in decisions.SPLITS if split not in (
+        kits.split_of(number), "sealed"))
+    cases = (
+        ("a document of the kit that holds the seed", seed_in_document, "holds the seed"),
+        (f"a manifest with the split {other}",
+         with_manifest(lambda manifest: manifest.update(split=other)), "the plan gives"),
+        ("a manifest with the hash of another seed",
+         with_manifest(lambda manifest: manifest.update(seed_sha256="0" * 64)), "seed_sha256"),
+    )
+    if split_problems(kit_dir, number, seed):
+        out(f"kit {number} has a problem of its own: nothing can be planted")
+        return False
+    for what, plant, expected in cases:
+        scratch = Path(tempfile.mkdtemp(prefix="specfirst-gen2a-split-"))
+        try:
+            copy_of = scratch / "kit"
+            shutil.copytree(kit_dir, copy_of)
+            plant(copy_of)
+            found = split_problems(copy_of, number, seed)
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+        if len(found) != 1 or expected not in found[0]:
+            out(f"the check did not report {what} alone, but {found[:3]}")
+            return False
+        out(f"planted defect: {what}: {found[0]}")
+    return True
+
+
+def planted_matrix(root: Path, out: Out, kit_dir: Path, engines: bool = True) -> bool:
+    """A kit whose files call an unseparated decision separated must be seen: the matrix
+    of a kit counts only because a new mutation gives it again (`kits.check`).
+
+    `engines=False` is for a kit that was written without the R engine.
+    """
+    entry_id = "date.studyday.origin"
+    scratch = Path(tempfile.mkdtemp(prefix="specfirst-gen2a-matrix-"))
+    try:
+        copy_of = scratch / "kit"
+        shutil.copytree(kit_dir, copy_of)
+        with open(copy_of / kits.IDENTIFIABILITY, encoding="ascii") as handle:
+            matrix = json.load(handle)
+        item = next(item for item in matrix["decisions"] if item["id"] == entry_id)
+        if item["identifiable"] != "unseparated":
+            out(f"{entry_id} is not unseparated in the kit: nothing can be planted")
+            return False
+        item["identifiable"] = "separated"
+        summary = matrix["summary"]
+        summary["separated"] = sorted([*summary["separated"], entry_id])
+        summary["unseparated_not_read"] = [name for name in summary["unseparated_not_read"]
+                                           if name != entry_id]
+        write_json(copy_of / kits.IDENTIFIABILITY, matrix)
+        records = kits.read_decisions(copy_of)
+        for record in records:
+            if record["id"] == entry_id:
+                record["identifiable"] = "separated"
+        gold.write_decisions(copy_of, records)
+        manifest = kits.read_manifest(copy_of)
+        manifest["properties"]["identifiability"] = summary
+        manifest["files"] = kits.all_files(copy_of)
+        kits.write_manifest(copy_of, manifest)
+        quiet = kits.check(root, copy_of, mutation=False, engines=engines)
+        found = kits.check(root, copy_of, engines=engines)
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    wanted = (f"{kits.IDENTIFIABILITY} is not the matrix", "the identifiability summary",
+              f"decision {entry_id}: 'identifiable'")
+    if quiet or len(found) != len(wanted) or not all(
+            any(text in problem for problem in found) for text in wanted):
+        out(f"a new mutation did not report the changed matrix alone: without mutation "
+            f"{quiet[:2]}, with mutation {found[:4]}")
+        return False
+    out(f"planted defect: a kit whose matrix, decision record and manifest call {entry_id} "
+        f"separated, with the hashes written again: the check without a mutation reports "
+        f"{len(quiet)} problems, a new mutation {len(found)}: {'; '.join(found)[:260]}")
+    return True
 
 
 # ---- one scratch folder for the checks -----------------------------------------------------

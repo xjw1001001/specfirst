@@ -36,8 +36,11 @@ the kit"; a decision that the output reads without such a claim may stay
 unseparated in a kit, and the log lists each case. Three points are for
 the owner, at the end.
 
-The independent review (rule R7) is in `docs/reports/gen-2a.review.md`;
-the section "Review" says what it found and what was done about it.
+The independent review (rule R7) is in `docs/reports/gen-2a.review.md`.
+Pass 1 did not sign: one finding blocks (G1, the reading of "applicable"
+above), and the reviewer says the choice it leaves is the owner's. The
+section "Review" says what the review found and what was done about it.
+By PLAN.md section 2.3 the part has not passed until the review is signed.
 
 ## What gen-2a asks for, and where it stands
 
@@ -338,7 +341,46 @@ How the gate reads its text:
 
 ## The pilot kit
 
-PENDING: the gate of real-3a is running on a clean clone of `3c503de`.
+gen-2a changed two modules that the pilot kit is built with:
+`specfirst.machine.methods` (the rounding behind `display.pattern`) and
+`specfirst.machine.lineage`. The gate of real-3a was therefore run once
+more, on a clean clone of the same commit. The complete output is
+`docs/reports/gen-2a.real-3a.gate.log` (468 lines):
+
+```text
+$ flock /run/lock/specfirst-heavy.lock bash scripts/clean_clone_gate.sh real-3a
+clean clone gate real-3a
+commit:     3c503debbf8724d5b371e2e292cff13f904771d7
+...
+P1 determinism: 30 of 30 files have the same SHA-256 in both builds
+TOTAL cells=9119605 mismatched=0
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+results common-safety-displays, engines: 4238 results in both, 0 disagree; largest relative difference 2.4e-13 (allowed 1e-09)
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+...
+PASS  environment          0.3 s
+PASS  pins                 0.7 s
+PASS  lint                 0.0 s
+PASS  registry             0.0 s
+PASS  unit tests         133.2 s
+PASS  method vectors       1.3 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      31.9 s
+PASS  P2 reproduction      0.3 s
+PASS  trace                0.8 s
+PASS  results              2.5 s
+PASS  grids                2.1 s
+PASS  pilot tests         46.2 s
+PASS  planted defects     53.0 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-3a: PASS
+
+clean clone gate real-3a: PASS (clone: /tmp/specfirst-clean-e1t45U/specfirst)
+```
+
+The pilot kit is built as before: the same 30 files, the same 27 cells,
+the same trace.
 
 ## What was built
 
@@ -360,11 +402,11 @@ that of PLAN.md section 6.4:
   Python engine and the R engine; the grid and its mock shell; the graph
   with `decides` edges from every decision to the elements it sets.
 - S7, twin and verify: the same on the twin; P2, P3, P4; the manifest. A
-  kit that fails a property is not written.
+  kit that fails a property is not written: its folder is removed.
 
 Numbers: about 3,200 lines of Python in seven new modules; 28 unit tests
-in four new files and 7 more in files of gen-1a (942 unit tests in all,
-908 at the gate of gen-1a).
+in four new files and 7 more in files of gen-1a (943 unit tests in all at
+the first gate run, 908 at the gate of gen-1a).
 
 Three things had to be built that the plan does not name, because three
 parts met here for the first time (ADR-007):
@@ -565,15 +607,48 @@ so a new version of yamaa that reads `not_before` otherwise fails a test.
   table (F23 of the gen-1a review).
 - The matrix is that of the twin. The visible data carry about half of
   the probes; no matrix is computed for them.
+- P2 holds the table and nothing else. No ADaM value and no ARD value
+  that no cell shows is held against anything: ASTDY under
+  `date.studyday.origin` is the example. And where a kit leaves a decision
+  unseparated, P2 cannot see a machine that ignores it: on the twin of kit
+  9 a build that rounds half away from zero although the kit states half
+  to even passes P2 (the reviewer's experiment D).
+- P3 is checked without "no spec element is unused" (section 4.6). With
+  one output most columns of ADSL are read by no cell; the check reports
+  how many ADaM columns are on the way of a cell and fails on no other.
+  The full gen-2, with four table families, owes it.
 - The order of the columns is taken from the design: the catalog
-  alternative `protocol_order` has no slot for the order of the arms.
-- The reference follows the words of the catalog entries. Two readings
+  alternative `protocol_order` has no slot for the order of the arms. The
+  hand calculation gets the arms, with the texts that can name each in a
+  treatment column, from `gold.arms_of`, the function the machine uses,
+  and `reference.column_order` is the rule of `gold.order_values` written
+  a second time. For this one rule the reference is a copy with a shared
+  input: an arm named wrongly there stands last in both. The labels of
+  the rows and of the total column are copied from the house layout
+  template.
+- The reference follows the words of the catalog entries. Five readings
   are marked in the module: a partial exposure start date is ordered as
-  its text when the first exposure record is looked for, and the first
-  alternative of `ae.start.imputation` (section "not_before"). A wrong
-  reading that the machine shares would not show.
+  its text when the first exposure record is looked for; the first
+  alternative of `ae.start.imputation` (section "not_before"); a partial
+  end date of an event is no end "before the treatment start date"; when
+  an event has no analysis start date and ended before the treatment
+  start, the end decides; a subject of the analysis set without a
+  treatment in the grouping stands in no column, the total included, and
+  an arm without a subject in the set has no column. The last one is why
+  `pop.safety.rule` cannot be separated on a table by planned treatment.
+  A wrong reading that the machine shares would not show.
 - The hand calculation and the grid builder agree on the form of a cell
-  ("12 ( 37.5)") by construction: the form is the one thing they share.
+  ("12 ( 37.5)") by construction.
+- What the sampler never draws (`decisions.slot_values`, `decisions.fits`).
+  A stated list of rows is one of four, each with ANY and FATAL and none
+  with DISCONTINUATION; an emergence window is always the follow-up length
+  of the design; `disp.status.record` as above. So the conditions of
+  `probes.REACHES` on the rows hold in every kit that is written, and a
+  reader is never scored on a table of "any event and serious events"
+  alone or on a window of another length. The machine and the hand
+  calculation agree on such vectors too (the reviewer's experiment C: 940
+  random vectors on six twins, about three quarters of them vectors the
+  sampler refuses).
 - `gold/docs/sap.md` is the standard form of the stated decisions. It is
   not the protocol and SAP of gen-3a.
 - The seed of the gate is a development seed. No seed file for a set with
@@ -581,11 +656,66 @@ so a new version of yamaa that reads `not_before` otherwise fails a test.
 
 ## Review
 
-PENDING: written when the reviewer has given a verdict.
+The independent review (rule R7) is in `docs/reports/gen-2a.review.md`.
+
+Pass 1 read commit `ce70734` (the code of `3c503de`, on which the gates
+ran) with the gate logs, this report and the handover. Verdict: NOT
+SIGNED. One finding blocks (G1), seven do not (G2 to G8). What the
+reviewer established that the author could not:
+
+- A count by hand of the reviewer's own, 110 lines that import nothing of
+  specfirst, equals the twin of kit 9 in 24 of 24 cells.
+- 940 decision vectors drawn at random, most of them vectors the sampler
+  never draws, built by the machine on six twins: 940 grids equal the hand
+  calculation.
+- Defects planted in the machine (a window one day longer or shorter, a
+  strict comparison in the compiled spec, the rounding rule ignored, the
+  columns reversed, the zero rule turned round, an event missing, another
+  rule of the safety set) are seen by P2 wherever the kit separates the
+  decision, and not where it does not.
+- Kit 9 of the gate, built again by the reviewer twenty minutes later in
+  another process and folder, is the kept kit byte for byte.
+- Every claim of `probes.REACHES` held on every vector that the sampler
+  can draw (6,068 pairs on 366 vectors); four claims were false on
+  vectors it refuses (G8).
+
+| Finding | What was done |
+| --- | --- |
+| G1 "applicable" is what the generator claims: the gate passes kits in which a decision that the output reads, and that data could separate, is not separated on the twin (blocks) | Open. The finding is right about what the gate proves: see "Limits". The reviewer names two ways to settle it and says the choice is the owner's: the owner approves the reading of ADR-007, decision 6, for this slice; or the probes follow the decisions of the kit (stage S3 after S1) and the gate fails on a read decision that data could separate. Put to the owner on 2026-11-17. Nothing is merged before the answer. |
+| G2 P3 without "no spec element is unused"; P2 holds the table only | Both are under "Limits" now, with the reviewer's experiment: a machine that ignores the rounding rule passes P2 on the twin of kit 9. |
+| G3 the hand calculation shares a little with the machine; three readings not marked | The module text says what is shared (the arms and their names from `gold.arms_of`, the column order written a second time, the labels copied). The three readings are marked `READING` in `reference.py`, and all five are under "Limits". No behaviour changed. |
+| G4 four checks had no planted defect in the repository | `gate2.planted_splits`: a document that holds the seed, a manifest with another split, a manifest with the hash of another seed, each in a copy of kit 1; each must be reported alone. `gate2.planted_matrix`: a copy of the kit whose matrix, decision record and manifest call `date.studyday.origin` separated, with the hashes written again; the check without a mutation must report nothing and a new mutation exactly the three differences. Both run in the gate and in the unit tests. |
+| G5 values the sampler never draws were not under the limits | They are. |
+| G6 the two builds of P1 ran at the same moment | `gate2.write_all` ends every first build before a second build starts. |
+| G7 records | 943, not 942. `kits.generate` removes the folder of a kit that cannot be written, with a test. The line "Passed" of the handover is true once the review is signed; the merge waits for that. |
+| G8 a false claim for `disp.status.record` on vectors the sampler refuses | `REACHES` does not claim the pair when the end-of-study record is the one with the subcategory of the study participation; a test. The log of probes carries the table, so `GENERATOR` is `gen-2a.2`. |
+
+The code changed after the first gate run (G4, G6, G7, G8, the comments of
+G3), so the gates were run again: section "The gate".
 
 ## GitHub and CI
 
-PENDING: written after the push.
+`track/gen` is pushed to the owner's private repository. CI
+(`.github/workflows/ci.yml`: the ASCII check, lint, the unit tests, on
+GitHub's runner, which has no R, no fetch cache and no CORE) ran on the
+push of `ce70734`, which holds the code of the gate (`3c503de`) and the
+first form of this report:
+
+```text
+run 44178069250 on track/gen at ce70734: completed, success
+ASCII check: 441 files checked, 0 with non-ASCII bytes
+All checks passed!
+924 passed, 19 skipped, 22 deselected in 188.07s (0:03:08)
+```
+
+The 19 skipped tests need R; in the gate, where R is installed, the same
+selection gives 943 passed and none skipped. The unit tests that build a
+kit do it without R (`with_r=False`), so they run on GitHub's runner too;
+the agreement of the engines is decided in the gate only.
+
+The runs on the commit that holds this report and on `main` after the
+merge cannot be in it; they are in GitHub, and the session reports them
+when it hands the work back.
 
 ## For the owner
 
@@ -617,6 +747,7 @@ PENDING: written after the push.
   `test_gen_gate.py`, `test_gen_probes.py`, `test_gen_subjects.py`,
   `test_doctor.py`, `test_registry.py`; `tests/methods/`.
 - Records: `docs/decisions/ADR-007.md`, `docs/lessons.md` (lessons 40 to
-  46), `docs/state/gen.md`, `CLAUDE.md`, `scripts/clean_clone_gate.sh`,
-  this report, `docs/reports/gen-2a.gate.log`,
-  `docs/reports/gen-2a.gen-1a.gate.log`, `docs/reports/gen-2a.review.md`.
+  46), `docs/state/gen.md`, `CLAUDE.md`, `kits/README.md`,
+  `scripts/clean_clone_gate.sh`, this report,
+  `docs/reports/gen-2a.gate.log`, `docs/reports/gen-2a.gen-1a.gate.log`,
+  `docs/reports/gen-2a.real-3a.gate.log`, `docs/reports/gen-2a.review.md`.

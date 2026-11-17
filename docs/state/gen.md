@@ -50,7 +50,9 @@ twin/gold/                  data/adam/, ars/, ard/, grid/, out/, graph/, referen
   the grouping still data-driven.
 - `gold/grid/Out_AESUM.json` is the grid, `Out_AESUM.shell.json` its mock
   shell. Row 1 has the section `@header` and holds the counts under the
-  column headers.
+  column headers. Every cell names the ARD rows behind it (`ard`), also a
+  cell with a count of zero: the groups are listed, so the engines give a
+  row for an arm without records.
 - A kit of the slice builds ADSL and ADAE. The other three outputs of the
   house are stated as not included; the decisions of `mod-demographics`
   are at the house default; `mod-bds-visits` is not in the vector.
