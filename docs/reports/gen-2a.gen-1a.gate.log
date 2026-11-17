@@ -1,24 +1,24 @@
 clean clone gate gen-1a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     3c503debbf8724d5b371e2e292cff13f904771d7
-clone:      /tmp/specfirst-clean-nqzldO/specfirst
-environment and cache: /tmp/specfirst-clean-nqzldO/env
+commit:     f2dac3b07f6614c37de47233e0edfe135574fc65
+clone:      /tmp/specfirst-clean-KYSJkM/specfirst
+environment and cache: /tmp/specfirst-clean-KYSJkM/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-nqzldO/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-KYSJkM/specfirst
 
-$ git -C /tmp/specfirst-clean-nqzldO/specfirst checkout --quiet --detach 3c503debbf8724d5b371e2e292cff13f904771d7
+$ git -C /tmp/specfirst-clean-KYSJkM/specfirst checkout --quiet --detach f2dac3b07f6614c37de47233e0edfe135574fc65
 
-$ git -C /tmp/specfirst-clean-nqzldO/specfirst log -1 --format=%H %s
-3c503debbf8724d5b371e2e292cff13f904771d7 gen-2a: decisions, gold, the reference, P1 to P4, kits, splits, the gate
+$ git -C /tmp/specfirst-clean-KYSJkM/specfirst log -1 --format=%H %s
+f2dac3b07f6614c37de47233e0edfe135574fc65 gen-2a: the review, pass 1 (not signed), and its findings G2 to G8
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-nqzldO/env/venv-specfirst-2602393551
-R library: /tmp/specfirst-clean-nqzldO/env/r-lib
+python environment: /tmp/specfirst-clean-KYSJkM/env/venv-specfirst-3675224984
+R library: /tmp/specfirst-clean-KYSJkM/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-nqzldO/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-nqzldO/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-KYSJkM/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-KYSJkM/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-nqzldO/env/venv-specfirst-2602393551/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-KYSJkM/env/venv-specfirst-3675224984/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-nqzldO/env/cache
+cache: /tmp/specfirst-clean-KYSJkM/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate gen-1a --clean
-gate gen-1a at commit 3c503debbf8724d5b371e2e292cff13f904771d7 (clean)
+gate gen-1a at commit f2dac3b07f6614c37de47233e0edfe135574fc65 (clean)
 
 == [1/8] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-nqzldO/env/venv-specfirst-2602393551/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-KYSJkM/env/venv-specfirst-3675224984/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -77,15 +77,15 @@ All checks passed!
 ........................................................................ [ 38%]
 ........................................................................ [ 45%]
 ........................................................................ [ 53%]
-........................................................................ [ 61%]
+........................................................................ [ 60%]
 ........................................................................ [ 68%]
 ........................................................................ [ 76%]
 ........................................................................ [ 83%]
 ........................................................................ [ 91%]
 ........................................................................ [ 99%]
-.......                                                                  [100%]
-943 passed, 22 deselected in 134.69s (0:02:14)
--- PASS unit tests (135.0 s)
+.........                                                                [100%]
+945 passed, 22 deselected in 138.97s (0:02:18)
+-- PASS unit tests (139.3 s)
 
 == [4/8] identical hashes: specfirst.gen.gate.determinism: 10 seeds, generated twice
 planted defect: a build with another time stamp differs in 25 files, for example inputs/data/sdtm/ae.json: the hashes differ
@@ -93,7 +93,7 @@ planted defect: a study whose manifest alone differs: study.json: the hashes dif
 planted defect: a build that depends on the hash seed of its process, made by two processes: differs in 25 files
 10 seeds, each generated twice, by this process and by a process of its own (hash seed 1, time zone Pacific/Kiritimati, locale C, its own working folder): 510 files and 2799 subjects per build, the manifests included, catalog specfirst-m1 1
 identical hashes: 0 problems
--- PASS identical hashes (8.0 s)
+-- PASS identical hashes (7.8 s)
 
 == [5/8] CDISC CORE: specfirst.gen.gate.core: visible and twin of the 10 seeds
 CDISC CORE v1.0.0 at f3282a0d870b, SDTMIG V3.4, Define-XML 2.1.0, terminology sdtmct-2025-09-26; explained findings: core_findings.yaml, 18 entries
@@ -141,7 +141,7 @@ findings by explanation, over all runs:
      32  probe-event-after-end-of-study (probe)
 every report names the datasets handed over with their numbers of records, Define-XML 2.1.0 and the terminology sdtmct-2025-09-26
 CORE on 20 datasets (10 seeds, visible and twin): no unexplained finding; the pinned source is unchanged
--- PASS CDISC CORE (906.5 s)
+-- PASS CDISC CORE (889.8 s)
 
 == [6/8] controlled terms: specfirst.gen.gate.controlled_terms: values against the CT package of CORE
 CT package sdtmct-2025-09-26 of the pinned CORE: 1181 codelists
@@ -169,20 +169,20 @@ units of the slice: mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-sum
 -- PASS probes (0.6 s)
 
 == [8/8] ASCII: python -m specfirst.asciicheck
-ASCII check: 438 files checked, 0 with non-ASCII bytes
+ASCII check: 443 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
 PASS  environment          0.3 s
 PASS  lint                 0.0 s
-PASS  unit tests         135.0 s
-PASS  identical hashes      8.0 s
-PASS  CDISC CORE         906.5 s
+PASS  unit tests         139.3 s
+PASS  identical hashes      7.8 s
+PASS  CDISC CORE         889.8 s
 PASS  controlled terms      0.7 s
 PASS  probes               0.6 s
 PASS  ASCII                0.0 s
 GATE gen-1a: PASS
 
-clean clone gate gen-1a: PASS (clone: /tmp/specfirst-clean-nqzldO/specfirst)
+clean clone gate gen-1a: PASS (clone: /tmp/specfirst-clean-KYSJkM/specfirst)
 The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
 minute after the last command ends. Copy what must be kept in the same command that
 runs this script (docs/lessons.md, lesson 39). The log is in build/gates/gen-1a/ here.

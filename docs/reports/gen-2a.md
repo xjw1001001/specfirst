@@ -6,10 +6,13 @@ at `843c890`.
 
 ## Verdict
 
-The gate passed. `scripts/clean_clone_gate.sh gen-2a` exited 0 on a clean
-clone of commit `3c503de`, after a fresh install and a fresh fetch: 13 of
-13 checks. The complete output is `docs/reports/gen-2a.gate.log` (394
-lines); the section "The gate" quotes it.
+The gate script passed, twice: `scripts/clean_clone_gate.sh gen-2a` exited
+0 on a clean clone of commit `3c503de`, and again on a clean clone of
+`f2dac3b`, which holds what was changed after pass 1 of the review. Each
+time after a fresh install and a fresh fetch, each time 13 of 13 checks.
+The complete output of the second run is `docs/reports/gen-2a.gate.log`
+(398 lines); the section "The gate" quotes it. The numbers below are
+the same in both runs, but for the planted defects: 17 in the first.
 
 - Ten kits were each written twice by processes of their own: 1,216 files,
   none differs (P1).
@@ -24,7 +27,7 @@ lines); the section "The gate" quotes it.
   which no cell of this output reads. It is recorded as `unseparated`
   (P4).
 - The Python engine and the R engine agree on all 766 results.
-- 17 planted defects inside the gate were each seen by the check they
+- 21 planted defects inside the gate were each seen by the check they
   were planted for (rule R5).
 - The gate of gen-1a passes again on the same commit, CORE included, after
   the findings of its review were settled. A first attempt at one of them
@@ -61,7 +64,7 @@ engines agree."
 | Splits (section 6.7) | done: by the place of a kit in its set; held-out factors; the seed never in a file | `kits.py`, `decisions.HELD_OUT` |
 | The separation proof: both alternatives built on the twin | done, for every decision of every kit: section "Separation" | `verify.mutate` |
 | The open point on yamaa's `not_before` | settled by experiment: section "not_before" | `tests/unit/test_gen_gold.py` |
-| Gate `gen-2a`; each new check fails on a planted defect first | done: 13 checks, 17 planted defects inside the gate | `src/specfirst/gates.py`, `gen/gate2.py` |
+| Gate `gen-2a`; each new check fails on a planted defect first | done: 13 checks, 21 planted defects inside the gate | `src/specfirst/gates.py`, `gen/gate2.py` |
 | `specfirst gen kit`, `gen kits`, `gen verify` | done | `gen/command.py` |
 
 `PLAN.md`, `standard/schemas/` and the catalog are not changed. Changed
@@ -123,20 +126,23 @@ behind an entry of `core_findings.yaml`: the epoch was wrong before
 the epoch FOLLOW-UP (lesson 40).
 
 Then on a clean clone of `3c503de`, which holds all the code of gen-2a,
-after a fresh install and a fresh fetch. The complete output is
+and once more on a clean clone of `f2dac3b`, after the changes that
+followed the review (finding G8 changed the field `reaches` of the log of
+probes). Both runs passed, 8 of 8 checks, each after a fresh install and
+a fresh fetch. The complete output of the last run is
 `docs/reports/gen-2a.gen-1a.gate.log` (188 lines):
 
 ```text
 $ flock /run/lock/specfirst-heavy.lock bash scripts/clean_clone_gate.sh gen-1a
 clean clone gate gen-1a
-commit:     3c503debbf8724d5b371e2e292cff13f904771d7
+commit:     f2dac3b07f6614c37de47233e0edfe135574fc65
 ...
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 ...
-gate gen-1a at commit 3c503debbf8724d5b371e2e292cff13f904771d7 (clean)
+gate gen-1a at commit f2dac3b07f6614c37de47233e0edfe135574fc65 (clean)
 ...
-943 passed, 22 deselected in 134.69s (0:02:14)
+945 passed, 22 deselected in 138.97s (0:02:18)
 ...
 10 seeds, each generated twice, by this process and by a process of its own (hash seed 1, time zone Pacific/Kiritimati, locale C, its own working folder): 510 files and 2799 subjects per build, the manifests included, catalog specfirst-m1 1
 identical hashes: 0 problems
@@ -163,6 +169,7 @@ findings by explanation, over all runs:
      17  probe-first-exposure-date-differs (probe)
      32  probe-actual-arm-differs (probe)
      32  probe-event-after-end-of-study (probe)
+every report names the datasets handed over with their numbers of records, Define-XML 2.1.0 and the terminology sdtmct-2025-09-26
 CORE on 20 datasets (10 seeds, visible and twin): no unexplained finding; the pinned source is unchanged
 ...
 planted defect: a milestone term in a disposition event, COUNTRY = XXX and AEREL = MAYBE are reported: DS.DSDECOD = 'RANDOMIZED' SFATXTPG-101-001 of a record with DSCAT 'DISPOSITION EVENT': not a term of NCOMPLT
@@ -170,15 +177,15 @@ planted defect: a milestone term in a disposition event, COUNTRY = XXX and AEREL
 ...
 PASS  environment          0.3 s
 PASS  lint                 0.0 s
-PASS  unit tests         135.0 s
-PASS  identical hashes      8.0 s
-PASS  CDISC CORE         906.5 s
+PASS  unit tests         139.3 s
+PASS  identical hashes      7.8 s
+PASS  CDISC CORE         889.8 s
 PASS  controlled terms      0.7 s
 PASS  probes               0.6 s
 PASS  ASCII                0.0 s
 GATE gen-1a: PASS
 
-clean clone gate gen-1a: PASS (clone: /tmp/specfirst-clean-nqzldO/specfirst)
+clean clone gate gen-1a: PASS (clone: /tmp/specfirst-clean-KYSJkM/specfirst)
 ```
 
 The findings are those of the gate of gen-1a, entry by entry: 1,825 in
@@ -205,9 +212,9 @@ wrapper copies the log out of the clone in the same command (lesson 39):
 $ flock /run/lock/specfirst-heavy.lock bash scripts/clean_clone_gate.sh gen-2a
 clean clone gate gen-2a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     3c503debbf8724d5b371e2e292cff13f904771d7
-clone:      /tmp/specfirst-clean-hdOMSD/specfirst
-environment and cache: /tmp/specfirst-clean-hdOMSD/env
+commit:     f2dac3b07f6614c37de47233e0edfe135574fc65
+clone:      /tmp/specfirst-clean-uaKxeJ/specfirst
+environment and cache: /tmp/specfirst-clean-uaKxeJ/env
 ...
 $ bash env/install.sh
 ...
@@ -221,27 +228,29 @@ $ specfirst fetch
 fetch: every pin verified
 
 $ specfirst gate gen-2a --clean
-gate gen-2a at commit 3c503debbf8724d5b371e2e292cff13f904771d7 (clean)
+gate gen-2a at commit f2dac3b07f6614c37de47233e0edfe135574fc65 (clean)
 ```
 
 It exited 0: 13 of 13 checks. The complete output is
-`docs/reports/gen-2a.gate.log` (394 lines). The checks that gen-2a adds,
-with their planted defects:
+`docs/reports/gen-2a.gate.log` (398 lines). This is the run on
+`f2dac3b`; the run on `3c503de`, before the review, passed the same 13
+checks with the same numbers (its log is in the repository at commit
+`ce70734`). The checks that gen-2a adds, with their planted defects:
 
 ```text
 == [5/13] unit tests: pytest -m "not evidence" -q
-943 passed, 22 deselected in 130.83s (0:02:10)
--- PASS unit tests (131.2 s)
+945 passed, 22 deselected in 138.22s (0:02:18)
+-- PASS unit tests (138.6 s)
 
 == [6/13] method vectors: SPECFIRST_STRICT=1 pytest tests/methods -s -q
 ...
-6 passed in 1.13s
--- PASS method vectors (1.2 s)
+6 passed in 1.25s
+-- PASS method vectors (1.4 s)
 
 == [7/13] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -s -q
 ...
-6 passed in 45.64s
--- PASS pilot tests (45.8 s)
+6 passed in 45.80s
+-- PASS pilot tests (46.0 s)
 
 == [8/13] kits: specfirst.gen.gate2.kits_pass: 10 kits, each written twice; P1 to P4
 planted defect: a build that stamps its data with a time that depends on its process: 26 files differ, for example twin/data/sdtm/vs.json: the hashes differ
@@ -266,17 +275,18 @@ kit 2: study SFMYNCMQ, 3 arms, split train, scenario 2 {'tfl.population': 'rando
 kit 10: study SF4TVBDP, 2 arms, split test, scenario 10 {'tfl.population': 'safety', 'pop.safety.grouping': 'actual', 'trt.actual.source': 'dm_actarm'}; decision vectors drawn before this one: 0
 ...
 10 kits of the set 'gen-2a': P1 to P4 hold for every kit
--- PASS kits (134.7 s)
+-- PASS kits (140.7 s)
 
 == [9/13] separation: specfirst.gen.gate2.separation: every applicable decision, and the matrix of the 10 kits
-planted defect: a log of probes that claims a difference for date.studyday.origin: date.studyday.origin: the log of probes claims that dm_rfstdtc and treatment_start differ in the output under these decisions; the two builds are the
+planted defect: a log of probes that claims a difference for date.studyday.origin: date.studyday.origin: the log of probes claims that dm_rfstdtc and treatment_start differ in the output under these decisions; the two builds are the 
 planted defect: the 28 planted subjects of the twin lost their adverse events: ae.teae.start is unseparated, and the kit is unfit in 8 claims, for example: ae.teae.start: the log of probes claims that on_or_after_first_dose_date and at_or_after_first_dose_time diffe
+planted defect: a kit whose matrix, decision record and manifest call date.studyday.origin separated, with the hashes written again: the check without a mutation reports 0 problems, a new mutation 3: gold/identifiability.json is not the matrix a new mutation gives; kit.yaml: the identifiability summary is not that of a new mutation; decision date.studyday.origin: 'identifiable' is not what the matrix says
 kit 1: 22 decisions, 16 read by the output, 12 applicable (the log claims a probe for every pair), 14 separated; applicable and unseparated: none
 ... (two lines per kit; the table of the section "Separation")
 planted defect: matrices in which no kit separates ae.teae.end: 5 holes, for example: ae.teae.end: separated in no kit
 ...
 separation: 0 holes in the matrix of 10 kits; every applicable decision is separated on the twin of its kit
--- PASS separation (12.9 s)
+-- PASS separation (20.1 s)
 
 == [10/13] engines: specfirst.gen.gate2.engines: the Python and the R engine on every result
 planted defect: a result of the R engine that differs: ard:An_AESUM_ANY/Mth_CatSumm_n/Grp_TRT01P_1: Python 39, R 40, relative difference 2.5e-02
@@ -285,27 +295,30 @@ the Python engine and the R engine agree on 766 results of 20 builds (10 kits, v
 -- PASS engines (0.1 s)
 
 == [11/13] splits: specfirst.gen.gate2.splits: the splits of section 6.7
+planted defect: a document of the kit that holds the seed: kit 1: gold/docs/sap.md holds the seed
+planted defect: a manifest with the split dev: kit 1: split dev, the plan gives train
+planted defect: a manifest with the hash of another seed: kit 1: seed_sha256 is not the hash of its seed
 planted defect: the vector of kit 1 with {'tfl.columns.total': 'none', 'tfl.columns.arms': 'protocol_order'}: held out, a train kit must not have it
 200 vectors drawn for a train kit: none has the held-out combination; of 200 for a sealed kit: 83 have it
 splits of the 10 kits by their place in the set: train 4, dev 3, test 3, sealed 0; held out for an exam: an allocation ratio other than 1 to 1, and the combination {'tfl.columns.total': 'none', 'tfl.columns.arms': 'protocol_order'}; 0 problems
--- PASS splits (0.9 s)
+-- PASS splits (1.1 s)
 ...
 PASS  environment          0.4 s
-PASS  pins                 1.4 s
+PASS  pins                 0.5 s
 PASS  lint                 0.0 s
 PASS  registry             0.0 s
-PASS  unit tests         131.2 s
-PASS  method vectors       1.2 s
-PASS  pilot tests         45.8 s
-PASS  kits               134.7 s
-PASS  separation          12.9 s
+PASS  unit tests         138.6 s
+PASS  method vectors       1.4 s
+PASS  pilot tests         46.0 s
+PASS  kits               140.7 s
+PASS  separation          20.1 s
 PASS  engines              0.1 s
-PASS  splits               0.9 s
+PASS  splits               1.1 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE gen-2a: PASS
 
-clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-hdOMSD/specfirst)
+clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-uaKxeJ/specfirst)
 ```
 
 Over the ten kits, from the log:
@@ -317,12 +330,13 @@ Over the ten kits, from the log:
 | Mutated builds on the twins (P4), each also held against the hand calculation | 509 |
 | Results on which the two engines agree | 766 of 766 |
 | Decision vectors drawn again because a claimed pair was not separated | 0 |
-| Planted defects inside the gate, each seen by its check | 17 |
+| Planted defects inside the gate, each seen by its check | 21 |
 
 How the gate reads its text:
 
 - "10 kits pass P1 to P4": check 8. The kits are written by 20 processes
-  of their own, four at a time. A kit is written only when its own build
+  of their own, four at a time; every first build has ended before a
+  second build starts. A kit is written only when its own build
   has P2 to P4; the gate then decides all of it again from the files of
   the kit (`kits.check`): the hashes, the decision records and the parser,
   a new hand calculation, the graph files, and a new mutation whose matrix
@@ -380,7 +394,8 @@ clean clone gate real-3a: PASS (clone: /tmp/specfirst-clean-e1t45U/specfirst)
 ```
 
 The pilot kit is built as before: the same 30 files, the same 27 cells,
-the same trace.
+the same trace. The changes after the review (`f2dac3b`) touch no module
+of the machine, so this gate was not run a third time.
 
 ## What was built
 
@@ -428,8 +443,9 @@ parts met here for the first time (ADR-007):
 | P1 determinism | Every kit is written twice, by two processes: hash seed 1 against 2, the time zone and locale of the gate against Pacific/Kiritimati and the C locale, two working folders. Every file is compared by SHA-256, `kit.yaml` included. | A build that stamps its data with a time that depends on its process; a build whose manifest names its folder (it must differ in `kit.yaml` and in nothing else). |
 | P2 reproduction | The reference of a generated study is a hand calculation (`gen/reference.py`): SDTM rows and decision values in, the texts of the table out, about 460 lines that share nothing with the compiler, the templates, yamaa, the engines, the registry or the grid builder. Every cell, the columns and the rows of the grid must equal it: on the visible data, on the twin, and for every mutated build of P4. | One changed cell; a grid built by another rule than the reference follows, for three decisions; a mock shell that shows a number. On the tiny hand-made study the unit tests compare 224 decision vectors. |
 | P3 traceability | `graph.check_graph` with no accepted gap; `graph.check_cells`: every cell that prints a number has a complete path to SDTM columns; the `reads` edges of every analysis are what the ARS file names; every decision has a node, and every numeric cell an analysis that a decision sets. | A cell without a `shows` edge; an analysis without a `reads` edge; a column without its derivation; a decision without a node. |
-| P4 identifiability | Mutation on the twin: every alternative of every decision is compiled and built, and the grids are compared pair by pair (section "Separation"). | A log of probes that claims a difference for `date.studyday.origin`; a twin whose planted subjects lost their events; matrices in which no kit separates a decision. |
+| P4 identifiability | Mutation on the twin: every alternative of every decision is compiled and built, and the grids are compared pair by pair (section "Separation"). The matrix of a kit counts because a new mutation gives it again. | A log of probes that claims a difference for `date.studyday.origin`; a twin whose planted subjects lost their events; a kit whose matrix, decision record and manifest call an unseparated decision separated, with the hashes written again; matrices in which no kit separates a decision. |
 | Engines (R11) | The ARD of the Python engine and of the R engine, row by row, for every kit, visible and twin. | A result that differs; a result that is missing. |
+| Splits (section 6.7) | Every kit has the split of its place in the set and the hash of its seed; no file of a kit holds the seed; no train, dev or test kit has a held-out factor. | A document of the kit that holds the seed; a manifest with another split; a manifest with the hash of another seed; a vector with the held-out combination. |
 
 P3 in a kit of one output: most columns of ADSL are read by no cell. The
 check reports how many ADaM columns are on the way of a cell and does not
