@@ -445,25 +445,100 @@ def test_the_safety_set_and_the_randomized_set_never_count_the_same(catalog):
 
 
 def test_a_log_line_says_when_its_difference_reaches_the_output(catalog, full):
-    """Review findings F5 and F8: what a probe separates may need another decision's value."""
+    """Review findings F5, F8 and F22: what a probe separates may need other decisions."""
     design, _, log, _ = full
     assert set(probes.REACHES) == {e.id for e in probes.slice_entries(catalog, design)}
     for record in log:
         served = [*record["separates"], *record["varies"], *record["stresses"]]
         assert set(record["reaches"]) == set(served) & set(probes.REACHES)
-        for reach in record["reaches"].values():
-            assert len({"always", "any_of", "never"} & set(reach)) == 1
+        for entry_id, reach in record["reaches"].items():
+            assert reach == probes.REACHES[entry_id] and "when" in reach
     by_probe = {r["probe"]: r for r in log}
-    assert by_probe["no_exposure_end_date"]["reaches"]["trt.end.source"]["any_of"] == [
-        "ae.teae.end=last_dose_plus_days"]
-    assert by_probe["reference_start_before_first_dose"]["reaches"]["date.studyday.origin"][
-        "never"] is True
-    assert by_probe["zero_dose_record_before_first_dose"]["reaches"]["trt.start.source"] == {
-        "always": True}
     half = by_probe["statistic_at_rounding_half"]["detail"]["assumes"]
     assert half["trt.actual.source"] == "dm_actarm" and "tfl.ae.summary.rows" in half
     assert "FATAL" in by_probe["category_with_zero_count"]["detail"]["assumes"][
         "tfl.ae.summary.rows"]
+    parameters = log[0]["parameters"]
+    assert parameters["treatment_subcategory"] == "STUDY TREATMENT"
+    assert parameters["study_subcategory"] == "STUDY PARTICIPATION"
+
+
+def _reach(entry_id, first, second, parameters, **changed):
+    """`probes.reaches` for the house defaults with some decisions changed."""
+    values = {"tfl.population": {"rule": "safety"}, "pop.safety.grouping": {"rule": "actual"},
+              "trt.actual.source": {"rule": "dm_actarm"}, "ae.teae.end": {"rule": "no_end"},
+              "ae.teae.start": {"rule": "on_or_after_first_dose_date"},
+              "trt.end.source": {"rule": "last_ex_end_date"},
+              "disp.status.record": {"rule": "disposition_event"},
+              "tfl.ae.summary.rows": {"rule": "standard_rows"}}
+    values.update({name.replace("__", "."): value for name, value in changed.items()})
+    return probes.reaches(entry_id, first, second, values, parameters)
+
+
+def test_reaches_is_evaluated_on_a_decision_vector(catalog, full):
+    """Review finding F22: the rows, the length of the window, and two interplays."""
+    design, _, log, _ = full
+    parameters = log[0]["parameters"]
+    days = parameters["window_days"]
+    window = {"rule": "last_dose_plus_days", "days": days}
+    rows = {"rule": "stated_rows", "rows": ["RELATED", "FATAL"]}
+    # At the house defaults: what the report of gen-1a says.
+    assert _reach("trt.start.source", "first_ex_with_dose", "first_ex_record", parameters)
+    assert not _reach("date.studyday.origin", "treatment_start", "dm_rfstdtc", parameters)
+    assert not _reach("pop.randomized.rule", "all_randomized", "randomized_with_postbaseline",
+                      parameters)
+    assert _reach("pop.randomized.rule", "all_randomized", "randomized_with_postbaseline",
+                  parameters, tfl__population={"rule": "randomized"})
+    # A decision that acts through one mild event needs the row ANY.
+    for entry_id, pair in (("trt.start.source", ("first_ex_with_dose", "dm_rfxstdtc")),
+                           ("trt.date.imputation", ("not_completed", "first_day_of_month")),
+                           ("ae.start.imputation", ("first_of_month", "not_completed")),
+                           ("ae.teae.start", ("on_or_after_first_dose_date",
+                                              "at_or_after_first_dose_time"))):
+        assert _reach(entry_id, *pair, parameters)
+        assert not _reach(entry_id, *pair, parameters, tfl__ae__summary__rows=rows)
+    assert _reach("ae.related.values", "stated_list", "stated_list", parameters,
+                  tfl__ae__summary__rows=rows)
+    # The treatment end date is read by a window of exactly the planted length.
+    pair = ("last_ex_end_date", "ds_date_when_ex_missing")
+    assert not _reach("trt.end.source", *pair, parameters)
+    assert _reach("trt.end.source", *pair, parameters, ae__teae__end=window)
+    for other in (days + 2, days - 1):
+        assert not _reach("trt.end.source", *pair, parameters,
+                          ae__teae__end={"rule": "last_dose_plus_days", "days": other})
+    # The two interplays.
+    pair = ("first_of_month_not_before_first_dose", "first_of_month")
+    by_time = {"rule": "at_or_after_first_dose_time"}
+    assert _reach("ae.start.imputation", *pair, parameters)
+    assert _reach("ae.start.imputation", *reversed(pair), parameters)
+    assert not _reach("ae.start.imputation", *pair, parameters, ae__teae__start=by_time)
+    assert _reach("ae.start.imputation", "first_of_month", "not_completed", parameters,
+                  ae__teae__start=by_time)
+    treatment = {"rule": "disposition_event_by_subcategory",
+                 "subcategory": parameters["treatment_subcategory"]}
+    study = {**treatment, "subcategory": parameters["study_subcategory"]}
+    assert _reach("ae.teae.end", "no_end", "end_of_study", parameters)
+    assert not _reach("ae.teae.end", "no_end", "end_of_study", parameters,
+                      disp__status__record=treatment)
+    assert _reach("ae.teae.end", "no_end", "end_of_study", parameters,
+                  disp__status__record=study)
+    assert _reach("ae.teae.end", "no_end", "last_dose_plus_days", parameters,
+                  disp__status__record=treatment)
+    # The table reads actual treatment on the safety set grouped by it, planned otherwise.
+    planned = {"rule": "planned"}
+    pair = ("dm_actarm", "first_ex_treatment")
+    assert _reach("trt.actual.source", *pair, parameters)
+    assert not _reach("trt.actual.source", *pair, parameters, pop__safety__grouping=planned)
+    assert not _reach("trt.planned.source", "dm_arm", "dm_armcd_map", parameters)
+    assert _reach("trt.planned.source", "dm_arm", "dm_armcd_map", parameters,
+                  pop__safety__grouping=planned)
+    # A line of the log carries the same table: a reader of the log needs no code.
+    record = next(r for r in log if "ae.teae.end" in r["reaches"])
+    values = {"ae.teae.end": {"rule": "no_end"}, "disp.status.record": treatment}
+    assert probes.reaches("ae.teae.end", "no_end", "end_of_study", values, parameters,
+                          record["reaches"]) is False
+    with pytest.raises(ValueError, match="not a condition"):
+        probes.holds({"sometimes": True}, {}, parameters)
 
 
 # What an alternative needs besides the pattern (review finding F9): each case changes the

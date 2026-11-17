@@ -162,6 +162,57 @@ def test_dm_follows_sdtmig_3_4_for_subjects_without_an_arm(design, people, table
     assert not {row["ARMCD"] for row in tables["DM"]} & {"SCRNFAIL", "NOTASSGN"}
 
 
+def test_an_element_is_ordered_within_the_planned_arm_only(design, people, catalog):
+    """Review of gen-1a, finding F24: the screening element of a subject without an arm."""
+    twin, _ = study.simulate(design, catalog, SEED, "twin")
+    rows = sdtm.build(design, twin, ("TA", "SE"))
+    order = {(row["ARMCD"], row["ETCD"]): row["TAETORD"] for row in rows["TA"]}
+    by_subject = {s.usubjid: s for s in twin}
+    without_arm = 0
+    for row in rows["SE"]:
+        subject = by_subject[row["USUBJID"]]
+        if subject.planned_arm is None:
+            # A screen failure, or the subject who was dosed without being assigned.
+            assert row["TAETORD"] is None
+            without_arm += 1
+        else:
+            # The order of TA for the planned arm; empty for the element of another arm.
+            assert row["TAETORD"] == order.get((subject.planned_arm, row["ETCD"]))
+    assert without_arm > 3
+    assert {s.state for s in twin if s.planned_arm is None} == {"screen_failure", "not_assigned"}
+
+
+def test_a_record_after_the_end_of_participation_has_no_epoch(design, catalog):
+    """Review of gen-1a, finding F28: the epoch is that of an element of the subject."""
+    twin, log = study.simulate(design, catalog, SEED, "twin")
+    rows = sdtm.build(design, twin, ("DM", "SE", "AE", "DS", "VS", "EX"))
+    ends = {row["USUBJID"]: row["RFPENDTC"] for row in rows["DM"]}
+    elements: dict[str, list[dict]] = {}
+    for row in rows["SE"]:
+        elements.setdefault(row["USUBJID"], []).append(row)
+    late = set()
+    for row in rows["AE"]:
+        start, subject = row["AESTDTC"], row["USUBJID"]
+        if len(start) < 10:
+            continue  # a partial date falls in no element by itself
+        inside = [e["EPOCH"] for e in elements[subject]
+                  if e["SESTDTC"] <= start and (start < e["SEENDTC"] or (
+                      start == e["SEENDTC"] and e is elements[subject][-1]))]
+        if start > ends[subject]:
+            assert row["EPOCH"] is None and not inside
+            late.add(subject)
+        else:
+            assert row["EPOCH"] is not None and row["EPOCH"] in inside
+    planted = {s for r in log if r["probe"] in ("ae_starts_after_end_of_study",
+                                                "no_exposure_end_date") for s in r["subjects"]}
+    assert late == planted and len(planted) == 2
+    # No other record of a subject lies after the end of the participation.
+    for name, variable in (("DS", "DSSTDTC"), ("VS", "VSDTC"), ("EX", "EXSTDTC")):
+        for row in rows[name]:
+            assert row["EPOCH"] is not None
+            assert row[variable][:10] <= ends[row["USUBJID"]] or len(row[variable]) < 10
+
+
 def test_study_days_have_no_day_zero(tables):
     assert sdtm.study_day("2021-03-10", "2021-03-10") == 1
     assert sdtm.study_day("2021-03-09", "2021-03-10") == -1

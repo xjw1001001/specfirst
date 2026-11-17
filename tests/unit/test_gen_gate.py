@@ -104,10 +104,24 @@ def test_a_rule_that_reports_everything_must_report_everything():
     assert _unexplained(Finding("CORE-002034", "AE", "no flag", ISSUE, 5)) == []
     assert len(_unexplained(Finding("CORE-002034", "AE", "no flag", ISSUE, 4))) == 1
     # Without SVSEQ the rule reports the records of every subject with several visits:
-    # seven of the eight here. Any other count is a finding of its own.
-    assert _unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 7)) == []
-    assert len(_unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 8))) == 1
-    assert len(_unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 6))) == 1
+    # seven of the eight here, of the subjects S-1 and S-2. Any other count is a finding
+    # of its own.
+    def visits(count, subjects=("S-1", "S-2"), **rows):
+        rows = {"listed": count, "named": count, **rows}
+        return Finding("CORE-000544", "SV", "SVSEQ", ISSUE, count, subjects, **rows)
+
+    assert _unexplained(visits(7)) == []
+    assert len(_unexplained(visits(8))) == 1
+    assert len(_unexplained(visits(6))) == 1
+    # Review finding F27: a finding of the right size that names other subjects, the one
+    # with a single visit among them, is not this finding. Nor is one that names nobody,
+    # or whose detail rows are fewer than its issues.
+    assert len(_unexplained(visits(7, ("S-1", "S-3")))) == 1
+    assert len(_unexplained(visits(7, ("S-1", "S-2", "S-3")))) == 1
+    assert len(_unexplained(visits(7, ("S-1",)))) == 1
+    assert len(_unexplained(visits(7, ()))) == 1
+    assert len(_unexplained(visits(7, listed=3, named=3))) == 1
+    assert len(_unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 7))) == 1
     # The same rule on a dataset that does have a sequence number is a real finding.
     assert len(_unexplained(Finding("CORE-000544", "EX", "EXSEQ", ISSUE, 3))) == 1
     assert len(_unexplained(Finding("CORE-000544", "LB", "LBSEQ", ISSUE, 3))) == 1
@@ -360,9 +374,39 @@ def test_the_terms_of_the_generator_are_checked_against_a_package(catalog):
     found = gate.term_problems(broken, package)[1]
     assert len(found) == 3
     assert found[0].startswith("DM.SEX = 'X' ") and "not a term of SEX" in found[0]
-    assert any(line.startswith("DS.DSDECOD") and "NCOMPLT or PROTMLST" in line
-               for line in found)
+    assert any(line.startswith("DS.DSDECOD = 'GONE FISHING'") for line in found)
     assert any(line.startswith("AE.AESEV = 'TERRIBLE'") for line in found)
+    # Review finding F27: DSDECOD has one codelist per category of the record. A milestone
+    # term in a disposition event is a term of the wrong one, and so the other way round.
+    broken = copy.deepcopy(tables)
+    event = next(r for r in broken["DS"] if r["DSCAT"] == "DISPOSITION EVENT")
+    milestone = next(r for r in broken["DS"] if r["DSCAT"] == "PROTOCOL MILESTONE")
+    event["DSDECOD"], milestone["DSDECOD"] = "RANDOMIZED", "COMPLETED"
+    found = gate.term_problems(broken, package)[1]
+    assert len(found) == 2
+    assert (f"DS.DSDECOD = 'RANDOMIZED' {event['USUBJID']} of a record with DSCAT "
+            "'DISPOSITION EVENT': not a term of NCOMPLT") in found
+    assert any("'COMPLETED'" in line and line.endswith("not a term of PROTMLST")
+               for line in found)
+    # The country is checked without a codelist of the package; the codelists of the
+    # study (arms, elements, causality, treatment names) when they are handed over.
+    broken = copy.deepcopy(tables)
+    broken["DM"][0]["COUNTRY"] = "XXX"
+    broken["DM"][1]["COUNTRY"] = "usa"
+    assert len(gate.term_problems(broken, package)[1]) == 2
+    lists = sdtm.study_codelists(design, tables)
+    checked_with, problems = gate.term_problems(tables, package, lists)
+    assert problems == [] and checked_with > checked
+    broken = copy.deepcopy(tables)
+    broken["AE"][0]["AEREL"] = "MAYBE"
+    broken["EX"][0]["EXTRT"] = "ASPIRIN"
+    broken["DM"][0]["ARMCD"] = "ZZ"
+    broken["SE"][0]["ETCD"] = "NOPE"
+    assert gate.term_problems(broken, package)[1] == []      # not seen without the lists
+    found = gate.term_problems(broken, package, lists)[1]
+    assert len(found) == 4
+    assert any(line.startswith("AE.AEREL = 'MAYBE'") and "the study codelist AEREL" in line
+               for line in found)
     # Planted: a trial summary value whose code is the code of another term.
     broken = copy.deepcopy(tables)
     row = next(r for r in broken["TS"] if r["TSPARMCD"] == "TBLIND")
@@ -569,3 +613,14 @@ def test_coverage_of_the_visible_data_is_not_required(root, catalog, tmp_path):
     _, _, problems = present.coverage(catalog, design, log, study.read_tables(tmp_path, "visible"),
                                       "visible")
     assert problems and not [line for line in problems if line.startswith("probe ")]
+
+
+def test_the_country_codes_are_those_of_iso_3166():
+    """The package of CORE holds no country codes, and its rules on them cannot run.
+
+    ISO 3166-1 alpha-3, from the standard: Canada, Germany, Spain, the United
+    Kingdom, Poland, the United States of America.
+    """
+    from specfirst.gen import terms
+
+    assert sorted(terms.COUNTRIES) == ["CAN", "DEU", "ESP", "GBR", "POL", "USA"]

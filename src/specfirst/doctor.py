@@ -6,7 +6,8 @@ env/r-version.txt, an R package that differs from env/r-packages.lock, R or
 one of its recommended packages (system packages named r-*) that differs
 from env/system.lock, pdftotext missing or not poppler, CDISC CORE not
 installed as env/core-source.txt and env/core-requirements.lock pin it
-(specfirst.cdisccore). Differences in other
+(specfirst.cdisccore), env/lock.sh not writing every lock file that is read
+here. Differences in other
 system packages are printed as notes only: the Ubuntu archive does not keep
 old versions, so they cannot be pinned.
 """
@@ -174,6 +175,86 @@ def system_packages(names: list[str]) -> dict[str, str]:
     return found
 
 
+# What env/lock.sh must write: lock file -> the input it is resolved from by
+# `uv pip compile` (None: written by another command of the script).
+LOCK_SCRIPT = "env/lock.sh"
+LOCKS = {"env/requirements.lock": "env/requirements.in",
+         "env/core-requirements.lock": "env/core-requirements.in",
+         "env/r-packages.lock": None, "env/system.lock": None}
+
+
+def shell_commands(text: str) -> list[str]:
+    """The commands of a shell script, one text each: a line that ends in a backslash
+    goes on in the next one. Comment lines and blank lines are no commands."""
+    commands, parts = [], []
+    for line in text.splitlines():
+        if not parts and (not line.strip() or line.lstrip().startswith("#")):
+            continue
+        if line.endswith("\\"):
+            parts.append(line[:-1])
+            continue
+        commands.append(" ".join([*parts, line]).strip())
+        parts = []
+    if parts:
+        commands.append(" ".join(parts).strip() + " \\")
+    return commands
+
+
+def lock_script_problems(text: str, root: Path | None = None) -> list[str]:
+    """Why env/lock.sh would not write the lock files that the doctor reads.
+
+    `bash -n` accepts a script whose line continuations are broken: the
+    options of a command then stand on lines of their own, as commands. So
+    the script is read here: every lock that uv resolves has one `pip
+    compile` command that names its input, asks for hashes and names the
+    lock as its output; the two other locks are written by their own
+    commands; and no command of the script starts with an option.
+    """
+    problems = []
+    commands = shell_commands(text)
+    problems += [f"a command starts with an option, so a line before it lost its backslash: "
+                 f"{command[:60]}" for command in commands if command.startswith("-")]
+    problems += [f"a backslash is followed by blanks, so the line does not go on: "
+                 f"{line.strip()[:60]}" for line in text.splitlines()
+                 if line.rstrip() != line and line.rstrip().endswith("\\")]
+    problems += ["the script ends inside a command"] if commands and commands[-1].endswith(
+        " \\") else []
+    # The defect that was committed once: the characters backslash and n inside a line,
+    # where line breaks were meant. Outside quotes bash reads them as the letter n.
+    for line in text.splitlines():
+        if line.lstrip().startswith("#"):
+            continue
+        quote = ""
+        for position, character in enumerate(line.rstrip()):
+            if quote:
+                quote = "" if character == quote else quote
+            elif character in "'\"":
+                quote = character
+            elif character == "\\" and position != len(line.rstrip()) - 1:
+                problems.append("a backslash inside a line, outside quotes; a line goes on "
+                                f"only with a backslash at its end: {line.strip()[:60]}")
+                break
+    compiles = [command.split() for command in commands if " pip compile " in f" {command} "]
+    for lock, source in LOCKS.items():
+        if source is None:
+            if not any(lock in command for command in commands):
+                problems.append(f"no command writes {lock}")
+            continue
+        found = [words for words in compiles if "--output-file" in words[:-1]
+                 and words[words.index("--output-file") + 1] == lock]
+        if len(found) != 1:
+            problems.append(f"{len(found)} `pip compile` commands write {lock}, not one")
+            continue
+        words = found[0]
+        if words[words.index("compile") + 1] != source:
+            problems.append(f"{lock} is not resolved from {source}")
+        if "--generate-hashes" not in words:
+            problems.append(f"{lock} is written without hashes")
+        if root is not None and not (root / source).is_file():
+            problems.append(f"{source} is missing")
+    return problems
+
+
 def load_r_packages(root: Path, out: Callable[[str], None] = print) -> bool:
     """Load every package of env/r-packages.txt in R. This is a gate check.
 
@@ -258,6 +339,14 @@ def run(root: Path, out: Callable[[str], None] = print) -> int:
         for line in drift:
             if line not in hard:
                 out(f"note: system package {line}")
+
+    script = root / LOCK_SCRIPT
+    if script.is_file():
+        found = lock_script_problems(script.read_text(encoding="ascii"), root)
+        out(f"lock script: {LOCK_SCRIPT} writes {len(LOCKS)} lock files, {len(found)} problems")
+        failures += [f"{LOCK_SCRIPT}: {problem}" for problem in found]
+    else:
+        failures.append(f"{LOCK_SCRIPT} is missing")
 
     for failure in failures:
         out(f"FAIL {failure}")
