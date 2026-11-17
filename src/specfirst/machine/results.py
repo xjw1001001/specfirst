@@ -14,19 +14,24 @@ p-value of 1.0000):
               pattern of the ARS operation has (`resultPattern`, "XX.X" for a
               mean): a raw value is at least as precise as its display.
 
-Both allow a relative 1e-9 on top, for the floating error of two correct
-computations (the tolerance of rule R11). A result that is reproduced as
-printed but not at the precision of its pattern is a difference like any
-other: the first step alone would hide half a unit of a value printed
-without decimals. The comparison also lists the results that agree only on
-the edge of the allowance.
+Both allow a relative 1e-9 on top. It covers two things: the floating error
+of two correct computations (the tolerance of rule R11), and a reference
+value that was rounded to about ten significant digits before it was
+embedded ("0.0771929825" for 0.07719298245614...). A result that is
+reproduced as printed but not at the precision of its pattern is a
+difference like any other: the first step alone would hide half a unit of a
+value printed without decimals. The comparison also lists the results that
+agree only on the edge of the allowance.
 
 Every difference needs exactly one entry in the kit's gold/exceptions.yaml,
 with one class of section 4.8 and a proof. A proof names its kind, and this
 module checks it against the built results:
 
-    value_of_other_result  the embedded value is our value of another result
-                           (two arms exchanged, E3)
+    value_of_other_result  two results are exchanged (two arms, E3): the embedded
+                           value is our value of another result of the same
+                           analysis and operation that differs in one group of
+                           one grouping, and the reference's value of that
+                           result is our value of this one
     same_under_every       our value is the same under every value of a method
                            option, so no listed alternative gives the embedded one
     no_alternative         the other statistics of the same cell are reproduced,
@@ -34,8 +39,24 @@ module checks it against the built results:
                            the embedded one
     alternative            a build with another value of a method option gives
                            the embedded value (the proof of a rule_choice)
+    between_equal_values   our value is a quartile or a median, and the sorted
+                           values of its cell between which every definition
+                           of a sample quantile places it are all that value
     no_records             the reference embeds no value, the engines give no
-                           result, and the named counts are 0
+                           result, and the named counts are 0: one count of
+                           the cell's own groups per group the test compares
+
+A proof must say something about the reference, so three kinds are narrow
+(review of real-2, finding F2). `same_under_every` and `no_alternative`
+hold only for an option that changes some result of the same operation: a
+mean is the same under every quantile definition, and that proves nothing.
+Under the two quantile definitions of the registry a median never changes
+(summary.continuous, statement 9), so no option proves anything about a
+median; `between_equal_values` is the proof for one. It rests on Hyndman
+and Fan (1996), "Sample quantiles in statistical packages": each of their
+nine definitions, which include the five of SAS and the nine of R, gives a
+value between x[j] and x[j + 1] with j = floor(n p + m), where m is from
+-1/2 to 3/4 for p = 1/4, 1/2 and 3/4.
 
 A difference without an entry, an entry without a difference and a proof
 that does not hold all fail the check.
@@ -59,11 +80,13 @@ from specfirst.machine import ars
 from specfirst.machine.canonical import write_jsonl
 from specfirst.machine.registry import Registry
 
-RELATIVE = 1e-9  # rule R11, and the floating allowance of the comparison with a reference
+RELATIVE = 1e-9  # rule R11, and the allowance of the comparison with a reference
 NOISE = 1e-12  # a relative difference below this is rounding of the last digits, not an edge
 CLASSES = ("rule_choice", "reference_error", "data_difference")
 PROOFS = ("value_of_other_result", "same_under_every", "no_alternative", "alternative",
-          "no_records")
+          "between_equal_values", "no_records")
+# The quantiles of summary.continuous in quarters: p = quarters / 4.
+QUARTERS = {"q1": 1, "median": 2, "q3": 3}
 FORMAT = 0
 _PATTERN_DECIMALS = re.compile(r"\.(X+)")
 
@@ -294,6 +317,30 @@ def load_exceptions(path: Path) -> dict[str, list[dict]]:
 
 
 Alternative = Callable[[str, str, object], Rows]  # (registry method, option, value) -> our rows
+Group = tuple[str, str | None]  # ("id", group ID), ("value", group value) or ("all", None)
+
+
+def _nothing(_: str) -> None:
+    return None
+
+
+@dataclass(frozen=True)
+class Evidence:
+    """What a proof may ask for beyond the rows of the build.
+
+    alternative      our rows under another value of a method option
+    cell_values      for a result of summary.continuous: its registry
+                     operation and the sorted values of its cell; None for
+                     any other result
+    compared_groups  for an analysis with an occurrence test: the groups of
+                     its compared grouping that the test compares, that is,
+                     those with subjects in its population (rules I12b and
+                     I13); None for any other analysis
+    """
+
+    alternative: Alternative
+    cell_values: Callable[[str], tuple[str, list[float]] | None] = _nothing
+    compared_groups: Callable[[str], list[Group] | None] = _nothing
 
 
 def same(one: float | int | None, two: float | int | None) -> bool:
@@ -303,22 +350,122 @@ def same(one: float | int | None, two: float | int | None) -> bool:
     return abs(one - two) <= RELATIVE * max(abs(one), abs(two))
 
 
+def row_groups(row: dict) -> dict[str, Group]:
+    """The groups of an ARD row, by grouping."""
+    found: dict[str, Group] = {}
+    n = 1
+    while f"group{n}_groupingId" in row:
+        if row.get(f"group{n}_groupId") is not None:
+            group: Group = ("id", row[f"group{n}_groupId"])
+        elif row.get(f"group{n}_groupValue") is not None:
+            group = ("value", row[f"group{n}_groupValue"])
+        else:
+            group = ("all", None)
+        found[row[f"group{n}_groupingId"]] = group
+        n += 1
+    return found
+
+
+def embedded_groups(item: Embedded) -> dict[str, Group]:
+    """The groups of an embedded result, by grouping, as `row_groups` gives them."""
+    return {grouping: ("id", group) if group is not None
+            else ("value", value) if value is not None else ("all", None)
+            for grouping, group, value in item.cell}
+
+
+def _other_result_problem(key: str, item: Embedded, other: object, rows: Rows) -> str | None:
+    """Why `other` is not the same analysis and operation in one other group."""
+    if other not in rows or other == key:
+        return f"the proof names {other!r}, which is not another of our results"
+    there = rows[other]
+    if (there["analysis_id"], there["operation_id"]) != (item.analysis_id, item.operation_id):
+        return f"the proof names {other}, a result of another analysis or operation"
+    mine, theirs = embedded_groups(item), row_groups(there)
+    differing = [grouping for grouping in sorted(set(mine) | set(theirs))
+                 if mine.get(grouping) != theirs.get(grouping)]
+    if len(differing) != 1 or "all" in (mine.get(differing[0], ("all", None))[0],
+                                        theirs.get(differing[0], ("all", None))[0]):
+        return (f"the proof names {other}, which does not differ from this result in exactly "
+                "one group of one grouping")
+    return None
+
+
+def _no_records_problem(item: Embedded, zero: list, rows: Rows,
+                        evidence: Evidence) -> str | None:
+    """Why the named counts do not show that the cell has no records in a compared group."""
+    if not zero:
+        return "the proof names no count that shows there are no records"
+    mine = embedded_groups(item)
+    compared = [grouping for grouping, (kind, _) in mine.items() if kind == "all"]
+    if len(compared) != 1:
+        return "a proof by counts of 0 is for a test with one compared grouping"
+    grouping = compared[0]
+    own = {name: group for name, group in mine.items() if name != grouping}
+    wanted = evidence.compared_groups(item.analysis_id)
+    if wanted is None:
+        return (f"the groups of {grouping} that analysis {item.analysis_id} compares are not "
+                "known")
+    seen: list[Group] = []
+    for other in zero:
+        row = rows.get(other)
+        if row is None or row["method_id"] != "count.subjects" or row["raw_value"] != 0:
+            return f"{other} is not a count of 0 among our results"
+        groups = row_groups(row)
+        in_grouping = groups.pop(grouping, ("all", None))
+        if groups != own or in_grouping[0] == "all":
+            return (f"{other} is not a count of the cell's own groups in one group of "
+                    f"{grouping}")
+        seen.append(in_grouping)
+    if sorted(seen) != sorted(wanted):
+        return (f"the counts are for the groups {', '.join(str(key) for _, key in sorted(seen))} "
+                f"of {grouping}; the test compares "
+                f"{', '.join(str(key) for _, key in sorted(wanted))}: one count per compared "
+                "group is needed")
+    return None
+
+
+def _equal_values_problem(key: str, ours: object, evidence: Evidence) -> str | None:
+    """Why the values around a quantile do not fix it under every definition."""
+    found = evidence.cell_values(key)
+    if found is None or found[0] not in QUARTERS or ours is None:
+        return "this result is not a quartile or a median that summary.continuous computed"
+    quarters, values = QUARTERS[found[0]], found[1]
+    n = len(values)
+    # Hyndman and Fan: j = floor(n p + m) with -1/2 <= m <= 3/4, and the quantile
+    # is between x[j] and x[j + 1]. In whole numbers, with p = quarters / 4:
+    low = max(1, (n * quarters - 2) // 4)
+    high = min(n, (n * quarters + 3) // 4 + 1)
+    if any(not same(value, ours) for value in values[low - 1:high]):
+        return (f"the sorted values {low} to {high} of the {n} in the cell are not all our "
+                f"value {ours}: another definition of the quantile could give another value")
+    return None
+
+
 def _proof_problem(entry: dict, rows: Rows, comparison: Comparison, registry: Registry,
-                   alternative: Alternative) -> str | None:
+                   evidence: Evidence) -> str | None:
     """Why the proof of an entry does not hold; None when it does."""
     proof, key = entry["proof"], entry["result"]
     kind, item = proof["kind"], comparison.reference[key]
     printed = item.printed
     ours = rows.get(key, {}).get("raw_value")
+    alternative = evidence.alternative
     if kind == "value_of_other_result":
         other = proof.get("result")
-        if other not in rows or other == key:
-            return f"the proof names {other!r}, which is not another of our results"
+        problem = _other_result_problem(key, item, other, rows)
+        if problem:
+            return problem
         if entry["class"] != "reference_error":
             return "a value of another result proves a reference_error only"
         if not equal(printed, rows[other]["raw_value"], item.decimals):
             return (f"the embedded value {printed} is not our value of {other} "
                     f"({rows[other]['raw_value']})")
+        # Two groups exchanged: the reference has our value of this result there.
+        # Without this, any group that happens to have the embedded value would do.
+        back = comparison.reference.get(other)
+        if back is None or not equal(back.printed, ours, back.decimals):
+            return (f"the reference's value of {other} "
+                    f"({'not listed' if back is None else back.printed or '(no value)'}) is "
+                    f"not our value of this result ({ours}): the two are not exchanged")
         return None
     if kind in ("same_under_every", "no_alternative", "alternative"):
         method_id, option = proof.get("method"), proof.get("option")
@@ -339,6 +486,14 @@ def _proof_problem(entry: dict, rows: Rows, comparison: Comparison, registry: Re
             return None
         if entry["class"] != "reference_error":
             return "a value that no alternative gives proves a reference_error only"
+        # The option must be able to change this operation at all: otherwise "the
+        # same under every value" is true of any result and proves nothing.
+        if not any(not same(alternative(method_id, option, value).get(other, {}).get("raw_value"),
+                            row["raw_value"])
+                   for value in values for other, row in rows.items()
+                   if row["operation_id"] == item.operation_id):
+            return (f"no value of {option} changes a result of the operation "
+                    f"{item.operation_id}: the option says nothing about this result")
         for value in values:
             other = alternative(method_id, option, value).get(key, {}).get("raw_value")
             if kind == "same_under_every" and not same(other, ours):
@@ -356,23 +511,27 @@ def _proof_problem(entry: dict, rows: Rows, comparison: Comparison, registry: Re
                 if other in comparison.open:
                     return f"{other}, of the same cell, is not reproduced either"
         return None
+    if kind == "between_equal_values":
+        if entry["class"] != "reference_error":
+            return "values that fix a quantile under every definition prove a reference_error only"
+        return _equal_values_problem(key, ours, evidence)
     # no_records
     if printed != "":
         return f"the reference embeds the value {printed}"
     if key in rows:
         return "our engines give a result"
-    zero = proof.get("zero") or []
-    if not zero:
-        return "the proof names no count that shows there are no records"
-    for other in zero:
-        if other not in rows or rows[other]["raw_value"] != 0:
-            return f"{other} is not a count of 0 among our results"
-    return None
+    return _no_records_problem(item, proof.get("zero") or [], rows, evidence)
 
 
 def check_exceptions(comparison: Comparison, entries: list[dict], rows: Rows, registry: Registry,
-                     alternative: Alternative) -> tuple[list[str], list[str]]:
-    """Every difference has one entry whose proof holds, and every entry is a difference."""
+                     evidence: Evidence | Alternative) -> tuple[list[str], list[str]]:
+    """Every difference has one entry whose proof holds, and every entry is a difference.
+
+    `evidence` may be the `alternative` function alone; a proof that asks for
+    the data behind a cell then does not hold.
+    """
+    if not isinstance(evidence, Evidence):
+        evidence = Evidence(evidence)
     lines, problems = [], []
     open_results = comparison.open
     listed = {entry["result"]: entry for entry in entries}
@@ -387,7 +546,7 @@ def check_exceptions(comparison: Comparison, entries: list[dict], rows: Rows, re
             problems.append(f"{key}: the entry says the reference embeds {entry['embedded']!r}, "
                             f"it embeds {printed!r}")
             continue
-        problem = _proof_problem(entry, rows, comparison, registry, alternative)
+        problem = _proof_problem(entry, rows, comparison, registry, evidence)
         if problem:
             problems.append(f"{key}: the proof ({entry['proof']['kind']}) does not hold: "
                             f"{problem}")

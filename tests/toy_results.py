@@ -17,7 +17,7 @@ import copy
 
 import pyarrow as pa
 
-from specfirst.machine import ard, ars, registry
+from specfirst.machine import ard, ars, registry, results
 
 ADSL = {
     "USUBJID": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"],
@@ -141,11 +141,27 @@ def tables(adsl: dict | None = None, adae: dict | None = None) -> dict[str, ard.
     }
 
 
-def run(root, data: dict | None = None, binding: dict | None = None,
-        given: dict[str, ard.Table] | None = None) -> dict[str, dict]:
-    """The Python engine on the toy event: ARD rows by ID."""
+def engine(root, data: dict | None = None, binding: dict | None = None,
+           given: dict[str, ard.Table] | None = None) -> ard.Engine:
+    """The Python engine on the toy event, not yet run."""
     event = ars.index(data or event_data())
     assert event.problems == [], event.problems
     known = registry.load(root)
-    rows = ard.run(event, known, ars.bind(event, known, binding), given or tables())
-    return {row["id"]: row for row in rows}
+    return ard.Engine(event, known, ars.bind(event, known, binding), given or tables())
+
+
+def run(root, data: dict | None = None, binding: dict | None = None,
+        given: dict[str, ard.Table] | None = None) -> dict[str, dict]:
+    """The Python engine on the toy event: ARD rows by ID."""
+    return {row["id"]: row for row in engine(root, data, binding, given).run()}
+
+
+def evidence(root, data: dict | None = None,
+             given: dict[str, ard.Table] | None = None) -> results.Evidence:
+    """What a proof may ask for on the toy study, as specfirst.machine.build gives it for a kit."""
+    made = engine(root, data, None, given)
+
+    def alternative(method_id: str, option: str, value: object) -> dict[str, dict]:
+        return run(root, data, {"options": {method_id: {option: value}}}, given)
+
+    return results.Evidence(alternative, made.cell_values, made.compared_groups)

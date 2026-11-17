@@ -31,7 +31,14 @@ vector_result <- function(method, input, options) {
     return(do.call(m_summary_continuous, c(list(values_of(input$values)), options)))
   }
   if (method == "test.chisq") return(list(p_value = m_chisq_p(table_of(input$table))))
-  if (method == "test.fisher.exact") return(list(p_value = m_fisher_p(table_of(input$table))))
+  if (method == "test.fisher.exact") {
+    limit <- input$max_tables %||% FISHER_MAX_TABLES  # a test may ask for a lower limit
+    return(list(p_value = m_fisher_p(table_of(input$table), limit)))
+  }
+  if (method == "stats::fisher.test") {
+    # Not a registry method: R's own function, as a second opinion (tests/methods, fisher-r).
+    return(list(p_value = stats::fisher.test(reduced_table(table_of(input$table)))$p.value))
+  }
   if (method == "test.anova.oneway") {
     return(list(p_value = m_anova_oneway_p(lapply(input$groups, values_of))))
   }

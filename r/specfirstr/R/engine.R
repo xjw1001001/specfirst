@@ -15,22 +15,26 @@ by_id <- function(items) {
 
 # One dataset as the Python side handed it over: a JSON file with one array
 # per column. Numbers are doubles with NA for a missing value; everything else
-# is text with "" for a missing value.
+# is text with "" for a missing value. The file is read without jsonlite's
+# simplification, which takes the text "NA" for a missing value; every column
+# is then converted by its kind.
 read_handover <- function(path) {
-  h <- jsonlite::fromJSON(path, simplifyVector = TRUE, simplifyDataFrame = FALSE,
-                          simplifyMatrix = FALSE)
+  h <- jsonlite::fromJSON(path, simplifyVector = FALSE)
   columns <- list()
   kinds <- character(0)
   for (column in h$columns) {
-    if (column$kind == "number") {
-      values <- as.numeric(unlist(column$values))
-    } else {
-      values <- as.character(unlist(column$values))
-      values[is.na(values)] <- ""
-    }
-    if (length(values) != h$rows) {
-      fail("dataset ", h$dataset, ", column ", column$name, ": ", length(values),
+    given <- column$values
+    if (length(given) != h$rows) {
+      fail("dataset ", h$dataset, ", column ", column$name, ": ", length(given),
            " values for ", h$rows, " rows")
+    }
+    absent <- vapply(given, is.null, TRUE)
+    if (column$kind == "number") {
+      values <- rep(NA_real_, length(given))
+      values[!absent] <- vapply(given[!absent], as.numeric, 0)
+    } else {
+      values <- rep("", length(given))
+      values[!absent] <- vapply(given[!absent], as.character, "")
     }
     columns[[column$name]] <- values
     kinds[[column$name]] <- column$kind
@@ -71,10 +75,7 @@ eng_numbers <- function(eng, dataset, name) {
 
 compare_values <- function(values, kind, comparator, wanted) {
   if (kind == "number") {
-    numbers <- suppressWarnings(as.numeric(wanted))
-    if (length(numbers) == 0 || anyNA(numbers)) {
-      fail("a number column is compared with ", paste(wanted, collapse = ", "))
-    }
+    numbers <- condition_numbers(wanted)
     ok <- !is.na(values)
     return(switch(comparator,
       EQ = ok & values == numbers[1],
@@ -116,6 +117,9 @@ where_mask <- function(eng, dataset, clause) {
   if (!is.null(condition)) {
     source <- condition$dataset
     column <- eng_column(eng, source, condition$variable)
+    if (!all(vapply(condition$value, is.character, TRUE))) {
+      fail("a condition on ", source, ".", condition$variable, " has a value that is not text")
+    }
     mask <- compare_values(column$values, column$kind, condition$comparator,
                            unlist(condition$value))
     if (source == dataset) return(mask)

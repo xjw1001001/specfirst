@@ -6,12 +6,17 @@ pins, run by the real engines on the ADaM datasets the kit builds, and
 judged by the functions the gate itself calls (`build.judge` for P2 with
 the kit's exceptions, `results.agreement` for rule R11).
 
-    D1-arms      the low dose and the high dose group exchange their conditions (E3)
+    D1-arms      the low dose and the high dose group exchange their conditions
+                 (E3); and the values of the two arms are exchanged in one
+                 analysis only, the case of E3 as it happened
     D2-set       the analysis set reads another population flag
     D3-quantile  the quantile definition is R's default, not SAS's (E4)
     D4-subset    an analysis loses its data subset
     D5-engines   each of the four planted in the R engine's input alone: the
                  two engines must be seen to disagree
+    D6-proofs    proofs that prove nothing, planted in the kit's exceptions:
+                 each passed the check of real-2 and must fail (review of
+                 real-2, finding F2)
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -45,6 +50,20 @@ KIT = "cdiscpilot01"
 TREATMENT, LOW, HIGH = "AnlsGrouping_01_Trt", "AnlsGrouping_01_Trt_2", "AnlsGrouping_01_Trt_3"
 SAFETY, ITT = "AnalysisSet_02_SAF", "AnalysisSet_01_ITT"
 OVERVIEW = "An07_01_TEAE_Summ_ByTrt"
+# D1, the exchange in one analysis: counts, a continuous summary, events, vital signs,
+# and the analysis in which the reference itself has the two arms exchanged.
+ETHNICITY = "An03_04_Ethnic_Summ_ByTrt"
+ONE_ANALYSIS = ("An03_03_Sex_Summ_ByTrt", "An03_01_Age_Summ_ByTrt", "An07_03_SerTEAE_Summ_ByTrt",
+                "An08_01_Obs_Summ_ByTrt", ETHNICITY)
+# D6: results of the kit's exceptions file, by what their entry proves.
+_SUMMARY = "Mth02_ContVar_Summ_ByGrp"
+ETHNIC_N_LOW = (f"ard:{ETHNICITY}/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_2/"
+                "AnlsGrouping_05_Ethnic_1")
+AGE_Q1_HIGH = f"ard:An03_01_Age_Summ_ByTrt/{_SUMMARY}_5_Q1/AnlsGrouping_01_Trt_3"
+HEIGHT_MEAN_HIGH = f"ard:An03_06_Height_Summ_ByTrt/{_SUMMARY}_2_Mean/AnlsGrouping_01_Trt_3"
+HEIGHT_MEDIAN_LOW = f"ard:An03_06_Height_Summ_ByTrt/{_SUMMARY}_4_Median/AnlsGrouping_01_Trt_2"
+NO_P_VALUE = ("ard:An07_10_SocPt_Comp_ByTrt_PlacLow/Mth03_CatVar_Comp_FishEx_1_pval/*/"
+              "=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE")
 
 
 class Missing(RuntimeError):
@@ -60,6 +79,7 @@ class Pilot:
     reference: ars.Event  # the example as pinned: its embedded results are the reference
     registry: registry.Registry
     gold: results.Rows  # what the Python engine gives on the unchanged inputs
+    evidence: results.Evidence | None = None  # what a proof may ask for; made once
 
     def data(self) -> dict:
         return copy.deepcopy(self.reference.data)
@@ -87,12 +107,15 @@ class Pilot:
         assert rengine.data_problems(meta, tables) == []
         return results.by_id(rows)
 
-    def judge(self, rows: results.Rows) -> tuple[bool, results.Comparison, list[str]]:
+    def judge(self, rows: results.Rows,
+              entries: list[dict] | None = None) -> tuple[bool, results.Comparison, list[str]]:
         """P2 for results, as the gate judges it: against the pinned example and its exceptions."""
         lines: list[str] = []
+        if self.evidence is None:
+            self.evidence = build.proof_evidence(self.root, self.folder, self.spec)
         ok, comparison = build.judge(
-            "planted", self.reference, self.registry, rows, self.entries,
-            build.alternatives(self.root, self.folder, self.spec), lines.append)
+            "planted", self.reference, self.registry, rows,
+            self.entries if entries is None else entries, self.evidence, lines.append)
         return ok, comparison, lines
 
 
@@ -138,6 +161,19 @@ def changed(pilot: Pilot, rows: results.Rows) -> list[str]:
     return sorted(key for key in set(rows) | set(pilot.gold)
                   if key not in rows or key not in pilot.gold
                   or not results.same(rows[key]["raw_value"], pilot.gold[key]["raw_value"]))
+
+
+def exchanged_in(rows: results.Rows, analysis_id: str) -> results.Rows:
+    """The rows with the values of the low and the high dose arm exchanged in one analysis."""
+    found = {key: dict(row) for key, row in rows.items()}
+    for key, row in rows.items():
+        parts = key.split("/")
+        if row["analysis_id"] == analysis_id and LOW in parts:
+            other = "/".join(HIGH if part == LOW else part for part in parts)
+            assert other in rows, f"{key} has no result in the high dose arm"
+            found[key]["raw_value"], found[other]["raw_value"] = (
+                rows[other]["raw_value"], row["raw_value"])
+    return found
 
 
 def exchange_arms(data: dict) -> dict:
@@ -190,6 +226,29 @@ def d1_arms(pilot: Pilot, tmp_path) -> list[str]:
           f"{len(reproduced_now)} of 22")
     if len(reproduced_now) != 22:
         problems.append(f"{len(reproduced_now)} of the 22 exchanged results agree, expected 22")
+    # The case of E3 as it happened: the two arms exchanged in one analysis only
+    # (review of real-2, finding F11). In the analysis of ethnicity the exchange is
+    # the reference's own error, so there the entries of the kit become stale.
+    for analysis_id in ONE_ANALYSIS:
+        rows = exchanged_in(pilot.gold, analysis_id)
+        moved = changed(pilot, rows)
+        ok, comparison, lines = pilot.judge(rows)
+        unexplained = [line for line in lines if line.startswith("  unexplained:")]
+        stale = sum("listed as an exception, but it is reproduced" in line for line in unexplained)
+        _, disagreements = results.agreement(pilot.gold, rows)
+        print(f"low and high dose exchanged in {analysis_id} only: {len(moved)} values change; "
+              f"check passes: {ok}; unexplained {len(unexplained)}, of which stale entries "
+              f"{stale}; against the other engine {len(disagreements)} disagree")
+        if not moved:
+            problems.append(f"{analysis_id}: exchanging the arms changes nothing; use another")
+        if ok or not unexplained:
+            problems.append(f"{analysis_id}: arms exchanged in this analysis alone pass the check")
+        if len(disagreements) != len(moved):
+            problems.append(f"{analysis_id}: {len(moved)} values change, the engines are said "
+                            f"to disagree on {len(disagreements)}")
+        if analysis_id == ETHNICITY and stale != 8:
+            problems.append(f"{analysis_id}: {stale} stale entries; the kit has 8 entries for "
+                            "the values the reference has exchanged there")
     return problems
 
 
@@ -309,8 +368,67 @@ def d5_engines(pilot: Pilot, tmp_path) -> list[str]:
     return problems
 
 
+def d6_proofs(pilot: Pilot, tmp_path) -> list[str]:
+    """Proofs that prove nothing, planted in the kit's own exceptions (review of real-2, F2).
+
+    The reviewer's cases A3 and A8 to A11, each on the entry it was found
+    on, and the proof the median of height had until real-3a. Every one
+    passed the check of real-2. Each must fail now, for the reason given.
+    """
+    problems = control(pilot)
+    option = {"method": "summary.continuous", "option": "quantile_definition"}
+    race = "ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/"
+    zero_of_race = sorted(key for key, row in pilot.gold.items()
+                          if key.startswith(race) and row["raw_value"] == 0)
+    if not zero_of_race:
+        return [*problems, "no count of 0 among the race counts of the placebo arm: A11 "
+                           "cannot be planted"]
+    placebo = ETHNIC_N_LOW.replace(LOW, "AnlsGrouping_01_Trt_1")
+    planted = {
+        "A3 an exchanged count, proven by the placebo arm, which has the same value": (
+            ETHNIC_N_LOW, {"kind": "value_of_other_result", "result": placebo},
+            "the two are not exchanged"),
+        "A8 the quartile of age, by an option with one value": (
+            AGE_Q1_HIGH, {"kind": "no_alternative", "method": "summary.continuous",
+                          "option": "sd_denominator"},
+            "no value of sd_denominator changes a result of the operation"),
+        "A9 an exchanged mean, as the same under every quantile definition": (
+            HEIGHT_MEAN_HIGH, {"kind": "same_under_every", **option},
+            "no value of quantile_definition changes a result of the operation"),
+        "A10 the same mean, as given by no quantile definition": (
+            HEIGHT_MEAN_HIGH, {"kind": "no_alternative", **option},
+            "no value of quantile_definition changes a result of the operation"),
+        "A11 no records, by a count of 0 of another analysis": (
+            NO_P_VALUE, {"kind": "no_records", "zero": zero_of_race[:1]},
+            "is not a count of the cell's own groups"),
+        "no records, by the count of one of the two compared arms": (
+            NO_P_VALUE, {"kind": "no_records", "zero": [
+                "ard:An07_10_SocPt_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/"
+                "=VASCULAR%20DISORDERS/=WOUND%20HAEMORRHAGE"]},
+            "one count per compared group is needed"),
+        "the median of height, as the same under every quantile definition": (
+            HEIGHT_MEDIAN_LOW, {"kind": "same_under_every", **option},
+            "no value of quantile_definition changes a result of the operation"),
+    }
+    by_result = {entry["result"]: entry for entry in pilot.entries}
+    if pilot.gold[placebo]["raw_value"] != 3 or by_result[ETHNIC_N_LOW]["embedded"] != "3":
+        problems.append("A3 needs a placebo count equal to the embedded count of the low dose arm")
+    for name, (key, proof, message) in planted.items():
+        entries = [dict(entry, proof=proof) if entry["result"] == key else entry
+                   for entry in pilot.entries]
+        ok, _, lines = pilot.judge(pilot.gold, entries)
+        unexplained = [line for line in lines if line.startswith("  unexplained:")]
+        print(f"{name}: check passes: {ok}"
+              + (f"; {unexplained[0].split(': ', 2)[-1]}" if unexplained else ""))
+        if ok or len(unexplained) != 1 or key not in unexplained[0]:
+            problems.append(f"{name}: the proof passes, or more than this entry fails")
+        elif message not in unexplained[0]:
+            problems.append(f"{name}: fails for another reason: {unexplained[0]}")
+    return problems
+
+
 CASES = {"D1-arms": d1_arms, "D2-set": d2_set, "D3-quantile": d3_quantile,
-         "D4-subset": d4_subset, "D5-engines": d5_engines}
+         "D4-subset": d4_subset, "D5-engines": d5_engines, "D6-proofs": d6_proofs}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

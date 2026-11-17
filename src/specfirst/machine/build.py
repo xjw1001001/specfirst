@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from specfirst import kit as kits
-from specfirst.machine import ard, ars, compare, graph, rengine, results, runner
+from specfirst.machine import ard, ars, compare, graph, methods, rengine, results, runner
 from specfirst.machine import registry as registries
 from specfirst.machine.canonical import read_jsonl, sha256_file, write_json, write_parquet
 from specfirst.paths import build_dir
@@ -109,7 +109,9 @@ def build(root: Path, kit_id: str, into: Path | None = None, out: Out = print) -
         try:
             written += build_results(root, kit, into, record, out)
         except (ars.ArsError, ard.EngineError, rengine.REngineError, results.ResultsError,
-                registries.RegistryError) as error:
+                registries.RegistryError, methods.MethodError) as error:
+            # A method that refuses its input (a Fisher table too large to sum) ends the
+            # build like any other input that cannot be run.
             out(f"build {kit_id}: FAIL ({error})")
             return 1
     files = {path.relative_to(into).as_posix(): sha256_file(path) for path in sorted(written)}
@@ -192,9 +194,12 @@ def build_results(root: Path, kit: kits.Kit, into: Path, record: dict, out: Out)
     return written
 
 
-def alternatives(root: Path, folder: Path, spec: kits.ResultSet) -> results.Alternative:
-    """Our results under another value of a method option: what a proof may ask for."""
+def proof_evidence(root: Path, folder: Path, spec: kits.ResultSet) -> results.Evidence:
+    """What a proof may ask for: our results under another value of a method option,
+    and, from the Python engine on the built data, the values of a cell and the
+    groups a test compares. Each is made when it is first asked for."""
     made: dict[tuple, results.Rows] = {}
+    engines: list[ard.Engine] = []
 
     def build_with(method_id: str, option: str, value: object) -> results.Rows:
         key = (method_id, option, value)
@@ -206,15 +211,23 @@ def alternatives(root: Path, folder: Path, spec: kits.ResultSet) -> results.Alte
                                               inputs.tables, spec.subject_key))
         return made[key]
 
-    return build_with
+    def engine() -> ard.Engine:
+        if not engines:
+            inputs = result_inputs(root, folder, spec)
+            engines.append(ard.Engine(inputs.event, inputs.registry, inputs.binding,
+                                      inputs.tables, spec.subject_key))
+        return engines[0]
+
+    return results.Evidence(build_with, lambda key: engine().cell_values(key),
+                            lambda analysis_id: engine().compared_groups(analysis_id))
 
 
 def judge(label: str, event: ars.Event, registry: registries.Registry, rows: results.Rows,
-          entries: list[dict], alternative: results.Alternative,
+          entries: list[dict], evidence: results.Evidence | results.Alternative,
           out: Out) -> tuple[bool, results.Comparison]:
     """P2 for the results of one engine: reproduced, or a difference with one class and a proof."""
     comparison = results.compare_reference(event, rows)
-    lines, problems = results.check_exceptions(comparison, entries, rows, registry, alternative)
+    lines, problems = results.check_exceptions(comparison, entries, rows, registry, evidence)
     out(f"{label}: {comparison.total} embedded results, {comparison.reproduced} reproduced as "
         f"printed, {len(comparison.differing)} with another value, {len(comparison.absent)} "
         "without a result of ours")
@@ -277,13 +290,13 @@ def result_checks(root: Path, kit_id: str, folder: Path | None = None,
                 "Python": read_jsonl(folder / ARD / f"{spec.id}.jsonl"),
                 "R": read_jsonl(folder / ARD / f"{spec.id}.r.jsonl"),
             }
-            alternative = alternatives(root, folder, spec)
+            evidence = proof_evidence(root, folder, spec)
             comparisons = {}
             for engine, lines in rows.items():
                 problems += [f"{engine} ARD: {p}" for p in results.ard_problems(lines, root)]
                 ok, comparison = judge(
                     f"results {spec.id}, {engine} engine", inputs.event, inputs.registry,
-                    results.by_id(lines), listed.get(spec.id, []), alternative, out)
+                    results.by_id(lines), listed.get(spec.id, []), evidence, out)
                 passed &= ok
                 comparisons[engine] = comparison
                 counts.append({

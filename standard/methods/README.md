@@ -73,13 +73,13 @@ Both engines follow these rules. They are the choices ARS leaves to code.
 | --- | --- |
 | I1 | An analysis runs on the records of its `dataset`. A missing value is a null or a not-a-number, and for text also the empty text; these are one thing, "missing". Dates and times are compared as their ISO text. |
 | I2 | Records of two datasets belong together when they have the same subject key: `USUBJID`, unless the kit names another column. |
-| I3 | A condition compares a column with the listed values, as numbers when the column holds numbers and as text otherwise. For a missing value EQ and IN are false, NE and NOTIN are true, and GT, GE, LT and LE are false. (For text, EQ with the empty text is true for a missing value.) |
+| I3 | A condition compares a column with the listed values, as numbers when the column holds numbers and as text otherwise. Every listed value is text, as ARS writes it. A number is written as in JSON: an optional minus sign, digits without a leading zero, an optional fraction, an optional exponent (`61`, `-0.5`, `1e3`); any other text compared with a number column is an error, and so is a number that is not finite. For a missing value EQ and IN are false, NE and NOTIN are true, and GT, GE, LT and LE are false. For text, the empty text among the listed values stands for the missing value: EQ and IN with it are true for a missing value, NE and NOTIN with it are false. |
 | I4 | A condition on another dataset than the one being filtered holds for a record when it holds for at least one record of that other dataset with the same subject key. |
 | I5 | A compound expression joins its where clauses with AND or OR; NOT takes exactly one. |
 | I6 | The analysis records are the records of the dataset that fulfil the analysis set and the data subset. |
 | I7 | Groupings are taken in the order of `order`. One with `resultsByGroup` true splits the analysis records into cells; one with `resultsByGroup` false is compared by a test. |
 | I8 | A grouping with defined groups has one group per listed group. A record belongs to a group when it fulfils the group's where clause. Every listed group gives results, with or without records. |
-| I9 | A data-driven grouping has one group per distinct non-missing value of its variable on the analysis records. The variable is read from the grouping's dataset; when that is not the analysis dataset, by the subject key, and the grouping's dataset must then hold one value per subject. Several data-driven groupings give the combinations of values that occur together on a record, not every combination. |
+| I9 | A data-driven grouping has one group per distinct non-missing value of its variable on the analysis records. The variable is read from the grouping's dataset; when that is not the analysis dataset, by the subject key, and the grouping's dataset must then hold one value per subject. Several data-driven groupings give the combinations of values that occur together on a record, not every combination. A number as a group value is written by one rule: zero is `0`, with no sign; any other whole number has all its digits and neither a decimal point nor an exponent (`8`, `1000000000000000`); any other number is the shortest decimal that reads back as the same number, with an exponent of at least two digits when it is below 0.0001 (`0.1`, `1.5e-07`). A number that is not finite cannot be a group value. |
 | I10 | The cells of an analysis: every combination of one group per grouping with defined groups, with every occurring combination of the data-driven groupings. |
 | I11 | A descriptive operation gives one result per cell. A cell without records gives a count of 0 and missing statistics, not no result. |
 | I12 | A test gives one result per cell, from the groupings that are compared. (a) A chi-square or Fisher test with two compared groupings: the table of the distinct values of the analysis variable, by group of the first and group of the second. (b) With one compared grouping: an occurrence table. One row per group that has subjects in the population; two columns: the subjects with at least one record in the cell, and the other subjects of the population in that group. The analysis variable must be the subject key. (c) An analysis of variance: one compared grouping; the values of the analysis variable per group. |
@@ -112,6 +112,15 @@ A reference embeds results as text. Its raw values drop trailing zeros
 shows. `specfirst.machine.results` compares in two steps: as printed (half
 a unit of the last printed decimal, the comparison of evidence E2), and at
 the precision of the operation's `resultPattern` when that has more
-decimals. Both allow a relative 1e-9 for floating error. A result that
-passes the first step only is a difference and needs a class like any
-other (PLAN.md section 4.8).
+decimals. Both allow a relative 1e-9. That covers the floating error of two
+correct computations, and also a reference value that was rounded to about
+ten significant digits before it was embedded. A result that passes the
+first step only is a difference and needs a class like any other (PLAN.md
+section 4.8).
+
+A difference is proven by one of the kinds `specfirst.machine.results`
+checks; the header of a kit's `gold/exceptions.yaml` lists them. A proof by
+a method option (`same_under_every`, `no_alternative`) holds only for an
+option that changes some result of the same operation. The two quantile
+definitions of the registry never differ on a median, so a wrong median is
+proven by the values of its cell (`between_equal_values`).

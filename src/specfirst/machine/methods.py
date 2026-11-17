@@ -91,7 +91,12 @@ def summary_continuous(values: Iterable[float | None], quantile_definition: str 
     mean = math.fsum(ordered) / n
     result["mean"] = mean
     if n > 1:
-        result["sd"] = math.sqrt(math.fsum((value - mean) ** 2 for value in ordered) / (n - 1))
+        if ordered[0] == ordered[-1]:
+            # Statement 10: equal values have no spread, whatever the rounding of the mean.
+            result["sd"] = 0.0
+        else:
+            result["sd"] = math.sqrt(
+                math.fsum((value - mean) ** 2 for value in ordered) / (n - 1))
     result["median"] = quantile(ordered, 2, quantile_definition)
     result["q1"] = quantile(ordered, 1, quantile_definition)
     result["q3"] = quantile(ordered, 3, quantile_definition)

@@ -185,6 +185,8 @@ def clause_problems(clause: dict) -> list[str]:
         comparator, values = condition.get("comparator"), condition.get("value") or []
         if not condition.get("dataset") or not condition.get("variable"):
             problems.append("a condition names no dataset or no variable")
+        if not all(isinstance(value, str) for value in values):
+            problems.append("a condition has a value that is not text")
         if comparator not in COMPARATORS:
             problems.append(f"unknown comparator '{comparator}'")
         elif comparator in ("IN", "NOTIN") and not values:
