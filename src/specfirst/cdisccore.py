@@ -22,6 +22,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,8 +31,14 @@ from specfirst import fetch
 from specfirst.sources import Source
 
 SOURCE_FILE = "env/core-source.txt"
+IN_FILE = "env/core-requirements.in"
 LOCK_FILE = "env/core-requirements.lock"
 SDIST_FILE = "env/core-sdist.txt"
+
+# Where env/core-requirements.in differs from the dependency list of CORE on
+# purpose (docs/decisions/ADR-006.md, decisions 2 and 3).
+LEFT_OUT = ("pyinstaller",)     # builds the executable; not imported when CORE runs from source
+ADDED = ("setuptools-scm",)     # build requirement of titlecase, which has no wheel
 
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
 _PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)==([^\s\\;]+)")
@@ -229,6 +236,40 @@ def source_problems(source: Path, commit: str) -> list[str]:
     return []
 
 
+def _requirement(line: str) -> tuple[str, str]:
+    """A requirement as its normalized name (with extras) and its bounds, without spaces."""
+    text = "".join(line.split())
+    match = re.match(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)(\[[^\]]*\])?(.*)$", text)
+    if not match:
+        return text, ""
+    return normalize(match.group(1)) + (match.group(2) or ""), match.group(3)
+
+
+def requirement_problems(root: Path, source: Path) -> list[str]:
+    """Where env/core-requirements.in is not the dependency list of the pinned CORE.
+
+    The list is `project.dependencies` of pyproject.toml in the source; the
+    lock is resolved from our file, so a difference would mean an
+    environment that CORE did not ask for.
+    """
+    try:
+        with open(source / "pyproject.toml", "rb") as handle:
+            theirs = tomllib.load(handle)["project"]["dependencies"]
+    except (OSError, KeyError, tomllib.TOMLDecodeError) as error:
+        return [f"CORE source: cannot read the dependencies in pyproject.toml: {error}"]
+    lines = (line.split("#", 1)[0].strip()
+             for line in (root / IN_FILE).read_text("ascii").splitlines())
+    ours = dict(_requirement(line) for line in lines if line)
+    wanted = dict(_requirement(line) for line in theirs)
+    for name in LEFT_OUT:
+        wanted.pop(name, None)
+    for name in ADDED:
+        ours.pop(name, None)
+    return [f"{IN_FILE}: {name} is '{ours.get(name, 'absent')}' here and "
+            f"'{wanted.get(name, 'absent')}' in pyproject.toml of the pinned CORE"
+            for name in sorted(set(ours) | set(wanted)) if ours.get(name) != wanted.get(name)]
+
+
 def drift(root: Path) -> list[str]:
     """Everything in which the installed CORE differs from its pins (for `specfirst doctor`)."""
     try:
@@ -242,7 +283,9 @@ def drift(root: Path) -> list[str]:
     if installed is None:
         return ["CORE environment: its Python could not list the packages"]
     lock = read_lock((root / LOCK_FILE).read_text("ascii"))
-    return package_drift(lock, installed) + source_problems(source_dir(root), pin.commit)
+    source = source_problems(source_dir(root), pin.commit)
+    return package_drift(lock, installed) + (
+        source or requirement_problems(root, source_dir(root)))
 
 
 # -- running -------------------------------------------------------------------
@@ -256,10 +299,12 @@ class Finding:
     dataset: str      # empty when the report names none
     message: str
     status: str       # ISSUE REPORTED | EXECUTION ERROR
-    count: int = 0
+    count: int = 0    # the number of issues, as the summary of the report gives it
     subjects: tuple[str, ...] = ()   # USUBJID of the records, where the report gives one
     variables: tuple[str, ...] = ()
     examples: tuple[dict, ...] = field(default=(), compare=False)
+    listed: int = -1  # detail rows of the report; -1: not read from a report
+    named: int = -1   # detail rows that name a subject
 
 
 @dataclass(frozen=True)
@@ -270,6 +315,9 @@ class Report:
     rules: dict[str, str]            # rule ID -> run status
     findings: tuple[Finding, ...]
     datasets: tuple[str, ...]
+    records: dict[str, int] = field(default_factory=dict)   # dataset -> records CORE read
+    terminology: str = ""            # the controlled terminology package CORE used
+    define: str = ""                 # the version of the Define-XML CORE read
 
     def counts(self) -> dict[str, int]:
         """How many rules ended in each run status."""
@@ -317,13 +365,18 @@ def read_report(path: Path) -> Report:
             count=counts.get((rule, dataset), len(rows)),
             subjects=tuple(sorted({str(r["USUBJID"]) for r in rows if r.get("USUBJID")})),
             variables=tuple(sorted({str(v) for r in rows for v in (r.get("variables") or [])})),
-            examples=tuple(rows[:3])))
+            examples=tuple(rows[:3]), listed=len(rows),
+            named=sum(1 for r in rows if r.get("USUBJID"))))
     conformance = raw.get("Conformance_Details") or {}
     return Report(
         path=path, engine=str(conformance.get("CORE_Engine_Version", "")),
         standard=f"{conformance.get('Standard', '')} {conformance.get('Version', '')}".strip(),
         rules=rules, findings=tuple(findings),
-        datasets=tuple(str(d.get("filename", "")) for d in raw.get("Dataset_Details") or []))
+        datasets=tuple(str(d.get("filename", "")) for d in raw.get("Dataset_Details") or []),
+        records={str(d.get("filename", "")): int(d.get("length", 0) or 0)
+                 for d in raw.get("Dataset_Details") or []},
+        terminology=str(conformance.get("CT_Version") or ""),
+        define=str(conformance.get("Define_XML_Version") or ""))
 
 
 # CORE starts one worker process per processor unless told otherwise, and each
@@ -387,6 +440,34 @@ def validate(
         tail = log.read_text(encoding="utf-8", errors="replace").strip().splitlines()[-5:]
         raise CoreError(f"core.py validate exited {done.returncode}: " + " | ".join(tail))
     return read_report(report)
+
+
+_READ_PACKAGE = (
+    "import json, pickle, sys\n"
+    "data = pickle.load(open(sys.argv[1], 'rb'))\n"
+    "data = data.get(sys.argv[2], data)\n"
+    "print(json.dumps({c['conceptId']: {'name': c['submissionValue'],\n"
+    "    'extensible': str(c.get('extensible')).lower() == 'true',\n"
+    "    'terms': {t['submissionValue']: t['conceptId'] for t in c['terms']}}\n"
+    "    for c in data['codelists']}))\n"
+)
+
+
+def terminology(root: Path, package: str) -> dict[str, dict]:
+    """A controlled terminology package of the cache that CORE ships.
+
+    NCI code of a codelist -> its submission value (`name`), whether it is
+    extensible, and its terms as submission value -> NCI code. The cache is
+    a pickle of CORE; it is read by the Python of CORE's own environment.
+    """
+    path = source_dir(root) / "resources" / "cache" / f"{package}.pkl"
+    if not path.is_file():
+        raise CoreError(f"the cache of CORE has no package {package}")
+    done = subprocess.run([str(python_path(root)), "-I", "-B", "-c", _READ_PACKAGE, str(path),
+                           package], capture_output=True, text=True)
+    if done.returncode != 0:
+        raise CoreError(f"cannot read {path.name}: {done.stderr.strip().splitlines()[-1:]}")
+    return json.loads(done.stdout)
 
 
 def main(argv: list[str] | None = None) -> int:

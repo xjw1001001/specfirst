@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Callable
-from itertools import combinations
 
 from specfirst.compile import catalog as catalogs
 from specfirst.gen import design as designs
@@ -61,8 +60,22 @@ class Data:
     def exposure(self, subject: str) -> list[dict]:
         return sorted(self.rows("EX", subject), key=lambda r: r["EXSEQ"])
 
+    def dosed(self, subject: str) -> list[dict]:
+        """Exposure records with a dose, as the catalog defines one, and a complete start."""
+        return [r for r in self.exposure(subject) if with_dose(r) and _date(r["EXSTDTC"])]
+
+    def event_starts(self, subject: str) -> list[tuple[Date, dict]]:
+        """Adverse events with a complete start date, as (date, record)."""
+        return [(d, r) for r in self.rows("AE", subject) if (d := _date(r["AESTDTC"]))]
+
     def vitals(self, subject: str, test: str | None = None) -> list[dict]:
         return [r for r in self.rows("VS", subject) if test is None or r["VSTESTCD"] == test]
+
+
+def with_dose(row: dict) -> bool:
+    """trt.start.source: EXDOSE above zero, or zero with an EXTRT that contains PLACEBO."""
+    dose = row["EXDOSE"]
+    return dose is not None and (dose > 0 or (dose == 0 and "PLACEBO" in (row["EXTRT"] or "")))
 
 
 Finder = Callable[[dict, Data, dict], list[str]]
@@ -115,21 +128,27 @@ def _first_other(record: dict, data: Data, design: dict) -> list[str]:
 
 def _zero_dose(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
-        rows = data.exposure(subject)
-        zero = [r["EXSTDTC"][:10] for r in rows
-                if r["EXDOSE"] == 0 and "PLACEBO" not in r["EXTRT"]]
-        dosed = [r["EXSTDTC"][:10] for r in rows if r["EXDOSE"] > 0]
+        zero = [d for r in data.exposure(subject)
+                if r["EXDOSE"] == 0 and not with_dose(r) and (d := _date(r["EXSTDTC"]))]
+        dosed = [_date(r["EXSTDTC"]) for r in data.dosed(subject)]
         if not zero or not dosed or min(zero) >= min(dosed):
             return "no record of dose zero before the first record with a dose"
+        if not any(min(zero) <= d < min(dosed) and (_date(r["AEENDTC"]) or d) < min(dosed)
+                   for d, r in data.event_starts(subject)):
+            return "no event that starts and ends between the two treatment starts"
         return None
     return _each(record, check)
 
 
 def _rfxstdtc(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
-        starts = [r["EXSTDTC"][:10] for r in data.exposure(subject)]
-        if not starts or (data.dm[subject]["RFXSTDTC"] or "")[:10] == min(starts):
+        starts = [_date(r["EXSTDTC"]) for r in data.dosed(subject)]
+        first = data.first_dose(subject)
+        if not starts or first is None or first == min(starts):
             return "RFXSTDTC is the earliest exposure start date"
+        low, high = sorted((first, min(starts)))
+        if not any(low <= d < high for d, _ in data.event_starts(subject)):
+            return "no event that starts between RFXSTDTC and the first exposure record"
         return None
     return _each(record, check)
 
@@ -149,8 +168,17 @@ def _no_end_date(record: dict, data: Data, design: dict) -> list[str]:
         rows = data.exposure(subject)
         if not rows or any(r["EXENDTC"] for r in rows):
             return "an exposure record has an end date, or there is no record"
-        if data.end_of_study(subject) is None:
+        if not data.dosed(subject):
+            return "no exposure record with a dose and a complete start date"
+        end = data.end_of_study(subject)
+        if end is None:
             return "no disposition event with a date"
+        limit = end + datetime.timedelta(days=record["detail"]["window_days"])
+        late = [r for d, r in data.event_starts(subject) if d > limit]
+        if not late:
+            return "no event later than the window after the disposition date"
+        if not any(r["AESER"] == "Y" for r in late):
+            return "the event after the window is not serious"
         return None
     return _each(record, check)
 
@@ -158,10 +186,16 @@ def _no_end_date(record: dict, data: Data, design: dict) -> list[str]:
 def _partial_exposure(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
         rows = data.exposure(subject)
-        if not rows or len(rows[0]["EXSTDTC"]) != 7:
+        if not rows or len(rows[0]["EXSTDTC"]) != 7 or not with_dose(rows[0]):
             return "the first exposure start is not a year and a month"
-        if not any(_date(r["EXSTDTC"]) for r in rows[1:]):
+        complete = [_date(r["EXSTDTC"]) for r in data.dosed(subject)]
+        if not complete:
             return "no other exposure record has a complete start date"
+        month = _date(rows[0]["EXSTDTC"] + "-01")
+        if not any(month <= d < min(complete) and (_date(r["AEENDTC"]) or d) < min(complete)
+                   for d, r in data.event_starts(subject)):
+            return ("no event between the first day of the month and the first complete "
+                    "start date")
         return None
     return _each(record, check)
 
@@ -180,7 +214,10 @@ def _partial_not_earliest(record: dict, data: Data, design: dict) -> list[str]:
 def _reference_start(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
         start, dose = _date(data.dm[subject]["RFSTDTC"]), data.first_dose(subject)
-        return None if start and dose and start < dose else "RFSTDTC is not before the first dose"
+        if not (start and dose and start < dose):
+            return "RFSTDTC is not before the first dose"
+        return None if data.event_starts(subject) else \
+            "no event with a start date: no study day that the two origins number differently"
     return _each(record, check)
 
 
@@ -201,7 +238,8 @@ def _not_randomized(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
         if data.dm[subject]["ARMCD"]:
             return "ARMCD is present"
-        return None if data.exposure(subject) else "no exposure record"
+        return None if data.dosed(subject) else \
+            "no exposure record with a dose and a complete start date"
     return _each(record, check)
 
 
@@ -267,11 +305,16 @@ def _two_dispositions(record: dict, data: Data, design: dict) -> list[str]:
 def _partial_ae_in_month(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
         dose = data.dm[subject]["RFXSTDTC"] or ""
-        starts = [r["AESTDTC"] for r in data.rows("AE", subject)]
-        if not any(len(s) == 7 and s == dose[:7] for s in starts if s):
+        if len(dose) < 10 or int(dose[8:10]) <= 1:
+            return "the first dose is on the first day of the month, or has no complete date"
+        rows = [r for r in data.rows("AE", subject)
+                if r["AESTDTC"] and len(r["AESTDTC"]) == 7 and r["AESTDTC"] == dose[:7]]
+        if not rows:
             return "no event start of a year and a month in the month of the first dose"
-        return None if len(dose) >= 10 and int(dose[8:10]) > 1 else \
-            "the first dose is on the first day of the month"
+        # An event that ended before the first dose is not emergent under any alternative.
+        if not any(not r["AEENDTC"] or r["AEENDTC"][:10] >= dose[:10] for r in rows):
+            return "the event ended before the first dose"
+        return None
     return _each(record, check)
 
 
@@ -288,10 +331,15 @@ def _partial_ae_before_month(record: dict, data: Data, design: dict) -> list[str
 
 def _on_first_dose_date(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
-        dose = data.dm[subject]["RFXSTDTC"] or ""
-        if "T" not in dose or dose.split("T")[1] <= "00:00":
-            return "the first dose has no time after 00:00"
-        if not any(r["AESTDTC"] == dose[:10] for r in data.rows("AE", subject)):
+        # The time of the first dose is read from the exposure record by two alternatives
+        # of trt.start.source and from DM.RFXSTDTC by the third: it must stand in both.
+        dosed = data.dosed(subject)
+        texts = [data.dm[subject]["RFXSTDTC"] or "", dosed[0]["EXSTDTC"] if dosed else ""]
+        if any("T" not in text or text.split("T")[1] <= "00:00" for text in texts):
+            return "the first dose has no time after 00:00 in EX.EXSTDTC or in DM.RFXSTDTC"
+        if texts[0][:10] != texts[1][:10]:
+            return "DM.RFXSTDTC and the first exposure record are on different days"
+        if not any(r["AESTDTC"] == texts[1][:10] for r in data.rows("AE", subject)):
             return "no event that starts on the first dose date without a time"
         return None
     return _each(record, check)
@@ -308,9 +356,13 @@ def _after_window(record: dict, data: Data, design: dict) -> list[str]:
         last = data.last_dose(subject)
         if last is None:
             return "no date of the last dose"
-        wanted = {last + datetime.timedelta(days=days), last + datetime.timedelta(days=days + 1)}
-        return None if wanted <= set(_starts(data, subject)) else \
-            f"no events {days} and {days + 1} days after the last dose"
+        offset = record["by_subject"][subject]["days_after_last_dose"]
+        return None if last + datetime.timedelta(days=offset) in _starts(data, subject) else \
+            f"no event {offset} days after the last dose"
+    offsets = sorted(own["days_after_last_dose"] for own in record["by_subject"].values())
+    if offsets != [days, days + 1]:
+        return [f"the log has subjects for {offsets} days after the last dose, not for "
+                f"{days} and {days + 1}"]
     return _each(record, check)
 
 
@@ -381,13 +433,13 @@ def _zero_count(record: dict, data: Data, design: dict) -> list[str]:
 
 
 def arm_counts(data: Data, arm: str) -> tuple[int, int, int]:
-    """Treated subjects of an arm; with an event after the first dose day; with a serious one."""
+    """Treated subjects of an arm; with an event from the first dose day on; with a serious one."""
     people = _treated(data, arm)
     having = serious = 0
     for subject in people:
         dose = data.first_dose(subject)
         rows = [r for r in data.rows("AE", subject)
-                if (d := _date(r["AESTDTC"])) and dose and d > dose]
+                if (d := _date(r["AESTDTC"])) and dose and d >= dose]
         having += bool(rows)
         serious += any(r["AESER"] == "Y" for r in rows)
     return len(people), having, serious
@@ -463,23 +515,38 @@ def coverage(catalog: catalogs.Catalog, design: dict, records: list[dict], table
     """Pairs of alternatives asked for, probes checked, and what is missing.
 
     For every decision of the units that applies to the design, and every
-    pair of its alternatives, one probe of the dataset `which` must claim to
-    separate the pair and must be found in the data.
+    pair of its alternatives, one probe of the dataset `which` must separate
+    the pair, as the catalog says, and must be found in the data. The twin
+    must carry every probe that these decisions list. The log is what is
+    being checked: which pairs a probe separates is read from the catalog,
+    and a line of the log that claims other pairs is a problem.
     """
     own = [r for r in records if r["data"] == which]
+    logged = [record["probe"] for record in own]
+    problems = [f"probe {probe}: logged {logged.count(probe)} times"
+                for probe in sorted(set(logged)) if logged.count(probe) > 1]
     found: dict[str, list[str]] = {}
+    claims: dict[str, dict[str, list[list]]] = {}
     for record in own:
-        found[record["probe"]] = find(record, tables, design)
-    problems = [f"probe {probe}: {problem}" for probe, issues in sorted(found.items())
-                for problem in issues]
+        probe = record["probe"]
+        if probe not in catalog.probes:
+            problems.append(f"probe {probe}: not a probe of the catalog")
+            continue
+        found[probe] = find(record, tables, design)
+        claims[probe] = probes.claimed_pairs(catalog, design, probe)
+        if record.get("separates") != claims[probe]:
+            problems.append(f"probe {probe}: the log claims other pairs than the catalog gives")
+    problems += [f"probe {probe}: {problem}" for probe, issues in sorted(found.items())
+                 for problem in issues]
+    if which == "twin":
+        problems += [f"probe {probe}: the twin does not carry it"
+                     for probe in probes.needed(catalog, design, units) if probe not in found]
     pairs = 0
     for entry in probes.slice_entries(catalog, design, units):
-        ids = [alternative.id for alternative in entry.alternatives]
-        for first, second in combinations(ids, 2):
+        for first, second in probes.pairs_of(entry, design):
             pairs += 1
-            claiming = [r["probe"] for r in own
-                        if any(set(pair) == {first, second}
-                               for pair in r["separates"].get(entry.id, []))]
+            claiming = [probe for probe in found
+                        if [first, second] in claims[probe].get(entry.id, [])]
             if not claiming:
                 problems.append(f"{entry.id}: no probe in the {which} separates {first} "
                                 f"from {second}")
@@ -487,4 +554,4 @@ def coverage(catalog: catalogs.Catalog, design: dict, records: list[dict], table
                 problems.append(f"{entry.id}: {first} and {second}: every probe that should "
                                 f"separate them is missing from the data "
                                 f"({', '.join(claiming)})")
-    return pairs, len(own), problems
+    return pairs, len(found), problems

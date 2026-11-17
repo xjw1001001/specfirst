@@ -12,22 +12,39 @@ coverage, not for clinical realism (section 6.8).
                   planned number.
     Visits        A visit takes place on its planned day plus a uniform shift
                   inside its window. Visits after the end of treatment are
-                  missed, except the follow-up visit.
+                  missed. The follow-up visit is timed from the last dose,
+                  not from its planned day: the follow-up days of the design
+                  plus a shift inside its window. A subject who is lost to
+                  follow-up or withdraws has no follow-up visit and leaves
+                  the study 0 to 3 days after the last dose.
     Exposure      One tablet a day from day 1. One exposure record per
                   interval between two attended visits. The first dose has a
                   collected time.
     Dropout       With the probability of the arm a subject stops early, on
                   a day uniform over the treatment period, for a reason drawn
-                  from a fixed list.
+                  from a fixed list. A subject who stops for an adverse event
+                  has the action DRUG WITHDRAWN on the last event; a subject
+                  with that reason and no event gets one in the last days of
+                  treatment.
     Vital signs   A subject mean plus noise per visit; after day 1 a shift
                   per dose step.
     Adverse       The number of events is Poisson; the mean grows with the
     events        dose step and shrinks with a short exposure. An event starts
                   on a treatment day after day 1 and lasts an exponential
                   number of days. Severity, seriousness, causality, action
-                  and outcome are drawn from fixed tables. With a small
+                  and outcome are drawn from fixed tables. An event that
+                  lasts beyond the end of the study is ongoing. With a small
                   chance there is one event before the first dose that ends
                   before it.
+    Death         A serious, severe event that starts after the first dose is
+                  fatal with a chance of 0.10. The subject then dies on the
+                  day the event ends (two days after its start when it was
+                  ongoing): nothing of the subject is dated later, the
+                  disposition is DEATH, and other events that have not ended
+                  stay ongoing. Nobody dies in the placebo arm of a study
+                  whose probes include the category with a zero count
+                  (`spared` below): that probe needs an arm without a fatal
+                  event.
 
 In the base process every randomized subject is dosed with the planned
 treatment, has complete dates, and has no event after the last dose. The

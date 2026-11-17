@@ -8,6 +8,7 @@ builds, the rule for seed files, the command line.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -18,6 +19,7 @@ from specfirst import cdisccore, cli, gates
 from specfirst.cdisccore import EXECUTION_ERROR, ISSUE, Finding
 from specfirst.compile import catalog as catalogs
 from specfirst.gen import GENERATOR, command, gate, pgfix, present, study
+from specfirst.gen.rng import seed_sha256
 
 
 @pytest.fixture(scope="module")
@@ -29,8 +31,11 @@ def test_the_gate_has_the_checks_of_the_plan():
     """PLAN.md section 13.5: CORE, identical hashes, a probe for every pair; drift first."""
     names = [check.name for check in gates.GATES["gen-1a"]]
     assert names[0] == "environment"
-    for needed in ("unit tests", "identical hashes", "CDISC CORE", "probes", "ASCII"):
+    for needed in ("unit tests", "identical hashes", "CDISC CORE", "controlled terms", "probes",
+                   "ASCII"):
         assert needed in names
+    # The scratch folder of the checks is removed by the last of them.
+    assert names.index("CDISC CORE") < names.index("controlled terms") < names.index("probes")
     assert len(gate.SEEDS) == 10 and len(set(gate.SEEDS)) == 10
 
 
@@ -46,13 +51,15 @@ def test_the_list_of_explained_findings_is_well_formed(root, catalog):
     assert len(set(ids)) == len(ids)
     seen: set[str] = set()
     for entry in entries:
-        assert entry["kind"] in ("cannot_run", "dataset", "every_record", "study", "probe")
+        assert entry["kind"] in ("cannot_run", "dataset", "every_record", "repeated_key",
+                                 "study", "probe")
         assert len(entry["reason"]) > 40
         for rule in entry["rules"]:
             assert re.fullmatch(r"CORE-\d{6}", rule) and rule not in seen, rule
             seen.add(rule)
         assert (entry["kind"] == "cannot_run") == ("text" in entry)
         assert (entry["kind"] == "probe") == ("probes" in entry)
+        assert (entry["kind"] == "repeated_key") == ("key" in entry)
         for probe in entry.get("probes", []):
             assert probe in catalog.probes and catalog.probes[probe]["kind"] == "record"
 
@@ -62,7 +69,10 @@ LOG = [
     {"data": "visible", "probe": "actual_arm_differs_from_planned", "subjects": ["S-7"]},
     {"data": "twin", "probe": "ae_starts_after_end_of_study", "subjects": ["S-4"]},
 ]
-TABLES = {"AE": [{}] * 5, "SV": [{}] * 8, "EX": [{}] * 3, "DM": [{}] * 4, "TS": [{}] * 2}
+# In SV, three subjects: two with several visits (seven records), one with a single visit.
+TABLES = {"AE": [{}] * 5, "EX": [{"USUBJID": "S-1"}, {"USUBJID": "S-2"}, {"USUBJID": "S-3"}],
+          "SV": [{"USUBJID": s} for s in ("S-1",) * 3 + ("S-2",) * 4 + ("S-3",)],
+          "DM": [{}] * 4, "TS": [{}] * 2}
 
 
 def _report(*findings: Finding) -> cdisccore.Report:
@@ -71,7 +81,7 @@ def _report(*findings: Finding) -> cdisccore.Report:
                             datasets=("DM", "AE"))
 
 
-def _unexplained(*findings: Finding, which: str = "twin") -> list[str]:
+def _unexplained(*findings: Finding, which: str = "twin") -> list[Finding]:
     return gate.classify(_report(*findings), gate.load_explained(), TABLES, LOG, which)[1]
 
 
@@ -93,9 +103,14 @@ def test_an_engine_error_is_explained_only_with_its_error_text():
 def test_a_rule_that_reports_everything_must_report_everything():
     assert _unexplained(Finding("CORE-002034", "AE", "no flag", ISSUE, 5)) == []
     assert len(_unexplained(Finding("CORE-002034", "AE", "no flag", ISSUE, 4))) == 1
-    assert _unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 8)) == []
+    # Without SVSEQ the rule reports the records of every subject with several visits:
+    # seven of the eight here. Any other count is a finding of its own.
+    assert _unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 7)) == []
+    assert len(_unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 8))) == 1
+    assert len(_unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 6))) == 1
     # The same rule on a dataset that does have a sequence number is a real finding.
     assert len(_unexplained(Finding("CORE-000544", "EX", "EXSEQ", ISSUE, 3))) == 1
+    assert len(_unexplained(Finding("CORE-000544", "LB", "LBSEQ", ISSUE, 3))) == 1
     assert _unexplained(Finding("CORE-000510", "DM", "split", ISSUE, 1)) == []
     assert len(_unexplained(Finding("CORE-000510", "DM", "split", ISSUE, 1, ("S-1",)))) == 1
     assert _unexplained(Finding("CORE-000735", "TS", "UNII", ISSUE, 1)) == []
@@ -104,26 +119,82 @@ def test_a_rule_that_reports_everything_must_report_everything():
 
 def test_a_probe_explains_only_the_subjects_it_planted():
     arms = ("CORE-000655", "DM", "arms differ", ISSUE)
-    assert _unexplained(Finding(*arms, 1, ("S-9",))) == []
+
+    def found(count, subjects=(), listed=None, named=None):
+        """A finding as a report gives it: one detail row with a subject for every issue."""
+        return Finding(*arms, count, subjects, listed=count if listed is None else listed,
+                       named=count if named is None else named)
+
+    assert _unexplained(found(1, ("S-9",))) == []
     # A subject that no probe planted, alone or beside a planted one.
-    assert len(_unexplained(Finding(*arms, 1, ("S-1",)))) == 1
-    assert len(_unexplained(Finding(*arms, 2, ("S-1", "S-9")))) == 1
+    assert len(_unexplained(found(1, ("S-1",)))) == 1
+    assert len(_unexplained(found(2, ("S-1", "S-9")))) == 1
     # A subject planted by another probe, or in the other dataset of the study.
-    assert len(_unexplained(Finding(*arms, 1, ("S-4",)))) == 1
-    assert len(_unexplained(Finding(*arms, 1, ("S-7",)))) == 1
-    assert _unexplained(Finding(*arms, 1, ("S-7",)), which="visible") == []
+    assert len(_unexplained(found(1, ("S-4",)))) == 1
+    assert len(_unexplained(found(1, ("S-7",)))) == 1
+    assert _unexplained(found(1, ("S-7",)), which="visible") == []
     # A finding without subjects cannot be tied to a probe.
-    assert len(_unexplained(Finding(*arms, 1))) == 1
-    line = _unexplained(Finding(*arms, 1, ("S-1",)))[0]
+    assert len(_unexplained(found(1))) == 1
+    # Review finding F13: more issues than detail rows, or a row without a subject: the
+    # planted subject that happens to be listed does not explain the rest.
+    assert len(_unexplained(found(3, ("S-9",), listed=1, named=1))) == 1
+    assert len(_unexplained(found(2, ("S-9",), listed=2, named=1))) == 1
+    assert _unexplained(found(2, ("S-9",), listed=2, named=2)) == []   # two records of S-9
+    assert len(_unexplained(Finding(*arms, 1, ("S-9",)))) == 1         # not read from a report
+    line = gate.describe(_unexplained(found(1, ("S-1",)))[0])
     assert "CORE-000655 DM" in line and "S-1" in line
+    many = gate.describe(found(5, ("S-1", "S-2", "S-3", "S-4", "S-5")))
+    assert "S-3 and 2 more" in many and "S-4" not in many
+
+
+def test_a_rule_about_every_record_is_explained_for_its_dataset_only():
+    """Review finding F13: an entry without datasets took any dataset of the right size."""
+    for entry in gate.load_explained()["explained"]:
+        if entry["kind"] in ("every_record", "repeated_key", "study", "probe"):
+            assert entry.get("datasets"), entry["id"]
+    # AE has five records here and TS two.
+    for rule in ("CORE-002056", "CORE-002084"):
+        assert _unexplained(Finding(rule, "AE", "missing", ISSUE, 5)) == []
+        assert len(_unexplained(Finding(rule, "TS", "missing", ISSUE, 2))) == 1
+        assert len(_unexplained(Finding(rule, "AE", "missing", ISSUE, 4))) == 1
+
+
+def _counted(tables, **changes) -> cdisccore.Report:
+    """A report as the pinned CORE writes it for these datasets."""
+    values = {"path": Path("r"), "engine": "1.0.0", "standard": "SDTMIG V3.4",
+              "rules": {f"R{n}": "SUCCESS" for n in range(500)}, "findings": (),
+              "datasets": tuple(tables), "records": {n: len(r) for n, r in tables.items()},
+              "terminology": "sdtmct-2025-09-26", "define": "2.1.0"}
+    return cdisccore.Report(**{**values, **changes})
 
 
 def test_a_report_of_another_engine_or_standard_does_not_count(root):
-    assert gate.report_problems(root, cdisccore.Report(
-        Path("r"), "1.0.0", "SDTMIG V3.4", {f"R{n}": "SUCCESS" for n in range(500)}, (), ())) == []
-    problems = gate.report_problems(root, cdisccore.Report(
-        Path("r"), "0.17.1", "SDTMIG V3.3", {"R1": "SUCCESS"}, (), ()))
+    assert gate.report_problems(root, _counted(TABLES), TABLES) == []
+    problems = gate.report_problems(root, _counted(
+        TABLES, engine="0.17.1", standard="SDTMIG V3.3", rules={"R1": "SUCCESS"}), TABLES)
     assert len(problems) == 3 and "0.17.1" in problems[0]
+
+
+def test_a_report_counts_only_for_the_datasets_that_were_handed_over(root):
+    """Review finding F12: a report that lists no dataset passed."""
+    assert gate.report_problems(root, _counted(TABLES, records={}), TABLES) == [
+        "CORE did not read the datasets as they were handed over: AE not read of 5 records, "
+        "DM not read of 4 records, EX not read of 3 records, SV not read of 8 records, "
+        "TS not read of 2 records"]
+    # A dataset CORE skipped, one it read short, one nobody handed over.
+    skipped = {n: len(r) for n, r in TABLES.items() if n != "SV"}
+    assert gate.report_problems(root, _counted(TABLES, records=skipped), TABLES) == [
+        "CORE did not read the datasets as they were handed over: SV not read of 8 records"]
+    short = {**{n: len(r) for n, r in TABLES.items()}, "AE": 4, "LB": 9}
+    assert gate.report_problems(root, _counted(TABLES, records=short), TABLES) == [
+        "CORE did not read the datasets as they were handed over: AE 4 of 5 records, "
+        "LB 9 of no records"]
+    # CORE without the Define-XML, or with another terminology package than it names.
+    assert gate.report_problems(root, _counted(TABLES, define=""), TABLES) == [
+        "CORE read the Define-XML as '', not 2.1.0"]
+    assert gate.report_problems(root, _counted(TABLES, terminology="sdtmct-2025-12-19"),
+                                TABLES) == [
+        "CORE used the terminology 'sdtmct-2025-12-19', not sdtmct-2025-09-26"]
 
 
 def test_parallel_runs_of_core_stay_within_the_memory(monkeypatch):
@@ -138,6 +209,155 @@ def test_parallel_runs_of_core_stay_within_the_memory(monkeypatch):
     assert gate.core_workers(available_mb=need, processors=32) == 1
     assert gate.core_workers(available_mb=64000, processors=2) == 1
     assert gate.core_workers(available_mb=0, processors=1) == 1
+
+
+def test_a_planted_defect_counts_only_with_its_rule_dataset_and_subject(root, catalog, tmp_path,
+                                                                        monkeypatch):
+    """Lesson 31: a finding that merely lists the subject somewhere is not the planted one."""
+    seeds = ("unit-planted",)
+    label = study.catalog_label(catalog)
+    gate.generate_all(root, tmp_path / "first", seeds)
+    design = pgfix.sample(seeds[0], label)
+    explained = gate.load_explained()
+
+    def changed(folder):
+        """What the check planted, read back from the copy it wrote."""
+        tables = study.read_tables(folder, "twin")
+        seen, twice = set(), None
+        for row in tables["AE"]:
+            key = (row["USUBJID"], row["AESEQ"])
+            twice = row["USUBJID"] if key in seen else twice
+            seen.add(key)
+        planted = {s for r in study.read_probes(folder) if r["data"] == "twin"
+                   for s in r["subjects"]}
+        arm = next(r["USUBJID"] for r in tables["DM"] if r["ARMCD"] and r["ACTARMCD"]
+                   and r["ARMCD"] != r["ACTARMCD"] and r["USUBJID"] not in planted)
+        return twice, arm, [r["USUBJID"] for r in tables["DM"]]
+
+    def report_of(findings, folder, **changes):
+        tables = study.read_tables(folder, "twin")
+        rules = {f"R{n}": "SUCCESS" for n in range(500)} | {f.rule: f.status for f in findings}
+        return _counted(tables, rules=rules, findings=tuple(findings), **changes)
+
+    def elsewhere(root_, folder, which):
+        # An unexplained finding of another rule that lists every subject of the study.
+        _, _, everyone = changed(folder)
+        return report_of([Finding("CORE-009999", "SV", "something else", ISSUE, len(everyone),
+                                  tuple(everyone))], folder)
+
+    def as_core_does(root_, folder, which):
+        twice, arm, _ = changed(folder)
+        return report_of([
+            Finding("CORE-000544", "AE", "AESEQ must be unique", ISSUE, 2, (twice,)),
+            Finding("CORE-000655", "DM", "arms differ", ISSUE, 1, (arm,), listed=1, named=1)],
+            folder)
+
+    def wrong_dataset(root_, folder, which):
+        twice, arm, _ = changed(folder)
+        return report_of([
+            Finding("CORE-000544", "EX", "EXSEQ must be unique", ISSUE, 2, (twice,)),
+            Finding("CORE-000655", "DM", "arms differ", ISSUE, 1, (arm,), listed=1, named=1)],
+            folder)
+
+    def without_define(root_, folder, which):
+        # CORE reports both defects, in a run that did not read the Define-XML.
+        twice, arm, _ = changed(folder)
+        return report_of([
+            Finding("CORE-000544", "AE", "AESEQ must be unique", ISSUE, 2, (twice,)),
+            Finding("CORE-000655", "DM", "arms differ", ISSUE, 1, (arm,), listed=1, named=1)],
+            folder, define="")
+
+    for number, (fake, expected) in enumerate(((elsewhere, False), (as_core_does, True),
+                                               (wrong_dataset, False), (without_define, False))):
+        monkeypatch.setattr(gate, "run_core", fake)
+        said: list[str] = []
+        assert gate.planted_core_defects(root, said.append, tmp_path / "first" / seeds[0],
+                                         tmp_path / f"run-{number}", explained, design,
+                                         label) is expected, fake.__name__
+        missed = any("did not report both planted defects" in line for line in said)
+        assert missed is (fake in (elsewhere, wrong_dataset))
+        assert any("does not count" in line for line in said) is (fake is without_define)
+
+
+# -- controlled terms ------------------------------------------------------------
+
+
+def _package() -> dict[str, dict]:
+    """A terminology package as CORE's cache gives it, built from the generator's table."""
+    from specfirst.gen import terms
+
+    package = {c["code"]: {"name": name, "extensible": c["extensible"],
+                           "terms": dict(c["terms"])} for name, c in terms.CT.items()}
+    package["C66738"] = {"name": "TSPARMCD", "extensible": True,
+                         "terms": {code: concept
+                                   for code, (_, concept) in terms.TS_PARAMETERS.items()}}
+    package["C67152"] = {"name": "TSPARM", "extensible": True,
+                         "terms": {name: concept
+                                   for name, concept in terms.TS_PARAMETERS.values()}}
+    # Codelists of the values of trial summary parameters, as far as a study writes them.
+    package["C99076"] = {"name": "INTMODEL", "extensible": True,
+                         "terms": {"PARALLEL": "C82639"}}
+    package["C99078"] = {"name": "INTTYPE", "extensible": True, "terms": {"DRUG": "C1909"}}
+    package["C66732"] = {"name": "SEXPOP", "extensible": False, "terms": {"BOTH": "C49636"}}
+    package["C99077"] = {"name": "STYPE", "extensible": False,
+                         "terms": {"INTERVENTIONAL": "C98388"}}
+    package["C66735"] = {"name": "TBLIND", "extensible": True,
+                         "terms": {"DOUBLE BLIND": "C15228"}}
+    package["C66785"] = {"name": "TCNTRL", "extensible": True, "terms": {"PLACEBO": "C49648"}}
+    package["C66737"] = {"name": "TPHASE", "extensible": True,
+                         "terms": {"PHASE II TRIAL": "C15601", "PHASE III TRIAL": "C15602"}}
+    package["C66739"] = {"name": "TTYPE", "extensible": True, "terms": {"SAFETY": "C49667"}}
+    return package
+
+
+def test_the_terms_of_the_generator_are_checked_against_a_package(catalog):
+    import copy
+
+    from specfirst.gen import sdtm, terms
+
+    package = _package()
+    assert gate.package_problems(package) == []
+    design = pgfix.sample("terms", study.catalog_label(catalog))
+    people, _ = study.simulate(design, catalog, "terms", "twin")
+    tables = sdtm.build(design, people)
+    checked, problems = gate.term_problems(tables, package)
+    assert problems == [] and checked > 5000
+
+    # Planted: values outside their codelist, in three domains.
+    broken = copy.deepcopy(tables)
+    broken["DM"][0]["SEX"] = "X"
+    broken["AE"][0]["AESEV"] = "TERRIBLE"
+    broken["DS"][0]["DSDECOD"] = "GONE FISHING"
+    found = gate.term_problems(broken, package)[1]
+    assert len(found) == 3
+    assert found[0].startswith("DM.SEX = 'X' ") and "not a term of SEX" in found[0]
+    assert any(line.startswith("DS.DSDECOD") and "NCOMPLT or PROTMLST" in line
+               for line in found)
+    assert any(line.startswith("AE.AESEV = 'TERRIBLE'") for line in found)
+    # Planted: a trial summary value whose code is the code of another term.
+    broken = copy.deepcopy(tables)
+    row = next(r for r in broken["TS"] if r["TSPARMCD"] == "TBLIND")
+    row["TSVALCD"] = "C49648"
+    assert gate.term_problems(broken, package)[1] == [
+        "TS: C49648 is not the code of 'DOUBLE BLIND' (TBLIND)"]
+    row = next(r for r in broken["TS"] if r["TSPARMCD"] == "NARMS")
+    row["TSPARMCD"] = "ARMSNO"
+    assert any("TSPARMCD = 'ARMSNO'" in line for line in gate.term_problems(broken, package)[1])
+
+    # Planted: the package differs from the table the generator carries.
+    other = copy.deepcopy(package)
+    other[terms.CT["SEX"]["code"]]["terms"]["F"] = "C00000"
+    assert gate.package_problems(other) == ["SEX: 'F' is C00000 in the package, C16576 here"]
+    other = copy.deepcopy(package)
+    del other[terms.CT["RACE"]["code"]]  # the packages of 2026 no longer have this codelist
+    assert gate.package_problems(other) == ["RACE: the package has no codelist C74457"]
+    other = copy.deepcopy(package)
+    other[terms.CT["EPOCH"]["code"]]["extensible"] = False
+    assert "extensible False" in gate.package_problems(other)[0]
+    other = copy.deepcopy(package)
+    other["C67152"]["terms"].pop("Trial Title")
+    assert gate.package_problems(other) == [
+        "trial summary parameter TITLE (Trial Title) is not C49802 in the package"]
 
 
 # -- identical hashes ------------------------------------------------------------
@@ -200,11 +420,40 @@ def test_the_gate_checks_see_their_planted_defects(root, catalog, tmp_path):
     seeds = ("unit-gate",)
     assert gate.determinism_check(root, said.append, tmp_path, seeds) is True
     assert any(line.startswith("planted defect: a build with another time stamp") for line in said)
+    assert "planted defect: a study whose manifest alone differs: study.json: the hashes " \
+        "differ" in said
+    assert any(line.startswith("planted defect: a build that depends on the hash seed")
+               for line in said)
+    assert "by a process of its own (hash seed " in said[-2]
     assert said[-1] == "identical hashes: 0 problems"
     said.clear()
     assert gate.probes_check(root, said.append, tmp_path, seeds) is True
     assert sum(line.startswith("planted defect:") for line in said) == 3
     assert any("0 problems" in line for line in said)
+
+
+def test_the_second_build_is_made_by_another_process(root, catalog, tmp_path, monkeypatch):
+    """Review finding F12: two builds of one process share what a build must not depend on."""
+    seeds = ("unit-apart",)
+    here = gate.generate_all(root, tmp_path / "here", seeds)
+    apart = gate.generate_apart(root, tmp_path / "apart", seeds, gate.other_hash_seed())
+    assert gate.hash_differences(gate.build_hashes(tmp_path / "here" / seeds[0]),
+                                 apart[seeds[0]]) == []
+    # The manifest is compared like every other file.
+    assert set(apart[seeds[0]]) == set(here[seeds[0]]["files"]) | {"study.json"}
+    # Planted defect: a build that depends on the hash seed differs between two processes ...
+    one = gate.generate_apart(root, tmp_path / "one", seeds, "1", planted=True)
+    two = gate.generate_apart(root, tmp_path / "two", seeds, "2", planted=True)
+    assert gate.hash_differences(one[seeds[0]], two[seeds[0]])
+    # ... and two processes with one hash seed would not show it.
+    again = gate.generate_apart(root, tmp_path / "again", seeds, "1", planted=True)
+    assert gate.hash_differences(one[seeds[0]], again[seeds[0]]) == []
+    monkeypatch.setenv("PYTHONHASHSEED", "1")
+    assert gate.other_hash_seed() == "2"
+    monkeypatch.delenv("PYTHONHASHSEED")
+    assert gate.other_hash_seed() == "1"
+    with pytest.raises(RuntimeError, match="a build in a process of its own failed"):
+        gate.generate_apart(tmp_path / "no-checkout", tmp_path / "fails", seeds, "1")
 
 
 def test_the_probe_check_fails_on_a_study_whose_twin_lost_a_probe(root, catalog, tmp_path):
@@ -226,11 +475,24 @@ def test_the_probe_check_fails_on_a_study_whose_twin_lost_a_probe(root, catalog,
 
 def test_a_seed_file_stays_outside_the_repository(root, tmp_path):
     outside = tmp_path / "seed.txt"
-    outside.write_text("  sealed-seed-text\n", encoding="ascii")
-    assert command.read_seed(root, None, str(outside)) == "sealed-seed-text"
+    outside.write_bytes(b"sealed-seed-text\n")
+    # The seed is the file, byte for byte: the hash in a manifest is the hash of the file.
+    assert command.read_seed(root, None, str(outside)) == "sealed-seed-text\n"
+    assert seed_sha256(command.read_seed(root, None, str(outside))) == hashlib.sha256(
+        outside.read_bytes()).hexdigest()
     assert command.read_seed(root, "abc", None) == "abc"
     with pytest.raises(command.SeedError, match="inside the checkout"):
         command.read_seed(root, None, str(root / "docs" / "seed.txt"))
+    # Another worktree or clone of a repository is a checkout as well.
+    clone = tmp_path / "another-worktree"
+    (clone / "notes").mkdir(parents=True)
+    (clone / ".git").write_text("gitdir: elsewhere\n", encoding="ascii")
+    (clone / "notes" / "seed.txt").write_bytes(b"sealed-seed-text\n")
+    with pytest.raises(command.SeedError, match="inside the checkout"):
+        command.read_seed(root, None, str(clone / "notes" / "seed.txt"))
+    outside.write_bytes(b"sealed \xff")
+    with pytest.raises(command.SeedError, match="not ASCII"):
+        command.read_seed(root, None, str(outside))
     with pytest.raises(command.SeedError, match="exactly one"):
         command.read_seed(root, "abc", str(outside))
     with pytest.raises(command.SeedError, match="exactly one"):

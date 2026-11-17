@@ -334,6 +334,8 @@ GATES: dict[str, tuple[Check, ...]] = {
               _gen("determinism")),
         Check("CDISC CORE", "specfirst.gen.gate.core: visible and twin of the 10 seeds",
               _gen("core")),
+        Check("controlled terms", "specfirst.gen.gate.controlled_terms: values against "
+              "the CT package of CORE", _gen("controlled_terms")),
         Check("probes", "specfirst.gen.gate.probe_coverage: every pair of alternatives",
               _gen("probe_coverage")),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),

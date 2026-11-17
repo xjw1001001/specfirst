@@ -234,14 +234,15 @@ def _undo_ongoing(t, r, d):
 
 
 def _undo_dose_time(t, r, d):
-    row = _row(t, "DM", r["subjects"][0])
-    row["RFXSTDTC"] = row["RFXSTDTC"][:10]
+    # The house default reads the time of the first dose from the exposure record.
+    row = min(_rows(t, "EX", r["subjects"][0]), key=lambda x: x["EXSEQ"])
+    row["EXSTDTC"] = row["EXSTDTC"][:10]
 
 
 def _undo_after_window(t, r, d):
-    subject = r["subjects"][0]
-    last = max(row["AESTDTC"] for row in _rows(t, "AE", subject))
-    _drop(t, "AE", lambda row: not (row["USUBJID"] == subject and row["AESTDTC"] == last))
+    # The subject whose event starts the day after the window loses it.
+    subject = max(r["by_subject"], key=lambda s: r["by_subject"][s]["days_after_last_dose"])
+    _drop(t, "AE", lambda row: row["USUBJID"] != subject)
 
 
 def _undo_events(t, r, d):
@@ -345,13 +346,208 @@ def test_a_pair_without_any_probe_is_reported(catalog, full):
     design, _, log, tables = full
     shorter = [r for r in log if r["probe"] != "reference_start_before_first_dose"]
     _, _, problems = present.coverage(catalog, design, shorter, tables)
-    assert problems == ["date.studyday.origin: no probe in the twin separates treatment_start "
-                        "from dm_rfstdtc"]
+    assert problems == [
+        "probe reference_start_before_first_dose: the twin does not carry it",
+        "date.studyday.origin: no probe in the twin separates treatment_start from dm_rfstdtc"]
     # A probe of the visible data does not count for the twin.
     moved = [dict(r, data="visible") if r["probe"] == "two_disposition_events" else r
              for r in log]
     _, _, problems = present.coverage(catalog, design, moved, tables)
     assert any("disp.status.record" in problem for problem in problems)
+
+
+def test_the_twin_must_carry_every_probe_even_one_that_separates_no_pair(catalog, full):
+    """Review finding F11: a probe that only varies a slot was free to be missing."""
+    design, _, log, tables = full
+    for probe in ("ae_with_each_causality_value", "baseline_value_of_other_test_only",
+                  "partial_exposure_date_not_earliest"):
+        shorter = [r for r in log if r["probe"] != probe]
+        _, checked, problems = present.coverage(catalog, design, shorter, tables)
+        assert problems == [f"probe {probe}: the twin does not carry it"]
+        assert checked == len(log) - 1
+    # The visible data carry a sampled part: there a missing probe is no problem by itself.
+    visible = [dict(r, data="visible") for r in log if r["probe"] != "two_disposition_events"]
+    _, _, problems = present.coverage(catalog, design, visible, tables, "visible")
+    assert not any("does not carry" in line for line in problems)
+
+
+def test_which_pairs_a_probe_separates_comes_from_the_catalog(catalog, full):
+    """Review finding F10: the log is what is checked, so its own claims do not count."""
+    design, _, log, tables = full
+    moved = []
+    for record in log:
+        record = copy.deepcopy(record)
+        if record["probe"] == "two_disposition_events":
+            continue
+        if record["probe"] == "output_shape":  # a probe whose check finds nothing to miss
+            record["separates"]["disp.status.record"] = [
+                ["disposition_event", "disposition_event_by_subcategory"]]
+        moved.append(record)
+    _, _, problems = present.coverage(catalog, design, moved, tables)
+    assert "probe output_shape: the log claims other pairs than the catalog gives" in problems
+    assert any(line.startswith("disp.status.record: no probe in the twin separates")
+               for line in problems)
+    twice = [*log, log[0]]
+    assert any("logged 2 times" in line for line in
+               present.coverage(catalog, design, twice, tables)[2])
+    unknown = [*log, dict(log[0], probe="no_such_probe")]
+    assert "probe no_such_probe: not a probe of the catalog" in present.coverage(
+        catalog, design, unknown, tables)[2]
+
+
+def test_a_design_without_an_efficacy_set_has_no_pair_with_that_set(catalog, studies):
+    """Review finding F7: a table on the efficacy-evaluable set cannot be built there."""
+    entry = catalog.entry("tfl.population")
+    for design, _, log, _ in studies.values():
+        has_set = designs.features(design)["design.has_efficacy_set"]
+        pairs = probes.pairs_of(entry, design)
+        assert (("safety", "efficacy") in pairs) is has_set
+        assert ("safety", "randomized") in pairs
+        record = next(r for r in log if r["probe"] == "dosed_without_postbaseline_value")
+        claimed = record["separates"]["tfl.population"]
+        assert claimed == ([["safety", "efficacy"], ["randomized", "efficacy"]] if has_set
+                           else [])
+
+
+def _counts(tables, flag, arm_variable):
+    """Subjects per arm of an analysis set, as the header of a table counts them."""
+    counts: dict[str, int] = {}
+    dosed = {row["USUBJID"] for row in tables["EX"]}
+    for row in tables["DM"]:
+        inside = row["USUBJID"] in dosed if flag == "safety" else bool(row["ARMCD"])
+        if inside and row[arm_variable]:
+            counts[row[arm_variable]] = counts.get(row[arm_variable], 0) + 1
+    return counts
+
+
+def test_the_safety_set_and_the_randomized_set_never_count_the_same(catalog):
+    """Review finding F3: three planted subjects cancelled in one twin in four.
+
+    The table on the safety set counts by actual arm, the table on the
+    randomized set by planned arm. With the arms of the planted subjects
+    drawn freely the two tables had the same count in every column in 18 of
+    150 twins. Here: 60 designs with three or four arms.
+    """
+    checked = 0
+    for number in range(400):
+        seed = f"cancel-{number}"
+        design = pgfix.sample(seed, study.catalog_label(catalog))
+        if len(designs.arms(design)) < 3:
+            continue
+        people, _ = study.simulate(design, catalog, seed, "twin")
+        tables = sdtm.build(design, people, ("DM", "EX"))
+        assert _counts(tables, "safety", "ACTARMCD") != _counts(tables, "randomized", "ARMCD"), \
+            seed
+        checked += 1
+        if checked == 60:
+            break
+    assert checked == 60
+
+
+def test_a_log_line_says_when_its_difference_reaches_the_output(catalog, full):
+    """Review findings F5 and F8: what a probe separates may need another decision's value."""
+    design, _, log, _ = full
+    assert set(probes.REACHES) == {e.id for e in probes.slice_entries(catalog, design)}
+    for record in log:
+        served = [*record["separates"], *record["varies"], *record["stresses"]]
+        assert set(record["reaches"]) == set(served) & set(probes.REACHES)
+        for reach in record["reaches"].values():
+            assert len({"always", "any_of", "never"} & set(reach)) == 1
+    by_probe = {r["probe"]: r for r in log}
+    assert by_probe["no_exposure_end_date"]["reaches"]["trt.end.source"]["any_of"] == [
+        "ae.teae.end=last_dose_plus_days"]
+    assert by_probe["reference_start_before_first_dose"]["reaches"]["date.studyday.origin"][
+        "never"] is True
+    assert by_probe["zero_dose_record_before_first_dose"]["reaches"]["trt.start.source"] == {
+        "always": True}
+    half = by_probe["statistic_at_rounding_half"]["detail"]["assumes"]
+    assert half["trt.actual.source"] == "dm_actarm" and "tfl.ae.summary.rows" in half
+    assert "FATAL" in by_probe["category_with_zero_count"]["detail"]["assumes"][
+        "tfl.ae.summary.rows"]
+
+
+# What an alternative needs besides the pattern (review finding F9): each case changes the
+# twin so that the pattern is still there and the two alternatives no longer differ.
+def _f9_dose_time_in_dm_only(t, r, d):
+    row = _row(t, "DM", r["subjects"][0])
+    row["RFXSTDTC"] = row["RFXSTDTC"][:10]
+
+
+def _f9_no_dose(t, r, d):
+    for row in _rows(t, "EX", r["subjects"][0]):
+        row["EXDOSE"] = 0.0
+
+
+def _f9_placebo_on_day_one(t, r, d):
+    rows = sorted(_rows(t, "EX", r["subjects"][0]), key=lambda x: x["EXSEQ"])
+    like = dict(rows[0])
+    like.update(EXTRT="PLACEBO", EXDOSE=0.0, EXSEQ=rows[-1]["EXSEQ"] + 1)
+    t["EX"].append(like)
+
+
+def _f9_event_over_before_the_dose(t, r, d):
+    subject = r["subjects"][0]
+    for row in _rows(t, "AE", subject):
+        row["AEENDTC"] = _row(t, "DM", subject)["RFXSTDTC"][:8] + "01"
+
+
+def _f9_no_event(t, r, d):
+    _drop(t, "AE", lambda row: row["USUBJID"] != r["subjects"][0])
+
+
+def _f9_late_event_not_serious(t, r, d):
+    for row in _rows(t, "AE", r["subjects"][0]):
+        row["AESER"] = "N"
+
+
+def _f9_one_more_serious_on_day_one(t, r, d):
+    arm = r["detail"]["arm"]
+    members = [row for row in t["DM"] if row["ACTARMCD"] == arm and row["RFXSTDTC"]]
+    serious = {row["USUBJID"] for row in t["AE"] if row["AESER"] == "Y"}
+    dm = next(row for row in members if row["USUBJID"] not in serious)
+    like = dict(t["AE"][0])
+    like.update(USUBJID=dm["USUBJID"], AESEQ=99, AESER="Y", AESTDTC=dm["RFXSTDTC"][:10],
+                AEENDTC=None)
+    t["AE"].append(like)
+
+
+F9 = [
+    ("ae_on_first_dose_date_without_time", _f9_dose_time_in_dm_only),
+    ("no_exposure_end_date", _f9_no_dose),
+    ("dosed_but_not_randomized", _f9_no_dose),
+    ("zero_dose_record_before_first_dose", _f9_placebo_on_day_one),
+    ("partial_ae_start_in_month_of_first_dose", _f9_event_over_before_the_dose),
+    ("zero_dose_record_before_first_dose", _f9_no_event),
+    ("rfxstdtc_differs_from_exposure", _f9_no_event),
+    ("partial_exposure_date", _f9_no_event),
+    ("no_exposure_end_date", _f9_no_event),
+    ("no_exposure_end_date", _f9_late_event_not_serious),
+    ("reference_start_before_first_dose", _f9_no_event),
+    ("statistic_at_rounding_half", _f9_one_more_serious_on_day_one),
+]
+
+
+@pytest.mark.parametrize("probe, change", F9, ids=[f"{p}-{c.__name__[4:]}" for p, c in F9])
+def test_a_pattern_that_no_longer_separates_is_missed(catalog, full, probe, change):
+    design, _, log, tables = full
+    record = next(r for r in log if r["probe"] == probe)
+    assert present.find(record, tables, design) == []
+    broken = copy.deepcopy(tables)
+    change(broken, record, design)
+    assert present.find(record, broken, design), f"{probe} is still found"
+
+
+def test_no_other_planted_subject_has_a_serious_event(catalog, studies):
+    """The subject without an exposure end date changes a count that no other probe does."""
+    for design, people, log, _ in studies.values():
+        serious = sorted({probe for s in people if s.probes and any(e.serious for e in s.events)
+                          for probe in s.probes})
+        assert serious == ["no_exposure_end_date"]
+        record = next(r for r in log if r["probe"] == "no_exposure_end_date")
+        assert record["detail"]["event_serious"] is True
+        # Never in the arm whose counts are calibrated for the rounding probe.
+        spared = probes.Parameters.of(design).spared_arm
+        assert all(s.actual_arm != spared for s in people if s.probes and s.events)
 
 
 def test_a_log_line_alone_proves_nothing(catalog, full):

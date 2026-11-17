@@ -23,8 +23,17 @@ takes these values from the design; the log of probes repeats them, so
 that the decisions of a kit can be sampled to fit (gen-2).
 
 The count probes hold for the house defaults: columns by actual treatment
-on the safety set. They use one arm, the placebo arm, which no planted
-subject enters under actual treatment.
+(DM.ACTARM) on the safety set. They use one arm, the placebo arm, which no
+planted subject has as its actual arm.
+
+What a probe promises, and what it does not. A recipe plants the pattern of
+the catalog in SDTM, and where the two alternatives differ in whether an
+adverse event is treatment-emergent, an event in the interval where they
+disagree. Whether the difference reaches the one output of the slice, the
+adverse event summary, depends for some decisions on the value of another
+decision (a table on the randomized set, an emergence window): `REACHES`
+says which, and every line of the log repeats it. That is a prediction;
+gen-2 verifies it by mutation (property P4).
 """
 
 from __future__ import annotations
@@ -45,6 +54,50 @@ Date = datetime.date
 
 # The units of the slice "adverse event summary first" (docs/decisions/ADR-005.md).
 SLICE_UNITS = ("mod-treatment", "mod-populations", "mod-ae-emergence", "tfl-ae-summary")
+
+# When a difference between two alternatives of a decision reaches the adverse
+# event summary (unit tfl-ae-summary), every other decision at its house default
+# unless named: "always", or a list of values of other decisions of which one is
+# needed, or "never". Predicted from the templates of the catalog and the house
+# standard; gen-2 verifies by mutation.
+REACHES: dict[str, dict] = {
+    "trt.planned.source": {"any_of": [
+        "trt.actual.source=same_as_planned", "pop.safety.grouping=planned",
+        "tfl.population=randomized", "tfl.population=efficacy"],
+        "note": "the table reads planned treatment only then"},
+    "trt.actual.source": {"always": True},
+    "trt.start.source": {"always": True},
+    "trt.end.source": {"any_of": ["ae.teae.end=last_dose_plus_days"],
+                       "note": "only an emergence window reads the treatment end date"},
+    "trt.date.imputation": {"always": True},
+    "date.studyday.origin": {"never": True,
+                             "note": "no row of the adverse event summary reads a study day; "
+                                     "ASTDY and AENDY of ADAE differ"},
+    "pop.randomized.rule": {"any_of": ["tfl.population=randomized"]},
+    "pop.safety.rule": {"always": True},
+    "pop.safety.grouping": {"always": True},
+    "pop.efficacy.rule": {"any_of": ["tfl.population=efficacy"]},
+    "disp.status.record": {"any_of": ["ae.teae.end=end_of_study"],
+                           "note": "the last disposition event of the planted subject is its "
+                                   "study participation record: the two alternatives differ for "
+                                   "the subcategory of the treatment record only"},
+    "ae.start.imputation": {"always": True},
+    "ae.teae.start": {"always": True},
+    "ae.teae.end": {"always": True,
+                    "note": "for a window of parameters.window_days days; a window that is "
+                            "much longer or shorter may leave the planted events on one side"},
+    "ae.related.values": {"any_of": ["tfl.ae.summary.rows shows RELATED"]},
+    "tfl.output.include": {"always": True},
+    "tfl.population": {"always": True},
+    "tfl.columns.arms": {"always": True},
+    "tfl.columns.total": {"always": True},
+    "tfl.percent.format": {"any_of": ["tfl.ae.summary.rows shows FATAL"],
+                           "note": "the zero count is the count of fatal events in one arm"},
+    "tfl.rounding.rule": {"any_of": ["tfl.ae.summary.rows shows ANY or SERIOUS"],
+                          "note": "with tfl.population=safety, pop.safety.grouping=actual and "
+                                  "trt.actual.source=dm_actarm"},
+    "tfl.ae.summary.rows": {"always": True},
+}
 
 
 @dataclass
@@ -94,6 +147,13 @@ class Planter:
         order = designs.dose_order(self.ctx.design)
         self.others = [a for a in order if a != self.parameters.spared_arm]
         self.active = [a for a in order if not designs.is_placebo(self.ctx.design, a)]
+        # The planned and the actual arm of the subject who is dosed off plan. Drawn here,
+        # whether or not that probe is planted, because another recipe depends on it.
+        if len(self.others) >= 2:
+            planned, actual = self.rng.child("switch").sample(self.others, 2)
+        else:
+            planned, actual = self.parameters.spared_arm, self.others[0]
+        self.switch = (planned, actual)
 
     def arm(self, probe: str, number: int = 1) -> str:
         """An arm for a planted subject: never the arm of the count probes."""
@@ -122,10 +182,20 @@ class Planter:
 
     def event(self, subject: Subject, start: Date, end: Date | None = None,
               **changes: object) -> Event:
-        """A mild, unrelated event; ongoing when it has no end."""
+        """A mild, unrelated event; ongoing when it has no end.
+
+        No action is taken with a treatment that is not being given: before
+        the first dose and after the last one the action is NOT APPLICABLE,
+        as in the base process.
+        """
         outcome = "RECOVERED/RESOLVED" if end else "NOT RECOVERED/NOT RESOLVED"
+        last = subject.last_dose or subject.end_of_study
+        on_treatment = subject.first_dose is not None and \
+            subject.first_dose <= start <= (last or start)
         event = Event(term="Headache", start=start, end=end, severity="MILD", serious=False,
-                      causality=self.ctx.scale[0], action="DOSE NOT CHANGED", outcome=outcome)
+                      causality=self.ctx.scale[0],
+                      action="DOSE NOT CHANGED" if on_treatment else "NOT APPLICABLE",
+                      outcome=outcome)
         for name, value in changes.items():
             setattr(event, name, value)
         subject.events.append(event)
@@ -171,10 +241,7 @@ def _arm_label(p: Planter) -> Planted | None:
 
 def _actual_differs(p: Planter) -> Planted:
     probe = "actual_arm_differs_from_planned"
-    if len(p.others) >= 2:
-        planned, actual = p.rng.child(probe, "arms").sample(p.others, 2)
-    else:
-        planned, actual = p.parameters.spared_arm, p.others[0]
+    planned, actual = p.switch
     subject = p.fresh(probe, arm=planned)
     subject.actual_arm = actual
     treatment, dose = p.ctx.treatment_of(actual)
@@ -196,18 +263,27 @@ def _first_other(p: Planter) -> Planted:
 def _zero_dose(p: Planter) -> Planted:
     probe = "zero_dose_record_before_first_dose"
     subject = p.fresh(probe, arm=p.rng.child(probe, "arm").choice(p.active))
-    first, _ = split_first(subject)
+    first, rest = split_first(subject)
     # SDTM takes the first exposure record as the start of treatment (RFXSTDTC),
     # whatever its dose; which record starts treatment in analysis is a decision.
     first.dose = 0.0
-    return Planted(probe, "planted", [subject.key], {"zero_dose_days": 3})
+    # An event during the days of dose zero, over before the first dose above zero:
+    # emergent when treatment starts with the first record, not when it starts with a dose.
+    p.event(subject, first.start + DAY, rest.start - DAY)
+    return Planted(probe, "planted", [subject.key],
+                   {"zero_dose_days": 3, "event_on_study_day": 2})
 
 
 def _rfxstdtc(p: Planter) -> Planted:
     probe = "rfxstdtc_differs_from_exposure"
     subject = p.fresh(probe)
-    subject.first_exposure_text = (subject.first_dose - DAY).isoformat()
-    return Planted(probe, "planted", [subject.key], {"days_earlier": 1})
+    earlier = subject.first_dose - DAY
+    subject.first_exposure_text = earlier.isoformat()
+    # An event that starts on the date of DM.RFXSTDTC, the day before the first exposure
+    # record: emergent when that date starts treatment, not when the record does.
+    p.event(subject, earlier, subject.first_dose + 2 * DAY)
+    return Planted(probe, "planted", [subject.key],
+                   {"days_earlier": 1, "event_on": earlier.isoformat()})
 
 
 def _spans_days(p: Planter) -> Planted | None:
@@ -225,18 +301,34 @@ def _no_end_date(p: Planter) -> Planted:
     for record in subject.doses:
         record.end = None
     subject.last_dose = None
-    return Planted(probe, "planted", [subject.key])
+    # An event later than the emergence window after the disposition date: emergent
+    # while the subject has no treatment end date, not once the disposition date is one.
+    # The event is serious, and the only serious event of a planted subject. Between a
+    # window and the end of the study as the end of emergence this subject changes
+    # against the subject with an event between the two, and where both are in one arm
+    # the count of subjects with any event stays the same; the count of subjects with a
+    # serious event does not.
+    days = p.parameters.window_days
+    p.event(subject, subject.end_of_study + (days + 2) * DAY, None, serious=True,
+            severity="MODERATE")
+    return Planted(probe, "planted", [subject.key],
+                   {"window_days": days, "event_days_after_disposition": days + 2,
+                    "event_serious": True})
 
 
 def _partial_exposure(p: Planter) -> Planted:
     probe = "partial_exposure_date"
     subject = p.fresh(probe, need=lambda date: 4 <= date.day <= 24)
-    first, _ = split_first(subject)
+    first, rest = split_first(subject)
     month = first.start.isoformat()[:7]
     first.start_text, first.start_time = month, None
     subject.first_exposure_text = month
     subject.reference_start = subject.first_dose
-    return Planted(probe, "planted", [subject.key], {"collected": month})
+    # An event between the first day of the month and the first complete start date, over
+    # before that date: emergent when the partial date is completed, not when it is left out.
+    p.event(subject, first.start + DAY, rest.start - DAY)
+    return Planted(probe, "planted", [subject.key],
+                   {"collected": month, "event_on": (first.start + DAY).isoformat()})
 
 
 def _partial_not_earliest(p: Planter) -> Planted:
@@ -264,6 +356,9 @@ def _reference_start(p: Planter) -> Planted:
     for item in subject.dispositions:
         if item.decod == "RANDOMIZED":
             item.date = subject.reference_start
+    # An event, so that a study day exists that the two origins number differently.
+    start = subject.first_dose + 3 * DAY
+    p.event(subject, start, start + 2 * DAY)
     return Planted(probe, "planted", [subject.key], {"days_before": days})
 
 
@@ -289,7 +384,11 @@ def _not_randomized(p: Planter) -> Planted:
 
 def _never_dosed(p: Planter) -> Planted:
     probe = "randomized_never_dosed"
-    subject = p.fresh(probe, dosed=False)
+    # Planned for the planned arm of the subject who is dosed off plan. Three planted
+    # subjects move between the safety set and the randomized set (this one, the one
+    # dosed off plan, the one dosed without being randomized); with arms drawn freely
+    # they can leave every column with the same count in both sets.
+    subject = p.fresh(probe, dosed=False, arm=p.switch[0])
     return Planted(probe, "planted", [subject.key], {"planned": subject.planned_arm})
 
 
@@ -360,11 +459,17 @@ def _on_first_dose_date(p: Planter) -> Planted:
 def _after_window(p: Planter) -> Planted:
     probe = "ae_starts_after_emergence_window"
     days = p.parameters.window_days
-    subject = p.fresh(probe)
-    delay_end(subject, subject.last_dose + (days + 3) * DAY)
-    p.event(subject, subject.last_dose + days * DAY, None)
-    p.event(subject, subject.last_dose + (days + 1) * DAY, None, term="Nausea")
-    return Planted(probe, "planted", [subject.key], {"window_days": days})
+    keys: list[str] = []
+    after: dict[str, dict] = {}
+    # Two subjects, so that the table counts each event: one event on the last day of
+    # the window, one on the day after it.
+    for number, offset in enumerate((days, days + 1), start=1):
+        subject = p.fresh(probe, number)
+        delay_end(subject, subject.last_dose + (days + 3) * DAY)
+        p.event(subject, subject.last_dose + offset * DAY, None)
+        keys.append(subject.key)
+        after[subject.key] = {"days_after_last_dose": offset}
+    return Planted(probe, "planted", keys, {"window_days": days}, after)
 
 
 def _after_end_of_study(p: Planter) -> Planted:
@@ -410,8 +515,8 @@ def _treated(p: Planter, arm: str) -> list[Subject]:
 
 
 def _emergent(subject: Subject) -> list[Event]:
-    """Events of a base subject that start after the day of the first dose."""
-    return [e for e in subject.events if e.start > subject.first_dose]
+    """Events of a base subject that start on or after the day of the first dose."""
+    return [e for e in subject.events if e.start >= subject.first_dose]
 
 
 def _zero_count(p: Planter) -> Planted | None:
@@ -419,8 +524,9 @@ def _zero_count(p: Planter) -> Planted | None:
     people = [s for s in p.people if arm in (s.planned_arm, s.actual_arm)]
     if any(e.fatal for s in people for e in s.events):
         raise RuntimeError("a subject of the spared arm has a fatal event")
-    return Planted("category_with_zero_count", "counts",
-                   detail={"arm": arm, "category": "fatal adverse event", "count": 0})
+    return Planted("category_with_zero_count", "counts", detail={
+        "arm": arm, "category": "fatal adverse event", "count": 0,
+        "assumes": {"tfl.ae.summary.rows": "shows FATAL"}})
 
 
 def is_rounding_half(count: int, total: int) -> bool:
@@ -476,7 +582,9 @@ def _rounding_half(p: Planter) -> Planted:
         "arm": arm, "subjects": total, "with_any_event": len(having),
         "with_serious_event": len(serious),
         "percent": [100.0 * len(having) / total, 100.0 * len(serious) / total],
-        "assumes": {"tfl.population": "safety", "pop.safety.grouping": "actual"}})
+        "assumes": {"tfl.population": "safety", "pop.safety.grouping": "actual",
+                    "trt.actual.source": "dm_actarm",
+                    "tfl.ae.summary.rows": "shows ANY or SERIOUS"}})
 
 
 # probe ID -> recipe; a planted or count probe can be left out of the visible data.
@@ -568,11 +676,37 @@ def plant(ctx: subjects.Context, catalog: catalogs.Catalog, people: list[Subject
     return planted
 
 
-def _pairs(entry: catalogs.Entry, claimed: object) -> list[list[str]]:
+def alternatives_of(entry: catalogs.Entry, design: dict) -> list[str]:
+    """The alternatives of a decision that a study of this design can choose.
+
+    The catalog says per entry when a decision applies, not per alternative.
+    One alternative of the slice needs more than its entry does: a table on
+    the efficacy-evaluable set needs a design that has such a set.
+    """
     ids = [alternative.id for alternative in entry.alternatives]
-    if claimed == "all":
-        return [list(pair) for pair in combinations(ids, 2)]
-    return [list(pair) for pair in claimed or []]
+    if entry.id == "tfl.population" and not designs.features(design)["design.has_efficacy_set"]:
+        ids.remove("efficacy")
+    return ids
+
+
+def pairs_of(entry: catalogs.Entry, design: dict) -> list[tuple[str, str]]:
+    """Every pair of alternatives of a decision that a probe has to separate."""
+    return list(combinations(alternatives_of(entry, design), 2))
+
+
+def claimed_pairs(catalog: catalogs.Catalog, design: dict, probe: str) -> dict[str, list[list]]:
+    """What the catalog says a probe separates: entry -> pairs, for the pairs of this design."""
+    claims = {}
+    for entry_id, claimed in (catalog.probes[probe].get("separates") or {}).items():
+        entry = catalog.entry(entry_id)
+        possible = pairs_of(entry, design)
+        if claimed == "all":
+            pairs = possible
+        else:
+            wanted = [frozenset(pair) for pair in claimed or []]
+            pairs = [pair for pair in possible if frozenset(pair) in wanted]
+        claims[entry_id] = [list(pair) for pair in pairs]
+    return claims
 
 
 def log(design: dict, catalog: catalogs.Catalog, which: str, planted: list[Planted],
@@ -584,8 +718,8 @@ def log(design: dict, catalog: catalogs.Catalog, which: str, planted: list[Plant
     records = []
     for item in sorted(planted, key=lambda p: order.index(p.probe)):
         recipe = catalog.probes[item.probe]
-        separates = {entry_id: _pairs(catalog.entry(entry_id), claimed)
-                     for entry_id, claimed in (recipe.get("separates") or {}).items()}
+        separates = claimed_pairs(catalog, design, item.probe)
+        served = [*separates, *(recipe.get("varies") or {}), *(recipe.get("stresses") or [])]
         records.append({
             "catalog": f"{catalog.name} {catalog.version}",
             "generator": GENERATOR,
@@ -598,6 +732,8 @@ def log(design: dict, catalog: catalogs.Catalog, which: str, planted: list[Plant
             "separates": separates,
             "varies": dict(recipe.get("varies") or {}),
             "stresses": list(recipe.get("stresses") or []),
+            "reaches": {entry_id: REACHES[entry_id] for entry_id in dict.fromkeys(served)
+                        if entry_id in REACHES},
             "subjects": sorted(by_key[key] for key in item.keys),
             "by_subject": {by_key[key]: value for key, value in sorted(item.per_key.items())},
             "detail": item.detail,

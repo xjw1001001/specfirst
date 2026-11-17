@@ -5,9 +5,11 @@
     specfirst gen check DIR
 
 A seed is a text. `--seed-file` reads it from a file instead of the command
-line; such a file must lie outside the checkout, because the seeds of dev,
-test and sealed kits are secrets (PLAN.md sections 6.7 and 8). The gate
-seeds are development seeds and are in `specfirst.gen.gate`.
+line; such a file must lie outside every checkout, because the seeds of dev,
+test and sealed kits are secrets (PLAN.md sections 6.7 and 8). The seed is
+then the whole content of the file, a line end included, so that
+`seed_sha256` of the manifest is what `sha256sum` says of the seed file.
+The gate seeds are development seeds and are in `specfirst.gen.gate`.
 """
 
 from __future__ import annotations
@@ -28,17 +30,27 @@ class SeedError(ValueError):
 
 
 def read_seed(root: Path, seed: str | None, seed_file: str | None) -> str:
-    """The seed text: from the command line, or from a file outside the checkout."""
+    """The seed text: from the command line, or the content of a file outside every checkout.
+
+    The content is taken byte for byte: the SHA-256 that a manifest gives
+    for the seed is the SHA-256 of the seed file (PLAN.md section 6.7).
+    """
     if (seed is None) == (seed_file is None):
         raise SeedError("give exactly one of --seed and --seed-file")
     if seed is not None:
         return seed
     path = Path(seed_file).expanduser().resolve()
-    if path == root.resolve() or root.resolve() in path.parents:
-        raise SeedError(f"{path} is inside the checkout; a seed file stays outside the "
-                        "repository (PLAN.md section 6.7)")
-    text = path.read_text(encoding="ascii").strip()
-    if not text:
+    inside = [root.resolve()] if root.resolve() in (path, *path.parents) else []
+    # Another worktree or clone is a checkout as well: its mark is an entry `.git`.
+    inside += [folder for folder in path.parents if (folder / ".git").exists()]
+    if inside:
+        raise SeedError(f"{path} is inside the checkout {inside[0]}; a seed file stays outside "
+                        "every repository (PLAN.md section 6.7)")
+    try:
+        text = path.read_bytes().decode("ascii")
+    except UnicodeDecodeError as error:
+        raise SeedError(f"{path} is not ASCII text") from error
+    if not text.strip():
         raise SeedError(f"{path} is empty")
     return text
 
@@ -85,8 +97,9 @@ def _check(root: Path, folder: Path, with_core: bool) -> int:
         problems += [f"{which}: {line}" for line in missing]
         if with_core:
             report = gate.run_core(root, folder, which)
-            _, unexplained = gate.classify(report, gate.load_explained(), tables, log, which)
-            unexplained = gate.report_problems(root, report) + unexplained
+            _, findings = gate.classify(report, gate.load_explained(), tables, log, which)
+            unexplained = gate.report_problems(root, report, tables) + [
+                gate.describe(f) for f in findings]
             print(f"{which}: CDISC CORE {report.engine}, {len(report.findings)} findings, "
                   f"{len(unexplained)} unexplained")
             problems += [f"{which}: CORE: {line}" for line in unexplained]

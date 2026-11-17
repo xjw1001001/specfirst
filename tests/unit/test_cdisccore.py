@@ -118,8 +118,9 @@ def test_the_runner_limits_the_worker_pool_of_core(tmp_path):
 
 REPORT = {
     "Conformance_Details": {"CORE_Engine_Version": "1.0.0", "Standard": "SDTMIG",
-                            "Version": "V3.4", "Report_Generation": "2026-11-17T10:42:43"},
-    "Dataset_Details": [{"filename": "DM"}, {"filename": "AE"}],
+                            "Version": "V3.4", "Report_Generation": "2026-11-17T10:42:43",
+                            "CT_Version": "sdtmct-2025-09-26", "Define_XML_Version": "2.1.0"},
+    "Dataset_Details": [{"filename": "DM", "length": 149}, {"filename": "AE", "length": 145}],
     "Issue_Summary": [
         {"dataset": "DM", "core_id": "CORE-000655", "message": "arms differ", "issues": 2},
         {"dataset": "AE", "core_id": "CORE-002034", "message": "no flag", "issues": 3},
@@ -158,16 +159,65 @@ def test_a_report_is_read_as_findings(tmp_path):
     arms = found["CORE-000655", "DM"]
     assert (arms.status, arms.count, arms.subjects) == ("ISSUE REPORTED", 2, ("S-1", "S-2"))
     assert arms.variables == ("ACTARMCD", "ARMCD")
+    assert (arms.listed, arms.named) == (2, 2)
     # A summary line without details keeps its count; it names no subject.
-    assert (found["CORE-002034", "AE"].count, found["CORE-002034", "AE"].subjects) == (3, ())
+    flag = found["CORE-002034", "AE"]
+    assert (flag.count, flag.subjects, flag.listed, flag.named) == (3, (), 0, 0)
     assert found["CORE-002008", "AE"].status == "EXECUTION ERROR"
+    assert (found["CORE-002008", "AE"].listed, found["CORE-002008", "AE"].named) == (1, 0)
     # A rule that could not run and has no line of its own is a finding all the same.
     assert found["CORE-002999", ""].status == "EXECUTION ERROR"
     assert report.datasets == ("DM", "AE")
+    # What ties a report to a run: the records CORE read, the Define-XML, the terminology.
+    assert report.records == {"DM": 149, "AE": 145}
+    assert (report.define, report.terminology) == ("2.1.0", "sdtmct-2025-09-26")
+    bare = dict(REPORT, Conformance_Details={}, Dataset_Details=[{"filename": "DM"}])
+    path.write_text(json.dumps(bare), encoding="utf-8")
+    report = cdisccore.read_report(path)
+    assert (report.records, report.define, report.terminology) == ({"DM": 0}, "", "")
+
+
+def test_the_requirements_are_those_of_the_pinned_core(root, tmp_path):
+    """Review finding F14: nothing compared env/core-requirements.in with CORE's own list."""
+    lines = [line.split("#", 1)[0].strip()
+             for line in (root / cdisccore.IN_FILE).read_text("ascii").splitlines()]
+    ours = [line for line in lines if line]
+    assert len(ours) == 26 and "setuptools_scm>=8" in ours
+
+    def source(dependencies):
+        quoted = ",\n".join(f'    "{line}"' for line in dependencies)
+        (tmp_path / "pyproject.toml").write_text(
+            f"[project]\nname = \"cdisc-rules-engine\"\ndependencies = [\n{quoted},\n]\n",
+            encoding="ascii")
+        return cdisccore.requirement_problems(root, tmp_path)
+
+    # CORE writes its list with spaces and names pyinstaller; ours adds setuptools_scm.
+    theirs = [line.replace(">=", " >=", 1) for line in ours if line != "setuptools_scm>=8"]
+    theirs.append("pyinstaller >=6.11.0")
+    assert source(theirs) == []
+    # Planted defects: a bound CORE raised, a dependency it added, one it dropped.
+    raised = [line.replace("pandas >=3.0.0", "pandas >=3.1.0") for line in theirs]
+    assert source(raised) == [
+        "env/core-requirements.in: pandas is '>=3.0.0' here and '>=3.1.0' in pyproject.toml "
+        "of the pinned CORE"]
+    assert source([*theirs, "polars >=1.0"]) == [
+        "env/core-requirements.in: polars is 'absent' here and '>=1.0' in pyproject.toml of "
+        "the pinned CORE"]
+    assert source([line for line in theirs if not line.startswith("redis")]) == [
+        "env/core-requirements.in: redis is '>=4.5.0' here and 'absent' in pyproject.toml of "
+        "the pinned CORE"]
+    assert source([line.replace("dask[dataframe,array]", "dask[dataframe]")
+                   for line in theirs])[0].startswith("env/core-requirements.in: dask[dataframe")
+    (tmp_path / "pyproject.toml").write_text("[project]\nname = 'x'\n", encoding="ascii")
+    assert "cannot read the dependencies" in cdisccore.requirement_problems(root, tmp_path)[0]
+    (tmp_path / "pyproject.toml").unlink()
+    assert "cannot read the dependencies" in cdisccore.requirement_problems(root, tmp_path)[0]
 
 
 def test_validate_refuses_to_run_without_an_install(root, tmp_path, monkeypatch):
     monkeypatch.setenv("SPECFIRST_CORE", str(tmp_path / "empty"))
     with pytest.raises(cdisccore.CoreError, match="not installed"):
         cdisccore.validate(root, [], tmp_path / "report")
+    with pytest.raises(cdisccore.CoreError, match="no package sdtmct-2025-09-26"):
+        cdisccore.terminology(root, "sdtmct-2025-09-26")
     assert cdisccore.main(["nonsense"]) == 2

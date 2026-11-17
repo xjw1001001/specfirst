@@ -24,7 +24,12 @@ python3 -m venv "$tool/venv"
   --no-annotate \
   --custom-compile-command "bash env/lock.sh" \
   --output-file env/requirements.lock
-"$tool/venv/bin/uv" pip compile env/core-requirements.in \n  --python "$(command -v python3)" \n  --generate-hashes \n  --no-annotate \n  --custom-compile-command "bash env/lock.sh" \n  --output-file env/core-requirements.lock
+"$tool/venv/bin/uv" pip compile env/core-requirements.in \
+  --python "$(command -v python3)" \
+  --generate-hashes \
+  --no-annotate \
+  --custom-compile-command "bash env/lock.sh" \
+  --output-file env/core-requirements.lock
 
 mkdir -p "$SPECFIRST_R_LIBS"
 Rscript --vanilla env/install_r.R --write-lock
@@ -43,4 +48,5 @@ Rscript --vanilla env/install_r.R --write-lock
     fi
   done
 } > env/system.lock
-echo "locks written: env/requirements.lock env/core-requirements.lock" \n  "env/r-packages.lock env/system.lock"
+echo "locks written: env/requirements.lock env/core-requirements.lock" \
+  "env/r-packages.lock env/system.lock"

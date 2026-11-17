@@ -1,10 +1,19 @@
 """Seeded random streams (rule R4).
 
 A stream is named by a seed text and a path of labels, for example
-`Stream(seed, "subject", 17, "events")`. Its numbers come from SHA-256 in
-counter mode, so they depend on nothing but the name: not on a library
+`Stream(seed, "subject", 17, "events")`. Its random bits come from SHA-256
+in counter mode, so they depend on nothing but the name: not on a library
 version, not on the order in which other streams are used. Adding a draw to
 one stream leaves every other stream as it was.
+
+What follows from the bits by integer arithmetic and by one division is the
+same on every machine: `uniform`, `below`, `between`, `chance`, `choice`,
+`shuffled`, `sample`. `normal`, `exponential` and `poisson` go through the
+logarithm, cosine and exponential of the C library, which may differ in the
+last bit between platforms. The generator rounds their results to days,
+years, counts and decimals, so a difference could show only for a value on
+a rounding edge; all the same, the bytes of a study are promised for the
+pinned platform (env/), and that is where the gate compares them.
 
 The distributions are the few the generator needs. They are simple on
 purpose (PLAN.md section 6.8).
@@ -108,5 +117,8 @@ class Stream:
 
 
 def seed_sha256(seed: str) -> str:
-    """What a kit may say about its seed: the hash, never the seed (PLAN.md section 6.7)."""
+    """What a kit may say about its seed: the hash, never the seed (PLAN.md section 6.7).
+
+    For a seed read from a file it is the SHA-256 of the file.
+    """
     return hashlib.sha256(str(seed).encode("utf-8")).hexdigest()

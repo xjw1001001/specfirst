@@ -10,9 +10,15 @@
 #   dataset       one issue for the dataset as a whole, with no record.
 #   every_record  the rule reports every record of the dataset: it cannot be
 #                 about particular records.
+#   repeated_key  the rule reports every record whose values of `key` occur
+#                 more than once in the dataset, and no other record.
 #   study         one issue for the study as a whole, with no subject.
-#   probe         every subject the rule reports was planted by one of the
-#                 named probes, as probes.jsonl of the same dataset says.
+#   probe         every issue of the rule is a record of a subject that one
+#                 of the named probes planted, as probes.jsonl of the same
+#                 dataset says.
+#
+# Every entry but those of the kinds cannot_run and dataset names the datasets
+# it holds for.
 #
 # A finding that fits no entry is unexplained and fails the gate. So does an
 # entry that no finding of a gate run needed: the list holds nothing spare.
@@ -76,13 +82,16 @@ explained:
       split or not: no dataset here is split, and a domain name has two
       letters. The public CDISC pilot datasets get the same finding.
   - id: sv-has-no-sequence-number
-    kind: every_record
+    kind: repeated_key
+    key: [USUBJID]
     datasets: [SV]
     rules: [CORE-000544]
     reason: >-
-      The rule asks for a unique --SEQ. SDTMIG v3.4 defines no SVSEQ for the
-      domain SV, whose key is the visit number, so the rule reports every
-      record.
+      The rule asks that --SEQ be unique within DOMAIN and USUBJID. SDTMIG
+      v3.4 defines no SVSEQ for the domain SV, whose key is the visit
+      number. Without the variable the rule compares DOMAIN and USUBJID
+      alone, and reports every record of every subject with more than one
+      visit. The public CDISC pilot dataset SV gets the same finding.
   - id: no-findings-about-domain
     kind: every_record
     datasets: [EX]
@@ -102,14 +111,21 @@ explained:
       would give the answer away.
   - id: trial-design-domains-not-in-the-study
     kind: every_record
+    datasets: [AE]
     rules: [CORE-002056]
     reason: >-
-      An FDA rule asks for every trial design dataset of the guide. The
-      study has TA, TE, TV and TS. It has no eligibility criteria as data
-      (TI), no disease assessments (TD) and no disease milestones (TM). The
-      rule also lists every other domain of the guide that is absent.
+      An FDA rule ("At least one Trial Design Dataset is missing") reports
+      every record of AE and lists every domain of the guide that the study
+      does not have, trial design or not (CORE marks it "partially
+      executable - possible overreporting"). The study has TA, TE, TV and
+      TS. It has no disease assessments (TD) and no disease milestones (TM),
+      which a study of this archetype does not plan. It has no TI either:
+      the design model of gen-1a carries no eligibility criteria, and TI
+      comes with them in the rest of gen-1. With TI the rule would report
+      the same records.
   - id: define-xml-not-seen-by-the-rule
     kind: every_record
+    datasets: [AE]
     rules: [CORE-002084]
     reason: >-
       An FDA rule looks for a dataset named define.xml. The Define-XML file
@@ -147,10 +163,16 @@ explained:
     kind: probe
     datasets: [DM]
     rules: [CORE-000239]
-    probes: [rfxstdtc_differs_from_exposure]
+    probes: [rfxstdtc_differs_from_exposure, partial_exposure_date_not_earliest]
     reason: >-
-      DM.RFXSTDTC is another date than the earliest exposure record. The
-      probe separates the sources of the treatment start date.
+      The rule compares DM.RFXSTDTC with the smallest EXSTDTC text. The first
+      probe makes RFXSTDTC another date than the earliest exposure record;
+      it separates the sources of the treatment start date. The second
+      probe has a later exposure record whose start is a year and a month
+      only, in the month of the first dose: as text, "2021-03" sorts before
+      "2021-03-03T09:15", so the rule takes the partial date for the
+      earliest one. A rule of the catalog (trt.date.imputation) says what
+      such a date means; the probe tests it.
   - id: probe-actual-arm-differs
     kind: probe
     datasets: [DM]
@@ -164,7 +186,10 @@ explained:
     kind: probe
     datasets: [AE]
     rules: [CORE-000717, CORE-002088]
-    probes: [ae_starts_after_end_of_study]
+    probes: [ae_starts_after_end_of_study, no_exposure_end_date]
     reason: >-
-      An adverse event starts after the end-of-study record. The probe
-      separates the rules for the end of treatment emergence.
+      An adverse event starts after the end-of-study record. The first probe
+      separates the rules for the end of treatment emergence. The second
+      has an exposure record without an end date and an event after the
+      window that follows the end of the study: the event is emergent or
+      not according to the source of the treatment end date.
