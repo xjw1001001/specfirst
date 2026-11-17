@@ -12,11 +12,16 @@ section 13.4).
 
 ## Open
 
-- Owner node N1. The owner approves the decision catalog, the standard form
-  and the house standard; docs/reports/std-1.md has a reading guide. The
-  catalog stays at version `draft-1` until then. Nobody else freezes it.
-- ADR-004 is a proposal. It carries the four schema points of ADR-000 item
-  7 with a recommendation each; none is applied.
+- Owner node N1: answered on 2026-11-17. The owner chose "as delivered"
+  for all 14 questions of the reading guide and called the answer
+  provisional; the words and their limits are in docs/decisions/ADR-004.md,
+  "Node N1: the owner's answer". A later change is a new catalog version.
+- The catalog is still at version `draft-1`. Setting it to 1 and tagging
+  `catalog@1` waits for the owner's word on the freeze itself: the std
+  session told the owner it would ask once more before that step.
+- The four schema points of ADR-000 item 7: the owner took the
+  recommendations of ADR-004. Point 3 (which records must cite) is for
+  std-2 to apply; point 4 (the prefix `layout:`) for real-3 with ADR-003.
 - Deferred by std-1 (standard/catalog/catalog.yaml, `deferred`): four
   entries of appendix B and two alternatives that need a derived record by
   aggregation.
