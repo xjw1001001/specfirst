@@ -35,3 +35,4 @@ the display pattern counts. The spike is kept as it was run.
 | File | Decision | What it shows |
 | --- | --- | --- |
 | `adr002_siera_trial.sh` | ADR-002 | siera 0.5.6 on CDISC's ARS example and on its own variant of it, with the pilot ADaM; and what cards and cardx give for the methods of the registry. Recorded output: `adr002_siera_trial.out`. Needs `. scripts/env.sh` and a build of the pilot kit. |
+| `adr003_rounding.sh` | ADR-003 | The expression tfrmt shows a number with, R's `format(round(x, digits), nsmall = digits)`, on the 2,537 results of the pilot that are shown with decimals, against the registry's rounding and the example's formatted values. tfrmt itself is not installed or run. Recorded output: `adr003_rounding.out`. Needs `. scripts/env.sh` and a build of the pilot kit. |

@@ -14,6 +14,7 @@ Version 0, started by real-2 (ADR-002).
 | `test.anova.oneway` | test | p_value |
 | `test.fisher.exact` | test | p_value |
 | `display.round.half_away_from_zero` | display | text |
+| `display.pattern` | display | text |
 
 `specfirst methods` lists the entries and checks `registry.json`.
 

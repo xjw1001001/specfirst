@@ -16,7 +16,7 @@ engine tests have those.
 
 | File | Content |
 | --- | --- |
-| `*.json` | the vectors: 81 cases for 7 entries |
+| `*.json` | the vectors: 99 cases for 8 entries |
 | `oracle.py` | the expected values computed again, with fractions and closed forms; used by no engine |
 | `test_methods.py` | the Python implementations, the R implementations and the oracle against the vectors; both Fisher sums against R's own `fisher.test` on tables larger than 2 x 2 (E27), and against exact fractions on the two tables where `fisher.test` is looser than statement 5; the limit of statement 6 in R |
 

@@ -170,6 +170,7 @@ class Embedded:
     analysis_id: str
     operation_id: str
     cell: frozenset  # its groups, to find the other results of the same cell
+    formatted: str | None = None  # the display of the value, where the reference has one
 
 
 def embedded(event: ars.Event) -> dict[str, Embedded]:
@@ -183,9 +184,11 @@ def embedded(event: ars.Event) -> dict[str, Embedded]:
             operation = event.operations.get(result["operationId"], ("", {}))[1]
             cell = frozenset((group["groupingId"], group.get("groupId"), group.get("groupValue"))
                              for group in result.get("resultGroups") or [])
+            formatted = result.get("formattedValue")
             found[key] = Embedded(str(result.get("rawValue") or ""),
                                   pattern_decimals(operation.get("resultPattern")),
-                                  analysis["id"], result["operationId"], cell)
+                                  analysis["id"], result["operationId"], cell,
+                                  formatted if isinstance(formatted, str) else None)
     return found
 
 
@@ -523,20 +526,21 @@ def _proof_problem(entry: dict, rows: Rows, comparison: Comparison, registry: Re
     return _no_records_problem(item, proof.get("zero") or [], rows, evidence)
 
 
-def check_exceptions(comparison: Comparison, entries: list[dict], rows: Rows, registry: Registry,
-                     evidence: Evidence | Alternative) -> tuple[list[str], list[str]]:
-    """Every difference has one entry whose proof holds, and every entry is a difference.
+def judge_entries(comparison: Comparison, entries: list[dict], rows: Rows, registry: Registry,
+                  evidence: Evidence | Alternative) -> tuple[dict[str, dict], list[str]]:
+    """The differences that are explained, each with its entry, and the problems of the others.
 
-    `evidence` may be the `alternative` function alone; a proof that asks for
-    the data behind a cell then does not hold.
+    A difference is explained when an entry names it and its embedded value
+    and the proof of the entry holds. `evidence` may be the `alternative`
+    function alone; a proof that asks for the data behind a cell then does
+    not hold.
     """
     if not isinstance(evidence, Evidence):
         evidence = Evidence(evidence)
-    lines, problems = [], []
-    open_results = comparison.open
+    explained: dict[str, dict] = {}
+    problems = []
     listed = {entry["result"]: entry for entry in entries}
-    classes = Counter()
-    for key, (printed, ours) in sorted(open_results.items()):
+    for key, (printed, ours) in sorted(comparison.open.items()):
         entry = listed.get(key)
         if entry is None:
             problems.append(f"{key}: embedded {printed or '(no value)'}, ours {ours}: a "
@@ -551,7 +555,18 @@ def check_exceptions(comparison: Comparison, entries: list[dict], rows: Rows, re
             problems.append(f"{key}: the proof ({entry['proof']['kind']}) does not hold: "
                             f"{problem}")
             continue
-        classes[(entry["class"], entry["proof"]["kind"])] += 1
+        explained[key] = entry
+    return explained, problems
+
+
+def check_exceptions(comparison: Comparison, entries: list[dict], rows: Rows, registry: Registry,
+                     evidence: Evidence | Alternative) -> tuple[list[str], list[str]]:
+    """Every difference has one entry whose proof holds, and every entry is a difference."""
+    lines = []
+    open_results = comparison.open
+    listed = {entry["result"]: entry for entry in entries}
+    explained, problems = judge_entries(comparison, entries, rows, registry, evidence)
+    classes = Counter((entry["class"], entry["proof"]["kind"]) for entry in explained.values())
     for key in sorted(set(listed) - set(open_results)):
         problems.append(f"{key}: listed as an exception, but it is reproduced or not a result "
                         "of the reference")

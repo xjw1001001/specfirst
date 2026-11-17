@@ -252,6 +252,39 @@ def _results(ctx: Context) -> bool:
     return passed
 
 
+# real-3a (ADR-005, decision 1): the outputs of the ARS example that are built as
+# grids, each with its cells and the results they show; and the planted defects of
+# the display and of its trace. The rest of real-3 adds the other four outputs here.
+PILOT_GRIDS = {"Out14-3-1-1": (27, 51)}
+REAL3A_DEFECTS = (*REAL2_DEFECTS, "D6-proofs", "D7-display", "D8-trace")
+
+
+def _grids(ctx: Context) -> bool:
+    """Every cell text is the reference's formatted value, or its difference has one class."""
+    from specfirst.machine import build
+
+    passed, counts = build.display_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
+    found = {count["output"]: count for count in counts}
+    if set(found) != set(PILOT_GRIDS):
+        ctx.out(f"grids: the kit builds {sorted(found)}, the gate asks for {sorted(PILOT_GRIDS)}")
+        return False
+    for output, (cells, results) in PILOT_GRIDS.items():
+        count = found[output]
+        if (count["cells"], count["results"], count["no_reference"]) != (cells, results, 0) or (
+                count["equal"] + count["classified"] != cells):
+            ctx.out(f"grids: {output}: {count['cells']} cells show {count['results']} results; "
+                    f"{count['equal']} equal the reference, {count['classified']} differ with "
+                    f"one class, {count['no_reference']} results have no formatted value in "
+                    f"the reference. The gate asks for {cells} cells that show {results} "
+                    "results, each cell equal or with one classified difference")
+            passed = False
+    return passed
+
+
+def _defects_3a(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/defects", "defects.xml", REAL3A_DEFECTS)
+
+
 _REAL1_CHECK = f"specfirst check {PILOT} --build build/p1/{PILOT}/first"
 
 GATES: dict[str, tuple[Check, ...]] = {
@@ -295,6 +328,29 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("results", f"{_REAL1_CHECK} (its last part)", _results),
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
         Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # ADR-005, part real-3a: everything the gate of real-2 checks; every cell text of
+    # the adverse event summary equals the example's formattedValue or has one
+    # classified difference (grids); every numeric cell has a complete path to SDTM
+    # variables (trace, which walks the cells since real-3a); the build is
+    # deterministic (P1, which covers the grids, the shells, the pages and the graph).
+    "real-3a": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("registry", "specfirst methods", _registry),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q", _method_vectors),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("P2 reproduction", f"{_REAL1_CHECK} (its second part)", _p2),
+        Check("trace", f"{_REAL1_CHECK} (its third part)", _trace),
+        Check("results", f"{_REAL1_CHECK} (its fourth part)", _results),
+        Check("grids", f"{_REAL1_CHECK} (its last part)", _grids),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
+        Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_3a),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),

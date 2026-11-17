@@ -59,6 +59,9 @@ def python_result(method: str, case: dict) -> dict:
         return {"p_value": methods.fisher_exact_p(given["table"])}
     if method == "display.round.half_away_from_zero":
         return {"text": methods.round_half_away(given["value"], given["decimals"])}
+    if method == "display.pattern":
+        return {"text": methods.pattern_text(given["value"], given["pattern"],
+                                             mock=given.get("mock", False))}
     raise AssertionError(f"no Python implementation of {method}")
 
 
@@ -124,7 +127,7 @@ def exact_arithmetic(tmp_path) -> list[str]:
             problems += [f"{file['method']}, {case['name']}: the file says {problem}"
                          for problem in differences(expected, case["expected"])]
     print(f"expected values computed again in exact arithmetic: {covered} cases, {len(problems)} "
-          f"differences; written by hand: {by_hand} cases (the display rule)")
+          f"differences; written by hand: {by_hand} cases (the display rules)")
     return problems
 
 

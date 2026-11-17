@@ -331,3 +331,63 @@ def _analysis_parameters(analysis_id: str, analysis: dict, used: list[str],
             value = int(value) if str(value).lstrip("-").isdigit() else value
         found.setdefault(owners[0], {})[name] = value
     return found
+
+
+# ---- outputs and displays (real-3) ----------------------------------------------------
+
+
+def outputs(event: Event) -> dict[str, dict]:
+    """The outputs of a reporting event by ID."""
+    found = event.data.get("outputs")
+    if not isinstance(found, list):
+        return {}
+    return {item["id"]: item for item in found if isinstance(item, dict) and item.get("id")}
+
+
+def display_sections(event: Event, output_id: str) -> dict[str, list[str]]:
+    """The texts of the first display of an output, by section type, in their order.
+
+    A subsection is written in the display, or names a subsection of the
+    event's global display sections. A name that is not defined gives no text.
+    """
+    output = outputs(event).get(output_id) or {}
+    shared = {sub.get("id"): sub.get("text")
+              for section in event.data.get("globalDisplaySections") or []
+              for sub in section.get("subSections") or []}
+    displays = sorted(output.get("displays") or [], key=lambda item: item.get("order", 0))
+    sections = (displays[0].get("display") or {}).get("displaySections") if displays else None
+    found: dict[str, list[str]] = {}
+    for section in sections or []:
+        texts = found.setdefault(str(section.get("sectionType")), [])
+        for entry in sorted(section.get("orderedSubSections") or [],
+                            key=lambda item: item.get("order", 0)):
+            text = (entry.get("subSection") or {}).get("text")
+            if text is None:
+                text = shared.get(entry.get("subSectionId"))
+            if isinstance(text, str):
+                texts.append(text)
+    return found
+
+
+def listed_analyses(event: Event, output_id: str) -> list[str]:
+    """The analyses the main list of contents lists under an output, in its order."""
+    def items(entry: dict) -> list[dict]:
+        listed = (entry.get("sublist") or {}).get("listItems")
+        return [item for item in listed if isinstance(item, dict)] \
+            if isinstance(listed, list) else []
+
+    def below(entry: dict) -> Iterator[str]:
+        for inner in items(entry):
+            if inner.get("analysisId"):
+                yield inner["analysisId"]
+            yield from below(inner)
+
+    def find(entry: dict) -> Iterator[str]:
+        for inner in items(entry):
+            if inner.get("outputId") == output_id:
+                yield from below(inner)
+            else:
+                yield from find(inner)
+
+    contents = (event.data.get("mainListOfContents") or {}).get("contentsList") or {}
+    return list(dict.fromkeys(find({"sublist": contents})))

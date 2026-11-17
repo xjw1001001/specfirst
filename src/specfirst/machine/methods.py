@@ -13,6 +13,7 @@ tables only and samples for larger ones (E27), so it is not used.
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Iterable, Sequence
 from decimal import ROUND_HALF_UP, Decimal, localcontext
 
@@ -240,3 +241,36 @@ def round_half_away(value: float | int | None, decimals: int) -> str | None:
     if rounded == 0:
         rounded = abs(rounded)  # a zero has no sign
     return format(rounded, "f")
+
+
+# ---- display.pattern ------------------------------------------------------------
+
+_MASK = re.compile(r"X+(?:[.]X+)?")
+
+
+def pattern_mask(pattern: object) -> tuple[str, str, str]:
+    """A result pattern taken apart: the text before its mask, the mask, the text after."""
+    found = list(_MASK.finditer(pattern)) if isinstance(pattern, str) else []
+    if len(found) != 1:
+        raise MethodError(f"a pattern holds exactly one mask of the letter X, such as XX.X; "
+                          f"{pattern!r} holds {len(found)}")
+    return pattern[:found[0].start()], found[0].group(), pattern[found[0].end():]
+
+
+def pattern_text(value: float | int | None, pattern: str, mock: bool = False) -> str | None:
+    """display.pattern: a number as the text a result pattern asks for.
+
+    With `mock` the mask itself is shown, in lower case, in place of the
+    number: the text of a mock shell.
+    """
+    before, mask, after = pattern_mask(pattern)
+    if mock:
+        return before + mask.lower() + after
+    if value is None:
+        return None
+    rounded = round_half_away(value, len(mask.partition(".")[2]))
+    sign = "-" if rounded.startswith("-") else ""
+    digits = rounded.removeprefix("-")
+    if "." in mask:
+        digits = digits.rjust(len(mask))
+    return before + sign + digits + after
