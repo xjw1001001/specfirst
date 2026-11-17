@@ -13,12 +13,13 @@
 The folder names are those of the kit format (PLAN.md section 8); gen-2
 adds the decisions, the gold results and kit.yaml. Everything is a pure
 function of the generator version, the design and the seed. The manifest
-holds the SHA-256 of the seed, never the seed (section 6.7).
+holds the SHA-256 of the seed, never the seed (section 6.7). JSON, JSONL
+and Parquet go through the canonical writers of the machine
+(`specfirst.machine.canonical`).
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -29,6 +30,7 @@ from specfirst.compile import catalog as catalogs
 from specfirst.gen import GENERATOR, datasetjson, define, probes, sdtm, subjects
 from specfirst.gen import design as designs
 from specfirst.gen.rng import Stream, seed_sha256
+from specfirst.machine import canonical
 
 VISIBLE = "inputs/data/sdtm"
 TWIN = "twin/data/sdtm"
@@ -80,8 +82,21 @@ def _arrow(domain: sdtm.Domain, rows: list[dict], note: dict) -> pa.Table:
         else:
             kind = pa.string()
         columns[variable.name] = pa.array(values, type=kind)
-    metadata = {b"specfirst": json.dumps(note, sort_keys=True).encode("ascii")}
-    return pa.table(columns).replace_schema_metadata(metadata)
+    metadata = {b"specfirst": canonical.json_text(note).encode("ascii")}
+    return canonical.canonical_table(pa.table(columns)).replace_schema_metadata(metadata)
+
+
+def write_parquet(path: Path, table: pa.Table) -> None:
+    """Parquet as `specfirst.machine.canonical.write_parquet` writes it, with the schema note.
+
+    The canonical writer drops schema metadata; a generated dataset keeps
+    one key that names the generator and the catalog. Every other option is
+    the canonical one, so the bytes are fixed under the pinned pyarrow.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(table, path, version="2.6", data_page_version="1.0", compression="zstd",
+                   compression_level=3, use_dictionary=True, write_statistics=True,
+                   row_group_size=1 << 20, store_schema=True)
 
 
 def write_dataset(folder: Path, design: dict, tables: dict[str, list[dict]], catalog: str,
@@ -93,8 +108,7 @@ def write_dataset(folder: Path, design: dict, tables: dict[str, list[dict]], cat
     note = {"generator": GENERATOR, "catalog": catalog, "study": study}
     for name, rows in tables.items():
         domain = sdtm.DOMAINS[name]
-        pq.write_table(_arrow(domain, rows, note), folder / f"{name.lower()}.parquet",
-                       compression="zstd", write_statistics=False)
+        write_parquet(folder / f"{name.lower()}.parquet", _arrow(domain, rows, note))
         text = datasetjson.render(domain, rows, study, stamp, made_by)
         (folder / f"{name.lower()}.json").write_text(text, encoding="ascii", newline="\n")
     text = define.render(
@@ -109,21 +123,12 @@ def data_stamp(people: list[subjects.Subject]) -> str:
     return f"{last.isoformat()}T00:00:00"
 
 
-def _jsonl(path: Path, records: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="ascii", newline="\n") as handle:
-        for record in records:
-            handle.write(json.dumps(record, sort_keys=True, ensure_ascii=True) + "\n")
-
-
-def sha256_of(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def file_hashes(folder: Path) -> dict[str, str]:
-    """SHA-256 of every file of a study folder but the manifest, by relative path."""
-    return {path.relative_to(folder).as_posix(): sha256_of(path)
-            for path in sorted(folder.rglob("*")) if path.is_file() and path.name != "study.json"}
+    """SHA-256 of every file of a study folder but the manifest and CORE reports, by path."""
+    return {path.relative_to(folder).as_posix(): canonical.sha256_file(path)
+            for path in sorted(folder.rglob("*"))
+            if path.is_file() and path.name != "study.json"
+            and path.relative_to(folder).parts[0] != "core"}
 
 
 def generate(root: Path, design: dict, seed: str, out: Path,
@@ -151,12 +156,12 @@ def generate(root: Path, design: dict, seed: str, out: Path,
         tables = sdtm.build(design, people, domains)
         write_dataset(out / place, design, tables, label, data_stamp(people))
         truth = out / ("gold" if which == "visible" else "twin") / "truth" / "subjects.jsonl"
-        _jsonl(truth, [{"catalog": label, "generator": GENERATOR,
-                        **subjects.as_record(person)} for person in people])
+        canonical.write_jsonl(truth, [{"catalog": label, "generator": GENERATOR,
+                                       **subjects.as_record(person)} for person in people])
         log += planted
         counts[which] = {"subjects": len(people),
                          "records": {name: len(rows) for name, rows in tables.items()}}
-    _jsonl(out / "gold" / "probes.jsonl", log)
+    canonical.write_jsonl(out / "gold" / "probes.jsonl", log)
     manifest = {
         "generator": GENERATOR,
         "catalog": {"name": catalog.name, "version": catalog.version},
@@ -169,14 +174,17 @@ def generate(root: Path, design: dict, seed: str, out: Path,
         "counts": counts,
         "files": file_hashes(out),
     }
-    (out / "study.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n",
-                                    encoding="ascii", newline="\n")
+    canonical.write_json(out / "study.json", manifest)
     return manifest
 
 
+def read_manifest(folder: Path) -> dict:
+    with open(folder / "study.json", encoding="ascii") as handle:
+        return json.load(handle)
+
+
 def read_probes(folder: Path) -> list[dict]:
-    with open(folder / "gold" / "probes.jsonl", encoding="ascii") as handle:
-        return [json.loads(line) for line in handle if line.strip()]
+    return canonical.read_jsonl(folder / "gold" / "probes.jsonl")
 
 
 def read_tables(folder: Path, which: str) -> dict[str, list[dict]]:

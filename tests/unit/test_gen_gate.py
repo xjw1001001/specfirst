@@ -176,12 +176,13 @@ def test_everything_generated_names_the_catalog_version(root, catalog, tmp_path)
     for path in text_files:
         text = path.read_text(encoding="ascii")
         if path.name == "study.json":
-            assert f'"version": "{catalog.version}"' in text
+            assert json.loads(text)["catalog"]["version"] == catalog.version
         else:
             assert label in text, path.name
     assert len(list(tmp_path.rglob("*.parquet"))) == 22  # their schema names it: see sdtm tests
     # The manifest lists every other file, and holds the hash of the seed, never the seed.
     assert set(manifest["files"]) == set(study.file_hashes(tmp_path))
+    assert study.read_manifest(tmp_path) == manifest
     everything = b"".join(p.read_bytes() for p in tmp_path.rglob("*") if p.is_file())
     assert manifest["seed_sha256"].encode() in everything
     assert seed.encode() not in everything and seed not in json.dumps(manifest)

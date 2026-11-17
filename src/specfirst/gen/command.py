@@ -66,14 +66,11 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _check(root: Path, folder: Path, with_core: bool) -> int:
-    import json
-
     from specfirst.gen import gate
 
     catalog = catalogs.load(catalogs.default_dir(root))
     design = designs.load(folder / "gold" / "design.yaml")
-    with open(folder / "study.json", encoding="ascii") as handle:
-        manifest = json.load(handle)
+    manifest = study.read_manifest(folder)
     problems = gate.hash_differences(manifest["files"], study.file_hashes(folder))
     print(f"{len(manifest['files'])} files against the hashes of study.json: "
           f"{len(problems)} differ")
