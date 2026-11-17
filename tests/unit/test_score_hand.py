@@ -267,3 +267,13 @@ def test_the_checks_of_the_gate_hold_on_the_hand_made_study(root):
     assert "HAND01, twin: 24 of 24 cells are the cells worked out by hand" in text
     assert "the control fails on the changed document: yes" in text
     assert "arm S, stage T: every score 100%: yes" in text
+
+
+def test_the_hand_table_check_fails_on_another_table(root, monkeypatch):
+    """Rule R5 for the check itself: one cell of the table by hand is changed."""
+    twin = {**hand.EXPECTED["twin"], "": ("(N=3)", "(N=2)", "(N=3)", "(N=9)")}
+    monkeypatch.setattr(hand, "EXPECTED", {**hand.EXPECTED, "twin": twin})
+    lines: list[str] = []
+    assert gate.hand_table(root, lines.append) is False
+    assert any("problem: " in line and "'(N=9)'" in line for line in lines)
+    assert "HAND01, twin: 23 of 24 cells are the cells worked out by hand" in lines
