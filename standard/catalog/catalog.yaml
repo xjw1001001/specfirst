@@ -1,10 +1,11 @@
 # The decision catalog for the M1 families (PLAN.md section 5, appendix B).
 #
-# Draft of std-1. The owner approves it at node N1; only then is the version
-# set to 1 and the catalog frozen as catalog@1. Until then other tracks may
-# read it as a draft.
+# Frozen as catalog@1 on 2026-11-17 at owner node N1 (docs/decisions/ADR-004.md,
+# "Node N1: the owner's answer"). The owner called the answer provisional. A
+# change of an entry, an alternative, a default or a statement is a new
+# catalog version and needs an ADR.
 catalog: specfirst-m1
-version: draft-1
+version: 1
 
 # The units that own decisions (PLAN.md section 10), in the order of the
 # standard form. A table family has a phrase: how a statement names its
@@ -130,8 +131,12 @@ deferred_alternatives:
     std-2 together with its yamaa row template.
 
 # Alternatives for which std-1 found no public source of their own. They come
-# from the seed list of appendix B. The entry they belong to has sources; the
-# owner decides at N1 whether each stays (PLAN.md section 5.2, rule 5).
+# from the seed list of appendix B. The entry they belong to has sources
+# (PLAN.md section 5.2, rule 5). At node N1 (2026-11-17, question 5) the
+# owner kept all three as the plan's own alternatives.
+unsourced_alternatives_kept: >-
+  Kept by the owner at node N1 on 2026-11-17 as the plan's own alternatives
+  (seed list of PLAN.md appendix B); the answer is provisional.
 unsourced_alternatives:
   demo.race.pooling/pooled_below_count: >-
     ADaMIG has the variable for a pooled race group (RACEGRy) and leaves the
