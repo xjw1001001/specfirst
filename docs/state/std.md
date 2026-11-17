@@ -9,16 +9,17 @@ section 13.4).
   `scripts/clean_clone_gate.sh std-1` (2026-11-11). Evidence:
   docs/reports/std-1.md and std-1.gate.log. Review:
   docs/reports/std-1.review.md. Choices: docs/decisions/ADR-004.md.
+- Owner node N1, 2026-11-17. The owner chose "as delivered" for all 14
+  questions of the reading guide and called the answer provisional, then
+  confirmed the freeze ("Freeze", in translation). The catalog is version
+  1, tagged `catalog@1`. The words and their limits are in
+  docs/decisions/ADR-004.md, "Node N1: the owner's answer". The gate on
+  the frozen commit is in docs/reports/std-1.md, "After node N1".
 
 ## Open
 
-- Owner node N1: answered on 2026-11-17. The owner chose "as delivered"
-  for all 14 questions of the reading guide and called the answer
-  provisional; the words and their limits are in docs/decisions/ADR-004.md,
-  "Node N1: the owner's answer". A later change is a new catalog version.
-- The catalog is still at version `draft-1`. Setting it to 1 and tagging
-  `catalog@1` waits for the owner's word on the freeze itself: the std
-  session told the owner it would ask once more before that step.
+- A change of an entry, an alternative, a default or a statement of
+  `catalog@1` is a new catalog version and needs an ADR.
 - The four schema points of ADR-000 item 7: the owner took the
   recommendations of ADR-004. Point 3 (which records must cite) is for
   std-2 to apply; point 4 (the prefix `layout:`) for real-3 with ADR-003.
@@ -59,7 +60,7 @@ section 13.4).
 
 ## For other tracks
 
-- gen-1 can start from the draft catalog now. Entries, alternatives, slots
+- gen-1 and gen-2 work from `catalog@1`. Entries, alternatives, slots
   with examples and probe recipes (`standard/catalog/probes.yaml`) are
   usable as they are. A probe of the kind `design` asks for a property of
   the design (arms listed out of dose order), not for a planted record.
@@ -73,7 +74,7 @@ section 13.4).
   - A visit is unscheduled when VISITDY is missing. A placebo record has
     EXDOSE 0 and an EXTRT that contains PLACEBO. A subject is randomized
     when ARMCD is present and is neither SCRNFAIL nor NOTASSGN.
-  - `specfirst.compile.tiny` is a three-subject study in these domains.
+  - `specfirst.compile.tiny` is a four-subject study in these domains.
 - std-2 and std-3: `compiler.bind_tables` gives the `decides` edges to ARS
   elements and layout parts by mutation; `specfirst compile` writes them to
   `compile.json`. An ADaM bind is the column a fragment writes, often a

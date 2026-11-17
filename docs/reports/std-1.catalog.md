@@ -1,4 +1,4 @@
-# Decision catalog specfirst-m1 draft-1: overview
+# Decision catalog specfirst-m1 1: overview
 
 Rendered by `specfirst catalog --overview` from `standard/catalog/` and the house standard open-default@1. 43 entries, 62 questions when an entry is counted once per unit, 96 alternatives, 4 questions without a default.
 

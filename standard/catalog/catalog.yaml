@@ -1,10 +1,11 @@
 # The decision catalog for the M1 families (PLAN.md section 5, appendix B).
 #
-# Draft of std-1. The owner approves it at node N1; only then is the version
-# set to 1 and the catalog frozen as catalog@1. Until then other tracks may
-# read it as a draft.
+# Frozen as catalog@1 on 2026-11-17 at owner node N1 (docs/decisions/ADR-004.md,
+# "Node N1: the owner's answer"). The owner called the answer provisional. A
+# change of an entry, an alternative, a default or a statement is a new
+# catalog version and needs an ADR.
 catalog: specfirst-m1
-version: draft-1
+version: 1
 
 # The units that own decisions (PLAN.md section 10), in the order of the
 # standard form. A table family has a phrase: how a statement names its

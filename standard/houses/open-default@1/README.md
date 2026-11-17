@@ -1,8 +1,9 @@
 # House standard open-default@1
 
 The conventions that hold for a study where its protocol and SAP are silent
-(PLAN.md sections 5.2 and 13.4), built from public standards only. Draft of
-std-1; the owner approves it at node N1.
+(PLAN.md sections 5.2 and 13.4), built from public standards only.
+Delivered by std-1 and accepted by the owner at node N1 with `catalog@1`
+(2026-11-17; ADR-004).
 
 | File | Holds |
 | --- | --- |
