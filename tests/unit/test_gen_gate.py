@@ -279,6 +279,35 @@ def test_a_planted_defect_counts_only_with_its_rule_dataset_and_subject(root, ca
         assert any("does not count" in line for line in said) is (fake is without_define)
 
 
+def test_the_reports_of_core_outlive_the_scratch_folder(root, catalog, tmp_path, monkeypatch):
+    """Rule R8: a line of the gate log about CORE has a report that can be read afterwards."""
+    seeds = ("unit-keep",)
+    gate.generate_all(root, tmp_path / "first", seeds)
+
+    def fake(root_, folder, which):
+        (folder / "core").mkdir(exist_ok=True)
+        (folder / "core" / f"{which}.json").write_text(json.dumps({"which": which}), "ascii")
+        return _counted(study.read_tables(folder, which))
+
+    monkeypatch.setattr(gate, "run_core", fake)
+    said: list[str] = []
+    keep = tmp_path / "kept"
+    # The fake reports no planted defect, so the check fails; its report is kept all the same.
+    assert gate.core_check(root, said.append, tmp_path, seeds, keep=keep) is False
+    assert sorted(p.name for p in keep.iterdir()) == ["planted-twin.json"]
+    monkeypatch.setattr(gate, "planted_core_defects", lambda *args: True)
+    assert gate.core_check(root, said.append, tmp_path, seeds, keep=keep) is False
+    assert sorted(p.name for p in keep.iterdir()) == [
+        "planted-twin.json", "unit-keep-twin.json", "unit-keep-visible.json"]
+    # The report of the planted study and the two of the seed.
+    assert "3 reports of CORE are kept in kept/ beside this log" in said
+    assert any(line.startswith("explanations that no finding needed") for line in said)
+    # Without a folder to keep them in, nothing is copied and nothing is said about it.
+    said.clear()
+    gate.core_check(root, said.append, tmp_path, seeds)
+    assert not any("are kept" in line for line in said)
+
+
 # -- controlled terms ------------------------------------------------------------
 
 

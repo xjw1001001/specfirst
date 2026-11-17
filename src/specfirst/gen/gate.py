@@ -43,6 +43,7 @@ from specfirst.compile import catalog as catalogs
 from specfirst.gen import datasetjson, pgfix, present, probes, sdtm, study, terms
 from specfirst.gen import design as designs
 from specfirst.machine import canonical
+from specfirst.paths import build_dir
 
 Out = Callable[[str], None]
 
@@ -455,6 +456,15 @@ def planted_core_defects(root: Path, out: Out, source: Path, folder: Path, expla
     return True
 
 
+def _keep(report: Path, keep: Path | None, name: str) -> int:
+    """Copy a report of CORE into the folder that outlives the gate; 1 when it was copied."""
+    if keep is None or not report.is_file():
+        return 0
+    keep.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(report, keep / name)
+    return 1
+
+
 def datasetjson_stamp(path: Path) -> str:
     import json
 
@@ -462,8 +472,14 @@ def datasetjson_stamp(path: Path) -> str:
         return str(json.load(handle)["datasetJSONCreationDateTime"])
 
 
-def core_check(root: Path, out: Out, folder: Path, seeds: tuple[str, ...] = SEEDS) -> bool:
-    """Visible and twin SDTM of every seed pass CORE with no unexplained finding."""
+def core_check(root: Path, out: Out, folder: Path, seeds: tuple[str, ...] = SEEDS,
+               keep: Path | None = None) -> bool:
+    """Visible and twin SDTM of every seed pass CORE with no unexplained finding.
+
+    The reports of CORE are copied to `keep`, whatever the check says: the
+    scratch folder is removed after the gate, and a report is the evidence
+    for every line the check prints.
+    """
     catalog = catalogs.load(catalogs.default_dir(root))
     label = study.catalog_label(catalog)
     explained = load_explained()
@@ -475,14 +491,20 @@ def core_check(root: Path, out: Out, folder: Path, seeds: tuple[str, ...] = SEED
     if not studies.is_dir():
         generate_all(root, studies, seeds)
     first_design = pgfix.sample(seeds[0], label)
-    if not planted_core_defects(root, out, studies / seeds[0], folder, explained, first_design,
-                                label):
+    seen = planted_core_defects(root, out, studies / seeds[0], folder, explained, first_design,
+                                label)
+    kept = _keep(folder / "planted-core" / "core" / "twin.json", keep, "planted-twin.json")
+    if not seen:
         return False
 
     jobs = [(seed, which) for seed in seeds for which in study.PLACES]
     workers = core_workers()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         reports = list(pool.map(lambda job: run_core(root, studies / job[0], job[1]), jobs))
+    for seed, which in jobs:
+        kept += _keep(studies / seed / "core" / f"{which}.json", keep, f"{seed}-{which}.json")
+    if keep is not None:
+        out(f"{kept} reports of CORE are kept in {keep.name}/ beside this log")
     ok = True
     totals: dict[str, int] = {}
     for (seed, which), report in zip(jobs, reports, strict=True):
@@ -743,7 +765,8 @@ def determinism(root: Path, out: Out) -> bool:
 
 
 def core(root: Path, out: Out) -> bool:
-    return core_check(root, out, SCRATCH.get())
+    return core_check(root, out, SCRATCH.get(),
+                      keep=build_dir(root) / "gates" / "gen-1a" / "core")
 
 
 def controlled_terms(root: Path, out: Out) -> bool:
