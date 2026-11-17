@@ -252,6 +252,15 @@ def _results(ctx: Context) -> bool:
     return passed
 
 
+def _gen(name: str) -> Callable[[Context], bool]:
+    """A check of the generator (specfirst.gen.gate), by its function name."""
+    def run(ctx: Context) -> bool:
+        from specfirst.gen import gate
+
+        return getattr(gate, name)(ctx.root, ctx.out)
+    return run
+
+
 # real-3a (ADR-005, decision 1): the outputs of the ARS example that are built as
 # grids, each with its cells and the results they show; and the planted defects of
 # the display and of its trace. The rest of real-3 adds the other four outputs here.
@@ -369,6 +378,22 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("yamaa run", "specfirst catalog --run", _root_check(std1.run_check)),
         Check("ARS schema", "specfirst catalog --tables", _root_check(std1.tables_check)),
         Check("house standard", "specfirst house", _root_check(std1.house_check)),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # PLAN.md section 13.5 and ADR-005: the gate of gen-1 for the datasets and
+    # the decisions of the slice. The environment check covers CDISC CORE.
+    "gen-1a": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("identical hashes", "specfirst.gen.gate.determinism: 10 seeds, generated twice",
+              _gen("determinism")),
+        Check("CDISC CORE", "specfirst.gen.gate.core: visible and twin of the 10 seeds",
+              _gen("core")),
+        Check("controlled terms", "specfirst.gen.gate.controlled_terms: values against "
+              "the CT package of CORE", _gen("controlled_terms")),
+        Check("probes", "specfirst.gen.gate.probe_coverage: every pair of alternatives",
+              _gen("probe_coverage")),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
 }

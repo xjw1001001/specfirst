@@ -1,0 +1,4 @@
+# Packages of env/core-requirements.lock that PyPI offers without a wheel.
+# They are built from their pinned source archive (hash checked) with the
+# setuptools of the same lock; everything else is installed from wheels only.
+titlecase

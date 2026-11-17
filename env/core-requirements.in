@@ -1,0 +1,37 @@
+# Python requirements of CDISC CORE (cdisc-rules-engine), which runs in its
+# own virtual environment (docs/decisions/ADR-006.md). env/lock.sh resolves
+# them into env/core-requirements.lock, which is what gets installed.
+#
+# This is the dependency list of pyproject.toml at the commit that
+# env/core-source.txt pins, with the same bounds. One line is left out:
+# pyinstaller, which builds the executable and is not imported when CORE
+# runs from source.
+business_rules_enhanced>=1.4.8
+cachetools>=6.1.0
+cdisc-library-client>=0.1.7
+click>=8.3.0
+dask[dataframe,array]>=2025.4.0
+fastparquet>=2024.2.0
+importlib-metadata>=8.5.0
+jsonata-python>=0.6.0
+jsonpath-ng>=1.8.0,<1.11
+jsonschema>=4.26.0
+lxml>=5.2.1
+numpy>=1.26.0
+odmlib>=0.2.1
+openpyxl>=3.1.5
+pandas>=3.0.0
+psutil>=6.1.1
+pympler>=1.1
+pyreadstat>=1.2.9
+python-dotenv>=1.0.0
+pytz>=2024.0
+pyyaml>=6.0.2
+redis>=4.5.0
+requests>=2.32.3
+setuptools>=75.6.0
+titlecase>=2.4.1
+
+# Build requirement of titlecase, which PyPI offers as a source archive only
+# (env/core-sdist.txt): setuptools_scm reads its version from the archive.
+setuptools_scm>=8

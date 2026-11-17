@@ -4,6 +4,7 @@
 # (Ubuntu 24.04, x86_64), and commit the result.
 #
 #   env/requirements.lock  exact Python versions with hashes (written by uv)
+#   env/core-requirements.lock  the same for the environment of CDISC CORE
 #   env/r-packages.lock    exact R versions from the snapshot in env/r-repo.txt
 #   env/system.lock        versions of the system packages, for information
 set -euo pipefail
@@ -23,6 +24,12 @@ python3 -m venv "$tool/venv"
   --no-annotate \
   --custom-compile-command "bash env/lock.sh" \
   --output-file env/requirements.lock
+"$tool/venv/bin/uv" pip compile env/core-requirements.in \
+  --python "$(command -v python3)" \
+  --generate-hashes \
+  --no-annotate \
+  --custom-compile-command "bash env/lock.sh" \
+  --output-file env/core-requirements.lock
 
 mkdir -p "$SPECFIRST_R_LIBS"
 Rscript --vanilla env/install_r.R --write-lock
@@ -41,4 +48,5 @@ Rscript --vanilla env/install_r.R --write-lock
     fi
   done
 } > env/system.lock
-echo "locks written: env/requirements.lock env/r-packages.lock env/system.lock"
+echo "locks written: env/requirements.lock env/core-requirements.lock" \
+  "env/r-packages.lock env/system.lock"

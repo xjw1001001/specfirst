@@ -8,6 +8,7 @@
 #   SPECFIRST_VENV    .venv              Python virtual environment
 #   SPECFIRST_R_LIBS  .r-lib             R package library (also R_LIBS_USER)
 #   fetch cache       third_party/cache  (or what third_party/cache-location names)
+#   SPECFIRST_CORE    .core              CDISC CORE: its environment and its source
 #
 # Under SPECFIRST_HOME, when that variable is set or when the checkout is on
 # a Windows drive under WSL (/mnt/<letter>/...), where the mount is slow and
@@ -15,6 +16,7 @@
 #   SPECFIRST_VENV    $SPECFIRST_HOME/venv-<checkout folder name>-<checksum of its path>
 #   SPECFIRST_R_LIBS  $SPECFIRST_HOME/r-lib    shared by all checkouts
 #   SPECFIRST_CACHE   $SPECFIRST_HOME/cache    shared by all checkouts
+#   SPECFIRST_CORE    $SPECFIRST_HOME/core     shared; one folder per pair of pins
 
 _sf_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -40,6 +42,7 @@ if [ -n "$_sf_home" ]; then
   _sf_id="$(basename "$_sf_root")-$(printf '%s' "$_sf_root" | cksum | cut -d' ' -f1)"
   export SPECFIRST_VENV="$_sf_home/venv-$_sf_id"
   export SPECFIRST_R_LIBS="$_sf_home/r-lib"
+  export SPECFIRST_CORE="$_sf_home/core"
   if [ -z "${SPECFIRST_CACHE:-}" ]; then
     export SPECFIRST_CACHE="$_sf_home/cache"
     export _SPECFIRST_OWNS_CACHE=1
@@ -47,6 +50,7 @@ if [ -n "$_sf_home" ]; then
 else
   export SPECFIRST_VENV="$_sf_root/.venv"
   export SPECFIRST_R_LIBS="$_sf_root/.r-lib"
+  export SPECFIRST_CORE="$_sf_root/.core"
 fi
 # The R scripts in env/ read SPECFIRST_R_LIBS: R fills R_LIBS_USER with its
 # own default when it is unset, so that variable cannot tell them where the

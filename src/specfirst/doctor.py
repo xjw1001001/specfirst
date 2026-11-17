@@ -4,7 +4,9 @@ Hard failures (exit 1): Python older than 3.12, a Python package that
 differs from env/requirements.lock, R missing or not the version of
 env/r-version.txt, an R package that differs from env/r-packages.lock, R or
 one of its recommended packages (system packages named r-*) that differs
-from env/system.lock, pdftotext missing or not poppler. Differences in other
+from env/system.lock, pdftotext missing or not poppler, CDISC CORE not
+installed as env/core-source.txt and env/core-requirements.lock pin it
+(specfirst.cdisccore). Differences in other
 system packages are printed as notes only: the Ubuntu archive does not keep
 old versions, so they cannot be pinned.
 """
@@ -46,6 +48,12 @@ def read_table(path: Path) -> dict[str, str]:
             raise ValueError(f"{path.name}: expected a name and a version, found {line!r}")
         table[parts[0]] = parts[1]
     return table
+
+
+def _two_words(path: Path) -> dict[str, str]:
+    """Like read_table, for a file that may not be well formed: bad lines are left out."""
+    lines = (line.split("#", 1)[0].split() for line in path.read_text("ascii").splitlines())
+    return {parts[0]: parts[1] for parts in lines if len(parts) == 2}
 
 
 def read_list(path: Path) -> list[str]:
@@ -228,6 +236,17 @@ def run(root: Path, out: Callable[[str], None] = print) -> int:
     if problem:
         failures.append(problem)
     out(f"git        {_first_line(['git', '--version']) or 'not found'}")
+
+    from specfirst import cdisccore
+
+    if (root / cdisccore.SOURCE_FILE).is_file():
+        drift = cdisccore.drift(root)
+        pins = _two_words(root / cdisccore.SOURCE_FILE)
+        out(f"CDISC CORE {pins.get('tag', '?')} at {pins.get('commit', '?')[:12]}: "
+            f"{len(drift)} differ")
+        failures += drift
+    else:
+        failures.append(f"{cdisccore.SOURCE_FILE} is missing")
 
     system_lock = root / "env" / "system.lock"
     if system_lock.is_file() and shutil.which("dpkg-query"):

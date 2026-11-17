@@ -1,0 +1,181 @@
+clean clone gate gen-1a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     39ff635
+clone:      /tmp/specfirst-clean-CTanbE/specfirst
+environment and cache: /tmp/specfirst-clean-CTanbE/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-CTanbE/specfirst
+
+$ git -C /tmp/specfirst-clean-CTanbE/specfirst checkout --quiet --detach 39ff635
+
+$ git -C /tmp/specfirst-clean-CTanbE/specfirst log -1 --format=%H %s
+39ff635c614031a89c44e9ab533f9674219b761b gen-1a: the gate keeps the reports of CORE beside its log
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-CTanbE/env/venv-specfirst-1532074759
+R library: /tmp/specfirst-clean-CTanbE/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-CTanbE/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-CTanbE/env/core/f3282a0d870b-d90ef34c553d
+source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
+python     3.12.3  (/tmp/specfirst-clean-CTanbE/env/venv-specfirst-1532074759/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-CTanbE/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate gen-1a --clean
+gate gen-1a at commit 39ff635c614031a89c44e9ab533f9674219b761b (clean)
+
+== [1/8] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-CTanbE/env/venv-specfirst-1532074759/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+doctor: ok
+-- PASS environment (0.3 s)
+
+== [2/8] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [3/8] unit tests: pytest -m "not evidence" -q
+........................................................................ [  7%]
+........................................................................ [ 15%]
+........................................................................ [ 23%]
+........................................................................ [ 31%]
+........................................................................ [ 39%]
+........................................................................ [ 47%]
+........................................................................ [ 55%]
+........................................................................ [ 63%]
+........................................................................ [ 71%]
+........................................................................ [ 79%]
+........................................................................ [ 87%]
+........................................................................ [ 95%]
+............................................                             [100%]
+908 passed, 22 deselected in 58.14s
+-- PASS unit tests (58.5 s)
+
+== [4/8] identical hashes: specfirst.gen.gate.determinism: 10 seeds, generated twice
+planted defect: a build with another time stamp differs in 25 files, for example inputs/data/sdtm/ae.json: the hashes differ
+planted defect: a study whose manifest alone differs: study.json: the hashes differ
+planted defect: a build that depends on the hash seed of its process, made by two processes: differs in 25 files
+10 seeds, each generated twice, by this process and by a process of its own (hash seed 1, time zone Pacific/Kiritimati, locale C, its own working folder): 510 files and 2799 subjects per build, the manifests included, catalog specfirst-m1 1
+identical hashes: 0 problems
+-- PASS identical hashes (7.7 s)
+
+== [5/8] CDISC CORE: specfirst.gen.gate.core: visible and twin of the 10 seeds
+CDISC CORE v1.0.0 at f3282a0d870b, SDTMIG V3.4, Define-XML 2.1.0, terminology sdtmct-2025-09-26; explained findings: core_findings.yaml, 18 entries
+planted defect: two events of one subject with the same AESEQ: reported by CORE and unexplained: CORE-000544 AE (issue reported, 2 issues, SFATXTPG-101-001): AESEQ must be a unique number per USUBJID per domain, or a 
+planted defect: an actual arm that no probe planted: reported by CORE and unexplained: CORE-000655 DM (issue reported, 2 issues, SFATXTPG-101-002, SFATXTPG-102-016): Values between ARMCD and ACTARMCD are not
+21 reports of CORE are kept in core/ beside this log
+seed gen-1a-1 visible: 562 rules (323 passed, 191 not applicable, 10 with issues, 38 not executable); 86 findings, 0 unexplained
+seed gen-1a-1 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-2 visible: 562 rules (324 passed, 191 not applicable, 9 with issues, 38 not executable); 85 findings, 0 unexplained
+seed gen-1a-2 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-3 visible: 562 rules (323 passed, 191 not applicable, 10 with issues, 38 not executable); 86 findings, 0 unexplained
+seed gen-1a-3 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-4 visible: 562 rules (319 passed, 191 not applicable, 14 with issues, 38 not executable); 90 findings, 0 unexplained
+seed gen-1a-4 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-5 visible: 562 rules (325 passed, 191 not applicable, 8 with issues, 38 not executable); 84 findings, 0 unexplained
+seed gen-1a-5 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-6 visible: 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-6 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-7 visible: 562 rules (320 passed, 191 not applicable, 13 with issues, 38 not executable); 89 findings, 0 unexplained
+seed gen-1a-7 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-8 visible: 562 rules (316 passed, 191 not applicable, 17 with issues, 38 not executable); 93 findings, 0 unexplained
+seed gen-1a-8 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-9 visible: 562 rules (319 passed, 191 not applicable, 14 with issues, 38 not executable); 90 findings, 0 unexplained
+seed gen-1a-9 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+seed gen-1a-10 visible: 562 rules (321 passed, 191 not applicable, 12 with issues, 38 not executable); 88 findings, 0 unexplained
+seed gen-1a-10 twin   : 562 rules (315 passed, 191 not applicable, 18 with issues, 38 not executable); 94 findings, 0 unexplained
+findings by explanation, over all runs:
+    660  engine-invalid-operator (cannot_run)
+    280  engine-unknown-rule-type (cannot_run)
+    120  engine-unknown-operation (cannot_run)
+     40  engine-unsupported-attribute (cannot_run)
+    180  engine-join-type (cannot_run)
+     40  engine-list-startswith (cannot_run)
+    220  split-dataset-name (dataset)
+     20  sv-has-no-sequence-number (repeated_key)
+     20  no-findings-about-domain (every_record)
+     20  treatment-emergence-is-a-decision (every_record)
+     20  trial-design-domains-not-in-the-study (every_record)
+     20  define-xml-not-seen-by-the-rule (every_record)
+     40  invented-drug-has-no-code (study)
+     16  probe-randomized-never-dosed (probe)
+     48  probe-dosed-but-not-randomized (probe)
+     17  probe-first-exposure-date-differs (probe)
+     32  probe-actual-arm-differs (probe)
+     32  probe-event-after-end-of-study (probe)
+every report names the datasets handed over with their numbers of records, Define-XML 2.1.0 and the terminology sdtmct-2025-09-26
+CORE on 20 datasets (10 seeds, visible and twin): no unexplained finding; the pinned source is unchanged
+-- PASS CDISC CORE (881.4 s)
+
+== [6/8] controlled terms: specfirst.gen.gate.controlled_terms: values against the CT package of CORE
+CT package sdtmct-2025-09-26 of the pinned CORE: 1181 codelists
+planted defect: SEX = X and AESEV = TERRIBLE are reported: DM.SEX = 'X' SFATXTPG-101-001: not a term of SEX
+planted defect: another code for SEX F in the package: SEX: 'F' is C00000 in the package, C16576 here
+95 terms of 22 codelists and the trial summary parameters agree with the package; 709791 values of controlled variables in 20 datasets checked: 0 problems
+-- PASS controlled terms (0.6 s)
+
+== [7/8] probes: specfirst.gen.gate.probe_coverage: every pair of alternatives
+planted defect: the records of a logged probe are removed from the data: 2 problems, for example: ae.teae.start: on_or_after_first_dose_date and at_or_after_first_dose_time: every probe that should separate them is missing from the data (ae_on_firs
+planted defect: a probe is left out of the log: probe two_disposition_events: the twin does not carry it
+planted defect: one serious event less in the calibrated arm: probe statistic_at_rounding_half: arm PBO: the data give 32, 18 and 1 subjects, the log says 32, 18 and 2
+seed gen-1a-1: 21 decisions apply, 32 pairs of alternatives; twin: 26 of 26 probes logged and found in the data; visible: 14 probes logged and found; 0 problems
+seed gen-1a-2: 22 decisions apply, 35 pairs of alternatives; twin: 28 of 28 probes logged and found in the data; visible: 14 probes logged and found; 0 problems
+seed gen-1a-3: 21 decisions apply, 32 pairs of alternatives; twin: 26 of 26 probes logged and found in the data; visible: 13 probes logged and found; 0 problems
+seed gen-1a-4: 22 decisions apply, 35 pairs of alternatives; twin: 28 of 28 probes logged and found in the data; visible: 19 probes logged and found; 0 problems
+seed gen-1a-5: 22 decisions apply, 35 pairs of alternatives; twin: 28 of 28 probes logged and found in the data; visible: 16 probes logged and found; 0 problems
+seed gen-1a-6: 22 decisions apply, 35 pairs of alternatives; twin: 28 of 28 probes logged and found in the data; visible: 20 probes logged and found; 0 problems
+seed gen-1a-7: 22 decisions apply, 35 pairs of alternatives; twin: 28 of 28 probes logged and found in the data; visible: 17 probes logged and found; 0 problems
+seed gen-1a-8: 22 decisions apply, 35 pairs of alternatives; twin: 28 of 28 probes logged and found in the data; visible: 16 probes logged and found; 0 problems
+seed gen-1a-9: 22 decisions apply, 35 pairs of alternatives; twin: 28 of 28 probes logged and found in the data; visible: 16 probes logged and found; 0 problems
+seed gen-1a-10: 21 decisions apply, 32 pairs of alternatives; twin: 26 of 26 probes logged and found in the data; visible: 15 probes logged and found; 0 problems
+units of the slice: mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary
+-- PASS probes (0.6 s)
+
+== [8/8] ASCII: python -m specfirst.asciicheck
+ASCII check: 421 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.3 s
+PASS  lint                 0.0 s
+PASS  unit tests          58.5 s
+PASS  identical hashes      7.7 s
+PASS  CDISC CORE         881.4 s
+PASS  controlled terms      0.6 s
+PASS  probes               0.6 s
+PASS  ASCII                0.0 s
+GATE gen-1a: PASS
+
+clean clone gate gen-1a: PASS (clone kept in /tmp/specfirst-clean-CTanbE/specfirst until /tmp is cleared)

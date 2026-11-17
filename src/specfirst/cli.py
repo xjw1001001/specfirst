@@ -3,9 +3,9 @@
 base-0 provides doctor, fetch, status and gate. real-1 adds kit, build and
 check. std-1 adds catalog, house, compile, render and parse. real-2 adds
 methods, and the results to build and check. real-3a adds the grids, their
-mock shells and pages, and the trace of their cells. The other commands of PLAN.md
-section 12 (preview, rebuild, gen, score, run, ask) arrive with the work
-packages that build them.
+mock shells and pages, and the trace of their cells. gen-1a adds gen. The
+other commands of PLAN.md section 12 (preview, rebuild, score, run, ask)
+arrive with the work packages that build them.
 """
 
 from __future__ import annotations
@@ -111,6 +111,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_parse.add_argument("document", help="a standard-form Markdown file")
     p_parse.add_argument("--out", required=True, help="decisions.jsonl to write")
+
+    p_gen = commands.add_parser(
+        "gen", add_help=False,
+        help="generate a study: `gen design`, `gen study`, `gen check` (see `gen --help`)")
+    p_gen.add_argument("rest", nargs=argparse.REMAINDER)
     return parser
 
 
@@ -241,6 +246,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         from specfirst.machine import build
 
         return build.check(root, args.kit, folder=args.build, twice=args.twice)
+    if args.command == "gen":
+        from specfirst.gen import command
+
+        return command.main(root, args.rest)
     handlers = {"catalog": _catalog, "house": _house, "compile": _compile,
                 "render": _render, "parse": _parse}
     return handlers[args.command](root, args)

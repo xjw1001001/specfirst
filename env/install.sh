@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Create the Python environment and the R library of this checkout from the
-# lock files, then run `specfirst doctor`.
+# lock files, install CDISC CORE as pinned, then run `specfirst doctor`.
 #
 # System packages come first (once per machine, as root): env/system.sh.
 set -euo pipefail
@@ -26,6 +26,10 @@ pip_install --no-build-isolation -e .
 echo "R library: $SPECFIRST_R_LIBS"
 mkdir -p "$SPECFIRST_R_LIBS"
 Rscript --vanilla env/install_r.R
+
+# CDISC CORE: its own environment from env/core-requirements.lock and its
+# source at the commit of env/core-source.txt (docs/decisions/ADR-006.md).
+"$SPECFIRST_VENV/bin/python" -m specfirst.cdisccore install
 
 # shellcheck disable=SC1091
 . scripts/env.sh
