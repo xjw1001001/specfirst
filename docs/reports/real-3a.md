@@ -6,20 +6,20 @@ Depends on real-2 (passed).
 
 ## Verdict
 
-The gate passed with the installed environment. `specfirst gate real-3a
---clean` exited 0 on a clone of commit `0938fe4`: 16 of 16 checks. The
-complete output is in `docs/reports/real-3a.gate.log` (405 lines); the
-section "The gate" quotes it.
+The gate passed. `scripts/clean_clone_gate.sh real-3a` exited 0 on a clean
+clone of commit `9730843`, after a fresh install and a fresh fetch: 16 of 16
+checks. The complete output is in
+`docs/reports/real-3a.clean-clone.gate.log` (455 lines); the section "The
+clean-clone gate" quotes it.
 
-The clean-clone gate is owed. `scripts/clean_clone_gate.sh real-3a` installs
-the environment and fetches the sources afresh, and on 2026-11-17 the Linux
-environment of the machine reached no network: every outbound TCP
-connection from WSL failed, while Windows was online. So the run above
-used the Python environment and the R library that were already installed
-and the existing fetch cache, which the gate verifies against its pins
-before and after (checks 2 and 15). The owner allowed the merge on this
-run, with the clean-clone gate to follow when the network is back (section
-"The environment on the day").
+It was the second run of the gate. For most of 2026-11-17 the Linux
+environment of the machine reached no network, so nothing could be
+installed or fetched. In that time `specfirst gate real-3a --clean` passed
+on a clone of commit `0938fe4` with the environment and the fetch cache
+that were already installed, 16 of 16 (`docs/reports/real-3a.gate.log`, 405
+lines; the section "The gate" quotes that run in full). `9730843` adds
+this report and two gate logs to `0938fe4` and changes nothing else. The
+two runs built the same bytes: all 30 file hashes of P1 are equal.
 
 - 27 cells of the grid show 51 results. Every cell text equals the
   formatted values the example embeds; no difference had to be classified.
@@ -308,8 +308,9 @@ system. The Python environment is the one installed for the worktree
 (`specfirst` itself is taken from the clone through `PYTHONPATH`), the R
 library and the fetch cache are the shared ones under
 `/root/.local/share/specfirst`. Nothing was installed or fetched for this
-run: that is what the clean-clone gate adds, and it is owed. The `flock`
-keeps heavy runs of the sessions on this machine apart.
+run: that is what the clean-clone gate adds; it ran later the same day
+(section "The clean-clone gate"). The `flock` keeps heavy runs of the
+sessions on this machine apart.
 
 Output. Lines are quoted as printed from `docs/reports/real-3a.gate.log`
 (405 lines). `[...]` marks where lines of the log are left out: the lines
@@ -529,6 +530,105 @@ Check 14 runs the folder `tests/defects`: the eight tests D1 to D8 and the
 D8 are the two planted cases: the same check, on the edges of the graph
 with one edge left out, finds 2 and 3 problems.
 
+## The clean-clone gate
+
+After the network was back. Command, run in Ubuntu 24.04 under WSL2 as
+root, in the worktree of `track/real` (`taskset` holds the fresh install to
+four processors; the `flock` keeps heavy runs of the sessions apart):
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh real-3a /mnt/d/trial_work/specfirst/.git 9730843
+```
+
+`9730843` was the HEAD of `track/real`. The script clones the repository
+with `git clone --no-local` into a new folder under `/tmp`, checks out the
+commit, puts the Python environment, the R library and the fetch cache of
+the clone under the same new folder, and runs `env/install.sh`,
+`specfirst fetch` and `specfirst gate real-3a --clean`.
+
+Output, from `docs/reports/real-3a.clean-clone.gate.log` (455 lines).
+`[...]` marks where lines are left out: the three git commands with the
+commit line they print, the lines of `specfirst doctor`, the pin listings,
+and everything of the gate between its first line and its summary but for
+the lines shown. Those lines are the lines of the run quoted above, apart
+from seconds, folders and the count of maintained files (390, with this
+report and the two logs, where the first run had 387).
+
+```text
+clean clone gate real-3a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     9730843
+clone:      /tmp/specfirst-clean-iARXrv/specfirst
+environment and cache: /tmp/specfirst-clean-iARXrv/env
+[...]
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-iARXrv/env/venv-specfirst-21289105
+R library: /tmp/specfirst-clean-iARXrv/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-iARXrv/env/r-lib
+[...]
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-iARXrv/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+[...]
+fetch: every pin verified
+
+$ specfirst gate real-3a --clean
+gate real-3a at commit 973084376618c487cd98902aa5cd8b8153ea8983 (clean)
+[...]
+775 passed, 22 deselected in 41.30s
+[...]
+P1 determinism: 30 of 30 files have the same SHA-256 in both builds
+[...]
+TOTAL cells=9119605 mismatched=0
+[...]
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+  through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
+trace: complete
+[...]
+results common-safety-displays, Python engine: 0 unexplained
+[...]
+results common-safety-displays, R engine: 0 unexplained
+[...]
+results common-safety-displays, engines: 4238 results in both, 0 disagree; largest relative difference 2.4e-13 (allowed 1e-09)
+results: pass
+[...]
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+grid Out14-3-1-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grids: 1 outputs, pass
+[...]
+59 passed in 51.90s
+[...]
+ASCII check: 390 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.2 s
+PASS  pins                 1.0 s
+PASS  lint                 0.0 s
+PASS  registry             0.0 s
+PASS  unit tests          41.6 s
+PASS  method vectors       1.1 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      32.4 s
+PASS  P2 reproduction      0.3 s
+PASS  trace                0.9 s
+PASS  results              2.8 s
+PASS  grids                1.8 s
+PASS  pilot tests         45.6 s
+PASS  planted defects     52.1 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-3a: PASS
+
+clean clone gate real-3a: PASS (clone kept in /tmp/specfirst-clean-iARXrv/specfirst until /tmp is cleared)
+```
+
+The 30 hash lines of P1 in this log are those of the first run, file by
+file: a fresh environment and a fresh fetch give the same grid, shell,
+pages and graph.
+
 ## One cell, end to end
 
 `cell:Out14-3-1-1/r2/c1`, the row "TEAE" under "Placebo", walked from
@@ -612,8 +712,9 @@ property of the code.
   outbound TCP connection from WSL failed (pypi.org, github.com,
   packagemanager.posit.co, by address too), while name lookup and ping
   worked and Windows itself was online. A fresh install and a fresh fetch
-  were impossible, so `scripts/clean_clone_gate.sh real-3a` has not run. The
-  repair is on the Windows side and is the owner's.
+  were impossible until the owner rebooted Windows at 11:54; after that the
+  connections worked, and `scripts/clean_clone_gate.sh real-3a` ran from
+  11:57 to 12:02.
 - Out of memory. At 11:16 the virtual machine of WSL (15 GB, shared by all
   sessions) ran out of memory while three sessions ran test suites. After
   that the Ubuntu instance was terminated every 30 to 120 seconds, attached
@@ -624,14 +725,15 @@ property of the code.
 - The worktree is on a Windows drive, where a gate takes several times as
   long. The gates of this report ran on clones in the Linux file system.
 
-What the owner decided. The base session asked the owner whether, until the
-network is repaired, real-3a and std-1 may merge on the gate with the
-installed environment; the owner answered that they may, and that the
-clean-clone gate is to be run afterwards. The question and the answer
-reached this session through the base session; their words, which are not
-ASCII, are in the hand-over note of the session group, outside the
-repository. `scripts/clean_clone_gate.sh real-3a` is to be run as soon as
-the network is back, and its log added to this report.
+What the owner decided, and what became of it. While the network was
+down, the base session asked the owner whether real-3a and std-1 may merge
+on the gate with the installed environment; the owner answered that they
+may, and that the clean-clone gate is to be run afterwards. The question
+and the answer reached this session through the base session; their
+words, which are not ASCII, are in the hand-over note of the session
+group, outside the repository. The permission was not used: the network
+came back before the review was done, the clean-clone gate passed, and
+nothing is owed.
 
 Two mistakes of this session on the way, both recorded in
 `docs/lessons.md`: a gate was started in the worktree while files of the
