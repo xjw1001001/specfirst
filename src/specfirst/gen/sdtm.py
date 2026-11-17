@@ -68,8 +68,8 @@ METHODS = {
     "SEQ": "A number that is unique within the subject, in the order of the dataset keys.",
     "STUDYDAY": "The date minus the date part of DM.RFSTDTC, plus one day when the date is on "
                 "or after it. Empty when either date is incomplete.",
-    "EPOCH": "The epoch of the trial element in which the start date of the record falls. "
-             "Empty when the date is after the end of the subject's last element.",
+    "EPOCH": "The epoch of the trial element in which the start date of the record falls; "
+             "FOLLOW-UP when the date is after the end of the subject's last element.",
     "REFERENCE": "Derived from the exposure, consent and disposition records of the subject.",
     "LOBXFL": "Y for the last result of the test on or before the date of first study treatment.",
     "STRES": "The collected result, unchanged: results are collected in the standard unit.",
@@ -327,18 +327,22 @@ def study_day(text: str | None, reference: str | None) -> int | None:
     return days + 1 if days >= 0 else days
 
 
-def epoch_of(subject: Subject, date: Date) -> str | None:
+def epoch_of(subject: Subject, date: Date) -> str:
     """The epoch of the element of the subject in which a date falls (`_se` writes them).
 
-    A date after the end of the subject's participation falls in no element
-    and has no epoch: the last element ends with the study. Two probes plant
-    an adverse event there.
+    A date after the end of the participation of a dosed subject falls in no
+    element. It lies after the treatment, so its epoch is FOLLOW-UP, whether
+    or not the subject has a follow-up element: an epoch is expected on
+    every subject-level record (CORE-000701 reports a record without one).
+    Two probes plant an adverse event there; one of them is for a subject
+    without a known last dose, whose treatment element lasts to the end of
+    the study.
     """
-    if subject.end_of_study is not None and date > subject.end_of_study:
-        return None
     if subject.first_dose is None or date < subject.first_dose:
         return "SCREENING"
     if subject.last_dose is not None and date > subject.last_dose:
+        return "FOLLOW-UP"
+    if subject.end_of_study is not None and date > subject.end_of_study:
         return "FOLLOW-UP"
     return "TREATMENT"
 

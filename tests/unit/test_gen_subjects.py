@@ -182,8 +182,10 @@ def test_an_element_is_ordered_within_the_planned_arm_only(design, people, catal
     assert {s.state for s in twin if s.planned_arm is None} == {"screen_failure", "not_assigned"}
 
 
-def test_a_record_after_the_end_of_participation_has_no_epoch(design, catalog):
-    """Review of gen-1a, finding F28: the epoch is that of an element of the subject."""
+def test_a_record_after_the_end_of_participation_is_in_follow_up(design, catalog):
+    """Review of gen-1a, finding F28: the epoch is that of an element of the subject; an
+    event after the last element lies after the treatment, never in it. (Leaving the epoch
+    empty was tried first: CORE-000701 reports such a record.)"""
     twin, log = study.simulate(design, catalog, SEED, "twin")
     rows = sdtm.build(design, twin, ("DM", "SE", "AE", "DS", "VS", "EX"))
     ends = {row["USUBJID"]: row["RFPENDTC"] for row in rows["DM"]}
@@ -199,7 +201,7 @@ def test_a_record_after_the_end_of_participation_has_no_epoch(design, catalog):
                   if e["SESTDTC"] <= start and (start < e["SEENDTC"] or (
                       start == e["SEENDTC"] and e is elements[subject][-1]))]
         if start > ends[subject]:
-            assert row["EPOCH"] is None and not inside
+            assert row["EPOCH"] == "FOLLOW-UP" and not inside
             late.add(subject)
         else:
             assert row["EPOCH"] is not None and row["EPOCH"] in inside
