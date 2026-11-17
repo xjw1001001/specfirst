@@ -32,4 +32,14 @@ of the 18 analyses with a data subset, dropping it changes nothing the
 reference lists.
 
 The tests need the fetch cache, the engine and R; they carry the marker
-`evidence`. read-1 adds the defects of the scorer.
+`evidence`.
+
+The defects of the scorer (read-1a, the slice "adverse event summary first")
+are planted by `specfirst.score.defects`, S1 to S12: the twelve of section
+9.5, of which three do not apply to a table of counts and percents, and one
+is planted at two layers. Each is planted in a candidate (a decision, a step
+of its build, a citation) and judged by `specfirst.score.scorer.run`, the
+function that scores any candidate. `specfirst score defects` runs them on
+the hand-made study HAND01; `tests/unit/test_score_hand.py` holds each one
+against the cells worked out by hand. They need no fetch cache and no R.
+read-1a runs them on the kits of gen-2a as well.

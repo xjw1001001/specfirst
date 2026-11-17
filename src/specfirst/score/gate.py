@@ -1,0 +1,165 @@
+"""The checks of `specfirst gate read-1a` (ADR-005, decision 1; PLAN.md section 13.6).
+
+Gate of the part: "The planted defects of section 9.5 that apply to the
+slice are each detected and attributed to the right layer. The parser
+control scores 100%." The work starts on the pilot and on hand-made
+fixtures and finishes on the kits of gen-2a. Each function prints what it
+counted, so the gate log is the evidence of the report (rule R8).
+
+    hand_table   the gold decisions of HAND01 build the table worked out by
+                 hand, on the visible data and on the twin
+    control      the parser control scores 100% on HAND01, in both stages;
+                 and it does not when a statement of the document is changed
+    defects      the planted defects on HAND01
+    pilot        the report on CDISCPILOT01 runs on the pinned files
+                 (report only: its scores decide nothing)
+    kits         the control and the planted defects on the kits of gen-2a
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from pathlib import Path
+
+from specfirst.compile.standard_form import StandardForm, StandardFormError, decision_record
+from specfirst.score import build, defects, hand, pilot, report, scorer
+from specfirst.score.candidate import Machine
+
+Out = Callable[[str], None]
+_MACHINES: dict[str, Machine] = {}
+
+
+def machine_of(root: Path) -> Machine:
+    """One machine per checkout and process: a build made by one check is not made
+    again by the next."""
+    if str(root) not in _MACHINES:
+        _MACHINES[str(root)] = Machine(root)
+    return _MACHINES[str(root)]
+
+
+def hand_table(root: Path, out: Out) -> bool:
+    machine = machine_of(root)
+    case = hand.case(machine.catalog, machine.house)
+    problems = 0
+    for which in case.data:
+        _, gold = scorer.staged(machine, case, which)
+        table = build.table_of(gold.grids[hand.OUTPUT])
+        ours = {(row[1], column[0]): cell["text"] for (row, column), cell in table.cells.items()}
+        wanted = hand.expected_cells(which)
+        out(f"HAND01, {which}: {len(hand.SUBJECTS[which])} subjects, "
+            f"{len(hand.EVENTS[which])} adverse events; columns "
+            + " | ".join(column[0] for column in table.columns))
+        for row in table.rows:
+            out(f"  {row[1] or '(column header)':60s} "
+                + " | ".join(table.cells[(row, column)]["text"] for column in table.columns))
+        differing = sorted(key for key in set(ours) | set(wanted)
+                           if ours.get(key) != wanted.get(key))
+        for key in differing:
+            out(f"  problem: {key[0]} / {key[1]}: built {ours.get(key)!r}, by hand "
+                f"{wanted.get(key)!r}")
+        problems += len(differing)
+        out(f"HAND01, {which}: {len(wanted) - len(differing)} of {len(wanted)} cells are the "
+            "cells worked out by hand")
+    return problems == 0
+
+
+def _changed_document(machine: Machine, case: scorer.Case) -> tuple[str, scorer.Result | str]:
+    """The control on a document in which one statement says something else."""
+    records, documents = scorer.control_records(machine, case)
+    text = documents.texts[scorer.CONTROL_DOCUMENT]
+    form = StandardForm(machine.catalog)
+    line = next(line for line in text.split("\n") if "30 days" in line)
+    changed = text.replace(line, line.replace("30 days", "31 days"))
+    try:
+        doc, parsed = form.parse_document(changed)
+    except StandardFormError as error:
+        return line, f"the parser refuses the document: {error}"
+    stated = [decision_record(item, doc, "stated", "document_rule") for item in parsed]
+    have = {(r["id"], r["unit"]) for r in stated}
+    rest = [r for r in records if (r["id"], r["unit"]) not in have]
+    return line, scorer.run(machine, case, stated + rest, arm="C",
+                            documents=type(documents)({**documents.texts, doc: changed}))
+
+
+def control(root: Path, out: Out) -> bool:
+    machine = machine_of(root)
+    passed = True
+    for stage in scorer.STAGES:
+        case = hand.case(machine.catalog, machine.house, stage)
+        result = scorer.control(machine, case)
+        out(f"parser control on HAND01, stage {stage}: {len(result.reading.decisions)} "
+            "decisions; " + "; ".join(
+                f"{name} {right} of {scored}" for name in ("value", "status", "quote", "span")
+                for right, scored in [result.reading.total(name)]))
+        for name, score in result.builds.items():
+            cells = score.denominators()
+            out(f"  {name}: produced {score.produced} of {score.in_gold}; cells correct "
+                f"{score.correct} of {cells['shared_rows']}, {cells['produced']} and "
+                f"{cells['all']} (its three denominators); strict {score.strict} of "
+                f"{score.in_gold}; lenient {score.lenient} of {score.in_gold}")
+        if not result.perfect:
+            for line in report.lines(result):
+                out("  " + line)
+        out(f"parser control on HAND01, stage {stage}: "
+            f"{'100%' if result.perfect else 'NOT 100%'}")
+        passed &= result.perfect
+    # Rule R5: the control must fail on a document that states something else.
+    case = hand.case(machine.catalog, machine.house)
+    line, found = _changed_document(machine, case)
+    out(f"planted in the document: '{line}' with 31 days in place of 30")
+    if isinstance(found, str):
+        out(f"  {found}")
+        seen = True
+    else:
+        wrong = [item.key[0] for item in found.reading.wrong()]
+        seen = not found.perfect and wrong == ["ae.teae.end"]
+        out(f"  the control is {'not ' if not found.perfect else ''}100%: wrong by value: "
+            f"{', '.join(wrong) or 'none'}; twin: "
+            f"{len(found.builds['twin'].wrong())} cells wrong")
+    out(f"the control fails on the changed document: {'yes' if seen else 'NO'}")
+    return passed and seen
+
+
+def planted_defects(root: Path, out: Out) -> bool:
+    machine = machine_of(root)
+    passed, _ = defects.suite(machine, hand.case(machine.catalog, machine.house), out)
+    return passed
+
+
+def arms(root: Path, out: Out) -> bool:
+    """Arm S on HAND01, in both stages: printed, and held against what the study is
+    built to show."""
+    machine = machine_of(root)
+    chain = scorer.standard_alone(machine, hand.case(machine.catalog, machine.house))
+    table = scorer.standard_alone(machine, hand.case(machine.catalog, machine.house, "T"))
+    for result in (chain, table):
+        for line in report.lines(result):
+            out(line)
+    # The study states two decisions. One has no default, so the chain cannot be
+    # built from the standard alone; the table decisions are all defaults.
+    not_built = all(score.produced == 0 for score in chain.builds.values())
+    owners = {key[0] for owners in chain.owners.values() for owner in owners
+              for key in owner.decisions}
+    out(f"arm S, chain: no output produced: {'yes' if not_built else 'NO'}; owned by "
+        f"{', '.join(sorted(owners)) or 'no decision'}")
+    out(f"arm S, stage T: every score 100%: {'yes' if table.perfect else 'NO'}")
+    return not_built and owners == {"ae.related.values"} and table.perfect
+
+
+def pilot_report(root: Path, out: Out) -> bool:
+    try:
+        found = pilot.run(machine_of(root))
+    except pilot.PilotError as error:
+        out(f"pilot: {error}")
+        return False
+    for line in pilot.lines(found):
+        out(line)
+    out("pilot: report only; its scores decide nothing in this gate")
+    return True
+
+
+def kits(root: Path, out: Out) -> bool:
+    out("the kits of gen-2a are not on this checkout: the scorer and the planted defects "
+        "have run on the hand-made study and on the pilot only")
+    out("read-1a is not done before this check runs on the kits (docs/state/read.md)")
+    return False
