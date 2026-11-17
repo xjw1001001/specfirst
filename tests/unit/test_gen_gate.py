@@ -1,0 +1,266 @@
+"""The checks of the gate gen-1a, as far as they run without CDISC CORE.
+
+The gate itself (`specfirst gate gen-1a`) runs CORE and plants its defects
+in generated studies. Here the parts that decide are tested on planted
+values (rule R5): the list of explained findings, the comparison of two
+builds, the rule for seed files, the command line.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+import pytest
+
+from specfirst import cdisccore, cli, gates
+from specfirst.cdisccore import EXECUTION_ERROR, ISSUE, Finding
+from specfirst.compile import catalog as catalogs
+from specfirst.gen import GENERATOR, command, gate, pgfix, present, study
+
+
+@pytest.fixture(scope="module")
+def catalog(root):
+    return catalogs.load(catalogs.default_dir(root))
+
+
+def test_the_gate_has_the_checks_of_the_plan():
+    """PLAN.md section 13.5: CORE, identical hashes, a probe for every pair; drift first."""
+    names = [check.name for check in gates.GATES["gen-1a"]]
+    assert names[0] == "environment"
+    for needed in ("unit tests", "identical hashes", "CDISC CORE", "probes", "ASCII"):
+        assert needed in names
+    assert len(gate.SEEDS) == 10 and len(set(gate.SEEDS)) == 10
+
+
+# -- the list of explained findings ---------------------------------------------
+
+
+def test_the_list_of_explained_findings_is_well_formed(root, catalog):
+    explained = gate.load_explained()
+    assert explained["core"] == cdisccore.read_pin(root).version
+    assert explained["standard"] == gate.STANDARD
+    entries = explained["explained"]
+    ids = [entry["id"] for entry in entries]
+    assert len(set(ids)) == len(ids)
+    seen: set[str] = set()
+    for entry in entries:
+        assert entry["kind"] in ("cannot_run", "dataset", "every_record", "study", "probe")
+        assert len(entry["reason"]) > 40
+        for rule in entry["rules"]:
+            assert re.fullmatch(r"CORE-\d{6}", rule) and rule not in seen, rule
+            seen.add(rule)
+        assert (entry["kind"] == "cannot_run") == ("text" in entry)
+        assert (entry["kind"] == "probe") == ("probes" in entry)
+        for probe in entry.get("probes", []):
+            assert probe in catalog.probes and catalog.probes[probe]["kind"] == "record"
+
+
+LOG = [
+    {"data": "twin", "probe": "actual_arm_differs_from_planned", "subjects": ["S-9"]},
+    {"data": "visible", "probe": "actual_arm_differs_from_planned", "subjects": ["S-7"]},
+    {"data": "twin", "probe": "ae_starts_after_end_of_study", "subjects": ["S-4"]},
+]
+TABLES = {"AE": [{}] * 5, "SV": [{}] * 8, "EX": [{}] * 3, "DM": [{}] * 4, "TS": [{}] * 2}
+
+
+def _report(*findings: Finding) -> cdisccore.Report:
+    return cdisccore.Report(path=Path("report.json"), engine="1.0.0", standard="SDTMIG V3.4",
+                            rules={f.rule: f.status for f in findings}, findings=findings,
+                            datasets=("DM", "AE"))
+
+
+def _unexplained(*findings: Finding, which: str = "twin") -> list[str]:
+    return gate.classify(_report(*findings), gate.load_explained(), TABLES, LOG, which)[1]
+
+
+def _broken(rule: str, text: str) -> Finding:
+    return Finding(rule, "AE", "rule execution error", EXECUTION_ERROR, 1,
+                   examples=({"values": text, "message": "rule execution error"},))
+
+
+def test_an_engine_error_is_explained_only_with_its_error_text():
+    assert _unexplained(_broken("CORE-002008", "Rule contains invalid operator")) == []
+    # The same rule failing for another reason is a new finding.
+    assert len(_unexplained(_broken("CORE-002008", "KeyError: 'AESTDTC'"))) == 1
+    # A rule of that list that reports issues is not a rule that cannot run.
+    assert len(_unexplained(Finding("CORE-002008", "AE", "x", ISSUE, 5))) == 1
+    # A rule nobody listed.
+    assert len(_unexplained(_broken("CORE-000001", "Rule contains invalid operator"))) == 1
+
+
+def test_a_rule_that_reports_everything_must_report_everything():
+    assert _unexplained(Finding("CORE-002034", "AE", "no flag", ISSUE, 5)) == []
+    assert len(_unexplained(Finding("CORE-002034", "AE", "no flag", ISSUE, 4))) == 1
+    assert _unexplained(Finding("CORE-000544", "SV", "SVSEQ", ISSUE, 8)) == []
+    # The same rule on a dataset that does have a sequence number is a real finding.
+    assert len(_unexplained(Finding("CORE-000544", "EX", "EXSEQ", ISSUE, 3))) == 1
+    assert _unexplained(Finding("CORE-000510", "DM", "split", ISSUE, 1)) == []
+    assert len(_unexplained(Finding("CORE-000510", "DM", "split", ISSUE, 1, ("S-1",)))) == 1
+    assert _unexplained(Finding("CORE-000735", "TS", "UNII", ISSUE, 1)) == []
+    assert len(_unexplained(Finding("CORE-000735", "TS", "UNII", ISSUE, 2))) == 1
+
+
+def test_a_probe_explains_only_the_subjects_it_planted():
+    arms = ("CORE-000655", "DM", "arms differ", ISSUE)
+    assert _unexplained(Finding(*arms, 1, ("S-9",))) == []
+    # A subject that no probe planted, alone or beside a planted one.
+    assert len(_unexplained(Finding(*arms, 1, ("S-1",)))) == 1
+    assert len(_unexplained(Finding(*arms, 2, ("S-1", "S-9")))) == 1
+    # A subject planted by another probe, or in the other dataset of the study.
+    assert len(_unexplained(Finding(*arms, 1, ("S-4",)))) == 1
+    assert len(_unexplained(Finding(*arms, 1, ("S-7",)))) == 1
+    assert _unexplained(Finding(*arms, 1, ("S-7",)), which="visible") == []
+    # A finding without subjects cannot be tied to a probe.
+    assert len(_unexplained(Finding(*arms, 1))) == 1
+    line = _unexplained(Finding(*arms, 1, ("S-1",)))[0]
+    assert "CORE-000655 DM" in line and "S-1" in line
+
+
+def test_a_report_of_another_engine_or_standard_does_not_count(root):
+    assert gate.report_problems(root, cdisccore.Report(
+        Path("r"), "1.0.0", "SDTMIG V3.4", {f"R{n}": "SUCCESS" for n in range(500)}, (), ())) == []
+    problems = gate.report_problems(root, cdisccore.Report(
+        Path("r"), "0.17.1", "SDTMIG V3.3", {"R1": "SUCCESS"}, (), ()))
+    assert len(problems) == 3 and "0.17.1" in problems[0]
+
+
+def test_parallel_runs_of_core_stay_within_the_memory(monkeypatch):
+    """Lesson 27: too many runs at once exhausted the memory of the machine."""
+    need = gate.CORE_RUN_MEMORY_MB
+    assert gate.core_workers(available_mb=64000, processors=32) == 4
+    assert gate.core_workers(available_mb=4 * need, processors=32) == 2
+    assert gate.core_workers(available_mb=need, processors=32) == 1
+    assert gate.core_workers(available_mb=64000, processors=2) == 1
+    assert gate.core_workers(available_mb=0, processors=1) == 1
+
+
+# -- identical hashes ------------------------------------------------------------
+
+
+def test_two_builds_of_a_study_have_identical_hashes(root, catalog, tmp_path):
+    design = pgfix.sample("hashes", study.catalog_label(catalog))
+    first = study.generate(root, design, "hashes", tmp_path / "a")
+    second = study.generate(root, design, "hashes", tmp_path / "b")
+    assert gate.hash_differences(first["files"], second["files"]) == []
+    assert first == second
+    other = study.generate(root, design, "another seed", tmp_path / "c")
+    assert gate.hash_differences(first["files"], other["files"])
+    # Planted defect: one changed byte, one missing file.
+    path = tmp_path / "b" / "inputs" / "data" / "sdtm" / "dm.json"
+    path.write_bytes(path.read_bytes().replace(b'"M"', b'"F"', 1))
+    (tmp_path / "b" / "twin" / "data" / "sdtm" / "define.xml").unlink()
+    assert gate.hash_differences(first["files"], study.file_hashes(tmp_path / "b")) == [
+        "twin/data/sdtm/define.xml: only in one build",
+        "inputs/data/sdtm/dm.json: the hashes differ"]
+
+
+def test_everything_generated_names_the_catalog_version(root, catalog, tmp_path):
+    label = study.catalog_label(catalog)
+    assert label == "specfirst-m1 draft-1"  # the draft of std-1; N1 is open
+    design = pgfix.sample("names", label)
+    manifest = study.generate(root, design, "names", tmp_path)
+    assert manifest["catalog"] == {"name": "specfirst-m1", "version": "draft-1"}
+    assert manifest["generator"] == GENERATOR
+    text_files = [p for p in tmp_path.rglob("*") if p.suffix in (".json", ".jsonl", ".yaml",
+                                                                 ".xml")]
+    assert len(text_files) >= 28
+    for path in text_files:
+        assert "draft-1" in path.read_text(encoding="ascii"), path.name
+    assert len(list(tmp_path.rglob("*.parquet"))) == 22  # their schema names it: see sdtm tests
+    # The manifest lists every other file, and holds the hash of the seed, never the seed.
+    assert set(manifest["files"]) == set(study.file_hashes(tmp_path))
+    assert "names" not in json.dumps(manifest["seed_sha256"])
+    everything = b"".join(p.read_bytes() for p in tmp_path.rglob("*") if p.is_file())
+    assert b"draft-1" in everything and manifest["seed_sha256"].encode() in everything
+
+
+def test_a_design_of_another_catalog_version_is_refused(root, catalog, tmp_path):
+    design = pgfix.sample("old", "specfirst-m1 draft-0")
+    with pytest.raises(study.StudyError, match="Sample the design again"):
+        study.generate(root, design, "old", tmp_path)
+
+
+def test_the_gate_checks_see_their_planted_defects(root, catalog, tmp_path):
+    """The two checks that need no CORE, on one seed: both pass, both prove themselves."""
+    said: list[str] = []
+    seeds = ("unit-gate",)
+    assert gate.determinism_check(root, said.append, tmp_path, seeds) is True
+    assert any(line.startswith("planted defect: a build with another time stamp") for line in said)
+    assert said[-1] == "identical hashes: 0 problems"
+    said.clear()
+    assert gate.probes_check(root, said.append, tmp_path, seeds) is True
+    assert sum(line.startswith("planted defect:") for line in said) == 3
+    assert any("0 problems" in line for line in said)
+
+
+def test_the_probe_check_fails_on_a_study_whose_twin_lost_a_probe(root, catalog, tmp_path):
+    seeds = ("unit-gate",)
+    gate.generate_all(root, tmp_path / "first", seeds)
+    path = tmp_path / "first" / seeds[0] / "gold" / "probes.jsonl"
+    lines = [line for line in path.read_text(encoding="ascii").splitlines()
+             if '"probe": "partial_exposure_date"' not in line or '"data": "visible"' in line]
+    path.write_text("\n".join(lines) + "\n", encoding="ascii", newline="\n")
+    said: list[str] = []
+    assert gate.probes_check(root, said.append, tmp_path, seeds) is False
+    assert any("trt.date.imputation: no probe in the twin separates" in line for line in said)
+
+
+# -- seeds and the command line ---------------------------------------------------
+
+
+def test_a_seed_file_stays_outside_the_repository(root, tmp_path):
+    outside = tmp_path / "seed.txt"
+    outside.write_text("  sealed-seed-text\n", encoding="ascii")
+    assert command.read_seed(root, None, str(outside)) == "sealed-seed-text"
+    assert command.read_seed(root, "abc", None) == "abc"
+    with pytest.raises(command.SeedError, match="inside the checkout"):
+        command.read_seed(root, None, str(root / "docs" / "seed.txt"))
+    with pytest.raises(command.SeedError, match="exactly one"):
+        command.read_seed(root, "abc", str(outside))
+    with pytest.raises(command.SeedError, match="exactly one"):
+        command.read_seed(root, None, None)
+    outside.write_text("\n", encoding="ascii")
+    with pytest.raises(command.SeedError, match="empty"):
+        command.read_seed(root, None, str(outside))
+    # No seed of a kit is written into the repository: the gate seeds are development seeds.
+    assert all(seed.startswith("gen-1a-") for seed in gate.SEEDS)
+
+
+def test_the_command_line_generates_and_checks_a_study(root, tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SPECFIRST_ROOT", str(root))
+    design = tmp_path / "design.yaml"
+    assert cli.main(["gen", "design", "--seed", "cli", "--out", str(design)]) == 0
+    assert "design of the archetype PG-FIX" in capsys.readouterr().out
+    out = tmp_path / "study"
+    assert cli.main(["gen", "study", "--design", str(design), "--seed", "cli",
+                     "--out", str(out)]) == 0
+    assert "for the catalog specfirst-m1 draft-1" in capsys.readouterr().out
+    assert (out / "inputs" / "data" / "sdtm" / "dm.parquet").is_file()
+    assert (out / "twin" / "data" / "sdtm" / "define.xml").is_file()
+    assert cli.main(["gen", "check", str(out), "--no-core"]) == 0
+    assert capsys.readouterr().out.rstrip().endswith("study: ok")
+    # Planted defect: a file changed after the manifest was written.
+    with open(out / "gold" / "probes.jsonl", "a", encoding="ascii") as handle:
+        handle.write("\n")
+    assert cli.main(["gen", "check", str(out), "--no-core"]) == 1
+    assert "gold/probes.jsonl: the hashes differ" in capsys.readouterr().out
+    assert cli.main(["gen", "study", "--design", str(design), "--out", str(out)]) == 2
+    limited = tmp_path / "limited"
+    assert cli.main(["gen", "study", "--design", str(design), "--seed", "cli", "--out",
+                     str(limited), "--domains", "DM", "AE"]) == 0
+    files = sorted(p.name for p in (limited / "inputs" / "data" / "sdtm").iterdir())
+    assert files == ["ae.json", "ae.parquet", "define.xml", "dm.json", "dm.parquet"]
+    assert cli.main(["gen", "study", "--design", str(design), "--seed", "cli", "--out",
+                     str(limited), "--domains", "XX"]) == 1
+
+
+def test_coverage_of_the_visible_data_is_not_required(root, catalog, tmp_path):
+    """The visible data carry a sampled part: what they log must be there, no more."""
+    design = pgfix.sample("visible", study.catalog_label(catalog))
+    study.generate(root, design, "visible", tmp_path)
+    log = study.read_probes(tmp_path)
+    _, _, problems = present.coverage(catalog, design, log, study.read_tables(tmp_path, "visible"),
+                                      "visible")
+    assert problems and not [line for line in problems if line.startswith("probe ")]

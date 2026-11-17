@@ -1,0 +1,8 @@
+# CDISC CORE (cdisc-rules-engine, MIT), run from source (ADR-006).
+# env/install.sh fetches exactly this commit of the repository; the rules,
+# the controlled terminology and the library metadata are the cache the
+# repository ships at that commit (resources/cache). specfirst doctor
+# checks the commit and that the tree is unchanged.
+repository cdisc-org/cdisc-rules-engine
+tag v1.0.0
+commit f3282a0d870bbdf57e326e9992cceea3ed0d9af5

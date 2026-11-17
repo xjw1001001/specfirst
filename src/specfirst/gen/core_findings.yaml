@@ -1,0 +1,170 @@
+# Findings of CDISC CORE that the gate gen-1a accepts, each with its reason
+# (PLAN.md section 13.5: "pass CORE with no unexplained error").
+#
+# A finding is a rule and a dataset in a report of CORE. It is explained when
+# an entry below names its rule and the condition of the entry's kind holds:
+#
+#   cannot_run    CORE could not execute the rule (status EXECUTION ERROR) and
+#                 its error text holds `text`. Such an error says nothing
+#                 about the data.
+#   dataset       one issue for the dataset as a whole, with no record.
+#   every_record  the rule reports every record of the dataset: it cannot be
+#                 about particular records.
+#   study         one issue for the study as a whole, with no subject.
+#   probe         every subject the rule reports was planted by one of the
+#                 named probes, as probes.jsonl of the same dataset says.
+#
+# A finding that fits no entry is unexplained and fails the gate. So does an
+# entry that no finding of a gate run needed: the list holds nothing spare.
+#
+# The entries were written for the engine and the rules named here. The gate
+# checks the version in every report.
+core: "1.0.0"
+standard: SDTMIG V3.4
+
+explained:
+  # -- CORE cannot execute the rule -------------------------------------------
+  - id: engine-invalid-operator
+    kind: cannot_run
+    text: Rule contains invalid operator
+    rules: [CORE-002008, CORE-002009, CORE-002010, CORE-002011, CORE-002012,
+            CORE-002013, CORE-002014, CORE-002015, CORE-002031, CORE-002047,
+            CORE-002063, CORE-002064, CORE-002065, CORE-002066, CORE-002067,
+            CORE-002068, CORE-002069, CORE-002070, CORE-002071, CORE-002072,
+            CORE-002073, CORE-002074, CORE-002121]
+    reason: >-
+      The rule in the cache that CORE 1.0.0 ships uses an operator that the
+      engine of the same commit does not have. The error is the same for the
+      public CDISC pilot datasets.
+  - id: engine-unknown-rule-type
+    kind: cannot_run
+    text: Invalid Rule Type Entered
+    rules: [CORE-000726, CORE-002061, CORE-002093, CORE-002116]
+    reason: >-
+      The rule has a type the engine does not know (Define Item Metadata
+      Check, Global Value Check with Variable Metadata, STF Metadata Check).
+  - id: engine-unknown-operation
+    kind: cannot_run
+    text: Operation name must be in
+    rules: [CORE-002041, CORE-002060, CORE-002075, CORE-002106, CORE-002117,
+            CORE-002120]
+    reason: >-
+      The rule calls an operation the engine does not have (get_countries,
+      get_define_external_dictionary_version, define_extended_terms_in_ct).
+  - id: engine-unsupported-attribute
+    kind: cannot_run
+    text: Unsupported ct_attribute
+    rules: [CORE-002051, CORE-002057]
+    reason: The rule asks for a codelist attribute the engine does not support.
+  - id: engine-join-type
+    kind: cannot_run
+    text: is not a valid JoinTypes
+    rules: [CORE-002101]
+    reason: The rule asks for a kind of merge the engine does not have.
+  - id: engine-list-startswith
+    kind: cannot_run
+    text: "'list' object has no attribute 'startswith'"
+    rules: [CORE-000737, CORE-002058]
+    reason: The engine fails inside the rule before it reads a value of the data.
+
+  # -- the rule reports whatever the data hold --------------------------------
+  - id: split-dataset-name
+    kind: dataset
+    rules: [CORE-000510]
+    reason: >-
+      The rule is about split datasets and is reported for every dataset,
+      split or not: no dataset here is split, and a domain name has two
+      letters. The public CDISC pilot datasets get the same finding.
+  - id: sv-has-no-sequence-number
+    kind: every_record
+    datasets: [SV]
+    rules: [CORE-000544]
+    reason: >-
+      The rule asks for a unique --SEQ. SDTMIG v3.4 defines no SVSEQ for the
+      domain SV, whose key is the visit number, so the rule reports every
+      record.
+  - id: no-findings-about-domain
+    kind: every_record
+    datasets: [EX]
+    rules: [CORE-000757]
+    reason: >-
+      The rule compares a Findings About record with its parent exposure
+      record. The study has no FA and no RELREC dataset, and the rule
+      reports every exposure record.
+  - id: treatment-emergence-is-a-decision
+    kind: every_record
+    datasets: [AE]
+    rules: [CORE-002034]
+    reason: >-
+      An FDA rule asks for the flag AETRTEM in SUPPAE. Whether an event is
+      treatment-emergent is a decision of the catalog (ae.teae.start,
+      ae.teae.end) that the analysis data make. Writing the flag into SDTM
+      would give the answer away.
+  - id: trial-design-domains-not-in-the-study
+    kind: every_record
+    rules: [CORE-002056]
+    reason: >-
+      An FDA rule asks for every trial design dataset of the guide. The
+      study has TA, TE, TV and TS. It has no eligibility criteria as data
+      (TI), no disease assessments (TD) and no disease milestones (TM). The
+      rule also lists every other domain of the guide that is absent.
+  - id: define-xml-not-seen-by-the-rule
+    kind: every_record
+    rules: [CORE-002084]
+    reason: >-
+      An FDA rule looks for a dataset named define.xml. The Define-XML file
+      is handed to CORE (the report names its version 2.1.0), and the rule
+      reports all the same, as it does for the public CDISC pilot datasets.
+
+  # -- the study is invented ---------------------------------------------------
+  - id: invented-drug-has-no-code
+    kind: study
+    datasets: [TS]
+    rules: [CORE-000735, CORE-002081]
+    reason: >-
+      The study drug is invented. It has no UNII code for the trial summary
+      parameter TRT and no pharmacological class (PCLAS).
+
+  # -- planted by a probe, on purpose ------------------------------------------
+  - id: probe-randomized-never-dosed
+    kind: probe
+    datasets: [DM]
+    rules: [CORE-000191]
+    probes: [randomized_never_dosed]
+    reason: >-
+      A randomized subject who never took a dose has an arm and no reference
+      period. The probe separates the safety set from the randomized set.
+  - id: probe-dosed-but-not-randomized
+    kind: probe
+    datasets: [DM]
+    rules: [CORE-000192, CORE-000758, CORE-000927, CORE-002099]
+    probes: [dosed_but_not_randomized]
+    reason: >-
+      A subject who was dosed without being randomized has no planned arm,
+      an actual arm and a reference period. The probe separates the two
+      rules of the safety set.
+  - id: probe-first-exposure-date-differs
+    kind: probe
+    datasets: [DM]
+    rules: [CORE-000239]
+    probes: [rfxstdtc_differs_from_exposure]
+    reason: >-
+      DM.RFXSTDTC is another date than the earliest exposure record. The
+      probe separates the sources of the treatment start date.
+  - id: probe-actual-arm-differs
+    kind: probe
+    datasets: [DM]
+    rules: [CORE-000655, CORE-000656]
+    probes: [actual_arm_differs_from_planned]
+    reason: >-
+      A subject was dosed with the treatment of another arm. The probe
+      separates the sources of actual treatment and the grouping of safety
+      analyses.
+  - id: probe-event-after-end-of-study
+    kind: probe
+    datasets: [AE]
+    rules: [CORE-000717, CORE-002088]
+    probes: [ae_starts_after_end_of_study]
+    reason: >-
+      An adverse event starts after the end-of-study record. The probe
+      separates the rules for the end of treatment emergence.

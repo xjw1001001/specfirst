@@ -90,8 +90,47 @@ load them, and no code or template of theirs is copied into this
 repository. The trial runs scripts that siera generates in a scratch
 folder; they are not kept.
 
+## CDISC CORE and the standards of generated data (gen-1a)
+
+CDISC CORE checks the SDTM that the generator writes. It is an engine, not
+an imported file: `env/core-source.txt` pins the repository
+https://github.com/cdisc-org/cdisc-rules-engine at the tag `v1.0.0`, commit
+`f3282a0d870bbdf57e326e9992cceea3ed0d9af5` (MIT, `LICENSE`: "Copyright (c)
+2022 cdisc"), and `env/core-requirements.lock` pins the Python packages it
+runs with. Both are installed outside the repository; nothing of CORE is
+committed (docs/decisions/ADR-006.md). The cache that the repository ships
+at that commit holds the conformance rules, CDISC Controlled Terminology and
+the library metadata of the implementation guides.
+
+Facts of public standards that the generator writes into every dataset. No
+file was copied; the table records where each fact was read.
+
+| Files here | Fact | Read from |
+| --- | --- | --- |
+| `src/specfirst/gen/sdtm.py` | names, labels, order and core status of the SDTM variables of eleven domains, the dataset labels and structures: SDTMIG v3.4 (SDTM v2.0), CDISC | the library metadata in CORE's cache (`resources/cache/standards_details.pkl`, key `standards/sdtmig/3-4`), commit above; CORE checks the datasets against the same metadata |
+| `src/specfirst/gen/terms.py` (`CT`, `TS_PARAMETERS`) | submission values and NCI codes of the controlled terms the generator writes: CDISC Controlled Terminology for SDTM, package 2025-09-26, published by NCI EVS | CORE's cache (`resources/cache/sdtmct-2025-09-26.pkl`), commit above |
+| `src/specfirst/gen/datasetjson.py` | the attributes of a Dataset-JSON v1.1 file (CDISC) | the SDTM files of the CDISC pilot study as Dataset-JSON in the pinned source `c360i` (`data/source/LZZT/sdtm/*.json`), commit 24bd98bdcea3db3046436e6a749bbbc92196fe12, read only |
+| `src/specfirst/gen/define.py` | the elements and attributes of Define-XML v2.1 (CDISC) | the published specification; CORE reads the result as Define-XML 2.1.0 |
+| `src/specfirst/gen/design.py`, `pgfix.py` | class and attribute names of USDM v4 (CDISC DDF): StudyArm, StudyEpoch, StudyElement, Encounter, StudyIntervention, AnalysisPopulation | `data/protocol/LZZT/usdm/CDISC_Pilot_Study_v4.json` of the pinned source `c360i`, same commit, read only |
+
+Everything else in generated studies is invented by the generator: the
+study, the drug, the subjects, the sites and every value. The adverse event
+dictionary (`src/specfirst/gen/terms.py`) is the generator's own: common
+event names in five levels with made-up codes. It is not MedDRA, which
+needs a license; Define-XML names it "SPECFIRST EVENT TERMS". No data of
+a real study enters a generated study: the pilot files named above were
+read for the form of a file, never for a value.
+
+The gate gen-1a was first tried on copies of the pilot's Dataset-JSON
+files, outside the cache, to learn the form of a CORE report and to tell
+what CORE reports for any data. The copies were scratch files and are gone.
+
 ## Other public documents
 
 Listed in appendix A of PLAN.md: the FDA Standard Safety Tables and Figures
 Integrated Guide and MAPP 6025.9, the 360i roadmap posts, and the Claude
 Code documentation. None is fetched or committed.
+
+Read for gen-1a and not fetched or committed: the documentation of CDISC
+CORE at the pinned commit (`docs/quick-start.md`, `docs/cli-reference.md`,
+`docs/PYPI.md`, `pyproject.toml`) and the page of its release v1.0.0.

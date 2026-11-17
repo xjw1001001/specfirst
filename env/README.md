@@ -14,6 +14,10 @@ pinned.
 | `r-packages.txt` | the R packages the project loads | hand |
 | `r-repo.txt` | the dated CRAN snapshot they come from | hand |
 | `r-packages.lock` | every R package in the project library: exact version | `lock.sh` |
+| `core-source.txt` | CDISC CORE: repository, release tag and commit of its source | hand |
+| `core-requirements.in` | the Python requirements of CORE, from its `pyproject.toml` | hand |
+| `core-requirements.lock` | every Python package of CORE's own environment: exact version and hashes | `lock.sh` (uv) |
+| `core-sdist.txt` | packages of that lock without a wheel, built from their pinned source archive | hand |
 
 R's base and recommended packages (Matrix, MASS, mgcv and the like) come
 with the pinned R. Everything else is in the project library, and the R
@@ -31,14 +35,21 @@ make install               # env/install.sh: virtual environment and R library, 
 the result differs from a lock. `specfirst doctor` repeats that comparison
 at any time.
 
+CDISC CORE, the conformance checker of generated SDTM, is installed last
+(`python -m specfirst.cdisccore install`, docs/decisions/ADR-006.md): a
+virtual environment of its own from `core-requirements.lock` and its source
+at the commit of `core-source.txt`, with the rules it ships. CORE runs from
+that source; nothing of it is in the project's Python environment.
+
 ## Where things go
 
 `scripts/env.sh` decides. By default everything is inside the checkout:
-`.venv`, `.r-lib` and `third_party/cache`, all ignored by git. With
+`.venv`, `.r-lib`, `.core` and `third_party/cache`, all ignored by git. With
 `SPECFIRST_HOME` set, or when the checkout is on a Windows drive under WSL,
 they go to `$SPECFIRST_HOME` (default `~/.local/share/specfirst`): one
 virtual environment per checkout, one R library and one fetch cache shared
-by all checkouts and worktrees.
+by all checkouts and worktrees. CORE goes to `core/<commit>-<lock>` there:
+one install per pair of pins, shared by every checkout that has those pins.
 
 ## Changing the environment
 
@@ -51,8 +62,18 @@ For another R version, or newer builds of R's recommended packages: edit
 `make lock` as above. Without `SPECFIRST_RELOCK=1`, `system.sh` installs
 exactly the `r-cran-*` versions of `system.lock`.
 
+For another release of CORE: edit `core-source.txt` and, when CORE's
+`pyproject.toml` changed, `core-requirements.in`; then `make lock`,
+`make install` and `specfirst gate gen-1a`. The findings the gate accepts
+(`src/specfirst/gen/core_findings.yaml`) were read for one release.
+
 An install never resolves versions by itself: `install_r.R` stops when
 `r-packages.lock` is missing, and pip installs with `--require-hashes`.
+
+Without a network in the install environment, pip can take the locked
+files from a folder (`PIP_NO_INDEX=1`, `PIP_FIND_LINKS=<folder>`), and
+`SPECFIRST_CORE_URL` can name a local clone that holds the pinned commit of
+CORE. The hashes and the commit are checked all the same.
 
 ## Not here yet
 
