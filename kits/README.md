@@ -12,6 +12,12 @@ One folder per kit (PLAN.md section 8).
   its pinned SHA-256. `cdiscpilot01` is the first.
 - Small generated fixtures (tier A) may be committed here with their data.
   There is none yet.
+- A generated kit (tier A) is written by `specfirst gen kit` or `gen kits`
+  into a folder outside the repository. Its manifest is a `kit.yaml` of
+  format 1 (`specfirst.gen.kits`; docs/state/gen.md has the tree), not the
+  format of a kit of real data. The seed of a dev, test or sealed kit is a
+  secret, because gold can be rebuilt from it: it comes from a file outside
+  every checkout, and no kit holds it.
 
 A test and the gate of real-1 look for study data and study documents in
 git (`specfirst.kit.tracked_data_problems`). They fail on: any file other
