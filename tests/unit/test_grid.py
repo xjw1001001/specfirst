@@ -456,3 +456,58 @@ def test_one_result_may_stand_twice_in_a_cell_under_two_patterns(root, event, ro
     assert made["rows"][1]["cells"][0] == {
         "id": "cell:Out_AE/r2/c1", "column": "c1", "text": "2 of  2.0",
         "ard": ["ard:A_AE/M_CAT_n/Arm_A"]}
+
+
+# ---- the built display of one output, as `specfirst check` judges it -------------------
+
+
+def judged_display(root, reference, spec, rows, made, shell, pages=None, other_rows=None):
+    from specfirst.machine import build
+
+    pages = pages or {"": render.html(made), ".shell": render.html(shell)}
+    return build.display_problems(root, reference, spec, made, shell, pages, rows,
+                                  rows if other_rows is None else other_rows, {})
+
+
+def test_the_built_display_of_an_output_and_what_must_not_pass(root, event, spec, made, rows):
+    shell = grid.shell(event, spec)
+    reference = displays.reference(rows)
+    compared, problems = judged_display(root, reference, spec, rows, made, shell)
+    assert problems == [] and (compared.cells, compared.equal) == (9, 7)
+
+    def problems_with(**changed):
+        given = {"made": made, "shell": shell, **changed}
+        return judged_display(root, reference, spec, rows, **given)[1]
+
+    # The second engine at the other side of a rounding: 200 / 3 against a value that is
+    # the same within 1e-9 and is shown as 66.6.
+    other = {key: dict(row) for key, row in rows.items()}
+    other["ard:A_TEAE/M_CAT_pct/Arm_B"]["raw_value"] = 66.64999999999
+    assert results.agreement(rows, other, tolerance=1e-3)[1] == []
+    assert problems_with(other_rows=other) == [
+        "the rows of the second engine give another grid: a value at the edge of a rounding, "
+        "or a result one engine lacks"]
+    fewer = {key: row for key, row in rows.items() if key != "ard:A_TEAE/M_CAT_pct/Arm_B"}
+    assert "1 results of the layout are not in the ARD" in problems_with(other_rows=fewer)[0]
+    # A shell that shows a number, or that is not the shell of this layout.
+    numbered = copy.deepcopy(shell)
+    numbered["rows"][1]["cells"][0]["text"] = "2 ( xx.x)"
+    assert problems_with(shell=numbered, pages={
+        "": render.html(made), ".shell": render.html(numbered)}) == [
+            "the mock shell is not what the layout gives",
+            "cell:Out_AE/r2/c1: the mock shell shows a number: '2 ( xx.x)'"]
+    relabelled = copy.deepcopy(shell)
+    relabelled["rows"][1]["label"] = "Events"
+    assert problems_with(shell=relabelled, pages={
+        "": render.html(made), ".shell": render.html(relabelled)}) == [
+            "the mock shell is not what the layout gives"]
+    # A page that is not the page of its grid.
+    said = problems_with(pages={"": render.html(shell), ".shell": render.html(shell)})
+    assert said and all(problem.startswith("page Out_AE.html: ") for problem in said)
+    said = problems_with(pages={"": render.html(made), ".shell": render.html(made)})
+    assert said and all(problem.startswith("page Out_AE.shell.html: ") for problem in said)
+    # A grid file that is not a grid is reported before anything is compared.
+    broken = copy.deepcopy(made)
+    del broken["rows"][0]["cells"][0]["ard"]
+    compared, said = judged_display(root, reference, spec, rows, broken, shell)
+    assert compared.cells == 0 and said and said[0].startswith("grid: ")

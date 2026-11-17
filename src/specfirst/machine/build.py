@@ -401,6 +401,39 @@ def _read_json(path: Path) -> object:
         return json.load(handle)
 
 
+def display_problems(root: Path, event: ars.Event, layout: layouts.Layout, made: object,
+                     shell: object, pages: dict[str, str], rows: results.Rows,
+                     other_rows: results.Rows,
+                     classes: dict[str, str]) -> tuple[grid.DisplayComparison, list[str]]:
+    """What is wrong with the built display of one output: `display_checks` has the list.
+
+    `pages` holds the page of the grid under "" and that of the mock shell
+    under ".shell". `rows` are the gold ARD, `other_rows` those of the second
+    engine. `classes` gives the class of every result whose difference from
+    the reference is explained.
+    """
+    problems = [f"grid: {p}" for p in grid.grid_problems(made, root)]
+    problems += [f"shell: {p}" for p in grid.grid_problems(shell, root)]
+    if problems:
+        return grid.DisplayComparison(layout.output), problems
+    compared = grid.compare_reference(event, layout, made, rows, classes)
+    problems += compared.problems
+    try:
+        if grid.build(event, layout, other_rows) != made:
+            problems.append("the rows of the second engine give another grid: a value at "
+                            "the edge of a rounding, or a result one engine lacks")
+        if grid.shell(event, layout) != shell:
+            problems.append("the mock shell is not what the layout gives")
+    except grid.GridError as error:
+        problems.append(str(error))
+    problems += [f"{cell['id']}: the mock shell shows a number: {cell['text']!r}"
+                 for row in shell["rows"] for cell in row["cells"] if grid.numeric(cell)]
+    for kind, value in (("", made), (".shell", shell)):
+        problems += [f"page {layout.output}{kind}.html: {p}"
+                     for p in render.projection_problems(value, pages[kind])]
+    return compared, problems
+
+
 def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                    out: Out = print) -> tuple[bool, list[dict]]:
     """P2 for grid text, on a build. Returns whether all holds, and the counts per output.
@@ -434,29 +467,11 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                 layout = layouts.read(folder / display.layout)
                 made = _read_json(folder / GRID / f"{display.output}.json")
                 shell = _read_json(folder / GRID / f"{display.output}.shell.json")
-                problems = [f"grid: {p}" for p in grid.grid_problems(made, root)]
-                problems += [f"shell: {p}" for p in grid.grid_problems(shell, root)]
-                compared = grid.DisplayComparison(display.output)
-                if not problems:
-                    compared = grid.compare_reference(inputs.event, layout, made,
-                                                      rows["Python"], classes)
-                    problems += compared.problems
-                    try:
-                        if grid.build(inputs.event, layout, rows["R"]) != made:
-                            problems.append("the rows of the R engine give another grid: a "
-                                            "value at the edge of a rounding")
-                        if grid.shell(inputs.event, layout) != shell:
-                            problems.append("the mock shell is not what the layout gives")
-                    except grid.GridError as error:
-                        problems.append(str(error))
-                    problems += [f"{cell['id']}: the mock shell shows a number: "
-                                 f"{cell['text']!r}" for row in shell["rows"]
-                                 for cell in row["cells"] if grid.numeric(cell)]
-                    for kind, value in (("", made), (".shell", shell)):
-                        page = (folder / PAGES / f"{display.output}{kind}.html").read_text(
-                            encoding="utf-8")
-                        problems += [f"page {display.output}{kind}.html: {p}"
-                                     for p in render.projection_problems(value, page)]
+                pages = {kind: (folder / PAGES / f"{display.output}{kind}.html").read_text(
+                    encoding="utf-8") for kind in ("", ".shell")}
+                compared, problems = display_problems(
+                    root, inputs.event, layout, made, shell, pages, rows["Python"], rows["R"],
+                    classes)
                 for line in compared.lines():
                     out(line)
                 for problem in problems[:UNEXPLAINED_SHOWN]:
