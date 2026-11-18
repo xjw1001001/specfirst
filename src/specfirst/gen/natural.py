@@ -67,6 +67,7 @@ UNIT_WORDS = ("day", "days", "week", "weeks", "month", "months", "year", "years"
 _VARIABLE = re.compile(r"\b[A-Z][A-Z0-9]{1,7}\.[A-Z][A-Z0-9_]*\b")
 _NUMBER = re.compile(r"(?<![\w.])-?[0-9]+(?:\.[0-9]+)?(?![\w]|\.[0-9])")
 _ANCHOR = re.compile(r"\[[0-9.]+/[sp][0-9]+\]")
+_CAPITALS = re.compile(r"(?<![\w.])[A-Z][A-Z0-9]+(?!\w|\.\w)")
 
 # What the rewriter is told (ADR-009, decision 6). The request file repeats it.
 REWRITE_RULES = (
@@ -167,17 +168,27 @@ class Store:
 
     def failed(self, record: dict) -> int:
         return sum(1 for attempt in record["attempts"]
-                   if attempt["by"] != "template" and _failed(attempt))
+                   if attempt["by"] != "template" and (
+                       attempt.get("slots") or self.readbacks(attempt)) and not any(
+                       item["agrees"] for item in self.readbacks(attempt)))
+
+    def abstention(self, call: str) -> str:
+        """The answer the verifier of a call was told to give for "none of them"."""
+        found = next((item for item in self.calls if item["call"] == call), {})
+        return str(found.get("abstention", NONE))
+
+    def readbacks(self, attempt: dict) -> list[dict]:
+        """The read-backs of an attempt that count: a pick that is also the abstention
+        marker of its call tells agreement from abstention apart only when no alternative
+        has that ID, so it does not count (lesson 57)."""
+        found = [attempt.get("readback"), *(attempt.get("again") or [])]
+        return [item for item in found if item and item["pick"] != self.abstention(
+            item["by"])]
 
     def add_call(self, call: dict) -> None:
         if any(item["call"] == call["call"] for item in self.calls):
             raise NaturalError(f"the call {call['call']} is in the store already")
         self.calls.append(call)
-
-
-def _failed(attempt: dict) -> bool:
-    readback = attempt.get("readback")
-    return bool(attempt.get("slots")) or (readback is not None and not readback["agrees"])
 
 
 # ---- the slot check -----------------------------------------------------------------------
@@ -201,7 +212,8 @@ def _bare(text: str) -> str:
 
 def _from_text(text: str, after_number: bool) -> tuple[list[str], list[str], list[str]]:
     """In a piece of template text: the unit word that follows a numeric slot, the numbers
-    with the unit word after each, and the variable names."""
+    with the unit word after each, and the names (variable names, and words in capitals
+    such as OTHER)."""
     lead: list[str] = []
     if after_number:
         match = re.match(r"\s+([a-z]+)\b", text)
@@ -215,7 +227,10 @@ def _from_text(text: str, after_number: bool) -> tuple[list[str], list[str], lis
         unit = re.match(r"\s+([a-z]+)\b", text[match.end():])
         if unit and unit.group(1) in UNIT_WORDS:
             numbers.append(unit.group(1))
-    return lead, numbers, [match.group(0) for match in _VARIABLE.finditer(text)]
+    names = [(match.start(), match.group(0)) for match in _VARIABLE.finditer(text)]
+    names += [(match.start(), match.group(0)) for match in _CAPITALS.finditer(text)
+              if not _VARIABLE.search(text[max(0, match.start() - 9):match.end() + 9])]
+    return lead, numbers, [name for _, name in sorted(names)]
 
 
 def token_groups(catalog: catalogs.Catalog, entry_id: str, unit: str,
@@ -258,13 +273,22 @@ def tokens(catalog: catalogs.Catalog, entry_id: str, unit: str, value: dict) -> 
     return [token for group in token_groups(catalog, entry_id, unit, value) for token in group]
 
 
+def _cased(text: str) -> str:
+    return " ".join(text.replace('"', " ").replace("`", " ").split())
+
+
 def _normal(text: str) -> str:
-    return " ".join(text.replace('"', " ").replace("`", " ").split()).lower()
+    return _cased(text).lower()
 
 
 def _find(token: str, text: str, start: int) -> re.Match | None:
-    body = re.escape(_normal(token)).replace(r"\ ", r"\s+")
-    return re.compile(rf"(?<![a-z0-9_.]){body}(?![a-z0-9_]|\.[0-9])").search(text, start)
+    """The next whole-word match of a token at or after `start`. `text` is `_cased` of
+    the paragraph: a token with a capital letter is matched with its case (the data
+    compare such values exactly), any other token without case."""
+    exact = any(char.isupper() for char in token)
+    body = re.escape(_cased(token) if exact else _normal(token)).replace(r"\ ", r"\s+")
+    pattern = rf"(?<![A-Za-z0-9_.]){body}(?![A-Za-z0-9_]|\.[0-9])"
+    return re.compile(pattern, 0 if exact else re.IGNORECASE).search(text, start)
 
 
 def _count(token: str, text: str) -> int:
@@ -274,12 +298,23 @@ def _count(token: str, text: str) -> int:
     return found
 
 
+def _numbers(text: str) -> list[str]:
+    return [match.group(0) for match in _NUMBER.finditer(text)
+            if not _VARIABLE.search(text[max(0, match.start() - 12):match.end()])]
+
+
+def _capitals(text: str) -> set[str]:
+    return {word for word in re.findall(r"[A-Za-z0-9]+", text)
+            if len(word) > 1 and word.isupper()}
+
+
 def slot_problems(paragraph: str, wanted: list[str] | list[list[str]]) -> list[str]:
     """Why a paragraph does not keep the tokens of its statement (empty: it does).
 
     `wanted` is `token_groups` of the statement, or one list of tokens taken as one
     group: every token must stand in the paragraph, and the tokens of a group in their
-    order.
+    order; a token with a capital letter with its case. The paragraph may hold no number
+    and no word in capitals that the statement lacks.
     """
     problems = []
     if not paragraph or not paragraph.strip():
@@ -294,8 +329,17 @@ def slot_problems(paragraph: str, wanted: list[str] | list[list[str]]) -> list[s
         problems.append("the paragraph holds an anchor")
     if len(paragraph) > MAX_LENGTH:
         problems.append(f"the paragraph is longer than {MAX_LENGTH} characters")
-    text = _normal(paragraph)
+    text = _cased(paragraph)
     groups = [wanted] if wanted and isinstance(wanted[0], str) else wanted
+    flat = [token for group in groups for token in group]
+    allowed = [number for token in flat for number in _numbers(token)]
+    for number in sorted(set(_numbers(text))):
+        if _numbers(text).count(number) > allowed.count(number):
+            problems.append(f"the number {number} is not in the statement" if number not in
+                            allowed else f"the number {number} stands more often than in "
+                            "the statement")
+    known = set().union(*(_capitals(token) for token in flat)) if flat else set()
+    problems += [f"'{word}' is not in the statement" for word in sorted(_capitals(text) - known)]
     for group in groups:
         position = 0
         for token in group:
@@ -456,7 +500,7 @@ def readback_request(catalog: catalogs.Catalog, store: Store) -> dict:
     for key in sorted(store.paragraphs):
         record = store.paragraphs[key]
         for attempt in record["attempts"]:
-            if attempt["readback"] is None and not attempt["slots"]:
+            if not attempt["slots"] and not store.readbacks(attempt):
                 items.append({"item": item_of(record["entry"], attempt["text"]),
                               "paragraph": attempt["text"],
                               **question(catalog, record["entry"], record["unit"])})
@@ -496,10 +540,15 @@ def readback(catalog: catalogs.Catalog, store: Store, answer: dict, call: str) -
         record = store.paragraphs[key]
         for attempt in record["attempts"]:
             item = item_of(record["entry"], attempt["text"])
-            if attempt["readback"] is not None or attempt["slots"] or item not in picks:
+            if store.readbacks(attempt) or attempt["slots"] or item not in picks:
                 continue
-            agrees = picks[item] == record["value"]["rule"]
-            attempt["readback"] = {"pick": picks[item], "agrees": agrees, "by": call}
+            # A pick that is also the abstention marker of this call agrees with nothing.
+            agrees = picks[item] == record["value"]["rule"] != store.abstention(call)
+            made = {"pick": picks[item], "agrees": agrees, "by": call}
+            if attempt.get("readback") is None:
+                attempt["readback"] = made
+            else:   # read again: the first read-back does not count (`Store.readbacks`)
+                attempt.setdefault("again", []).append(made)
             if agrees and not record.get("accepted"):
                 record["accepted"] = attempt["n"]
             lines.append(f"{key} {record['entry']}: attempt {attempt['n']}: read back as "
@@ -536,8 +585,11 @@ def paragraph_problems(catalog: catalogs.Catalog, store: Store, record: dict,
     stored = store.paragraphs.get(key_of(record["statement"]))
     attempts = [attempt for attempt in (stored or {}).get("attempts", [])
                 if sha256_text(attempt["text"]) == sha256_text(text)]
-    readbacks = [attempt["readback"] for attempt in attempts if attempt.get("readback")]
-    if not readbacks:
+    readbacks = [item for attempt in attempts for item in store.readbacks(attempt)]
+    if not readbacks and any(attempt.get("readback") for attempt in attempts):
+        problems.append("read-back: the only read-back of this text cannot tell agreement "
+                        "from abstention")
+    elif not readbacks:
         problems.append("read-back: no read-back of this text in the store")
     elif not any(item["pick"] == record["value"]["rule"] for item in readbacks):
         problems.append(f"read-back: read back as {readbacks[0]['pick']}, the decision is "

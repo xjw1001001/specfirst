@@ -240,9 +240,10 @@ def sap_paragraphs(design: dict, tier: str, house: houses.House) -> dict[str, li
     intro = (f"This statistical analysis plan describes the analyses of study "
              f"{designs.study_id(design)}. The design of the study, its arms in the order of the "
              "protocol and its schedule of visits are those of the protocol.")
-    intro += (" This plan states every convention that the analyses follow." if tier == "full"
-              else f" Where this plan states no convention, the house standard {house.label} "
-              "applies.")
+    intro += (" This plan and the protocol together state every convention that the "
+              "analyses follow." if tier == "full" else
+              f" Where neither this plan nor the protocol states a convention, the house "
+              f"standard {house.label} applies.")
     return {"intro": [intro]}
 
 
@@ -316,7 +317,9 @@ def write(catalog: catalogs.Catalog, house: houses.House, design: dict, listed: 
         for section, items in decided.items():
             by_section[section] += draw.child(section).shuffled(
                 sorted(items, key=lambda one: (one["entry"], one["unit"])))
-        mine_filler = [one for one in filler if one["document"] == doc]
+        named = [item["key"] for item in filler_wanted() if item["document"] == doc]
+        by_key = {one["key"]: one for one in filler}
+        mine_filler = [by_key[key] for key in named if key in by_key]
         chosen = draw.child("filler").sample(mine_filler, min(FILLER_SECTIONS, len(mine_filler)))
         sections = list(SECTIONS[doc]) + [
             (f"filler{index}", one["heading"], None) for index, one in enumerate(chosen)]
@@ -465,6 +468,7 @@ def paragraphs(text: str) -> dict[str, str]:
 # ---- the summary page ----------------------------------------------------------------------
 
 MAX_LINES, MAX_WIDTH = 60, 100
+_TWIN = {"separated": "yes", "unseparated": "no"}
 
 
 def summary(manifest: dict, design: dict, records: list[dict], visible: list[str],
@@ -483,13 +487,16 @@ def summary(manifest: dict, design: dict, records: list[dict], visible: list[str
              f"{sources['model']}, phrasing template {sources['template']}, missing "
              f"{sources['missing']}.",
              f"Probes: {len(twin)} in the twin, {len(visible)} of them in the visible data.", "",
-             "| Decision | Value | Status | Where | Twin |", "| --- | --- | --- | --- | --- |"]
+             "Where: the natural paragraph (its standard-form anchor). Twin: separated there.",
+             "", "| Decision | Value | Status | Where | Twin |", "| --- | --- | --- | --- | --- |"]
     for record in records:
         cited = record.get("citations") or []
-        where = ", ".join(f"{c['doc']}#{c['anchor']}" for c in cited)
+        where = (f"{cited[1]['doc']} {cited[1]['anchor']} ({cited[0]['anchor']})"
+                 if len(cited) > 1 else f"{cited[0]['doc']} {cited[0]['anchor']}"
+                 if cited else "")
         unit = f" ({record['unit']})" if record["id"] == "tfl.output.include" else ""
         lines.append(f"| {record['id']}{unit} | {record['value']['rule']} | {record['status']} | "
-                     f"{where or 'oracle'} | {record.get('identifiable', '-')} |")
+                     f"{where or 'oracle'} | {_TWIN.get(record.get('identifiable'), '-')} |")
     lines += ["", "Visible probes: " + ", ".join(visible) + "."]
     wrapped = []
     for line in lines:
@@ -507,7 +514,7 @@ def summary_problems(text: str, records: list[dict]) -> list[str]:
     problems = []
     if len(lines) > MAX_LINES:
         problems.append(f"the summary has {len(lines)} lines, more than {MAX_LINES}")
-    long = [line for line in lines if len(line) > MAX_WIDTH + 40]
+    long = [line for line in lines if len(line) > MAX_WIDTH]
     if long:
         problems.append(f"{len(long)} lines of the summary are too long")
     for record in records:
@@ -617,6 +624,10 @@ def problems(catalog: catalogs.Catalog, house: houses.House, kit_dir: Path, mani
         if f"Document ID: {doc}" not in text.split("\n"):
             found["layout"].append(f"{NATURAL[doc]}: no line 'Document ID: {doc}'")
         designed = [body for bodies in fixed[doc].values() for body in bodies]
+        fillers = sum(1 for item in listed.get("paragraphs") or [] if item["kind"] == "filler")
+        if fillers != FILLER_SECTIONS:
+            found["layout"].append(f"{NATURAL[doc]}: {fillers} filler paragraphs, the generator "
+                                   f"writes {FILLER_SECTIONS}")
         for item in listed.get("paragraphs") or []:
             body = anchored.get(item["anchor"])
             if body is None:

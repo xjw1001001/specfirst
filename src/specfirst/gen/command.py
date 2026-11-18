@@ -117,6 +117,8 @@ def _parser() -> argparse.ArgumentParser:
     p_natural.add_argument("--tokens", type=int, help="tokens of the call, as reported")
     p_natural.add_argument("--tool-uses", type=int, help="tool uses of the call, as reported")
     p_natural.add_argument("--seconds", type=int, help="time of the call, as reported")
+    p_natural.add_argument("--message", help="propose, readback: the final message of the "
+                           "subagent, kept beside its answer")
     return parser
 
 
@@ -241,6 +243,13 @@ def _natural(root: Path, args: argparse.Namespace) -> int:
             print(f"no kit in {args.kits}")
             return 2
         wanted = natural.statements_of([kits.read_decisions(folder) for folder in folders])
+        refused = _secret_kits(root, store.folder, folders)
+        if refused and args.step in ("requests", "propose"):
+            print(f"the store {store.folder} is inside a checkout, and these kits are not "
+                  f"train kits of the gate seed: {', '.join(refused)}. Their statements are "
+                  "secret (PLAN.md section 8): set SPECFIRST_REWRITES to a store outside "
+                  "every checkout")
+            return 2
     if args.step in ("requests", "propose") and not wanted:
         print("give --kits: the statements come from the decisions of kits")
         return 2
@@ -263,6 +272,12 @@ def _natural(root: Path, args: argparse.Namespace) -> int:
             return 2
         raw = Path(args.file).read_bytes()
         answer = json.loads(raw.decode("ascii"))
+        kept = store.folder / "calls"
+        kept.mkdir(parents=True, exist_ok=True)
+        for name, source in (("request.json", args.request), ("answer.json", args.file),
+                             ("message.txt", args.message)):
+            if source:
+                (kept / f"{args.call}.{name}").write_bytes(Path(source).read_bytes())
         if args.step == "propose":
             lines = natural.propose(catalog, store, wanted, answer, args.call)
             items = len(answer.get("paragraphs") or []) + len(answer.get("filler") or [])
@@ -275,7 +290,10 @@ def _natural(root: Path, args: argparse.Namespace) -> int:
             "tool_uses": args.tool_uses, "seconds": args.seconds,
             "request_sha256": hashlib.sha256(Path(args.request).read_bytes()).hexdigest()
             if args.request else None,
-            "answer_sha256": hashlib.sha256(raw).hexdigest()})
+            "answer_sha256": hashlib.sha256(raw).hexdigest(),
+            "message_sha256": hashlib.sha256(Path(args.message).read_bytes()).hexdigest()
+            if args.message else None,
+            **({"abstention": natural.NONE} if args.step == "readback" else {})})
         store.save()
         for line in lines:
             print(line)
@@ -292,3 +310,24 @@ def _natural(root: Path, args: argparse.Namespace) -> int:
         print(f"the kits state {len(wanted)} statements; without an accepted text: "
               f"{len(missing)}")
     return 0
+
+
+def _secret_kits(root: Path, store: Path, folders: list[Path]) -> list[str]:
+    """The kits whose statements may not go into a store inside a checkout: dev, test and
+    sealed kits, but those of the gate seed, whose seed is in the repository (section 8;
+    ADR-009, decision 5)."""
+    from specfirst.gen import gate2, kits
+    from specfirst.gen.rng import seed_sha256
+
+    store = store.resolve()
+    inside = any((folder / ".git").exists() for folder in (store, *store.parents))
+    if not inside:
+        return []
+    public = {seed_sha256(kits.kit_seed(gate2.SEED, number))
+              for number in range(1, gate2.COUNT + 1)}
+    found = []
+    for folder in folders:
+        manifest = kits.read_manifest(folder)
+        if manifest.get("split") != "train" and manifest.get("seed_sha256") not in public:
+            found.append(folder.name)
+    return found

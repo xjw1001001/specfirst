@@ -216,7 +216,23 @@ subagents of a Claude Code session; the CLI on this machine is not logged
 in (ADR-009, decision 1).
 
 - Change `GENERATOR` with any change that gives other bytes. Kits are
-  generated again, never patched. It is `gen-3a.1` now.
+  generated again, never patched. It is `gen-3a.2` now.
+- `specfirst gate` refuses to run while `SPECFIRST_REWRITES` is set, and
+  `specfirst gen natural requests|propose` refuses dev, test and sealed
+  kits (but those of the gate seed) while the store lies inside a
+  checkout.
+
+For read-2a, from the review of gen-3a:
+
+- A run of the reader must give `scorer.run` the questions it asked
+  (`asked=`); with `asked=None` a record with the status `asked` counts as
+  asked (finding D8). `specfirst score kit --decisions` always gives the
+  questions file (empty without `--questions`).
+- Kits 5 to 10 of the gate seed carry the splits dev and test, but their
+  seed is in the repository and their statements are in the store: never
+  score on them as dev or test kits (finding D7).
+- The store maps every natural paragraph back to its statement: keep it
+  out of a task folder and under the canary scan (section 11.2).
 
 ## Open
 

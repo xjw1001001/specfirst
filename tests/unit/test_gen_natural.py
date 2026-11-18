@@ -74,8 +74,8 @@ def test_the_slot_check_fails_on_planted_defects(catalog):
     assert natural.slot_problems(good, wanted) == []
     assert natural.slot_problems(good.replace("DM.ARMCD", "the arm code"), wanted) == [
         "'DM.ARMCD' is not in the paragraph"]
-    assert natural.slot_problems(good.replace("DM.ARMCD", "DM.ARMCDX"), wanted) == [
-        "'DM.ARMCD' is not in the paragraph"]
+    assert sorted(natural.slot_problems(good.replace("DM.ARMCD", "DM.ARMCDX"), wanted)) == [
+        "'ARMCDX' is not in the statement", "'DM.ARMCD' is not in the paragraph"]
     swapped = good.replace("Placebo", "@").replace("Low Dose", "Placebo").replace("@", "Low Dose")
     found = natural.slot_problems(swapped, wanted)
     assert found and all("is out of the order of the statement" in item for item in found)
@@ -92,10 +92,11 @@ def test_the_slot_check_fails_on_planted_defects(catalog):
     text = "Age groups will be below 65, 65 to 80, and above 80 years."
     assert natural.slot_problems(text, ages) == []
     assert natural.slot_problems(text.replace("above 80", "above 85"), ages) == [
+        "the number 85 is not in the statement",
         "'80' stands 1 times in the paragraph, the statement has it 2 times"]
     # What is no paragraph of a document.
     assert natural.slot_problems(period + "\nMore.", days) == ["the paragraph is not one line"]
-    assert natural.slot_problems("[3/p1] " + period, days) == ["the paragraph holds an anchor"]
+    assert natural.slot_problems("[3/p1] " + period, days)[0] == "the paragraph holds an anchor"
     assert natural.slot_problems("# " + period, days) == [
         "the paragraph starts with a blank or a Markdown mark"]
     assert natural.slot_problems(period.replace("will", "wi" + chr(0x2019) + "ll"), days) == [
@@ -283,3 +284,119 @@ def test_the_gate_gen_3a_has_the_checks_of_the_plan():
     assert names.index("summary") == max(names.index(name) for name in (
         "parser", "slots", "read-back", "bad rewrite", "tiers", "anchors", "visible probes",
         "summary"))
+
+
+def test_the_slot_check_keeps_case_and_refuses_what_the_statement_lacks(catalog):
+    """Review of gen-3a, finding D5: rewrites that change the meaning and passed the first
+    slot check. Values keep their case, and the paragraph may hold no number and no word
+    in capitals that the statement lacks."""
+    def groups(entry_id, value, unit=None):
+        _, unit = _render(catalog, entry_id, value, unit)
+        return natural.token_groups(catalog, entry_id, unit, value)
+
+    related = groups("ae.related.values", {"rule": "stated_list", "values": ["RELATED"]})
+    base = "An adverse event will be regarded as related to study treatment when its causality "
+    assert natural.slot_problems(base + "is one of RELATED.", related) == []
+    assert natural.slot_problems(base + "is one of PROBABLY RELATED.", related) == [
+        "'PROBABLY' is not in the statement"]
+    two = groups("ae.related.values", {"rule": "stated_list",
+                                       "values": ["PROBABLY RELATED", "RELATED"]})
+    assert natural.slot_problems(base + "is PROBABLY RELATED, NOT RELATED.", two) == [
+        "'NOT' is not in the statement"]
+    cased = groups("ae.related.values", {"rule": "stated_list",
+                                         "values": ["POSSIBLE", "PROBABLE"]})
+    assert natural.slot_problems(base + "is one of POSSIBLE, PROBABLE.", cased) == []
+    assert natural.slot_problems(base + "is one of possible, probable.", cased) == [
+        "'POSSIBLE' is not in the paragraph", "'PROBABLE' is not in the paragraph"]
+    rows = groups("tfl.ae.summary.rows", {"rule": "stated_rows",
+                                          "rows": ["FATAL", "SERIOUS", "RELATED", "ANY"]})
+    table = "The adverse event summary table will show the rows "
+    assert natural.slot_problems(table + "FATAL, SERIOUS, RELATED, ANY, in this order.",
+                                 rows) == []
+    assert natural.slot_problems(table + "FATAL, SERIOUS, RELATED, in this order, without "
+                                 "any other row.", rows) == ["'ANY' is not in the paragraph"]
+    window = groups("ae.teae.end", {"rule": "last_dose_plus_days", "days": 30})
+    assert natural.slot_problems("Emergence will end 30 days after the treatment end date plus "
+                                 "2 days.", window) == ["the number 2 is not in the statement"]
+    # A word in capitals of the template text is a token of its own.
+    pooled = groups("demo.race.pooling", {"rule": "pooled_below_count", "count": 5})
+    assert ["OTHER"] in pooled
+    assert natural.slot_problems("A race category with fewer than 5 subjects will be pooled "
+                                 "into the category Other.", pooled) == [
+        "'OTHER' is not in the paragraph"]
+
+
+def test_a_read_back_that_cannot_tell_agreement_from_abstention_does_not_count(catalog,
+                                                                               tmp_path):
+    """Review of gen-3a, finding D3 (lesson 57): `tfl.columns.total` has an alternative
+    `none`; a pick `none` under a call that told the verifier to answer `none` for "none of
+    them" does not count, and the paragraph is read again."""
+    store = natural.Store.load(tmp_path)
+    value = {"rule": "none"}
+    wanted = _wanted(catalog, "tfl.columns.total", value)
+    key = next(iter(wanted))
+    text = "The adverse event summary table will not include a total column."
+    natural.propose(catalog, store, wanted, {"paragraphs": [{"key": key, "text": text}]}, "w")
+    item = natural.readback_request(catalog, store)["items"][0]["item"]
+    store.add_call({"call": "old", "role": "read-back", "abstention": "none"})
+    natural.readback(catalog, store, {"items": [{"item": item, "pick": "none"}]}, "old")
+    record = {"id": "tfl.columns.total", "unit": "tfl-ae-summary", "value": value,
+              "statement": wanted[key]["statement"]}
+    assert natural.paragraph_problems(catalog, store, record, text) == [
+        "read-back: the only read-back of this text cannot tell agreement from abstention"]
+    request = natural.readback_request(catalog, store)
+    assert [one["item"] for one in request["items"]] == [item]
+    assert natural.NONE in request["rules"][0]
+    store.add_call({"call": "new", "role": "read-back", "abstention": natural.NONE})
+    natural.readback(catalog, store, {"items": [{"item": item, "pick": "none"}]}, "new")
+    attempt = store.paragraphs[key]["attempts"][0]
+    assert attempt["readback"]["by"] == "old" and attempt["again"][0]["by"] == "new"
+    assert natural.paragraph_problems(catalog, store, record, text) == []
+    assert natural.readback_request(catalog, store)["items"] == []
+
+
+def test_the_sap_names_the_protocol_where_it_sends_a_reader_to_the_house(catalog, house,
+                                                                          design):
+    """Review of gen-3a, finding D4: the protocol states decisions too; the SAP may not
+    send a reader to the house standard for them."""
+    for tier in documents.TIERS:
+        intro = documents.sap_paragraphs(design, tier, house)["intro"][0]
+        assert "this plan and the protocol" in intro.lower() or \
+            "neither this plan nor the protocol" in intro, intro
+
+
+def test_a_gate_refuses_another_store(root, monkeypatch):
+    """Review of gen-3a, finding D6: a gate writes and judges kits from the store of the
+    repository only."""
+    from specfirst import gates
+
+    lines: list[str] = []
+    monkeypatch.setenv("SPECFIRST_REWRITES", "/elsewhere")
+    check = gates.Check("demo", "nothing", lambda ctx: True)
+    assert gates.run_gate(root, "demo", (check,), echo=lines.append) == 1
+    assert any("SPECFIRST_REWRITES is set" in line for line in lines)
+
+
+def test_the_store_in_a_checkout_takes_no_secret_statement(root, tmp_path):
+    """Review of gen-3a, finding D7: the statements of dev, test and sealed kits are secret
+    (section 8); only the kits of the gate seed, whose seed is in the repository, and train
+    kits may go into the store of the repository."""
+    import yaml
+
+    from specfirst.gen import command, gate2, kits
+    from specfirst.gen.rng import seed_sha256
+
+    def kit(name, split, seed):
+        folder = tmp_path / name
+        folder.mkdir()
+        (folder / kits.MANIFEST).write_text(yaml.safe_dump(
+            {"split": split, "seed_sha256": seed_sha256(seed)}), encoding="ascii")
+        return folder
+
+    folders = [kit("dev-secret", "dev", "a secret seed/kit-5"),
+               kit("train-secret", "train", "a secret seed/kit-1"),
+               kit("dev-gate", "dev", kits.kit_seed(gate2.SEED, 5))]
+    assert command._secret_kits(root, natural.STORE, folders) == ["dev-secret"]
+    outside = tmp_path / "store-outside"
+    outside.mkdir()
+    assert command._secret_kits(root, outside, folders) == []

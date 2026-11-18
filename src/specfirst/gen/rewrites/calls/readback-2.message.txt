@@ -1,0 +1,1 @@
+rc04e6216ef90: pick "none", which is an alternative (the id "none", not the abstention answer "(none)"). The answer file is written to [the answer file].

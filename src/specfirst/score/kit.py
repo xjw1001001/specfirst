@@ -651,8 +651,14 @@ def planted(machine: Machine, kit: Kit, scored: KitScore, out: Out) -> bool:
     out(f"  planted in the gold of the kit: the first cell of the twin's grid reads "
         f"{cell['text']!r}: the gold check fails: {'yes' if ok else 'NO'}")
     seen &= ok
-    # 2. The control: the document lacks the statement of one stated decision of the slice.
-    stated = next(r for r in kit.records if r["unit"] in kit.units and r["status"] == "stated")
+    # 2. The control: the document lacks the statement of one stated decision of the slice,
+    # one whose value is not the house default (in a kit of the tier full a default is
+    # stated too, and without its statement the default stands in with the right value).
+    defaults = {(r["id"], r["unit"]): r["value"]
+                for r in houses.default_decisions(catalog, machine.house)}
+    scoped = [r for r in kit.records if r["unit"] in kit.units and r["status"] == "stated"]
+    stated = next((r for r in scoped if defaults.get((r["id"], r["unit"])) != r["value"]),
+                  scoped[0])
     doc, anchor = stated["citations"][0]["doc"], stated["citations"][0]["anchor"]
     text = _without_statement(kit.documents.texts[doc], anchor)
     other = dataclasses.replace(kit, documents=Documents(

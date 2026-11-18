@@ -26,4 +26,4 @@ the seed (rule R4): no clock, no unseeded randomness, sorted outputs.
 
 # The version of the generator. Change it whenever the same design and seed
 # would give other bytes; every generated file names it.
-GENERATOR = "gen-3a.1"
+GENERATOR = "gen-3a.2"

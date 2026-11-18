@@ -551,6 +551,13 @@ def run_gate(
             ctx.out("--clean: the gate counts only on a tree without uncommitted changes")
             ctx.out(f"GATE {wp}: FAIL")
             return 1
+        if os.environ.get("SPECFIRST_REWRITES"):
+            # The kits of a gate take their natural form from the store of the repository
+            # (docs/decisions/ADR-009.md, decision 5); another store gives other kits.
+            ctx.out("SPECFIRST_REWRITES is set: a gate writes and judges kits from the store "
+                    "of the repository only; unset it")
+            ctx.out(f"GATE {wp}: FAIL")
+            return 1
         results: list[tuple[str, bool, float]] = []
         for number, check in enumerate(checks, start=1):
             ctx.out("")
