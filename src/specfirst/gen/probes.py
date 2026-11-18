@@ -30,10 +30,11 @@ What a probe promises, and what it does not. A recipe plants the pattern of
 the catalog in SDTM, and where the two alternatives differ in whether an
 adverse event is treatment-emergent, an event in the interval where they
 disagree. Whether the difference reaches the one output of the slice, the
-adverse event summary, depends for some decisions on the value of another
-decision (a table on the randomized set, an emergence window): `REACHES`
-says which, and every line of the log repeats it. That is a prediction;
-gen-2 verifies it by mutation (property P4).
+adverse event summary, depends for most decisions on the values of other
+decisions (the analysis set of the table, the rows it shows, an emergence
+window): `REACHES` says which, as a condition that `reaches` evaluates on a
+decision vector, and every line of the log repeats it. That is a
+prediction; gen-2 verifies it by mutation (property P4).
 """
 
 from __future__ import annotations
@@ -56,48 +57,185 @@ Date = datetime.date
 SLICE_UNITS = ("mod-treatment", "mod-populations", "mod-ae-emergence", "tfl-ae-summary")
 
 # When a difference between two alternatives of a decision reaches the adverse
-# event summary (unit tfl-ae-summary), every other decision at its house default
-# unless named: "always", or a list of values of other decisions of which one is
-# needed, or "never". Predicted from the templates of the catalog and the house
-# standard; gen-2 verifies by mutation.
+# event summary (unit tfl-ae-summary). Per entry:
+#
+#     when    a condition on the decision vector of the study; it holds for every
+#             pair of alternatives of the entry
+#     pairs   "<alternative>|<alternative>" -> a further condition for that pair
+#     note    words for a reader of the log
+#
+# A condition is one of
+#
+#     {"always": true}, {"never": true}
+#     {"all_of": [...]}, {"any_of": [...]}, {"none_of": [...]}
+#     {"decision": <entry>, "is": [<alternative>, ...]}
+#         and with it "slot": <name>, "equals": <value>, where the value
+#         "parameters.<key>" stands for that key of the `parameters` of the log
+#     {"rows": [<code>, ...]}   the table shows at least one of these rows
+#
+# A decision of a table family is the one of the adverse event summary. A
+# decision the vector does not hold has its house default. The conditions are
+# predicted from the templates of the catalog and the house standard; gen-2
+# verifies them by mutation (`reaches` below evaluates one).
+_ROW_ANY = {"rows": ["ANY"]}
+_ROW_EVENT = {"rows": ["ANY", "SERIOUS"]}
+_BY_ACTUAL = {"all_of": [{"decision": "tfl.population", "is": ["safety"]},
+                         {"decision": "pop.safety.grouping", "is": ["actual"]}]}
+_READS_PLANNED = {"any_of": [
+    {"decision": "tfl.population", "is": ["randomized", "efficacy"]},
+    {"decision": "pop.safety.grouping", "is": ["planned"]},
+    {"decision": "trt.actual.source", "is": ["same_as_planned"]}]}
+# The analysis set of the table holds every randomized subject who was dosed, so a
+# planted subject is in it whatever else the probe did to it (an early stop, a missing
+# value). The efficacy-evaluable set and a randomized set that asks for a post-baseline
+# value leave some planted subjects out.
+_ANALYZED = {"any_of": [
+    {"decision": "tfl.population", "is": ["safety"]},
+    {"all_of": [{"decision": "tfl.population", "is": ["randomized"]},
+                {"decision": "pop.randomized.rule", "is": ["all_randomized"]}]}]}
+_WINDOW = {"decision": "ae.teae.end", "is": ["last_dose_plus_days"], "slot": "days",
+           "equals": "parameters.window_days"}
+_TREATMENT_RECORD = {"decision": "disp.status.record",
+                     "is": ["disposition_event_by_subcategory"], "slot": "subcategory",
+                     "equals": "parameters.treatment_subcategory"}
+_STUDY_RECORD = {"decision": "disp.status.record",
+                 "is": ["disposition_event_by_subcategory"], "slot": "subcategory",
+                 "equals": "parameters.study_subcategory"}
+_ONE_EVENT = ("the alternatives differ in one planted event, mild and not serious, of a "
+              "subject who is randomized and dosed: the table must show the row ANY, on an "
+              "analysis set that holds every such subject")
 REACHES: dict[str, dict] = {
-    "trt.planned.source": {"any_of": [
-        "trt.actual.source=same_as_planned", "pop.safety.grouping=planned",
-        "tfl.population=randomized", "tfl.population=efficacy"],
+    "trt.planned.source": {
+        "when": _READS_PLANNED,
         "note": "the table reads planned treatment only then"},
-    "trt.actual.source": {"always": True},
-    "trt.start.source": {"always": True},
-    "trt.end.source": {"any_of": ["ae.teae.end=last_dose_plus_days"],
-                       "note": "only an emergence window reads the treatment end date"},
-    "trt.date.imputation": {"always": True},
-    "date.studyday.origin": {"never": True,
-                             "note": "no row of the adverse event summary reads a study day; "
-                                     "ASTDY and AENDY of ADAE differ"},
-    "pop.randomized.rule": {"any_of": ["tfl.population=randomized"]},
-    "pop.safety.rule": {"always": True},
-    "pop.safety.grouping": {"always": True},
-    "pop.efficacy.rule": {"any_of": ["tfl.population=efficacy"]},
-    "disp.status.record": {"any_of": ["ae.teae.end=end_of_study"],
-                           "note": "the last disposition event of the planted subject is its "
-                                   "study participation record: the two alternatives differ for "
-                                   "the subcategory of the treatment record only"},
-    "ae.start.imputation": {"always": True},
-    "ae.teae.start": {"always": True},
-    "ae.teae.end": {"always": True,
-                    "note": "for a window of parameters.window_days days; a window that is "
-                            "much longer or shorter may leave the planted events on one side"},
-    "ae.related.values": {"any_of": ["tfl.ae.summary.rows shows RELATED"]},
-    "tfl.output.include": {"always": True},
-    "tfl.population": {"always": True},
-    "tfl.columns.arms": {"always": True},
-    "tfl.columns.total": {"always": True},
-    "tfl.percent.format": {"any_of": ["tfl.ae.summary.rows shows FATAL"],
-                           "note": "the zero count is the count of fatal events in one arm"},
-    "tfl.rounding.rule": {"any_of": ["tfl.ae.summary.rows shows ANY or SERIOUS"],
-                          "note": "with tfl.population=safety, pop.safety.grouping=actual and "
-                                  "trt.actual.source=dm_actarm"},
-    "tfl.ae.summary.rows": {"always": True},
+    "trt.actual.source": {
+        "when": _BY_ACTUAL,
+        "note": "the table reads actual treatment only on the safety set grouped by it"},
+    "trt.start.source": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
+    "trt.end.source": {
+        "when": {"all_of": [_WINDOW, _ROW_EVENT, _ANALYZED]},
+        "pairs": {"last_ex_end_date|ds_date_when_ex_missing": {"none_of": [_TREATMENT_RECORD]}},
+        "note": "only an emergence window reads the treatment end date, and the planted "
+                "event lies parameters.window_days + 2 days after the disposition date: a "
+                "window of exactly parameters.window_days days separates every pair. The "
+                "planted subject stops early, and it has no treatment record: with the "
+                "subcategory of that record as the end-of-study record it has no "
+                "disposition date to stand in for the missing end date"},
+    "trt.date.imputation": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
+    "date.studyday.origin": {
+        "when": {"never": True},
+        "note": "no row of the adverse event summary reads a study day; ASTDY and AENDY of "
+                "ADAE differ"},
+    "pop.randomized.rule": {"when": {"decision": "tfl.population", "is": ["randomized"]}},
+    "pop.safety.rule": {
+        "when": {"all_of": [_BY_ACTUAL, {"decision": "trt.actual.source",
+                                          "is": ["dm_actarm", "first_ex_treatment"]}]},
+        "note": "the subject who is dosed without being randomized has no planned "
+                "treatment: it stands in a column of the table only by actual treatment"},
+    "pop.safety.grouping": {
+        "when": {"all_of": [{"decision": "tfl.population", "is": ["safety"]},
+                            {"none_of": [{"decision": "trt.actual.source",
+                                          "is": ["same_as_planned"]}]}]}},
+    "pop.efficacy.rule": {"when": {"decision": "tfl.population", "is": ["efficacy"]}},
+    "disp.status.record": {
+        "when": {"all_of": [_ROW_EVENT, _ANALYZED, {"none_of": [_STUDY_RECORD]}, {"any_of": [
+            {"decision": "ae.teae.end", "is": ["end_of_study"]},
+            {"all_of": [_WINDOW, {"decision": "trt.end.source",
+                                  "is": ["ds_date_when_ex_missing"]}]}]}]},
+        "note": "the last disposition event of the planted subject is its study "
+                "participation record: the two alternatives differ for the subcategory "
+                "parameters.treatment_subcategory only, and a study whose end-of-study "
+                "record is the one with parameters.study_subcategory has no probe"},
+    "ae.start.imputation": {
+        "when": {"all_of": [_ROW_ANY, _ANALYZED]},
+        "pairs": {"first_of_month_not_before_first_dose|first_of_month": {"none_of": [
+            {"decision": "ae.teae.start", "is": ["at_or_after_first_dose_time"]}]}},
+        "note": _ONE_EVENT + "; an event completed to the first day of the month of the first "
+                "dose is before the dose by date and by time alike"},
+    "ae.teae.start": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
+    "ae.teae.end": {
+        "when": {"all_of": [_ROW_EVENT, _ANALYZED]},
+        "pairs": {"no_end|end_of_study": {"none_of": [_TREATMENT_RECORD]}},
+        "note": "a window is one of parameters.window_days days; a window that is longer "
+                "or shorter may leave the planted events on one side. With the subcategory "
+                "of the treatment record as the end-of-study record nearly no subject has "
+                "an end-of-study date. Two of the planted subjects stop early"},
+    "ae.related.values": {"when": {"all_of": [{"rows": ["RELATED"]}, _ANALYZED]}},
+    "tfl.output.include": {"when": {"always": True}},
+    "tfl.population": {"when": {"always": True}},
+    "tfl.columns.arms": {
+        "when": {"none_of": [{"all_of": [_BY_ACTUAL, {"decision": "trt.actual.source",
+                                                       "is": ["first_ex_treatment"]}]}]},
+        "note": "by the treatment of the first exposure record the active arms share one "
+                "column, and a protocol that lists the placebo arm first then has the "
+                "columns of the dose order"},
+    "tfl.columns.total": {"when": {"always": True}},
+    "tfl.percent.format": {
+        "when": {"rows": ["FATAL"]},
+        "note": "the zero count is the count of fatal events in one arm"},
+    "tfl.rounding.rule": {
+        "when": {"all_of": [_ROW_EVENT,
+                            {"decision": "tfl.population", "is": ["safety"]},
+                            {"decision": "pop.safety.grouping", "is": ["actual"]},
+                            {"decision": "trt.actual.source", "is": ["dm_actarm"]}]},
+        "note": "the counts of one arm are set for these decisions"},
+    "tfl.ae.summary.rows": {"when": {"always": True}},
 }
+_ALL_ROWS = ("ANY", "RELATED", "SERIOUS", "DISCONTINUATION", "FATAL")
+
+
+def shown_rows(value: dict | None) -> tuple[str, ...]:
+    """The rows of the adverse event summary that a value of tfl.ae.summary.rows shows."""
+    if value is None or value.get("rule") == "standard_rows":
+        return _ALL_ROWS
+    return tuple(value.get("rows") or ())
+
+
+def holds(condition: dict, values: dict[str, dict], parameters: dict) -> bool:
+    """Whether a condition of `REACHES` holds for a decision vector.
+
+    `values` maps an entry to its value, for a table family that of the
+    adverse event summary; `parameters` is the record of that name in a
+    line of the log of probes.
+    """
+    if "always" in condition:
+        return True
+    if "never" in condition:
+        return False
+    if "all_of" in condition:
+        return all(holds(item, values, parameters) for item in condition["all_of"])
+    if "any_of" in condition:
+        return any(holds(item, values, parameters) for item in condition["any_of"])
+    if "none_of" in condition:
+        return not any(holds(item, values, parameters) for item in condition["none_of"])
+    if "rows" in condition:
+        return bool(set(condition["rows"]) & set(shown_rows(values.get("tfl.ae.summary.rows"))))
+    if "decision" in condition:
+        value = values.get(condition["decision"])
+        if value is None or value.get("rule") not in condition["is"]:
+            return False
+        if "slot" not in condition:
+            return True
+        wanted = condition["equals"]
+        if isinstance(wanted, str) and wanted.startswith("parameters."):
+            wanted = parameters[wanted.split(".", 1)[1]]
+        return value.get(condition["slot"]) == wanted
+    raise ValueError(f"not a condition of REACHES: {condition}")
+
+
+def reaches(entry_id: str, first: str, second: str, values: dict[str, dict],
+            parameters: dict, table: dict[str, dict] | None = None) -> bool:
+    """Whether a difference between two alternatives of a decision reaches the output.
+
+    `table` is `REACHES`, or the field `reaches` of a line of the log.
+    """
+    reach = (REACHES if table is None else table)[entry_id]
+    if not holds(reach["when"], values, parameters):
+        return False
+    for pair, condition in (reach.get("pairs") or {}).items():
+        if set(pair.split("|")) == {first, second} and not holds(condition, values, parameters):
+            return False
+    return True
 
 
 @dataclass
@@ -108,6 +246,8 @@ class Parameters:
     tests: tuple[str, ...]      # pop.randomized.rule, pop.efficacy.rule: vital sign tests
     visits: tuple[str, ...]     # pop.efficacy.rule: every planned visit after day 1
     spared_arm: str             # the arm of the count probes
+    treatment_subcategory: str = ""   # disp.status.record: DSSCAT of the treatment record
+    study_subcategory: str = ""       # and of the study participation record
 
     @classmethod
     def of(cls, design: dict) -> Parameters:
@@ -115,12 +255,16 @@ class Parameters:
                  if len(t["encounterIds"]) > 1]
         preferred = [c for c in ("SYSBP", "WEIGHT") if c in codes] or codes
         later = [e["label"] for e in designs.encounters(design) if e["plannedDay"] > 1]
+        names = design["collection"]["disposition"]["subcategories"]
         return cls(window_days=designs.follow_up_days(design), tests=tuple(preferred[:2]),
-                   visits=tuple(later), spared_arm=designs.dose_order(design)[0])
+                   visits=tuple(later), spared_arm=designs.dose_order(design)[0],
+                   treatment_subcategory=names["treatment"], study_subcategory=names["study"])
 
     def as_record(self) -> dict:
         return {"window_days": self.window_days, "tests": list(self.tests),
-                "visits": list(self.visits), "spared_arm": self.spared_arm}
+                "visits": list(self.visits), "spared_arm": self.spared_arm,
+                "treatment_subcategory": self.treatment_subcategory,
+                "study_subcategory": self.study_subcategory}
 
 
 @dataclass

@@ -59,9 +59,11 @@ def python_result(method: str, case: dict) -> dict:
         return {"p_value": methods.fisher_exact_p(given["table"])}
     if method == "display.round.half_away_from_zero":
         return {"text": methods.round_half_away(given["value"], given["decimals"])}
+    if method == "display.round.half_even":
+        return {"text": methods.round_half_even(given["value"], given["decimals"])}
     if method == "display.pattern":
         return {"text": methods.pattern_text(given["value"], given["pattern"],
-                                             mock=given.get("mock", False))}
+                                             mock=given.get("mock", False), **options)}
     raise AssertionError(f"no Python implementation of {method}")
 
 

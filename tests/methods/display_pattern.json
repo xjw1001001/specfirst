@@ -18,6 +18,10 @@
     {"name": "a p-value with four decimals", "statements": [2, 3], "input": {"value": 0.59344, "pattern": "X.XXXX"}, "expected": {"text": "0.5934"}},
     {"name": "a missing number", "statements": [6], "input": {"value": null, "pattern": "XX.X"}, "expected": {"text": null}},
     {"name": "a mock shell shows the mask", "statements": [7], "input": {"value": null, "pattern": "( XX.X)", "mock": true}, "expected": {"text": "( xx.x)"}},
-    {"name": "a mock shell of a header count", "statements": [7], "input": {"value": 86, "pattern": "(N=XX)", "mock": true}, "expected": {"text": "(N=xx)"}}
+    {"name": "a mock shell of a header count", "statements": [7], "input": {"value": 86, "pattern": "(N=XX)", "mock": true}, "expected": {"text": "(N=xx)"}},
+    {"name": "a percent at a half, half away from zero by default", "statements": [2, 3], "input": {"value": 6.25, "pattern": "(XXX.X)"}, "expected": {"text": "(  6.3)"}},
+    {"name": "a percent at a half, half to even", "statements": [3, 8], "options": {"rounding": "half_even"}, "input": {"value": 6.25, "pattern": "(XXX.X)"}, "expected": {"text": "(  6.2)"}},
+    {"name": "half to even changes nothing away from a half", "statements": [8], "options": {"rounding": "half_even"}, "input": {"value": 46.875, "pattern": "(XXX.X)"}, "expected": {"text": "( 46.9)"}},
+    {"name": "a hundred percent fills the mask", "statements": [3], "input": {"value": 100.0, "pattern": "(XXX.X)"}, "expected": {"text": "(100.0)"}}
   ]
 }

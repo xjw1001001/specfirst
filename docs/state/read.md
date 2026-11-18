@@ -31,7 +31,7 @@ What exists (`src/specfirst/score/`; each module says what it does):
 - `hand`: the study HAND01 (7 and 9 subjects) with its table by hand. It
   separates 12 of the 21 decisions of the slice on one of its two
   datasets; the other nine are marked `unseparated`, found by mutation
-  (lesson 43). Its twin is no superset of its visible data: one decision
+  (lesson 51). Its twin is no superset of its visible data: one decision
   (`trt.end.source`) is shown by the visible data only.
 - `pilot`: arm S at stage T on the reference ADaM of CDISCPILOT01.
 - `gate`, `command`: `specfirst gate read-1a`, `specfirst score ...`.
@@ -117,7 +117,7 @@ For other tracks:
   modification (ADR-005, "For the owner", item 3).
 - std, gen: the 22 decisions of the slice do not compile alone.
   `date.studyday.origin` writes into ADVS, so ADVS needs every decision of
-  mod-bds-visits, and ADSL needs those of mod-demographics (lesson 42).
+  mod-bds-visits, and ADSL needs those of mod-demographics (lesson 50).
 - real: the percent of 100 is shown as "( 100.0)" under the pattern
   "( XX.X)", one character wider than every other cell (ADR-003 says the
   registry chose not to cut it).

@@ -261,6 +261,15 @@ def _gen(name: str) -> Callable[[Context], bool]:
     return run
 
 
+def _gen2(name: str) -> Callable[[Context], bool]:
+    """A check of the kits of generated studies (specfirst.gen.gate2), by its function name."""
+    def run(ctx: Context) -> bool:
+        from specfirst.gen import gate2
+
+        return getattr(gate2, name)(ctx.root, ctx.out)
+    return run
+
+
 # real-3a (ADR-005, decision 1): the outputs of the ARS example that are built as
 # grids, each with its cells and the results they show; and the planted defects of
 # the display and of its trace. The rest of real-3 adds the other four outputs here.
@@ -411,6 +420,29 @@ GATES: dict[str, tuple[Check, ...]] = {
               "the CT package of CORE", _gen("controlled_terms")),
         Check("probes", "specfirst.gen.gate.probe_coverage: every pair of alternatives",
               _gen("probe_coverage")),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # PLAN.md section 13.5 and ADR-005: the gate of gen-2 for the one output of the
+    # slice: 10 kits pass P1 to P4, every applicable decision is separated on the twin,
+    # the engines agree. gen-2a added a rounding rule to the method registry and two
+    # words to the column lineage of the machine: the registry, the method vectors and
+    # the tests of the pilot kit are checked with it.
+    "gen-2a": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("registry", "specfirst methods", _registry),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q", _method_vectors),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
+        Check("kits", "specfirst.gen.gate2.kits_pass: 10 kits, each written twice; P1 to P4",
+              _gen2("kits_pass")),
+        Check("separation", "specfirst.gen.gate2.separation: every applicable decision, and "
+              "the matrix of the 10 kits", _gen2("separation")),
+        Check("engines", "specfirst.gen.gate2.engines: the Python and the R engine on every "
+              "result", _gen2("engines")),
+        Check("splits", "specfirst.gen.gate2.splits: the splits of section 6.7", _gen2("splits")),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
     # ADR-005, part read-1a (PLAN.md section 13.6, read-1 for the slice): the planted

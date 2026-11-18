@@ -7,148 +7,239 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
 
 - gen-1a (2026-11-17): CDISC CORE in the environment (ADR-006); the design
   model and the sampler for PG-FIX; the subject process; SDTM for eleven
-  domains with Define-XML; 28 probes for the 22 decisions of the slice,
-  each read back from the data; the gate `gen-1a`; `specfirst gen`.
-  Gate: `scripts/clean_clone_gate.sh gen-1a` exited 0 on a clean clone of
-  `39ff635`, 8 of 8 checks (docs/reports/gen-1a.gate.log): CORE on the 20
-  datasets of ten seeds with 1,825 findings, none unexplained; identical
-  hashes from two processes; a probe in the twin for each of the 32 or 35
-  pairs of alternatives.
-  Report: docs/reports/gen-1a.md. Review: docs/reports/gen-1a.review.md,
-  signed in its second pass, with eight findings that do not block (F21
-  to F28; below).
+  domains with Define-XML; 28 probes for the 22 decisions of the slice; the
+  gate `gen-1a`; `specfirst gen design|study|check`. Report:
+  docs/reports/gen-1a.md. Review: docs/reports/gen-1a.review.md (signed).
+- gen-2a (2026-11-17): the decisions of a kit sampled within
+  `open-default@1` at `catalog@1`; compile; gold on the visible data and on
+  the twin with both result engines; P1 to P4; the manifest; the splits;
+  the gate `gen-2a`; `specfirst gen kit|kits|verify`. Its first commits
+  settle the eight findings of pass 2 of the gen-1a review. Report:
+  docs/reports/gen-2a.md (the gate, its numbers, the limits). Review:
+  docs/reports/gen-2a.review.md (signed in its second pass, for the slice).
+  Choices: docs/decisions/ADR-007.md; the owner approved the gate's
+  reading of "applicable" for the slice only, and a rework is owed before
+  the gate of the full gen-2 (see "Next").
+
+## A kit: what the folder holds
+
+`specfirst gen kit --seed S --out DIR` writes one kit; `specfirst gen kits
+--seed S --count N --out DIR` the kits 1 to N of the set of a seed, in
+`kit-001`, `kit-002`, ... A kit is never in the repository.
+
+```text
+kit.yaml                    id, tier A, archetype, slice, split, generator, catalog, house,
+                            pins, the properties, the SHA-256 of every file
+study.json                  the manifest of the data (gen-1a)
+inputs/data/sdtm/           visible SDTM: <domain>.parquet, <domain>.json, define.xml
+inputs/house/               the house standard, as in standard/houses/open-default@1
+gold/design.yaml  probes.jsonl  truth/subjects.jsonl
+gold/decisions.jsonl        one record per decision: value, status, class, statement,
+                            citations, binds, identifiable
+gold/docs/sap.md            the stated decisions in standard form (document ID sap)
+gold/spec/                  adam/*.yaml with fragments/ and project.yaml,
+                            ars/reporting-event.json, layout/tfl-ae-summary.json, compile.json
+gold/resolved/  data/adam/  ars/  ard/  grid/  out/  graph/      built on the visible data
+gold/reference/tfl-ae-summary.json    the table calculated by hand (P2)
+gold/identifiability.json   the matrix of the twin (P4)
+twin/data/sdtm/  twin/truth/
+twin/gold/                  data/adam/, ars/, ard/, grid/, out/, graph/, reference/
+```
+
+- `gold/ard/reporting-event.jsonl` is the ARD of the Python engine,
+  `.r.jsonl` that of the R engine. `gold/ars/reporting-event.json` is the
+  ARS file with the groups of the treatment grouping listed and the results
+  embedded; `gold/spec/ars/reporting-event.json` is the compiled file, with
+  the grouping still data-driven.
+- `gold/grid/Out_AESUM.json` is the grid, `Out_AESUM.shell.json` its mock
+  shell. Row 1 has the section `@header` and holds the counts under the
+  column headers. Every cell names the ARD rows behind it (`ard`), also a
+  cell with a count of zero: the groups are listed, so the engines give a
+  row for an arm without records.
+- A kit of the slice builds ADSL and ADAE. The other three outputs of the
+  house are stated as not included; the decisions of `mod-demographics`
+  are at the house default; `mod-bds-visits` is not in the vector.
+
+## How to load a kit and build a decision vector on it
+
+```python
+from specfirst.gen import decisions, gold, kits, study, verify
+from specfirst.gen import design as designs
+
+manifest = kits.read_manifest(kit_dir)             # kit.yaml
+records = kits.read_decisions(kit_dir)             # gold/decisions.jsonl
+values = decisions.as_values(records)              # entry -> value (the output of the slice)
+design = designs.load(kit_dir / "gold" / "design.yaml")
+rows = study.read_tables(kit_dir, "twin")          # SDTM as rows; or "visible"
+made = verify.grid_of(kit_dir, "twin")             # the gold grid
+
+bench = gold.Workbench(root, catalog, house, kit_dir, "twin", scratch_folder)
+shown = bench.show(candidate_records, gold.arms_of(design, decisions.as_values(candidate_records)))
+shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM tables
+```
+
+- `candidate_records` are `{id, unit, value}`. They must hold the records
+  the kit holds beyond the slice (the three outputs not included, the
+  demographics defaults): take the gold records and replace values.
+  `decisions.vector` builds the full list from slice values.
+- `Workbench.show` raises `gold.GoldError` when a vector cannot be compiled
+  or built (an analysis set without a subject, the efficacy-evaluable set in
+  a design without one). That is the "validity" of section 9.2.
+- `verify.table_view(grid)` gives the column labels and, per row, the label
+  and the cell texts; `verify.differences` and `verify.changed_cells`
+  compare two of them. `specfirst.gen.reference.table` is the hand
+  calculation of any vector on any SDTM rows.
+- `kits.check(root, kit_dir, print)` decides P2 to P4 of a written kit
+  again; `specfirst gen verify DIR` is the command.
+
+## What a scorer must know (read-1a)
+
+- `gold/identifiability.json` is the matrix of the twin. Per decision:
+  `read` (the output reads an element the decision sets), `applicable` (the
+  log of probes claims a probe for every pair of the gold value with
+  another alternative), `identifiable` (`separated`, `unseparated`, or
+  `no_alternative`), `reason`, and `pairs` with `gold`, `claimed`,
+  `separated` and the number of changed `cells`. The decision records
+  repeat `identifiable`.
+- A decision that is `unseparated` on the twin cannot be scored by the
+  table: compare decision values and report it apart (section 9.3). This
+  holds also for a decision that the table reads: a kit of this generator
+  can state a decision, have a table that reads it, and still give the
+  same table as under the house default (kit 9 of the gate set states
+  rounding half to even; every cell of its twin has the same text under
+  the default). The owner approved that for the slice on 2026-11-17
+  (ADR-007, "The owner's answer on decision 6"). A table that equals the
+  gold table is therefore no evidence for an `unseparated` decision, and a
+  table that differs is not caused by one. Three kinds occur. Not read: the output does not read it under the decisions
+  of the kit (`pop.randomized.rule` in a kit on the safety set;
+  `date.studyday.origin` in every kit of this slice). Read without a probe:
+  `tfl.rounding.rule` outside the safety set grouped by actual treatment
+  from DM, and the decisions that act through one planted event in a kit on
+  the efficacy-evaluable set. Equal by another decision:
+  `pop.safety.grouping` when actual treatment is the same as planned.
+- The matrix changes one decision at a time, from the gold vector. Two
+  wrong decisions can cancel in the table, and so can two planted subjects
+  in one arm; a kit is written only when every claimed pair is separated,
+  not when every pair of pairs is.
+- Slot values. A slot of an alternative is mutated to one value only, the
+  one the probes are built around (`decisions.variants`). A wrong value of
+  a slot of the gold alternative is not in the matrix, except for
+  `ae.related.values`, which has one alternative. The review of gen-1a
+  counted how often two values of a slot give the same table (F23).
+- `disp.status.record` is never "the record with the subcategory STUDY
+  TREATMENT" in a gold vector, and "STUDY PARTICIPATION" only where the
+  output does not read the decision: see "For the std track".
+- The visible data carry a part of the probes. There is no matrix for
+  them; `verify.mutate(..., "visible", ...)` computes one.
+- The order of the treatment columns needs the arms of the protocol
+  (`gold.arms_of(design, values)`). A reader cannot state the order of the
+  arms: the alternative `protocol_order` has no slot for it.
+
+## For gen-3a
+
+- `gold/docs/sap.md` is one standard-form document with every stated
+  decision; the records cite it by anchor, the defaults cite
+  `inputs/house/STANDARD.md` (document ID `house`). gen-3a owns the
+  documents of a kit (protocol and SAP, natural form, tiers): it replaces
+  that file and the citations, in `kits._attempt`, where stage S6 belongs.
+- A decision is `stated` when its value is not the house default, else
+  `default`. The tier `full` states defaults too; that changes `status`
+  and `citations`, not values.
+- Change `GENERATOR` with any change that gives other bytes. Kits are
+  generated again, never patched.
 
 ## Open
 
-What gen-2a meets first (docs/reports/gen-1a.md, "What the probes prove"
-and "Limits"):
-
-- The gate of gen-1a proves that every probe is in the SDTM of the twin
-  with what its alternatives need to differ. It does not build both
-  alternatives. gen-2a owes that proof ("every applicable decision of the
-  slice is separated on the twin"). A hand experiment with a reference
-  implementation says the output differs for every pair at the house
-  defaults in the ten gate twins, except where the next three points say
-  otherwise.
-- Every line of `gold/probes.jsonl` has a field `reaches`: under which
-  values of other decisions a difference reaches the adverse event summary.
-  Five decisions reach it only under another decision's value
-  (`trt.planned.source`, `trt.end.source`, `pop.randomized.rule`,
-  `pop.efficacy.rule`, `disp.status.record`), three only when the table
-  shows a certain row (`ae.related.values`, `tfl.percent.format`,
-  `tfl.rounding.rule`); `date.studyday.origin` never does and is
-  `unseparated` for this slice (section 4.7). Sample the decisions of a
-  kit with that field, or the matrix of section 6.5 has holes.
-- `ae.teae.end`: the events are planted around a window of N days, N being
-  the follow-up length of the design (`parameters.window_days` in the
-  log). A kit must take that number for the slot `days`.
-- The count probes hold under the decisions named in `detail.assumes` of
-  their log lines.
-- `disp.status.record`: the two alternatives pick the same record unless
-  the subcategory is that of the treatment record (see "For the std
-  track"). A kit that names the study participation record does not
-  separate the decision.
-- Values of one slot are not pairs of alternatives, and the planted
-  subjects for two values often cancel in one arm: a wrong `test` of
-  `pop.randomized.rule` is invisible in the table on the randomized set in
-  125 of 200 twins, a wrong `test` of `pop.efficacy.rule` in 52 of 109, a
-  wrong `visit` (first against second visit after day 1) in 5 of 97.
-  read-1a should know this as well.
-- The hand experiment follows the text of the catalog entries, not the
-  engine. Open since pass 1 of the review: what yamaa's `not_before` does
-  with a partial start date in a month before the treatment start. If it
-  moves every earlier date up to the treatment start, the pair
-  first_of_month_not_before_first_dose | not_completed of
-  `ae.start.imputation` is not separated by its two probes.
-- Cancellation between planted subjects is removed where it was found (the
-  analysis sets; the end of emergence). Planted subjects share few arms and
-  the table counts subjects: check each kit, do not assume. One case is
-  known and not fixed: with `tfl.population` = efficacy, the pair of
-  `pop.efficacy.rule` gives the same table in 4 of 109 twins when the
-  visit of attended_visit is the first one after day 1.
-
-Found by pass 2 of the review after the gate, and left as they are so that
-the code of the merge is the code that passed the gate. They are for the
-first commit of gen-2a:
-
-- `reaches` says `always` for the decisions that act through one event;
-  that assumes a table with the row ANY. It says "an emergence window" for
-  `trt.end.source`, which needs a window of exactly N days. Two interplays
-  are not in it: the pair first_of_month_not_before_first_dose |
-  first_of_month of `ae.start.imputation` is lost under `ae.teae.start` =
-  at_or_after_first_dose_time, and no_end | end_of_study of `ae.teae.end`
-  under `disp.status.record` with the subcategory of the treatment record.
-- `gate._holds`, kind `repeated_key`: it compares the number of issues
-  only. A finding of the right size that names other subjects would be
-  explained. Compare the subjects as the kind `probe` does.
-- `gate.term_problems` accepts a milestone term in a disposition event (it
-  joins the two codelists of DSDECOD) and does not look at COUNTRY or at
-  the codelists of the study itself.
-- `GENERATOR` is still "gen-1a.1" although the recipes changed after the
-  first push: no study of that version was ever kept, but the next change
-  of a recipe must change the name.
-- The event of `no_exposure_end_date` lies after the subject left the
-  study and has the epoch TREATMENT (`sdtm.epoch_of` takes the last
-  element of the subject).
-- The screening element of a subject without an arm has TAETORD 1 in SE.
-  The rule of CORE that compares TAETORD with TA cannot run (CORE-002101),
-  so nothing reports it; decide what such an element should carry.
-- No test or gate check reads `env/lock.sh`: the broken script of pass 1
-  passed `bash -n` and everything else. `scripts/clean_clone_gate.sh`
-  still says "clone kept ... until /tmp is cleared" (lesson 39).
+- The data of a kit are a function of the design and the seed (gen-1a);
+  the decisions are sampled to fit them. A probe that holds for one
+  analysis set (the calibrated counts) cannot follow the decisions. The
+  gate `gen-2a` therefore reads "applicable" as "claimed by the log of
+  probes" (ADR-007, decision 6). The owner approved that reading for the
+  slice only; the rework is the last point under "Next". Until it is
+  done, look at the matrices of a set before the set is used: how many
+  kits leave a decision unseparated that the table reads differs by seed
+  (2 of 10 in the set of the gate; 2 and 4 of 10 in two sets of the
+  reviewer, one case stated in the document of a dev kit).
+- The scenarios of a set (`decisions.SCENARIOS`) are what makes every
+  decision read and claimed in some kit of ten. A set of other size keeps
+  the rotation.
+- The seed of a set with dev and test kits must be a file outside every
+  checkout. No such file exists yet. The kits of the gate are development
+  kits and are removed after the gate.
+- Not done, and not part of gen-2a: the other three table families and
+  their probes; documents (gen-3a); strata, endpoints and analysis timing
+  in the design model; TI.
 
 For the std track:
 
 - The recipe of the probe `two_disposition_events` gives a subject whose
   last disposition event is the study participation record, so
   `disposition_event` and `disposition_event_by_subcategory` pick the same
-  record unless the subcategory is that of the treatment record.
+  record unless the subcategory is that of the treatment record. And with
+  that subcategory nearly no subject has an end-of-study date. A kit can
+  separate the decision only from `disposition_event` towards the treatment
+  record; the value "STUDY PARTICIPATION" is never separated.
 - `tfl.population` has the alternative `efficacy` in every design; in a
-  design without that set it cannot be built. The generator claims no pair
-  with it there. The catalog has no applicability per alternative.
+  design without that set it cannot be built. The catalog has no
+  applicability per alternative.
+- `tfl.columns.arms`: the alternative `protocol_order` carries no order. A
+  build needs the arms of the protocol from elsewhere (ADR-007, decision 2).
+- The house layout templates are layout draft 0. Four entries decide what
+  layout spec v0 cannot carry: a total column, a column rule, a rounding
+  rule, a rule for a count of zero (ADR-007, decision 3).
+- The house ARS templates give the treatment grouping as data-driven; the
+  engines then give no result for an arm without records (ADR-007,
+  decision 1).
 - The probe `dosed_but_not_randomized` is a DM record that four rules of
-  CORE for SDTMIG v3.4 do not allow (CORE-000192, CORE-000758,
-  CORE-000927, CORE-002099): no planned arm, the reason NOT ASSIGNED, an
-  actual arm and a reference period. The gate accepts the four findings
-  as planted. The recipe of the catalog ("ARMCD is NOTASSGN") is older
-  than v3.4: can the probe be a conformant record? Until that is settled
-  the reason of the entry `probe-dosed-but-not-randomized` in
-  `core_findings.yaml` should say that the rules refuse the record
-  (review finding F26).
+  CORE for SDTMIG v3.4 do not allow. `core_findings.yaml` says so now.
+- `ae.start.imputation`, first alternative: yamaa's `not_before` moves a
+  partial start up to the treatment start only when the treatment start is
+  in the month of the partial date, as the statement reads. Settled by
+  experiment (docs/reports/gen-2a.md).
 
-For the owner (docs/reports/gen-1a.md, "For the owner"): ADR-006 is
-proposed and stands unless the owner objects; the slice has no TI dataset.
+For the real track:
 
-Not done, and not part of gen-1a: strata, endpoints and analysis timing in
-the design model; eligibility criteria and TI; the probes of the other
-three table families; domains beyond the eleven.
+- `specfirst.machine.lineage` has two more words (`part`, DATE).
+  `display.pattern` has the option `rounding`; `display.round.half_even`
+  is a new registry entry (ADR-007, decision 4).
+- `graph.check_cells` is content with one `reads` edge per analysis
+  (lesson 45).
 
 ## Next
 
-- gen-2a (needs gen-1a, std-1 after N1, real-3a: all on `main` now): sample
-  decisions of the slice within the house standard, compile, build with
-  both engines on the visible data and on the twin, P1 to P4, splits.
-  Start from `specfirst gen study` and `specfirst.gen.study.read_tables`;
-  the Parquet files of a study have the names the parent specs expect.
-- Then gen-3a, then the rest of gen-1, gen-2 and gen-3.
+- gen-3a (needs gen-2a): protocol and SAP in standard form and in natural
+  form for the decisions of the slice.
+- read-1a (needs real-3a and gen-2a): the scorer.
+- Then the rest of gen-1, gen-2 and gen-3.
+- Owed before the gate of the full gen-2 is run (the owner's answer of
+  2026-11-17 on finding G1 of the gen-2a review; ADR-007): the probes
+  follow the decisions of the kit. The decisions are sampled first and
+  the probes are planted after them (section 6.4, S1 before S3): the
+  calibrated counts for the analysis set and the grouping of the kit's
+  own table, the planted subjects inside its analysis set.
+  `probes.REACHES` keeps only the conditions under which another decision
+  of the kit makes the alternatives equal on any data; the conditions
+  `_ANALYZED` and that of `tfl.rounding.rule` go. The gate fails on a kit
+  in which a decision that the output reads, and that data could
+  separate, is not separated on the twin. This changes `study.generate`
+  (the data of a kit then depend on its decisions) and the order in
+  `kits._attempt`, so the gate of gen-1a runs again, with CORE, and
+  `GENERATOR` changes. The kit folder and the loading API above need not
+  change. Not started; when it is done, and as which part, is the owner's
+  to plan.
 
 How to run things:
 
-- After merging `main`: `make install` once; `specfirst doctor` must say
-  "CDISC CORE v1.0.0 at f3282a0d870b: 0 differ".
-- `specfirst gate gen-1a` takes about 20 minutes, nearly all of it CORE
-  (20 runs, each about 80 seconds and up to 3 GB). The WSL machine is
-  shared: wrap every gate, test suite or generator run in
-  `flock /run/lock/specfirst-heavy.lock <command>` and never start runs of
-  CORE by hand in parallel (lesson 32).
-- The gate keeps the reports of CORE in `build/gates/gen-1a/core/`. Read a
-  finding there before adding it to
-  `src/specfirst/gen/core_findings.yaml`; an entry that no finding needs
-  fails the gate. In a clean clone that folder is under `/tmp`, which WSL
-  clears when the instance restarts, a minute after the last command:
-  copy the reports out in the same command (lesson 39).
-- A new release of CORE is a new pin (`env/core-source.txt`), `make lock`,
-  `make install`, and a new reading of that list.
+- After merging `main`: `make install` once; `specfirst doctor`.
+- `specfirst gate gen-2a` writes ten kits twice (20 builds, four at a
+  time) and decides each again: about 15 minutes. `specfirst gate gen-1a`
+  takes about 20 minutes, nearly all of it CORE. Wrap every gate, test
+  suite or generator run in `flock /run/lock/specfirst-heavy.lock
+  <command>` (lesson 32).
+- One kit takes about half a minute per decision vector; a vector is drawn
+  again when its kit does not separate what the log claims.
+- A clean clone is under `/tmp`, which WSL clears a minute after the last
+  command: copy what must last in the same command (lesson 39).
 
 ## Handed over by base-0
 

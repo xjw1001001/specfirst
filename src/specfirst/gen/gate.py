@@ -249,8 +249,18 @@ def _holds(entry: dict, finding: cdisccore.Finding, rows: list[dict] | None,
     if kind == "repeated_key":
         if rows is None:
             return False
-        repeated = _repeated([tuple(row.get(name) for name in entry["key"]) for row in rows])
-        return repeated > 0 and finding.count == repeated
+        # As for a probe: every issue is a detail row that names a subject, and the
+        # subjects are exactly those of the records with a repeated key. The number
+        # alone would explain a finding of the right size about other records.
+        keys = [tuple(row.get(name) for name in entry["key"]) for row in rows]
+        counts: dict[tuple, int] = {}
+        for key in keys:
+            counts[key] = counts.get(key, 0) + 1
+        repeated = sum(number for number in counts.values() if number > 1)
+        subjects = {row.get("USUBJID") for row, key in zip(rows, keys, strict=True)
+                    if counts[key] > 1}
+        return repeated > 0 and finding.count == repeated == finding.listed == finding.named \
+            and set(finding.subjects) == subjects
     if kind == "study":
         return finding.count == 1 and not finding.subjects
     if kind == "probe":
@@ -260,14 +270,6 @@ def _holds(entry: dict, finding: cdisccore.Finding, rows: list[dict] | None,
         return bool(finding.subjects) and set(finding.subjects) <= allowed \
             and finding.count == finding.listed == finding.named
     raise ValueError(f"core_findings.yaml: unknown kind '{kind}'")
-
-
-def _repeated(keys: list[tuple]) -> int:
-    """How many items of a list have a value that occurs more than once."""
-    counts: dict[tuple, int] = {}
-    for key in keys:
-        counts[key] = counts.get(key, 0) + 1
-    return sum(number for number in counts.values() if number > 1)
 
 
 def describe(finding: cdisccore.Finding) -> str:
@@ -573,36 +575,65 @@ def package_problems(package: dict[str, dict]) -> list[str]:
     return problems
 
 
-def term_problems(tables: dict[str, list[dict]], package: dict[str, dict]) -> tuple[int, list[str]]:
-    """Values checked, and values of controlled variables that the package does not hold.
+# The codelist of DSDECOD by the category of the record (SDTMIG v3.4, DS).
+DSDECOD_CODELIST = {"DISPOSITION EVENT": "NCOMPLT", "PROTOCOL MILESTONE": "PROTMLST"}
+
+
+def term_problems(tables: dict[str, list[dict]], package: dict[str, dict],
+                  study: dict[str, dict] | None = None) -> tuple[int, list[str]]:
+    """Values checked, and values of controlled variables that their codelist does not hold.
 
     CORE 1.0.0 does not report a value outside a codelist (a planted SEX of
-    X passes it), so the gate checks the values itself, against the package
-    that CORE ships.
+    X passes it), so the gate checks the values itself:
+
+    - a variable with a codelist of CDISC CT, against the package that CORE
+      ships. DSDECOD has two: the reasons for non-completion for a
+      disposition event, the milestones for a protocol milestone;
+    - DM.COUNTRY, against the country codes of `terms.COUNTRIES` (ISO 3166-1
+      alpha-3; the package holds no country codes);
+    - with `study` (`sdtm.study_codelists`), a variable with a codelist of
+      the study (arms, elements, causality, treatment names), against that.
     """
-    def allowed(names: tuple[str, ...]) -> set[str]:
-        return {value for name in names for value in package[terms.CT[name]["code"]]["terms"]}
+    def allowed(name: str) -> set[str]:
+        return set(package[terms.CT[name]["code"]]["terms"])
+
+    def of_study(name: str) -> set[str] | None:
+        if study is None or name not in study or name in ("TSPARMCD", "TSPARM"):
+            return None
+        return set(study[name].get("decode") or study[name].get("values") or ())
 
     checked = 0
     problems = []
     for domain_name, rows in tables.items():
         for variable in sdtm.DOMAINS[domain_name].variables:
+            fixed: set[str] | None = None
             if variable.codelist == "DSDECOD":
-                names: tuple[str, ...] = ("NCOMPLT", "PROTMLST")
+                by_category = {category: allowed(name)
+                               for category, name in DSDECOD_CODELIST.items()}
             elif variable.codelist in terms.CT:
-                names = (variable.codelist,)
+                fixed, listed = allowed(variable.codelist), variable.codelist
+            elif (domain_name, variable.name) == ("DM", "COUNTRY"):
+                fixed, listed = set(terms.COUNTRIES), "the country codes of the generator"
+            elif variable.codelist and of_study(variable.codelist) is not None:
+                fixed = of_study(variable.codelist)
+                listed = f"the study codelist {variable.codelist}"
             else:
                 continue
-            good = allowed(names)
             for row in rows:
                 value = row[variable.name]
                 if value is None:
                     continue
                 checked += 1
+                if fixed is None:
+                    listed = DSDECOD_CODELIST.get(row.get("DSCAT"), "no codelist")
+                    good = by_category.get(row.get("DSCAT"), set())
+                else:
+                    good = fixed
                 if value not in good:
                     where = row.get("USUBJID") or ""
-                    problems.append(f"{domain_name}.{variable.name} = '{value}' {where}: not a "
-                                    f"term of {' or '.join(names)}")
+                    of = f" of a record with DSCAT '{row.get('DSCAT')}'" if fixed is None else ""
+                    problems.append(f"{domain_name}.{variable.name} = '{value}' {where}{of}: "
+                                    f"not a term of {listed}")
     by_code: dict[str, set[str]] = {}
     for codelist in package.values():
         for value, code in codelist["terms"].items():
@@ -628,15 +659,35 @@ def terms_check(root: Path, out: Out, folder: Path, seeds: tuple[str, ...] = SEE
     if not studies.is_dir():
         generate_all(root, studies, seeds)
 
+    catalog = catalogs.load(catalogs.default_dir(root))
+    label = study.catalog_label(catalog)
+
+    def lists_of(seed: str, tables: dict[str, list[dict]]) -> dict[str, dict]:
+        return sdtm.study_codelists(pgfix.sample(seed, label), tables)
+
     # Planted defects: a value outside its codelist, and a term with a wrong code.
-    broken = copy.deepcopy(study.read_tables(studies / seeds[0], "twin"))
+    first = study.read_tables(studies / seeds[0], "twin")
+    broken = copy.deepcopy(first)
     broken["DM"][0]["SEX"] = "X"
     broken["AE"][0]["AESEV"] = "TERRIBLE"
-    _, planted = term_problems(broken, package)
+    _, planted = term_problems(broken, package, lists_of(seeds[0], first))
     if len(planted) != 2:
         out(f"the check did not report the two planted values, but {planted[:3]}")
         return False
     out(f"planted defect: SEX = X and AESEV = TERRIBLE are reported: {planted[0][:80]}")
+    # Planted defects: a milestone term in a disposition event, a country that is none,
+    # a causality outside the scale of the study.
+    broken = copy.deepcopy(first)
+    event = next(row for row in broken["DS"] if row["DSCAT"] == "DISPOSITION EVENT")
+    event["DSDECOD"] = "RANDOMIZED"
+    broken["DM"][0]["COUNTRY"] = "XXX"
+    broken["AE"][0]["AEREL"] = "MAYBE"
+    _, planted = term_problems(broken, package, lists_of(seeds[0], first))
+    if len(planted) != 3:
+        out(f"the check did not report the three planted values, but {planted[:4]}")
+        return False
+    out("planted defect: a milestone term in a disposition event, COUNTRY = XXX and AEREL = "
+        f"MAYBE are reported: {next(p for p in planted if 'DSDECOD' in p)[:110]}")
     wrong = copy.deepcopy(package)
     wrong[terms.CT["SEX"]["code"]]["terms"]["F"] = "C00000"
     if not package_problems(wrong):
@@ -648,7 +699,8 @@ def terms_check(root: Path, out: Out, folder: Path, seeds: tuple[str, ...] = SEE
     total = 0
     for seed in seeds:
         for which in study.PLACES:
-            checked, found = term_problems(study.read_tables(studies / seed, which), package)
+            tables = study.read_tables(studies / seed, which)
+            checked, found = term_problems(tables, package, lists_of(seed, tables))
             total += checked
             problems += [f"seed {seed} {which}: {problem}" for problem in found]
     for problem in problems[:20]:
@@ -656,7 +708,8 @@ def terms_check(root: Path, out: Out, folder: Path, seeds: tuple[str, ...] = SEE
     listed = sum(len(c["terms"]) for c in terms.CT.values()) + len(terms.TS_PARAMETERS)
     out(f"{listed} terms of {len(terms.CT)} codelists and the trial summary parameters agree "
         f"with the package; {total} values of controlled variables in {2 * len(seeds)} "
-        f"datasets checked: {len(problems)} problems")
+        f"datasets checked, the country codes and the codelists of each study included: "
+        f"{len(problems)} problems")
     return not problems
 
 

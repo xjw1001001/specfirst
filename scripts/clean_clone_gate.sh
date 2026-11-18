@@ -60,7 +60,7 @@ step() {
   "$@"
   local code=$?
   if [ "$code" -ne 0 ]; then
-    echo "clean clone gate $wp: FAIL ('$*' exited $code; clone kept in $clone)"
+    echo "clean clone gate $wp: FAIL ('$*' exited $code; clone: $clone, which does not last)"
     exit "$code"
   fi
 }
@@ -80,4 +80,7 @@ step bash env/install.sh
 step specfirst fetch
 step specfirst gate "$wp" --clean
 echo
-echo "clean clone gate $wp: PASS (clone kept in $clone until /tmp is cleared)"
+echo "clean clone gate $wp: PASS (clone: $clone)"
+echo "The clone does not last: under WSL /tmp is cleared when the instance restarts, about a"
+echo "minute after the last command ends. Copy what must be kept in the same command that"
+echo "runs this script (docs/lessons.md, lesson 39). The log is in build/gates/$wp/ here."

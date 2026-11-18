@@ -131,7 +131,7 @@ the gold records mark the same 9 as unseparated: yes
 ```
 
 The first version of the study marked two decisions as unseparated, the
-two its author had thought of; mutation finds nine (lesson 43). The gold
+two its author had thought of; mutation finds nine (lesson 51). The gold
 records now carry what mutation finds, and the check fails when they do
 not. A kit of gen-2a has probes for every pair of alternatives; this study
 has none for partial dates, dose times, a second exposure record or a
