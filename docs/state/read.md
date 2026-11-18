@@ -77,8 +77,9 @@ Numbers are in docs/reports/read-1a.md. In short:
 - On each of the ten kits the gold decisions, built again, give the files
   of the kit, and arm C scores 100% in both stages.
 - Arm S builds nothing on the chain in any kit (below). At stage T it
-  gives between 0 and 30 gold cells of a kit: the report has the line of
-  every kit. That is the floor arm R is compared with.
+  gives between 0 and 25 of the 15 to 30 gold cells of a kit's twin: the
+  report has the line of every kit. That is the floor arm R is compared
+  with.
 - Every decision of every kit, read as each other value of its matrix,
   is found by the reading score, shown on the twin exactly where the
   matrix says, and attributed to that decision in every wrong cell.
@@ -150,11 +151,13 @@ How to run things:
   `--decisions FILE`), `specfirst score defects`, `specfirst score pilot`.
   The first two need neither the fetch cache nor R; a run takes seconds.
 - `specfirst gen kits --seed gen-2a --count 10 --out DIR` writes the kits
-  of the gate (each twice, for P1; about 3 minutes with four at a time
-  through `specfirst.score.gate.write_kits`, which writes each once);
-  `specfirst score kits DIR` is what the gate runs on them, about a minute
-  per kit; `specfirst score kit DIR/kit-001` one kit.
-- `specfirst gate read-1a` takes about 20 minutes, half of it the kits.
+  of the gate, each twice (P1). `specfirst.score.gate.write_kits` writes
+  each once, four at a time: a minute and a half. `specfirst score kits
+  DIR` is what the gate runs on them (half a minute per kit on the Linux
+  file system, a minute from the worktree on `/mnt/d`); `specfirst score
+  kit DIR/kit-001` scores one kit.
+- `specfirst gate read-1a` takes about 9 minutes on a clone in the Linux
+  file system: 3 and a half for the unit tests, 4 and a half for the kits.
   Wrap a gate, a test suite or a build of kits in `flock
   /run/lock/specfirst-heavy.lock <command>` (lesson 32).
 - A gate of a commit runs on a clone (lesson 28). On this machine a clone
