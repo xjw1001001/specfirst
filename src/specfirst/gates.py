@@ -303,6 +303,23 @@ def _defects_3a(ctx: Context) -> bool:
     return _pytest(ctx, "tests/defects", "defects.xml", REAL3A_DEFECTS)
 
 
+def _score(name: str) -> Callable[[Context], bool]:
+    """A check of the scorer (specfirst.score.gate), by its function name."""
+    def run(ctx: Context) -> bool:
+        from specfirst.score import gate
+
+        return getattr(gate, name)(ctx.root, ctx.out)
+    return run
+
+
+# read-1a: the test of the scorer on the pilot that the gate must see pass.
+READ1A_PILOT_TESTS = ("P1-arm-s",)
+
+
+def _score_pilot_tests(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/score", "score.xml", READ1A_PILOT_TESTS)
+
+
 _REAL1_CHECK = f"specfirst check {PILOT} --build build/p1/{PILOT}/first"
 
 GATES: dict[str, tuple[Check, ...]] = {
@@ -425,6 +442,33 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("engines", "specfirst.gen.gate2.engines: the Python and the R engine on every "
               "result", _gen2("engines")),
         Check("splits", "specfirst.gen.gate2.splits: the splits of section 6.7", _gen2("splits")),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # ADR-005, part read-1a (PLAN.md section 13.6, read-1 for the slice): the planted
+    # defects of section 9.5 that apply to the slice are each detected and attributed
+    # to the right layer; the parser control scores 100%. First on a hand-made study
+    # and on the pilot (report only), then on the kits of the gate of gen-2a, which the
+    # check `kits of gen-2a` writes again from the seed of that gate: on every kit the
+    # gold built again is the gold of the kit, the control scores 100% in both stages,
+    # no planted defect fails and the sweep of its matrix has no problem; every defect
+    # is detected and attributed on at least one kit.
+    "read-1a": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("hand-made study", "specfirst.score.gate.hand_table: HAND01 against the table "
+              "worked out by hand", _score("hand_table")),
+        Check("separation", "specfirst.score.gate.separated: every other value of every "
+              "decision, alone on gold", _score("separated")),
+        Check("parser control", "specfirst score hand --arm C (both stages)", _score("control")),
+        Check("standard alone", "specfirst score hand --arm S (both stages)", _score("arms")),
+        Check("planted defects", "specfirst score defects", _score("planted_defects")),
+        Check("pilot", "specfirst score pilot (report only)", _score("pilot_report")),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/score -s -q", _score_pilot_tests),
+        Check("kits of gen-2a", "specfirst.score.gate.kits: the 10 kits of the seed of the "
+              "gate gen-2a, written again; then specfirst score kits", _score("kits")),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
