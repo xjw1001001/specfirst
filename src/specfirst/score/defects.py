@@ -360,12 +360,16 @@ def _quote(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
 
 
 def _span(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
-    cited = _cited(case, records)
-    others = [r for r in records if r.get("citations") and r is not (cited[0] if cited else None)
-              and r["citations"][0]["doc"] == (cited[0]["citations"][0]["doc"] if cited else "")]
-    if not cited or not others:
+    # The first decision of the scope that shares its document with another decision: a
+    # kit states its decisions in two documents, the protocol and the SAP (ADR-009).
+    for first in _cited(case, records):
+        others = [r for r in records if r.get("citations") and r is not first
+                  and r["citations"][0]["doc"] == first["citations"][0]["doc"]]
+        if others:
+            break
+    else:
         return "the scope has no two decisions cited in one document"
-    key = (cited[0]["id"], cited[0]["unit"])
+    key = (first["id"], first["unit"])
     anchor = others[0]["citations"][0]["anchor"]
     changed = [{**r, "citations": [{**c, "anchor": anchor} for c in r["citations"]]}
                if (r["id"], r["unit"]) == key else r for r in records]

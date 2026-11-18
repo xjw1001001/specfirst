@@ -140,11 +140,19 @@ def test_the_parser_control_scores_100_percent_on_the_kit(scored, kit):
     found, lines = scored
     assert found.gold == [] and found.control_holds
     scoped = sum(1 for r in kit.records if r["unit"] in kit.units)
+    # A decision the oracle answers (the ask demo of kit 7) is scored as asked, not on
+    # quote and span (section 4.5: study_input).
+    asked = sum(1 for r in kit.records if r["unit"] in kit.units and r["status"] == "asked")
+    assert asked == 2
     for stage, decisions_scored in (("C", scoped), ("T", 7)):
         result = found.control[stage]
         assert result.perfect and result.silent == [] and result.behind == {}
-        for name in ("value", "status", "quote", "span"):
-            assert result.reading.total(name) == (decisions_scored, decisions_scored)
+        cited = decisions_scored - (asked if stage == "C" else 0)
+        for name, wanted in (("value", decisions_scored), ("status", decisions_scored),
+                             ("quote", cited), ("span", cited)):
+            assert result.reading.total(name) == (wanted, wanted)
+        if stage == "C":
+            assert result.reading.asks.exact and result.reading.asks.gold == asked
     assert any(line.startswith("  arm C, stage T:") and line.endswith(": 100%") for line in lines)
 
 
