@@ -22,6 +22,13 @@ make fail (D2), one read-back that cannot tell agreement from abstention
 (D3), and a sentence of the natural SAP that contradicts what the protocol
 states (D4).
 
+Result of pass 2, on `901be3d`: SIGNED. D1 to D4 are settled and the three
+clean-clone gates pass on `901be3d`; three new findings (D13 to D15) do
+not block. ADR-009 items 4 and 5 are the owner's questions, and the merge
+waits for the answers. Pass 2 is the last section of this file. Two places
+of pass 1 were touched for it: this paragraph and the name of the verdict
+line of pass 1.
+
 ## How the review was done
 
 - Windows git for the diff and the history, always with `git -C
@@ -488,4 +495,249 @@ writing the answer, and no more.
    file and name its hash in `calls.jsonl`, and make the read-back of D3
    that way.
 
-Verdict: NOT SIGNED (blocking: D1, D2, D3, D4)
+Verdict of pass 1: NOT SIGNED (blocking: D1, D2, D3, D4)
+
+## Pass 2
+
+Reviewed: `901be3d` ("gen-3a: the findings of pass 1 of the review"), on
+top of `50bcbe1` (pass 1 of this file, unchanged until now). `git diff
+--stat 50bcbe1 901be3d` lists 18 files, 465 lines in, 57 out: `natural.py`,
+`documents.py`, `gen/command.py`, `gates.py`, `score/kit.py`, `GENERATOR`
+= `gen-3a.2`, the store (calls.jsonl, one record of paragraphs.jsonl, five
+new call files, the README), `test_gen_natural.py`, ADR-009, lessons 58
+to 60 and `docs/state/gen.md`. `PLAN.md`, `standard/`, `env/` and
+`third_party/` are again unchanged. When I finished, the worktree also held
+the author's uncommitted `docs/reports/gen-3a.md` and three copies of the
+gate logs. I compared the copies with `build/gates/<wp>/clean-clone.log`
+(`cmp`: the same) and read the report only for D9.
+
+Same rules as pass 1. No probe of mine wrote a kit or built anything. All
+ran as before with `scripts/env.sh`, against the code of `901be3d` (the
+worktree was clean at HEAD `901be3d` when they ran). I took the gate
+results from the author's three clean-clone logs. I waited for them with a
+background loop on `/root/scratch-gen3a/clean-gates.txt`.
+
+### What I ran in pass 2
+
+J. The three clean-clone gates on `901be3d` (the author's runs; summary and
+the lines that settle findings).
+
+```text
+/root/scratch-gen3a/clean-gates.txt:
+gen-3a exit=0 seconds=511
+gen-2a exit=0 seconds=747
+read-1a exit=0 seconds=1157
+
+build/gates/gen-3a/clean-clone.log (commit: 901be3dce07663a9475f34ad4bfb734ec0297760)
+1055 passed, 23 deselected in 343.68s
+kit 1 ... kit 10: generator gen-3a.2; tiers full, standard, full, ask, standard, full, ask, standard, full, standard; kits of the ask demo: 2
+the store: 61 statements, 61 accepted, 0 of them by the phrasing template; 10 filler paragraphs; 3 model calls
+planted bad rewrite proposed to the loop: ... SLOTS: the number 85 is not in the statement; '80' stands 1 times ...; not accepted and not sent to the verifier: yes
+planted defect in kit 1: the summary 30 lines longer: the check reports it: the summary has 80 lines, more than 60
+[every plant of pass 1 reported again; every kit, every check: 0 problems (80 such lines)]
+GATE gen-3a: PASS
+
+build/gates/gen-2a/clean-clone.log (commit 901be3d)
+  P1: 128 files of two builds by two processes, the manifest included: 0 differ   [and the other kits]
+PASS kits, separation, engines, splits ...   GATE gen-2a: PASS
+
+build/gates/read-1a/clean-clone.log (commit 901be3d)
+the checks on planted defects, on the first kit that passes:
+  planted in the gold of the kit: the first cell of the twin's grid reads '(N=48)9': the gold check fails: yes
+  planted in the document: the statement [1/s2] of trt.actual.source is taken out: the control is not 100%; wrong by value: trt.actual.source: the control fails: yes
+  planted in the matrix: the pair of tfl.population with randomized says the opposite: the comparison with the matrix fails: yes
+  arm C, stage C: 22 decisions: value 22 of 22; status 22 of 22; quote 20 of 20; span 20 of 20; ... : 100%   [the two kits of the ask demo]
+parser control 100% in both stages: 10 of 10 kits
+  S3-window (L4): detected and attributed on 3 kits; not planted on 7
+  S5-column (L7): detected and attributed on 8 kits; not planted on 2
+  S10-frozen (L4): detected and attributed on 5 kits; not planted on 3; silent on 2
+  S12-span (L0): detected and attributed on 10 kits;
+every defect that applies is detected and attributed on at least one kit: yes
+GATE read-1a: PASS
+```
+
+These counts per defect are the ones the owner was shown for read-1a (the
+window on 3 kits, the frozen list on 5, the missing column on 8). The new
+documents did not change what the scorer detects.
+
+K. The store against its call files, again (Python on the Windows side).
+
+```text
+sha256 of every file in calls/ = the hashes in calls.jsonl (request, answer, message): equal (9 of 9)
+abstention in calls.jsonl: readback-1 'none'; readback-2 '(none)'; rewrite-1 no field (not a read-back)
+readback-2.request.json rules[0]: "... If the paragraph states none of them, or more than one, answer '(none)'."
+readback-2.request.json answer template: "pick": "<alternative id or none>"
+readback-2.answer.json: {"items": [{"item": "rc04e6216ef90", "pick": "none"}], "filler": []}
+readback-2.message.txt: rc04e6216ef90: pick "none", which is an alternative (the id "none", not the abstention answer "(none)"). ...
+readback-1.message.txt: Answered 60 items and 10 filler items; 0 items answered "none" as an abstention. One item (rc04e6216ef90) has the alternative id "none", ...
+```
+
+L. `r5.py` (pure functions of `901be3d`): (a) the loop with a store in a
+temporary folder, where the verifier answers the new abstention `(none)`
+three times for one paragraph; (b) the decision that check 2 of read-1a
+now takes out of each of the ten dev kits; (c) the read-backs of the
+repository's store as the gate counts them.
+
+```text
+(a) read-back 1: items sent 1; ... read back as (none): MISMATCH, the statement is last_dose_plus_days; failed 0; accepted None; attempts 1; counted read-backs 0
+(a) read-back 2: [the same]
+(a) read-back 3: [the same]
+(a) a new rewrite requested: ['28e37381aefc8c6b'] ; read-back requested again: 1
+(a) answer template of the read-back request: <alternative id or none>
+(b) kit-001 full: takes out trt.actual.source (default: False)   [kits 2 to 10: trt.planned.source, trt.actual.source,
+    trt.end.source or trt.start.source, each with default: False]
+(c) counted read-backs of 5875cc9d5d85dbf2: [{'agrees': True, 'by': 'readback-2', 'pick': 'none'}]
+(c) abstentions: {'rewrite-1': '(none)', 'readback-1': 'none', 'readback-2': '(none)'}
+(c) attempts with no counted read-back: []
+```
+
+M. `r3.py` and `r4.py` of pass 1 again, on the code of `901be3d`.
+
+```text
+r3: PROBABLY RELATED -> ["'PROBABLY' is not in the statement"]; NOT RELATED -> ["'NOT' is not in the statement"];
+    possible, probable -> ["'POSSIBLE' is not in the paragraph", "'PROBABLE' is not in the paragraph"];
+    rows without ANY -> ["'ANY' is not in the paragraph"]; plus 2 days -> ['the number 2 is not in the statement'];
+    14 working days, WEEK 4 or a later visit, Active Placebo, other than Placebo and Low Dose -> PASSES
+r4: accepted paragraphs with a problem of the stricter reading: 0; filler with a digit: []; all store text ASCII: True
+```
+
+N. Plants of the new clauses (Grep in `tests/` and `gen/gate3.py`):
+
+```text
+pattern "filler paragraphs, the generator|FILLER_SECTIONS|too long|MAX_WIDTH" in tests/ and src/specfirst/gen/gate3.py: no match
+```
+
+### The findings of pass 1
+
+- D1, settled. `901be3d` contains `b55db77`. The gate gen-3a passes on a
+  clean clone with 1055 unit tests passed (J).
+- D2, settled. Check 2 of `kits.planted` now takes the first stated
+  decision of the slice whose value is not the house default
+  (`score/kit.py`). On every dev kit that is a decision away from its
+  default (L b). In the gate read-1a the check took `trt.actual.source`
+  out of kit 1 and printed "the control fails: yes" (J). Lesson 59
+  records the failure.
+- D3, settled. `calls.jsonl` names the abstention of each read-back call.
+  `Store.readbacks` does not count a pick that equals it, so the pick
+  `none` of `readback-1` counts for nothing. `readback-2` read the
+  paragraph again under `(none)` and picked `none`, and its kept final
+  message says that this is the alternative and not the abstention (K).
+  The gate counts only `readback-2` for that paragraph (L c). A planted
+  store with only the old read-back is reported ("cannot tell agreement
+  from abstention", unit test). Two weaknesses remain and do not block:
+  D13 and D14 below. The final messages of `rewrite-1` and `readback-1`
+  were written down by the executor after pass 1, and two lines of
+  `calls.jsonl` were rewritten to name them. The README says both under
+  "Corrections of the log". They are evidence of the same kind as the
+  answer files (owner question 2, now ADR-009 item 5). The message of
+  `readback-1` says "Answered 60 items" for a call of 61 items and 10
+  filler: it reads as 60 plus the one item it names.
+- D4, settled. The SAP introduction now names both documents. In the tier
+  full it says "This plan and the protocol together state every
+  convention". In the tiers standard and ask it says "Where neither this
+  plan nor the protocol states a convention, the house standard ...
+  applies" (`documents.py`). A unit test checks it for every tier. The
+  gate's layout check holds every design paragraph of the ten kits
+  against `sap_paragraphs`, so the kits of J carry the new sentence.
+  Lesson 60 records it.
+- D5, settled for the slice. A value with a capital letter now keeps its
+  case. The paragraph may hold no number and no word in capitals that the
+  statement lacks, and capitals of the template text (`OTHER`) are
+  tokens. Five of my nine cases now fail, each for the right reason, and
+  four pass (M). ADR-009 decision 7 names those four as a known limit
+  ("What neither check sees") and books a check for the full gen-3. The
+  61 accepted paragraphs and every phrasing template of the slice pass
+  the new check (M; the unit tests of J), and so does the gate's slot
+  check on the ten kits.
+- D6, settled. `specfirst gate` refuses to run while
+  `SPECFIRST_REWRITES` is set (`gates.py`, unit test). Kits take their
+  filler from the keys the generator names (`documents.filler_wanted`).
+  A paragraph added to the store under another key changes no kit.
+  `layout` asks for two filler sections per document (unplanted, D15).
+  `kit.yaml` still does not pin the store. A kit can only change with
+  the store where one of its statements had no accepted text, and such a
+  kit fails the gate. I accept that.
+- D7, settled. `gen natural requests|propose` refuses dev, test and
+  sealed kits not of the gate seed while the store lies inside a checkout
+  (`command._secret_kits`, unit test with a dev kit, a train kit and a dev
+  kit of the gate seed). The handover tells read-2a never to score on
+  kits 5 to 10 of the gate seed as dev or test kits, and to keep the
+  store out of a task folder and under the canary scan.
+- D8, left to read-2a, with a handover note in `docs/state/gen.md`. It
+  does not block: no reader runs yet, and the command line is safe.
+- D9, carried. The uncommitted report of the part states the number
+  (38 of 61 within 0.9, two equal).
+- D10, now ADR-009 item 5 for the owner, with the call files and the
+  final messages kept and named by hash (K).
+- D11, settled. Summary lines are held to 100 characters (unplanted,
+  D15), and every kit of J passes. The filler sections are counted. The
+  summary showing the rule but not the slots is written into ADR-009
+  decision 9.
+
+### New findings
+
+#### D13. The read-back request still offers `none` as the abstention (does not block)
+
+What is wrong: the rules of the read-back request say `(none)`, but its
+answer template still says `"pick": "<alternative id or none>"`
+(`natural.py:526`). For an entry with the alternative `none`
+(`tfl.columns.total`), a verifier that follows the template to abstain
+writes `none`. Under the abstention `(none)` that pick counts as
+agreement.
+
+Evidence: K and L (a). `readback-2` is told apart only by its kept final
+message. The pick itself is the same as before.
+
+What would settle it: the template says `(none)` (for example
+`"<alternative id, or (none)>"`), with a unit test on it.
+
+#### D14. A real abstention never counts as a failed read-back, so the loop never falls back (does not block)
+
+What is wrong: `Store.readbacks` drops every pick that equals the
+abstention of its call, not only the ambiguous `none` of `readback-1`.
+Under `(none)` a real abstention ("the paragraph states none of the
+alternatives", which is a mismatch under section 6.6) is then neither a
+failure nor an agreement. `failed()` stays 0. `readback-requests` sends
+the same paragraph to the verifier again on every call. `requests` also
+asks for a new rewrite. The fallback to the phrasing template after three
+failures is never reached for paragraphs that the verifier abstains on.
+
+Evidence: L (a). Three abstentions on one paragraph give "MISMATCH" three
+times, `failed 0`, a new rewrite requested, and the same paragraph sent
+again.
+
+Why it does not block: it fails closed. A statement without an accepted
+text stays `missing`, and a kit with it fails the gate. The store of the
+gate holds no abstention (L c), so no kit or score of this part is wrong.
+It must be fixed before the loop runs for another seed.
+
+What would settle it: a pick equal to the abstention is dropped only when
+an alternative of the entry has that ID (the case of `readback-1`).
+Otherwise it counts as a read-back that does not agree. Plant it with
+the loop test: three abstentions, then the phrasing template.
+
+#### D15. Two new clauses have no plant (does not block)
+
+What is wrong: rule R5. The filler count of `layout` (`fillers !=
+FILLER_SECTIONS`, `documents.py`) and the summary width of 100 characters
+are new in `901be3d`. Neither gate3 nor any unit test plants them (N).
+The summary plant of the gate makes the page longer, not wider. The other
+new checks have their plants: the abstention, the case and the extra
+words of the slot check, the refusal of the gate and of the loop, and the
+read-1a check of D2, which the read-1a log shows on kit 1.
+
+What would settle it: two plants, a natural document with one filler
+section and a summary line of 101 characters, in gate3 or in
+`test_gen_natural.py`.
+
+### Questions for the owner
+
+The two questions of pass 1 are ADR-009, "For the owner", items 4 and 5,
+with the recommendation of pass 1. They do not change the verdict below:
+it covers correctness, and the executor merges only after the owner
+answers. If the owner does not approve item 4, the parser control and the
+gate read-1a on kits of the ask demo must be done again. If the owner
+does not approve item 5, the read-backs of the store must be done again
+by another route. In either case this review covers neither.
+
+Verdict: SIGNED

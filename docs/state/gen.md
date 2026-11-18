@@ -20,6 +20,16 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   Choices: docs/decisions/ADR-007.md; the owner approved the gate's
   reading of "applicable" for the slice only, and a rework is owed before
   the gate of the full gen-2 (see "Next").
+- gen-3a (2026-11-18), gate passed and review signed, NOT MERGED: two
+  questions for the owner first (ADR-009, "For the owner", items 4 and 5).
+  The protocol and the SAP of each kit in standard form and in natural
+  form; the tiers full, standard and the ask demo with the oracle; a
+  one-page summary; the visible probes in `kit.yaml`; the store of model
+  text and the loop of section 6.6 (`specfirst gen natural`); the gate
+  `gen-3a`. Gates on clean clones of `901be3d`: gen-3a 15 of 15, gen-2a 13
+  of 13, read-1a 14 of 14. Report: docs/reports/gen-3a.md. Review:
+  docs/reports/gen-3a.review.md (signed in pass 2). Choices:
+  docs/decisions/ADR-009.md.
 
 ## A kit: what the folder holds
 
@@ -235,6 +245,22 @@ For read-2a, from the review of gen-3a:
   out of a task folder and under the canary scan (section 11.2).
 
 ## Open
+
+From the review of gen-3a, to settle before the loop of the natural form
+runs for another seed (docs/reports/gen-3a.review.md, pass 2):
+
+- D14: a pick `(none)` (the paragraph states none of the alternatives)
+  counts neither as agreement nor as failure, so the loop never falls back
+  to the phrasing template for it. Drop a pick equal to the abstention only
+  when an alternative of the entry has that ID; count it as a failure
+  otherwise; plant three abstentions in the loop test.
+- D13: the answer template of the read-back request writes `none`; it
+  should write `(none)`.
+- D15: plant a natural document with one filler section and a summary line
+  of 101 characters (rule R5).
+- D5, the known limit of the slot check: an ordinary word added to a value
+  or a rule passes both checks; the verifier should also read back the slot
+  values before rewrites that move further from the standard form.
 
 - The data of a kit are a function of the design and the seed (gen-1a);
   the decisions are sampled to fit them. A probe that holds for one
