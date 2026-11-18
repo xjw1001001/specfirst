@@ -12,7 +12,9 @@ The arms that need no reader (ADR-005, decision 3):
     C   the control of section 9.3: the parser on the standard-form
         document that `specfirst render` writes for the stated decisions,
         and on the house standards document for the defaults. It must
-        score 100%; if it does not, the kit or the scorer is wrong.
+        score 100%; if it does not, the kit or the scorer is wrong. A case
+        that ships a standard-form document (a generated kit:
+        gold/docs/sap.md) is read from that document.
 
 Stages (ADR-005, decision 2). In the chain (`C`) both vectors are built
 from SDTM. In stage `T` both are built on the ADaM datasets of gold: the
@@ -21,13 +23,15 @@ table decisions alone are read, and no analysis dataset can differ.
 
 from __future__ import annotations
 
+import dataclasses
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from specfirst.compile import house as houses
 from specfirst.compile.standard_form import StandardForm, decision_record
+from specfirst.machine.canonical import content_hash
 from specfirst.score import attribute, build, reading
-from specfirst.score.candidate import Build, Data, Hooks, Key, Machine, vector
-from specfirst.score.display0 import Arm
+from specfirst.score.candidate import Arms, Build, Data, Hooks, Key, Machine, vector
 
 STAGES = ("C", "T")
 CONTROL_DOCUMENT, CONTROL_TITLE = "sap", "Standard form"
@@ -42,10 +46,17 @@ class Case:
     id: str
     units: tuple[str, ...]  # the units that are scored
     gold: list[dict]  # gold decision records, of every unit the build needs
-    arms: tuple[Arm, ...]
+    # The arms of the protocol for a decision vector: a decision can change the text
+    # that names an arm in a treatment column, never the arms (ADR-007, decision 2).
+    arms: Callable[[list[dict]], Arms]
     data: dict[str, Data]  # visible, twin -> the dataset
     documents: reading.Documents = field(default_factory=reading.Documents)
     stage: str = "C"
+    # The ID of the standard-form document of the study, when the case ships one.
+    standard_form: str | None = None
+    # The other values a study of this design can decide for a decision (a kit knows
+    # its design); None: the planted defects take an alternative without a slot.
+    variants: Callable[[Key], list[dict]] | None = None
 
     def gold_vector(self) -> list[dict]:
         return [{"id": r["id"], "unit": r["unit"], "value": r["value"]} for r in self.gold
@@ -76,13 +87,16 @@ class Result:
 def staged(machine: Machine, case: Case, name: str) -> tuple[Data, Build]:
     """The dataset both vectors are built on in the stage of the case, and the gold build."""
     data = case.data[name]
-    gold = machine.build(case.gold_vector(), data, case.arms)
+    records = case.gold_vector()
+    gold = machine.build(records, data, case.arms(records))
     if not gold.ok or gold.not_produced:
         raise ScoreError(f"{case.id}, {name}: the gold decisions do not build: "
                          f"{gold.failure or gold.not_produced}")
     if case.stage == "T":
-        data = Data(f"{data.name}/T", adam=gold.adam)
-        gold = machine.build(case.gold_vector(), data, case.arms)
+        # The ADaM of gold is named by the gold vector: a build is known by the name
+        # of its data, and two gold vectors on one dataset give two sets of ADaM.
+        data = Data(f"{data.name}/T/{content_hash(records)[:12]}", adam=gold.adam)
+        gold = machine.build(records, data, case.arms(records))
     return data, gold
 
 
@@ -111,7 +125,7 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
     builds, owners, axes = {}, {}, {}
     for name in case.data:
         data, gold = staged(machine, case, name)
-        made = machine.build(ours, data, case.arms, hooks)
+        made = machine.build(ours, data, case.arms(ours), hooks)
         scored = build.score(name, gold.grids, made.grids, made.ok, made.failure,
                              made.not_produced)
         other_axes = [(output.output, axis) for output in scored.outputs if output.produced
@@ -122,7 +136,7 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
         if prove:
             attribute.confirm(owners[name], axes[name], gold, made,
                               lambda records, data=data: machine.build(
-                                  records, data, case.arms, hooks))
+                                  records, data, case.arms(records), hooks))
         builds[name] = scored
     owning = {key for name in case.data for owner in [*owners[name], *axes[name]]
               for key in owner.decisions}
@@ -151,7 +165,7 @@ def _alone(machine: Machine, case: Case, key: Key, value: object) -> dict[str, i
     changed = {}
     for name in case.data:
         data, gold = staged(machine, case, name)
-        made = machine.build(records, data, case.arms)
+        made = machine.build(records, data, case.arms(records))
         scored = build.score(name, gold.grids, made.grids, made.ok, made.failure,
                              made.not_produced)
         changed[name] = len(scored.wrong()) + sum(
@@ -175,9 +189,8 @@ def separation(machine: Machine, case: Case, datasets: tuple[str, ...] | None = 
     """
     from specfirst.compile import compiler
 
-    wanted = case if datasets is None else Case(
-        case.id, case.units, case.gold, case.arms,
-        {name: case.data[name] for name in datasets}, case.documents, case.stage)
+    wanted = case if datasets is None else dataclasses.replace(
+        case, data={name: case.data[name] for name in datasets})
     found: dict[Key, list[tuple[dict, dict[str, int]]]] = {}
     for record in case.gold:
         if record.get("unit") not in case.units or record.get("value") is None:
@@ -200,15 +213,19 @@ def standard_alone(machine: Machine, case: Case, prove: bool = True) -> Result:
 def control_records(machine: Machine, case: Case) -> tuple[list[dict], reading.Documents]:
     """Arm C: what the parser reads from the standard-form documents of the gold decisions.
 
-    The stated decisions are rendered as `specfirst render` renders them
-    and parsed as `specfirst parse` parses them; the defaults are parsed
-    from the house standards document. Returns the records and the
-    documents they cite.
+    The stated decisions are read by the parser of `specfirst parse` from
+    the standard-form document of the case; a case without one gets the
+    document that `specfirst render` writes for its stated decisions. The
+    defaults are the records of the house standards document. Returns the
+    records and the documents they cite.
     """
     form = StandardForm(machine.catalog)
-    stated = [{"id": r["id"], "unit": r["unit"], "value": r["value"]} for r in case.gold
-              if r.get("status") == "stated" and r.get("value") is not None]
-    text = form.render_document(CONTROL_DOCUMENT, CONTROL_TITLE, stated)
+    if case.standard_form is not None:
+        text = case.documents.texts[case.standard_form]
+    else:
+        stated = [{"id": r["id"], "unit": r["unit"], "value": r["value"]} for r in case.gold
+                  if r.get("status") == "stated" and r.get("value") is not None]
+        text = form.render_document(CONTROL_DOCUMENT, CONTROL_TITLE, stated)
     doc, parsed = form.parse_document(text)
     records = [decision_record(item, doc, "stated", "document_rule") for item in parsed]
     have = {(r["id"], r["unit"]) for r in records}
@@ -216,8 +233,8 @@ def control_records(machine: Machine, case: Case) -> tuple[list[dict], reading.D
     records += [r for r in houses.default_decisions(machine.catalog, machine.house)
                 if (r["id"], r["unit"]) in wanted - have]
     documents = reading.Documents({
-        **case.documents.texts, doc: text,
-        houses.DOCUMENT_ID: houses.standards_document(machine.catalog, machine.house)})
+        houses.DOCUMENT_ID: houses.standards_document(machine.catalog, machine.house),
+        **case.documents.texts, doc: text})
     return records, documents
 
 

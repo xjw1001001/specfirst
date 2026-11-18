@@ -448,8 +448,11 @@ GATES: dict[str, tuple[Check, ...]] = {
     # ADR-005, part read-1a (PLAN.md section 13.6, read-1 for the slice): the planted
     # defects of section 9.5 that apply to the slice are each detected and attributed
     # to the right layer; the parser control scores 100%. First on a hand-made study
-    # and on the pilot, then on the kits of gen-2a: the last check fails until those
-    # kits are scored, so the gate cannot pass on the first half alone.
+    # and on the pilot (report only), then on the kits of the gate of gen-2a, which the
+    # check `kits of gen-2a` writes again from the seed of that gate: on every kit the
+    # gold built again is the gold of the kit, the control scores 100% in both stages,
+    # no planted defect fails and the sweep of its matrix has no problem; every defect
+    # is detected and attributed on at least one kit.
     "read-1a": (
         Check("environment", "specfirst doctor", _environment),
         Check("pins", "specfirst fetch --verify", _pins),
@@ -464,7 +467,8 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("planted defects", "specfirst score defects", _score("planted_defects")),
         Check("pilot", "specfirst score pilot (report only)", _score("pilot_report")),
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/score -s -q", _score_pilot_tests),
-        Check("kits of gen-2a", "specfirst.score.gate.kits", _score("kits")),
+        Check("kits of gen-2a", "specfirst.score.gate.kits: the 10 kits of the seed of the "
+              "gate gen-2a, written again; then specfirst score kits", _score("kits")),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),

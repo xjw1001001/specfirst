@@ -55,8 +55,7 @@ from specfirst.machine import layout as layouts
 from specfirst.machine.canonical import sha256_file
 from specfirst.paths import cache_dir
 from specfirst.score import build
-from specfirst.score.candidate import SUBJECT_KEY, Build, Data, Hooks, Key, Machine
-from specfirst.score.display0 import Arm
+from specfirst.score.candidate import SUBJECT_KEY, Arms, Build, Data, Hooks, Key, Machine
 
 KIT = "cdiscpilot01"
 OUTPUT, UNIT, OUR_OUTPUT = "Out14-3-1-1", "tfl-ae-summary", "Out_AESUM"
@@ -135,15 +134,14 @@ def reference(root: Path) -> tuple[Data, ars.Event, layouts.Layout]:
     return Data(f"{KIT}/reference", adam=tables), event, layout
 
 
-def arms(data: Data) -> tuple[Arm, ...]:
+def arms(data: Data) -> Arms:
     """The arms of the pilot, from the reference ADSL: the actual treatment and its
     numeric code, which is the daily dose (0, 54 and 81)."""
     table = data.adam["ADSL"]
     doses = dict(zip(table.column("TRT01A").to_pylist(), table.column("TRT01AN").to_pylist(),
                      strict=True))
     ordered = sorted(doses.items(), key=lambda item: item[1])
-    return tuple(Arm(label, float(dose), place) for place, (label, dose)
-                 in enumerate(ordered, start=1))
+    return [{"code": label, "dose": float(dose), "names": [label]} for label, dose in ordered]
 
 
 def labels(machine: Machine) -> dict[str, str]:

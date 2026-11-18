@@ -12,6 +12,8 @@ subjects, a few seconds in all, no fetch cache and no R.
 
 from __future__ import annotations
 
+import dataclasses
+
 import pytest
 
 from specfirst import gates
@@ -98,8 +100,7 @@ def test_the_standard_alone_gives_the_table_at_stage_t(machine):
 
 
 def test_stage_t_reads_table_decisions_only(machine, case):
-    staged = scorer.Case(case.id, case.units, case.gold, case.arms, case.data, case.documents,
-                         stage="T")
+    staged = dataclasses.replace(case, stage="T")
     with pytest.raises(scorer.ScoreError, match="table decisions only"):
         scorer.run(machine, staged, [])
 
@@ -124,7 +125,7 @@ EXPECTED = {
     "S2-set": ("L5", 10, 8, False),
     "S2-set-rule": ("L4", 0, 8, False),
     "S3-window": ("L4", 0, 2, False),
-    "S4-denominator": ("L5", 1, 2, False),
+    "S4-denominator": ("L5", 2, 1, False),
     "S5-column": ("L7", 6, 6, True),
     "S9-sort": ("L7", 0, 0, True),
     "S10-frozen": ("L4", 0, 2, False),
@@ -194,8 +195,7 @@ def test_the_suite_stops_when_the_control_does_not_hold(machine, case):
             record["status"] = "default"  # gold calls a stated decision a default
     lines: list[str] = []
     passed, outcomes = defects.suite(
-        machine, scorer.Case("broken", case.units, broken, case.arms, case.data,
-                             case.documents), lines.append)
+        machine, dataclasses.replace(case, id="broken", gold=broken), lines.append)
     assert not passed and outcomes == []
     assert "no planted defect counts" in lines[-1]
 
@@ -236,6 +236,28 @@ def test_two_wrong_decisions_behind_one_cell_have_one_owner(machine, case, contr
     assert result.silent == [] and result.behind == {}
 
 
+def test_an_axis_of_columns_is_owned_by_the_data_behind_it(machine, case, control):
+    """A decision that writes the treatment label in another way changes the headers
+    of the treatment columns. The columns are the values of the grouping variable:
+    the axis rests on data, and its owner is found at L4 like that of a cell
+    (lesson 52: the walk of an axis began at the analyses, and the axis had no owner)."""
+    key = ("trt.actual.source", "mod-treatment")
+    result = scorer.run(machine, case, misread(control, {key[0]: {"rule": "first_ex_treatment"}}),
+                        documents=control[1])
+    for dataset in ("visible", "twin"):
+        table = build.table_of(scorer.staged(machine, case, dataset)[1].grids[hand.OUTPUT])
+        score = result.builds[dataset].outputs[0]
+        assert not score.columns_equal and score.rows_equal
+        # The three treatment columns have other headers; the total column stands.
+        assert len(result.owners[dataset]) == 18 == len(table.cells) - len(table.rows)
+        assert {cell.reason for cell in score.wrong} == {"no_column"}
+        [axis] = result.axes[dataset]
+        assert (axis.axis, axis.layer, axis.element) == ("columns", "L4", "adam:ADSL.TRT01A")
+        for owner in [axis, *result.owners[dataset]]:
+            assert owner.layer == "L4" and owner.decisions == (key,) and owner.confirmed is True
+    assert result.silent == [] and result.behind == {}
+
+
 def test_the_candidate_and_gold_differ_only_where_the_decisions_do(machine, case, control):
     """A candidate that is right is built from the very vector of gold."""
     made = vector(machine.catalog, machine.house, case.gold, control[0], case.units)
@@ -267,14 +289,19 @@ def test_the_command_scores_an_arm(root, capsys):
     assert "twin: cells correct: 24 of 24 gold cells of the outputs produced" in text
 
 
-def test_the_gate_of_the_part_cannot_pass_before_the_kits_are_scored(root):
+def test_the_gate_of_the_part_has_the_checks_of_the_plan():
+    """ADR-005, part read-1a: the planted defects and the parser control, on the
+    hand-made study and on the kits of gen-2a; the pilot is a report. Drift first."""
+    from specfirst.gen import gate2
+
     names = [check.name for check in gates.GATES["read-1a"]]
-    assert names[0] == "environment" and "kits of gen-2a" in names
-    assert {"hand-made study", "separation", "parser control", "planted defects",
-            "pilot"} <= set(names)
-    lines: list[str] = []
-    assert gate.kits(root, lines.append) is False
-    assert "read-1a is not done" in lines[-1]
+    assert names[0] == "environment" and names[-1] == "ASCII"
+    assert {"unit tests", "hand-made study", "separation", "parser control", "standard alone",
+            "planted defects", "pilot", "pilot tests", "kits of gen-2a",
+            "cache untouched"} <= set(names)
+    # The kits are those of the gate of gen-2a: its seed, its count, its limit of workers.
+    assert (gate2.SEED, gate2.COUNT) == ("gen-2a", 10) and gate2.MAX_WORKERS <= 4
+    assert gate.write_kits.__defaults__ == (gate2.SEED, gate2.COUNT)
 
 
 def test_the_checks_of_the_gate_hold_on_the_hand_made_study(root):

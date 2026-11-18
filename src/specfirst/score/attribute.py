@@ -24,6 +24,14 @@ explains every difference after it:
 A build that stopped has no artifacts to compare. Its cells are owned by
 the layer `build`, with the rule that failed (section 9.2, validity).
 
+An axis that is not the gold axis (section 9.2, structure) is walked the
+same way. The columns of a table are the groups of a grouping: the values
+its variable has on the records of the analysis set. So the columns rest on
+data as well, on the ADaM columns that the analyses of the output read as a
+grouping or as an analysis set, and a treatment label that a decision
+writes in another way owns the axis at L4. The rows of the tables of this
+slice are listed by the layout and rest on no data.
+
 The decision. Of the decisions in which the candidate differs from gold,
 the owners are those that decide the element that differs. That is the
 `decides` edge of section 4.2, proven by compiling: a decision decides the
@@ -205,18 +213,10 @@ def _own(walk: _Walk, machine: Machine, wrong: WrongCell) -> Owner:
     # L4: the ADaM columns the analyses of the cell read, and what those derive from.
     read = {f"adam:{dataset}.{variable}" for analysis_id in path.analyses
             for _, dataset, variable in ars.reads(walk.gold_event, analysis_id, SUBJECT_KEY)}
-    on_path = set(read)
-    for column in read:
-        on_path |= {node for node in walk.reach.get(column, set()) if node.startswith("adam:")}
-    other_data = sorted(column for column in on_path if column in walk.adam)
-    if other_data:
-        roots = [column for column in other_data
-                 if not walk.reach.get(column, set()) & set(other_data)]
-        decided = set()
-        for column in roots:
-            decided |= walk.through.get(column, {column})
-        return Owner(**made, layer="L4", element=roots[0], decisions=walk.deciders(decided),
-                     also=tuple(column for column in other_data if column != roots[0]))
+    data = _other_data(walk, read)
+    if data is not None:
+        root, decisions, also = data
+        return Owner(**made, layer="L4", element=root, decisions=decisions, also=also)
     # L5: the analyses, with what their definitions name.
     other_parts: list[str] = []
     for analysis_id in path.analyses:
@@ -241,6 +241,26 @@ def _own(walk: _Walk, machine: Machine, wrong: WrongCell) -> Owner:
                  note="" if parts else "the layouts are the same: the text was changed")
 
 
+def _other_data(walk: _Walk, read: set[str]) -> tuple[str, tuple[Key, ...], tuple[str, ...]] | None:
+    """Of the ADaM columns that are read and of those they derive from: the ones with
+    other values in the candidate. Returns the first column that no other differing
+    column lies upstream of, the differing decisions that decide such columns, and
+    the other differing columns; None when the data on the path are the same."""
+    on_path = set(read)
+    for column in read:
+        on_path |= {node for node in walk.reach.get(column, set()) if node.startswith("adam:")}
+    other_data = sorted(column for column in on_path if column in walk.adam)
+    if not other_data:
+        return None
+    roots = [column for column in other_data
+             if not walk.reach.get(column, set()) & set(other_data)]
+    decided: set[str] = set()
+    for column in roots:
+        decided |= walk.through.get(column, {column})
+    return (roots[0], walk.deciders(decided),
+            tuple(column for column in other_data if column != roots[0]))
+
+
 @dataclass
 class AxisOwner:
     """Who owns an axis of an output that is not the gold axis (section 9.2, structure)."""
@@ -258,15 +278,26 @@ class AxisOwner:
 
 
 def _own_axis(walk: _Walk, output: str, axis: str) -> AxisOwner:
-    """An axis differs when the analyses behind the output are defined in another
-    way (L5: a row or a column more or less), or when the layout places the same
-    analyses in another way (L7: another order, a row or column left out)."""
+    """An axis differs when the data give the columns other groups (L4: a treatment
+    label written in another way, another subject in the analysis set), when the
+    analyses behind the output are defined in another way (L5: a row or a column
+    more or less), or when the layout places the same analyses in another way (L7:
+    another order, a row or column left out)."""
     gold, candidate = walk.gold, walk.candidate
     unit = gold.outputs.get(output)
     prefix = f"cell:{output}/"
     names = list(dict.fromkeys(
         analysis_id for build in (gold, candidate) for cell, path in build.paths.items()
         if cell.startswith(prefix) for analysis_id in path.analyses))
+    if axis == "columns" and walk.gold_event is not None:
+        read = {f"adam:{dataset}.{variable}" for analysis_id in names
+                if analysis_id in walk.gold_event.analyses
+                for role, dataset, variable in ars.reads(walk.gold_event, analysis_id,
+                                                         SUBJECT_KEY)
+                if role in ("grouping", "set")}
+        data = _other_data(walk, read)
+        if data is not None:
+            return AxisOwner(output, axis, "L4", data[0], data[1])
     parts: list[str] = []
     for analysis_id in names:
         ours = analysis_parts(walk.gold_event, analysis_id)

@@ -62,14 +62,18 @@ from specfirst.compile import house as houses
 from specfirst.compile.catalog import Catalog
 from specfirst.compile.standard_form import StandardForm, decision_record
 from specfirst.score.candidate import Data
-from specfirst.score.display0 import Arm
 from specfirst.score.reading import Documents
 
 STUDY = "HAND01"
 UNITS = ("mod-treatment", "mod-populations", "mod-ae-emergence", "tfl-ae-summary")
 OUTPUT = "Out_AESUM"
-ARMS = (Arm("Low Dose", 10.0, 1), Arm("High Dose", 20.0, 2), Arm("Placebo", 0.0, 3))
 _CODES = {"Placebo": "PBO", "Low Dose": "LOW", "High Dose": "HIGH"}
+_DOSES = {"Low Dose": 10.0, "High Dose": 20.0, "Placebo": 0.0}
+# The arms in the order of the protocol, as a build takes them (specfirst.gen.gold.arms_of):
+# code, dose, and the texts that can name the arm in a treatment column (DM.ARM and
+# DM.ACTARM; EX.EXTRT).
+ARMS = [{"code": _CODES[label], "dose": dose, "names": sorted({label, label.upper()})}
+        for label, dose in _DOSES.items()]
 
 # The decisions the documents of the study state; every other decision of the
 # scope and of mod-demographics is the house default.
@@ -144,7 +148,7 @@ _COLUMNS = ("Placebo", "Low Dose", "High Dose", "Total")
 EXPECTED = {
     "visible": {
         "": ("(N=2)", "(N=2)", "(N=2)", "(N=6)"),
-        _ROWS[0]: ("1 ( 50.0)", "1 ( 50.0)", "2 ( 100.0)", "4 ( 66.7)"),
+        _ROWS[0]: ("1 ( 50.0)", "1 ( 50.0)", "2 (100.0)", "4 ( 66.7)"),
         _ROWS[1]: ("0", "1 ( 50.0)", "1 ( 50.0)", "2 ( 33.3)"),
         _ROWS[2]: ("0", "1 ( 50.0)", "1 ( 50.0)", "2 ( 33.3)"),
         _ROWS[3]: ("0", "0", "1 ( 50.0)", "1 ( 16.7)"),
@@ -152,8 +156,8 @@ EXPECTED = {
     },
     "twin": {
         "": ("(N=3)", "(N=2)", "(N=3)", "(N=8)"),
-        _ROWS[0]: ("1 ( 33.3)", "2 ( 100.0)", "2 ( 66.7)", "5 ( 62.5)"),
-        _ROWS[1]: ("0", "2 ( 100.0)", "0", "2 ( 25.0)"),
+        _ROWS[0]: ("1 ( 33.3)", "2 (100.0)", "2 ( 66.7)", "5 ( 62.5)"),
+        _ROWS[1]: ("0", "2 (100.0)", "0", "2 ( 25.0)"),
         _ROWS[2]: ("0", "1 ( 50.0)", "0", "1 ( 12.5)"),
         _ROWS[3]: ("0", "0", "1 ( 33.3)", "1 ( 12.5)"),
         _ROWS[4]: ("0", "0", "0", "0"),
@@ -185,8 +189,7 @@ def tables(which: str) -> dict[str, pa.Table]:
                    "F" if order % 2 else "M", "WHITE", "NOT HISPANIC OR LATINO", arm, code,
                    actual or arm, first or "2024-01-09", first))
         if first:
-            dose = 0.0 if actual == "Placebo" else next(
-                a.dose for a in ARMS if a.label == actual)
+            dose = _DOSES[actual]
             ex.append((STUDY, subject, 1, actual.upper(), dose, first, last))
             sv.append((STUDY, subject, "BASELINE", 2.0, first))
             vs.append((STUDY, subject, 1, "WEIGHT", "Weight", 70.0 + order, "", first,
@@ -317,6 +320,7 @@ def case(catalog: Catalog, house: houses.House, stage: str = "C"):
     from specfirst.score.scorer import Case
 
     units = UNITS if stage == "C" else tuple(unit for unit in UNITS if unit.startswith("tfl-"))
-    return Case(id=STUDY.lower(), units=units, gold=gold_records(catalog, house), arms=ARMS,
+    return Case(id=STUDY.lower(), units=units, gold=gold_records(catalog, house),
+                arms=lambda records: ARMS,
                 data={which: data(which) for which in ("visible", "twin")},
-                documents=documents(catalog, house), stage=stage)
+                documents=documents(catalog, house), stage=stage, standard_form="sap")

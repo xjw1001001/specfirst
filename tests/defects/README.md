@@ -42,4 +42,7 @@ of its build, a citation) and judged by `specfirst.score.scorer.run`, the
 function that scores any candidate. `specfirst score defects` runs them on
 the hand-made study HAND01; `tests/unit/test_score_hand.py` holds each one
 against the cells worked out by hand. They need no fetch cache and no R.
-read-1a runs them on the kits of gen-2a as well.
+`specfirst score defects --kit DIR` runs them on a generated kit, and the
+gate read-1a on the ten kits of the gate of gen-2a, with every pair of the
+identifiability matrix of each kit as one more planted decision
+(`specfirst.score.kit`, docs/decisions/ADR-008.md).

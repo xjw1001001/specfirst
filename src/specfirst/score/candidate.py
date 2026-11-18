@@ -11,11 +11,23 @@ do (rule R4).
     ADaM      the yamaa runner of the machine, in memory, in a new folder
               under the system's temporary folder (yamaa refuses to save on
               a Windows drive under WSL, and nothing is saved here)
+    groups    a treatment grouping of the house standard is data-driven;
+              its groups are listed from the ADaM data, in the order the
+              layout asks for (specfirst.gen.gold.resolve_groupings)
     results   the Python result engine: the gold ARD is its ARD
-    grids     specfirst.score.display0, a stand-in until the builder of
-              gen-2a is on `main` (docs/state/read.md)
+    grids     specfirst.gen.display, from the compiled layout and the ARD
     trace     derives_from from the resolved specs (specfirst.machine.graph);
               for every cell the results and analyses behind it
+
+From the groups on, these are the functions that build the gold of a
+generated kit (docs/decisions/ADR-007.md): on the data of a kit the gold
+decisions give the files of the kit, byte for byte in the grid
+(`specfirst.score.kit.gold_problems` holds that for every kit it scores).
+
+The order of the treatment columns needs the arms of the protocol, which no
+decision carries (ADR-007, decision 2). A build is given them as the
+generator gives them: code, dose, and every text that can name the arm in
+a treatment column, in the order of the protocol.
 
 Two stages (ADR-005, decision 2). The chain builds ADaM from SDTM. Stage T
 is given ADaM datasets and builds the tables only; the ADaM specs are
@@ -47,12 +59,13 @@ from specfirst import kit as kits
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import compiler
 from specfirst.compile import house as houses
-from specfirst.machine import ard, ars, graph, lineage, results, runner
+from specfirst.gen import display
+from specfirst.gen import gold as kitgold
+from specfirst.machine import ard, ars, graph, grid, lineage, results, runner
 from specfirst.machine import registry as registries
-from specfirst.score.display0 import Arm, CellPath, DisplayError
-from specfirst.score.display0 import grid as display_grid
 
 Key = tuple[str, str]
+Arms = list[dict]  # of the protocol, in its order: code, dose, names (specfirst.gen.gold.arms_of)
 SUBJECT_KEY = "USUBJID"
 # Where a build lays out its files, relative to its folder.
 SPEC, HOUSE, SDTM = "spec", "house", "sdtm"
@@ -83,6 +96,29 @@ class Hooks:
     ard: Callable | None = None
 
 
+@dataclass(frozen=True)
+class CellPath:
+    """What stands behind one cell: the results it shows, and the analyses they are
+    computed from (the numerator's and the denominator's)."""
+
+    ard: tuple[str, ...]
+    analyses: tuple[str, ...]
+
+
+def cell_paths(event: ars.Event, made: dict, rows: dict[str, dict]) -> dict[str, CellPath]:
+    """For every cell of a grid: its ARD rows, and the analyses behind them."""
+    found = {}
+    for row in made["rows"]:
+        for cell in row["cells"]:
+            analyses: list[str] = []
+            for key in cell["ard"]:
+                analysis = event.analyses[rows[key]["analysis_id"]]
+                analyses += [analysis["id"], *graph.referenced_analyses(
+                    event, analysis, rows[key]["operation_id"])]
+            found[cell["id"]] = CellPath(tuple(cell["ard"]), tuple(dict.fromkeys(analyses)))
+    return found
+
+
 @dataclass
 class Build:
     """What one decision vector builds on one dataset."""
@@ -91,7 +127,7 @@ class Build:
     records: list[dict]  # id, unit, value: the vector that was compiled
     failure: str | None = None  # the rule that stopped the build, if any
     files: dict[str, str] = field(default_factory=dict)  # the compiled files
-    ars: dict | None = None
+    ars: dict | None = None  # the compiled ARS file: its groupings as the decisions wrote them
     layouts: dict[str, dict] = field(default_factory=dict)  # unit -> compiled layout
     adam: dict = field(default_factory=dict)  # dataset -> Arrow table
     ard: dict[str, dict] = field(default_factory=dict)  # ARD rows by ID
@@ -116,7 +152,10 @@ def vector(catalog: catalogs.Catalog, house: houses.House, gold: list[dict],
 
     Inside the units of the scope: the candidate's value, else the house
     default, else nothing. Outside: the gold value. A record without a
-    value (asked, in conflict, not applicable) gives no value.
+    value (asked, in conflict, not applicable) gives no value. A decision
+    that the study does not make (gold has no record of it: the catalog
+    entry does not apply to its design) takes no default either; only a
+    record of the candidate puts it into the vector.
     """
     given = {(r.get("id"), r.get("unit")): r for r in reversed(candidate)}
     known = {(r.get("id"), r.get("unit")): r for r in gold}
@@ -125,8 +164,10 @@ def vector(catalog: catalogs.Catalog, house: houses.House, gold: list[dict],
         if key[1] in units:
             if key in given:
                 value = given[key].get("value")
-            else:
+            elif key in known:
                 value = houses.default_value(catalog, house, *key)
+            else:
+                value = None
         else:
             value = known[key].get("value") if key in known else None
         if value is not None:
@@ -218,12 +259,18 @@ def passes_through(plans: list, tables: dict) -> dict[str, list[str]]:
 
 
 class Machine:
-    """The standard of a checkout and the builds made with it, each made once."""
+    """The standard of a checkout and the builds made with it, each made once.
 
-    def __init__(self, root: Path):
+    `datasets` limits a build to these ADaM datasets of the house standard.
+    A kit of the slice builds ADSL and ADAE (ADR-007, decision 8): its
+    decisions do not hold those of ADVS, which the full house would ask for.
+    """
+
+    def __init__(self, root: Path, datasets: tuple[str, ...] | None = None):
         self.root = root
         self.catalog = catalogs.load(catalogs.default_dir(root))
         self.house = houses.load(houses.default_dir(root))
+        self.built = self.house if datasets is None else kitgold.house_view(self.house, datasets)
         self.registry = registries.load(root)
         self._compiled: dict[str, compiler.Compiled | str] = {}
         self._builds: dict[str, Build] = {}
@@ -237,7 +284,7 @@ class Machine:
         if key not in self._compiled:
             try:
                 self._compiled[key] = compiler.compile_decisions(
-                    self.catalog, self.house, records, f"../../{HOUSE}",
+                    self.catalog, self.built, records, f"../../{HOUSE}",
                     sdtm_dir=f"../../{SDTM}", adam_dir="../../adam")
             except compiler.CompileError as error:
                 self._compiled[key] = "compile: " + "; ".join(error.problems)
@@ -254,7 +301,7 @@ class Machine:
 
     # ---- build --------------------------------------------------------------------
 
-    def build(self, records: list[dict], data: Data, arms: tuple[Arm, ...],
+    def build(self, records: list[dict], data: Data, arms: Arms,
               hooks: Hooks | None = None) -> Build:
         """Build a decision vector on a dataset. The same vector, data and hooks are
         built once."""
@@ -264,7 +311,7 @@ class Machine:
             self._builds[key] = self._build(records, data, arms, hooks)
         return self._builds[key]
 
-    def _build(self, records: list[dict], data: Data, arms: tuple[Arm, ...],
+    def _build(self, records: list[dict], data: Data, arms: Arms,
                hooks: Hooks | None) -> Build:
         built = Build(data.name, [dict(r) for r in records])
         compiled = self.compile(records)
@@ -287,7 +334,7 @@ class Machine:
         except (runner.RunnerError, graph.GraphError) as error:
             built.failure = f"ADaM: {error}"
         except (ars.ArsError, ard.EngineError, results.ResultsError,
-                registries.RegistryError) as error:
+                registries.RegistryError, kitgold.GoldError) as error:
             built.failure = f"results: {error}"
         return built
 
@@ -321,13 +368,12 @@ class Machine:
         finally:
             shutil.rmtree(work, ignore_errors=True)
 
-    def _tables(self, built: Build, arms: tuple[Arm, ...], hooks: Hooks | None) -> None:
+    def _tables(self, built: Build, arms: Arms, hooks: Hooks | None) -> None:
         if built.ars is None:
             return  # no output is included
         event = ars.index(built.ars)
         if event.problems:
             raise ars.ArsError("; ".join(event.problems[:5]))
-        binding = ars.bind(event, self.registry, None)
         tables = {}
         for dataset, names in ars.columns(event, SUBJECT_KEY).items():
             table = built.adam.get(dataset)
@@ -337,7 +383,9 @@ class Machine:
             if missing:
                 raise ard.EngineError(f"dataset {dataset} has no column {', '.join(missing)}")
             tables[dataset] = ard.table_from_arrow(dataset, table.select(names))
-        rows = ard.run(event, self.registry, binding, tables, SUBJECT_KEY)
+        # From here on, as the gold of a generated kit is built (specfirst.gen.gold.show).
+        listed = kitgold.resolve_groupings(built.ars, tables, built.layouts, arms)
+        event, _, rows = kitgold.python_results(self.root, listed, tables)
         if hooks and hooks.ard:
             rows = hooks.ard([dict(row) for row in rows])
         built.ard = results.by_id(rows)
@@ -345,10 +393,16 @@ class Machine:
             output = str((layout.get("output") or {}).get("id"))
             built.outputs[output] = unit
             try:
-                built.grids[output], paths = display_grid(event, layout, built.ard, arms)
-                built.paths.update(paths)
-            except DisplayError as error:
+                made = display.build(event, layout, built.ard)
+            except display.DisplayError as error:
                 built.not_produced[output] = f"display: {error}"
+                continue
+            problems = grid.grid_problems(made, self.root)
+            if problems:
+                built.not_produced[output] = "grid: " + "; ".join(problems[:3])
+                continue
+            built.grids[output] = made
+            built.paths.update(cell_paths(event, made, built.ard))
 
 
 def _copy(compiled: compiler.Compiled) -> compiler.Compiled:

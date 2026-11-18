@@ -14,16 +14,32 @@ counted, so the gate log is the evidence of the report (rule R8).
     defects      the planted defects on HAND01
     pilot        the report on CDISCPILOT01 runs on the pinned files
                  (report only: its scores decide nothing)
-    kits         the control and the planted defects on the kits of gen-2a
+    kits         the kits of the gate of gen-2a, written again from its seed:
+                 the gold of each kit built again, the control, the planted
+                 defects and the sweep of its matrix (specfirst.score.kit)
+
+A kit is never in the repository (docs/state/gen.md). The check `kits`
+writes the ten kits of the development seed of the gate gen-2a into a
+folder under the system's temporary folder, each by a process of its own,
+four at a time, and removes them when it is done. A kit is a pure function
+of the generator, the catalog, the house standard and the seed (property
+P1, which the gate gen-2a holds), so these are the kits of that gate.
 """
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from specfirst.compile.standard_form import StandardForm, StandardFormError, decision_record
+from specfirst.gen import gate2
+from specfirst.gen import kits as genkits
+from specfirst.machine.canonical import sha256_file
 from specfirst.score import build, defects, hand, pilot, report, scorer
+from specfirst.score import kit as kits_scored
 from specfirst.score.candidate import Machine
 
 Out = Callable[[str], None]
@@ -187,8 +203,39 @@ def pilot_report(root: Path, out: Out) -> bool:
     return True
 
 
+def write_kits(root: Path, folder: Path, out: Out, seed: str = gate2.SEED,
+               count: int = gate2.COUNT) -> bool:
+    """Write the kits 1 to `count` of the set of a seed into `folder`, as the gate of
+    gen-2a writes its first builds: each by a process of its own, four at a time."""
+    def run(number: int) -> str:
+        try:
+            genkits.generate_apart(root, genkits.kit_seed(seed, number),
+                                   folder / f"kit-{number:03d}", genkits.split_of(number),
+                                   number=number, hash_seed="1", zone=None)
+        except genkits.KitError as error:
+            return str(error)
+        return ""
+
+    numbers = range(1, count + 1)
+    with ThreadPoolExecutor(max_workers=gate2.MAX_WORKERS) as pool:
+        failed = list(pool.map(run, numbers))
+    for number, problem in zip(numbers, failed, strict=True):
+        path = folder / f"kit-{number:03d}"
+        if problem:
+            out(f"kit {number}: cannot be written: {problem}")
+            continue
+        manifest = genkits.read_manifest(path)
+        out(f"kit {number} of the set of the seed '{seed}': {manifest['id']}, "
+            f"{manifest['split']}, generator {manifest['generator']}, {len(manifest['files'])} "
+            f"files, kit.yaml {sha256_file(path / genkits.MANIFEST)[:16]}")
+    return not any(failed)
+
+
 def kits(root: Path, out: Out) -> bool:
-    out("the kits of gen-2a are not on this checkout: the scorer and the planted defects "
-        "have run on the hand-made study and on the pilot only")
-    out("read-1a is not done before this check runs on the kits (docs/state/read.md)")
-    return False
+    folder = Path(tempfile.mkdtemp(prefix="specfirst-read1a-"))
+    try:
+        if not write_kits(root, folder, out):
+            return False
+        return kits_scored.score_set(root, folder, out)
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)

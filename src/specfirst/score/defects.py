@@ -15,6 +15,14 @@ planted candidate is then scored like any other, by `scorer.run`.
                  by the layer the defect was planted at; when a decision
                  was planted, by that decision, and building the candidate
                  again with the gold value gives the gold text.
+    silent       a planted decision that no cell of the case shows: the
+                 reading score has it wrong by value, and the gold vector
+                 with this one value builds the gold tables on every
+                 dataset. The data of the case cannot show the defect
+                 (section 9.3). It is neither detected by a build score nor
+                 a failure of the scorer; on a generated kit it is held
+                 against the identifiability matrix of the kit
+                 (specfirst.score.kit).
 
 Before anything is planted the control must hold: the gold decisions,
 through the parser, score 100% (`scorer.control`). A scorer that finds
@@ -27,13 +35,14 @@ event summary shows counts and percents only: `DEFECTS` says so for each.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from urllib.parse import quote
 
 from specfirst.score import report, scorer
-from specfirst.score.candidate import Hooks, Key, Machine
+from specfirst.score.candidate import Data, Hooks, Key, Machine
 from specfirst.score.scorer import Case, Result
 
 DOCUMENTS = "L0"  # the layer of a citation (section 4.1)
@@ -49,6 +58,8 @@ class Planted:
     records: list[dict]
     hooks: Hooks | None = None
     decision: Key | None = None  # the decision that was changed, if one was
+    value: dict | None = None  # the value it was changed to
+    data: dict[str, Data] | None = None  # the datasets to score on, when the plant changes them
 
 
 @dataclass(frozen=True)
@@ -70,12 +81,22 @@ class Outcome:
     result: Result | None = None
     detected: bool = False
     attributed: bool = False
+    silent: bool = False  # a planted decision that the data of the case cannot show
     shows: dict[str, str] = field(default_factory=dict)  # dataset -> what the score shows
     problems: list[str] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:
         return self.planted is not None and self.detected and self.attributed
+
+    @property
+    def state(self) -> str:
+        """does not apply | not planted | passed | silent | failed"""
+        if self.defect.layer is None:
+            return "does not apply"
+        if self.planted is None:
+            return "not planted"
+        return "passed" if self.passed else "silent" if self.silent else "failed"
 
 
 # ---- helpers ---------------------------------------------------------------------------
@@ -103,15 +124,21 @@ def _other_rule(machine: Machine, key: Key, value: dict) -> dict | None:
 
 def _misread(machine: Machine, case: Case, records: list[dict], key: Key,
              value: dict | None = None) -> Planted | str:
+    """One decision read as another value: the one given, else the first other value
+    a study of the case's design can decide, else another alternative without a slot."""
     gold = _gold_value(case, key)
     if gold is None:
         return f"the gold decisions have no value for {key[0]} ({key[1]})"
+    if value is None and case.variants is not None:
+        value = next(iter(case.variants(key)), None)
+        if value is None:
+            return f"a study of this design can decide nothing else for {key[0]}"
     value = value or _other_rule(machine, key, gold)
     if value is None:
         return f"{key[0]} has no other alternative without a slot"
     return Planted(f"{key[0]} ({key[1]}): {json.dumps(gold, sort_keys=True)} becomes "
                    f"{json.dumps(value, sort_keys=True)}", _with_value(records, key, value),
-                   decision=key)
+                   decision=key, value=value)
 
 
 def _layout(machine: Machine, case: Case) -> dict:
@@ -127,55 +154,63 @@ def _layout(machine: Machine, case: Case) -> dict:
 def _arms(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
     layout = _layout(machine, case)
     analyses = [row["analysis"] for row in layout["rows"]]
+    header = layout["columns"]["header_count"]
 
     def exchange(rows: list[dict]) -> list[dict]:
+        # A group of a result is named by its ID when the groups are listed, by its
+        # value when the grouping is data-driven (rule I14).
+        by_id = any("group1_groupId" in row for row in rows if row["analysis_id"] == header)
+        field, mark = ("group1_groupId", "") if by_id else ("group1_groupValue", "=")
+        arms = sorted({row.get(field) for row in rows if row["analysis_id"] == header} - {None})
         for analysis_id in analyses:
-            counts: dict[str, object] = {}
-            for row in rows:
-                if row["analysis_id"] == analysis_id and row["operation_id"].endswith("_n"):
-                    counts[row.get("group1_groupValue")] = row["raw_value"]
-            arms = sorted({row.get("group1_groupValue") for row in rows
-                           if row["analysis_id"] == layout["columns"]["header_count"]} - {None})
+            counts = {row.get(field): row["raw_value"] for row in rows
+                      if row["analysis_id"] == analysis_id and row["operation_id"].endswith("_n")}
             pair = next(((a, b) for i, a in enumerate(arms) for b in arms[i + 1:]
                          if counts.get(a, 0) != counts.get(b, 0)), None)
             if pair is None:
                 continue
             swap = {pair[0]: pair[1], pair[1]: pair[0]}
             for row in rows:
-                value = row.get("group1_groupValue")
-                if row["analysis_id"] == analysis_id and value in swap:
-                    row["group1_groupValue"] = swap[value]
-                    row["id"] = row["id"].rsplit("/", 1)[0] + "/=" + quote(swap[value], safe="")
+                group = row.get(field)
+                if row["analysis_id"] == analysis_id and group in swap:
+                    row[field] = swap[group]
+                    row["id"] = row["id"].rsplit("/", 1)[0] + "/" + mark + quote(
+                        swap[group], safe="")
             return sorted(rows, key=lambda row: row["id"])
         return rows
 
     return Planted("in the results of the first analysis in which two arms differ, the "
                    "results of the two arms are exchanged", records,
-                   hooks=Hooks("arms-exchanged", ard=exchange))
+                   hooks=Hooks(f"{case.id}/arms-exchanged", ard=exchange))
 
 
 def _denominator(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
+    if len(_layout(machine, case)["rows"]) < 2:
+        return "the gold table has one row: no count of another row to divide by"
+
     def plant(compiled) -> None:
         layout = compiled.layouts[TABLE_UNIT]
-        target, header = layout["rows"][0]["analysis"], layout["columns"]["header_count"]
+        first, second = layout["rows"][0], layout["rows"][1]
         analyses = {analysis["id"]: analysis for analysis in compiled.ars["analyses"]}
-        count = json.loads(json.dumps(analyses[header]))
-        current = next(item for item in compiled.ars["analysisSets"]
-                       if item["id"] == count["analysisSetId"])
-        flag = "ITTFL" if current["condition"]["variable"] != "ITTFL" else "SAFFL"
-        compiled.ars["analysisSets"].append({
-            "id": "AnalysisSet_PLANTED", "name": "Planted set", "label": "PLANTED", "level": 1,
-            "order": 1, "condition": {"dataset": "ADSL", "variable": flag, "comparator": "EQ",
-                                      "value": ["Y"]}})
-        count["id"], count["analysisSetId"] = f"{header}_PLANTED", "AnalysisSet_PLANTED"
-        compiled.ars["analyses"].append(count)
-        for reference in analyses[target]["referencedAnalysisOperations"]:
-            if reference["analysisId"] == header:
-                reference["analysisId"] = count["id"]
+        for name, columns in (("analysis", layout["columns"]),
+                              ("total_analysis", layout["columns"].get("total"))):
+            if not columns or not first.get(name) or not second.get(name):
+                continue
+            # The subjects with an event of the first row, counted as the header count
+            # is counted: the same analysis set, the same grouping.
+            count = json.loads(json.dumps(analyses[first[name]]))
+            count["id"] = f"{first[name]}_PLANTED"
+            count["methodId"] = analyses[columns["header_count"]]["methodId"]
+            count.pop("referencedAnalysisOperations", None)
+            compiled.ars["analyses"].append(count)
+            for reference in analyses[second[name]]["referencedAnalysisOperations"]:
+                if reference["analysisId"] == columns["header_count"]:
+                    reference["analysisId"] = count["id"]
 
-    return Planted("in the ARS file, the percent of the first row takes its denominator from "
-                   "a count of another analysis set", records,
-                   hooks=Hooks("wrong-denominator", compiled=plant))
+    return Planted("in the ARS file, the percent of the second row takes its denominator "
+                   "from the subjects counted in the first row, not from the subjects of "
+                   "the analysis set", records,
+                   hooks=Hooks(f"{case.id}/wrong-denominator", compiled=plant))
 
 
 def _column(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
@@ -189,7 +224,8 @@ def _column(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
             row["total_analysis"] = None
 
     return Planted("in the layout, the total column is left out; the ARS file still has its "
-                   "analyses", records, hooks=Hooks("missing-column", compiled=plant))
+                   "analyses", records,
+                   hooks=Hooks(f"{case.id}/missing-column", compiled=plant))
 
 
 def _set_of_table(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
@@ -198,10 +234,10 @@ def _set_of_table(machine: Machine, case: Case, records: list[dict]) -> Planted 
 
 def _set_by_rule(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
     table = _gold_value(case, ("tfl.population", TABLE_UNIT)) or {}
-    entry = {"safety": "pop.safety.rule", "randomized": "pop.randomized.rule"}.get(
-        table.get("rule"))
+    entry = {"safety": "pop.safety.rule", "randomized": "pop.randomized.rule",
+             "efficacy": "pop.efficacy.rule"}.get(table.get("rule"))
     if entry is None:
-        return "the gold table is on a set whose rule has no other alternative without a slot"
+        return "the gold table names no analysis set that a rule of mod-populations forms"
     return _misread(machine, case, records, (entry, "mod-populations"))
 
 
@@ -218,6 +254,16 @@ def _sort(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
 
 
 def _frozen(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
+    """The list of related causality values, cut down to those the visible data hold.
+
+    Where the visible data hold every value of the gold list (a generated
+    kit: its visible data are large), the reader that froze the list is
+    given less to see: the case is scored with visible data that lack the
+    adverse event records of the first value of the list. The twin is
+    never changed.
+    """
+    import pyarrow.compute as pc
+
     key = ("ae.related.values", "mod-ae-emergence")
     gold = _gold_value(case, key) or {}
     if gold.get("rule") != "stated_list":
@@ -228,9 +274,24 @@ def _frozen(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
         return "the case has no visible adverse event records to freeze a list from"
     seen = set(table.column("AEREL").to_pylist())
     frozen = [value for value in gold["values"] if value in seen]
-    if not frozen or frozen == gold["values"]:
-        return "the visible data hold every related causality value: nothing to freeze"
-    return _misread(machine, case, records, key, {**gold, "values": frozen})
+    data, note = None, ""
+    if frozen == gold["values"]:
+        if len(frozen) < 2:
+            return ("the gold list has one value, and the visible data hold it: a list "
+                    "frozen from them is the gold list")
+        gone, frozen = frozen[0], frozen[1:]
+        kept = table.filter(pc.fill_null(pc.not_equal(table.column("AEREL"), gone), True))
+        data = {**case.data, "visible": Data(f"{visible.name}/without-{quote(gone, safe='')}",
+                                             sdtm={**visible.sdtm, "ae": kept})}
+        note = (f"; the visible data hold every value of the list, so the case is scored "
+                f"with visible data that lack the {table.num_rows - kept.num_rows} adverse "
+                f"event records with the causality {gone}")
+    if not frozen:
+        return "the visible data hold no related causality value"
+    planted = _misread(machine, case, records, key, {**gold, "values": frozen})
+    if isinstance(planted, Planted):
+        planted.data, planted.what = data, planted.what + note
+    return planted
 
 
 def _cited(case: Case, records: list[dict]) -> list[dict]:
@@ -342,6 +403,10 @@ def judge(defect: Defect, planted: Planted, result: Result) -> Outcome:
             elif wanted and owner.confirmed is not True:
                 outcome.problems.append(f"{name}, {where}: the gold value of the decision does "
                                         "not give the gold text")
+    if not shown and planted.decision is not None and planted.hooks is None \
+            and planted.decision in result.silent:
+        outcome.silent = True
+        return outcome
     outcome.detected = shown
     if defect.twin_only:
         if not result.builds["visible"].perfect:
@@ -362,7 +427,8 @@ def run_one(machine: Machine, case: Case, defect: Defect, records: list[dict],
     planted = defect.plant(machine, case, records)
     if isinstance(planted, str):
         return Outcome(defect, reason=planted)
-    result = scorer.run(machine, case, planted.records, arm=defect.id, hooks=planted.hooks,
+    on = case if planted.data is None else dataclasses.replace(case, data=planted.data)
+    result = scorer.run(machine, on, planted.records, arm=defect.id, hooks=planted.hooks,
                         documents=documents)
     return judge(defect, planted, result)
 
@@ -403,15 +469,21 @@ def suite(machine: Machine, case: Case, out: Out = print) -> tuple[bool, list[Ou
                 + ", ".join(key[0] for key in result.silent))
         for problem in outcome.problems:
             out(f"    problem: {problem}")
+        if outcome.silent:
+            out("    silent: the reading score has the decision wrong by value; the gold "
+                "decisions with this one value build the gold tables on every dataset of "
+                "the case")
+            continue
         out(f"    detected: {'yes' if outcome.detected else 'NO'}; attributed to its layer: "
             f"{'yes' if outcome.attributed else 'NO'}")
     applies = [o for o in outcomes if o.defect.layer is not None]
     planted = [o for o in applies if o.planted is not None]
     passed = [o for o in planted if o.passed]
+    silent = [o for o in planted if o.silent]
     out(f"planted defects on {case.id}: {len(DEFECTS)} of section 9.5 with the one planted at "
         f"two layers; {len(DEFECTS) - len(applies)} do not apply to the slice; "
         f"{len(planted)} of {len(applies)} planted here; {len(passed)} of {len(planted)} "
-        "detected and attributed")
+        f"detected and attributed; {len(silent)} silent on these data")
     return len(passed) == len(planted), outcomes
 
 
