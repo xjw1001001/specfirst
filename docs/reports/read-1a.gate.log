@@ -1,24 +1,24 @@
 clean clone gate read-1a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     55dba60a5df1d12272b0a5660a627a928f5e6189
-clone:      /tmp/specfirst-clean-1v6CL8/specfirst
-environment and cache: /tmp/specfirst-clean-1v6CL8/env
+commit:     a95d9a900eb47ad5bd6f47e6c0d5759eb167f28a
+clone:      /tmp/specfirst-clean-OFi1xo/specfirst
+environment and cache: /tmp/specfirst-clean-OFi1xo/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-1v6CL8/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-OFi1xo/specfirst
 
-$ git -C /tmp/specfirst-clean-1v6CL8/specfirst checkout --quiet --detach 55dba60a5df1d12272b0a5660a627a928f5e6189
+$ git -C /tmp/specfirst-clean-OFi1xo/specfirst checkout --quiet --detach a95d9a900eb47ad5bd6f47e6c0d5759eb167f28a
 
-$ git -C /tmp/specfirst-clean-1v6CL8/specfirst log -1 --format=%H %s
-55dba60a5df1d12272b0a5660a627a928f5e6189 read-1a: the scorer on the kits of gen-2a
+$ git -C /tmp/specfirst-clean-OFi1xo/specfirst log -1 --format=%H %s
+a95d9a900eb47ad5bd6f47e6c0d5759eb167f28a read-1a: the owner's answer on the reading of the gate (approved, for the slice)
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-1v6CL8/env/venv-specfirst-1958452189
-R library: /tmp/specfirst-clean-1v6CL8/env/r-lib
+python environment: /tmp/specfirst-clean-OFi1xo/env/venv-specfirst-791404520
+R library: /tmp/specfirst-clean-OFi1xo/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-1v6CL8/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-1v6CL8/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-OFi1xo/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-OFi1xo/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-1v6CL8/env/venv-specfirst-1958452189/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-OFi1xo/env/venv-specfirst-791404520/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-1v6CL8/env/cache
+cache: /tmp/specfirst-clean-OFi1xo/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate read-1a --clean
-gate read-1a at commit 55dba60a5df1d12272b0a5660a627a928f5e6189 (clean)
+gate read-1a at commit a95d9a900eb47ad5bd6f47e6c0d5759eb167f28a (clean)
 
 == [1/14] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-1v6CL8/env/venv-specfirst-1958452189/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-OFi1xo/env/venv-specfirst-791404520/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.4 s)
+-- PASS environment (0.3 s)
 
 == [2/14] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-1v6CL8/env/cache
+cache: /tmp/specfirst-clean-OFi1xo/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,30 +84,30 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (1.1 s)
+-- PASS pins (0.8 s)
 
 == [3/14] lint: ruff check .
 All checks passed!
--- PASS lint (0.1 s)
+-- PASS lint (0.0 s)
 
 == [4/14] unit tests: pytest -m "not evidence" -q
-........................................................................ [  7%]
-........................................................................ [ 14%]
-........................................................................ [ 21%]
-........................................................................ [ 28%]
-........................................................................ [ 35%]
-........................................................................ [ 42%]
-........................................................................ [ 49%]
-........................................................................ [ 56%]
-........................................................................ [ 63%]
-........................................................................ [ 70%]
-........................................................................ [ 77%]
-........................................................................ [ 84%]
-........................................................................ [ 91%]
-........................................................................ [ 98%]
-....................                                                     [100%]
-1028 passed, 23 deselected in 213.11s (0:03:33)
--- PASS unit tests (213.5 s)
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 34%]
+........................................................................ [ 41%]
+........................................................................ [ 48%]
+........................................................................ [ 55%]
+........................................................................ [ 62%]
+........................................................................ [ 69%]
+........................................................................ [ 76%]
+........................................................................ [ 83%]
+........................................................................ [ 90%]
+........................................................................ [ 96%]
+................................                                         [100%]
+1040 passed, 23 deselected in 253.59s (0:04:13)
+-- PASS unit tests (254.1 s)
 
 == [5/14] hand-made study: specfirst.score.gate.hand_table: HAND01 against the table worked out by hand
 HAND01, visible: 7 subjects, 8 adverse events; columns Placebo | Low Dose | High Dose | Total
@@ -153,7 +153,7 @@ decision: other value -> cells or axes changed on the visible data / on the twin
   tfl.ae.summary.rows (separated on visible and twin): {"rows": ["ANY", "SERIOUS", "FATAL"], "rule": "stated_rows"} -> 9/9; {"rows": ["ANY"], "rule": "stated_rows"} -> 17/17; {"rows": ["SERIOUS", "RELATED", "ANY"], "rule": "stated_rows"} -> 9/9
 HAND01 separates 12 of 21 decisions of the slice on one of its two datasets; unseparated on both: trt.planned.source, trt.start.source, trt.date.imputation, date.studyday.origin, pop.randomized.rule, disp.status.record, ae.start.imputation, ae.teae.start, tfl.rounding.rule
 the gold records mark the same 9 as unseparated: yes
--- PASS separation (31.9 s)
+-- PASS separation (31.7 s)
 
 == [7/14] parser control: specfirst score hand --arm C (both stages)
 parser control on HAND01, stage C: 21 decisions; value 21 of 21; status 21 of 21; quote 21 of 21; span 21 of 21
@@ -209,8 +209,8 @@ attribution, visible: 24 wrong cells
   build  mod-ae-emergence   ae.related.values           24  24 of 24   compile: ADAE: no value for ae.related.values
 attribution, twin: 24 wrong cells
   layer  unit               decision                 cells  confirmed  first element that differs
-  build  mod-ae-emergence   ae.related.values           24  22 of 24   compile: ADAE: no value for ae.related.values
-wrong by value, and behind another owner: ae.teae.end (mod-ae-emergence); alone, on gold, it changes 0 cells or axes of visible, 2 cells or axes of twin
+  build  mod-ae-emergence   ae.related.values           22  22 of 22   compile: ADAE: no value for ae.related.values
+  build  mod-ae-emergence   ae.related.values, ae.teae.end      2  2 of 2     compile: ADAE: no value for ae.related.values
 case hand01, arm S: not every score is 100%
 case hand01, arm S, stage T
 reading score: 7 gold decisions of the units tfl-ae-summary
@@ -239,7 +239,7 @@ build score:
   twin: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
   twin: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
 case hand01, arm S: every score is 100%
-arm S, chain: no output produced: yes; owned by ae.related.values
+arm S, chain: no output produced: yes; every cell owned by the build that stopped, with ae.related.values: yes; some need ae.teae.end as well
 arm S, stage T: every score 100%: yes
 -- PASS standard alone (0.1 s)
 
@@ -289,17 +289,29 @@ planted defects on the case hand01, stage C
     twin: the axis columns owned by layer L7, unit -, decision -
     detected: yes; attributed to its layer: yes
   S6-quantile: a changed quantile definition (E4)
-    does not apply: the adverse event summary shows counts of subjects and percents, no quantile
-  S7-pvalue: a p-value rounded twice (E25)
-    does not apply: the adverse event summary shows counts of subjects and percents, no p-value
+    does not apply: the adverse event summary shows counts of subjects and percents, and nothing near it: no quantile
+  S7-rounded: a p-value rounded twice (E25)
+    planted at L6 (the table has no p-value; planted as the nearest thing it has, a percent rounded twice, in the results after the engine): in the results, every percent is rounded to a whole number before the grid rounds it to one decimal
+    visible: 5 of 24 gold cells wrong, strict 0 of 1
+    twin: 6 of 24 gold cells wrong, strict 0 of 1
+    visible: 5 cells owned by layer L6, unit -, decision -
+    twin: 6 cells owned by layer L6, unit -, decision -
+    detected: yes; attributed to its layer: yes
   S8-baseline: a baseline taken from the wrong record (E26)
-    does not apply: the adverse event summary shows counts of subjects and percents, no baseline value
+    does not apply: the adverse event summary shows counts of subjects and percents, and nothing near it: no baseline value
   S9-sort: an unstable sort
-    planted at L7 (the slice orders one thing, the treatment columns: planted as the other order (decision tfl.columns.arms). An order that changes from run to run is for P1 to find): tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}
+    planted at L7 (the slice orders one thing, the treatment columns: planted as the other order, read as a decision (tfl.columns.arms). An order that changes from run to run is for P1 to find): tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}
     visible: 0 of 24 gold cells wrong, strict 0 of 1
     twin: 0 of 24 gold cells wrong, strict 0 of 1
     visible: the axis columns owned by layer L7, unit tfl-ae-summary, decision tfl.columns.arms; confirmed yes
     twin: the axis columns owned by layer L7, unit tfl-ae-summary, decision tfl.columns.arms; confirmed yes
+    detected: yes; attributed to its layer: yes
+  S9-sort-build: an unstable sort
+    planted at L7 (the same order, wrong in the build: planted in the layout, no decision changed): in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision
+    visible: 0 of 24 gold cells wrong, strict 0 of 1
+    twin: 0 of 24 gold cells wrong, strict 0 of 1
+    visible: the axis columns owned by layer L7, unit -, decision -
+    twin: the axis columns owned by layer L7, unit -, decision -
     detected: yes; attributed to its layer: yes
   S10-frozen: a frozen site list (caught on the twin only)
     planted at L4 (the slice has no site list; its frozen list is the causality values that count as related, cut down to those the visible data hold (decision ae.related.values)): ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]} becomes {"rule": "stated_list", "values": ["POSSIBLE"]}
@@ -315,8 +327,9 @@ planted defects on the case hand01, stage C
     planted at L0 (planted in a citation of the candidate): ae.teae.end (mod-ae-emergence): the citation names the anchor 1/s2, that of another decision; the quote is unchanged
     reading: span: wrong for ae.teae.end
     detected: yes; attributed to its layer: yes
-planted defects on hand01: 13 of section 9.5 with the one planted at two layers; 3 do not apply to the slice; 10 of 10 planted here; 10 of 10 detected and attributed; 0 silent on these data
--- PASS planted defects (2.9 s)
+planted defects on hand01: 14 entries for the twelve defects of section 9.5 (two are planted in two ways); 2 do not apply to the slice; 12 of 12 planted here; 12 of 12 detected and attributed; 0 silent on these data
+every defect that applies is planted on HAND01, detected and attributed: yes
+-- PASS planted defects (4.7 s)
 
 == [10/14] pilot: specfirst score pilot (report only)
 pilot CDISCPILOT01, arm S (the house standard alone), stage T (table decisions on the reference ADaM); report only
@@ -358,7 +371,7 @@ key: the results CDISC's ARS example embeds for its adverse event summary (Out14
   reference ADaM: whole output, lenient: 0 of 1 outputs in gold (every gold cell present and equal)
   the rows are not the key's (the key has 4 rows that arm S lacks): no other value of one table decision makes them equal
   the columns are not the key's (arm S has more: Total): explained by tfl.columns.total = {"rule": "none"}
-  cells of the key that differ or are missing: 17. 5 differ and are explained by another value of one table decision; 3 are in a row that needs a variable the reference ADaM lacks; 9 are in rows the catalog does not have; 0 unexplained
+  cells of the key that differ or are missing: 17. Of the 15 cells of the rows both tables have, 5 differ and are explained by another value of one table decision, and 0 are unexplained. 12 are in rows that arm S does not build: 3 for a variable the reference ADaM lacks, 9 in rows the catalog does not have; these are classed by the crosswalk of rows, not by a build
   variables the house template reads: 9; in the reference ADaM under the same name: ADAE.AEACN, ADAE.AESDTH, ADAE.AESER, ADAE.TRTEMFL, ADAE.USUBJID, ADSL.SAFFL, ADSL.TRT01A, ADSL.USUBJID
   variables the house template reads and the reference ADaM does not have: 1
     ADAE.RELGR1: the house standard writes it by ae.related.values; rows not built: RELATED
@@ -389,180 +402,210 @@ kit sfpbt5zj (kit-001), train: 4 arms; 227 subjects in the visible data, 235 in 
   arm C, stage C: 22 decisions: value 22 of 22; status 22 of 22; quote 22 of 22; span 22 of 22; visible: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 10 of 22 decisions to change (trt.actual.source, trt.start.source, trt.end.source, trt.date.imputation, date.studyday.origin, pop.randomized.rule, pop.safety.grouping, pop.efficacy.rule, ae.related.values, tfl.columns.total); visible: produced 0 of 1; cells correct 0 of 0, 0 and 30; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 30; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 1 of 7 decisions to change (tfl.columns.total); visible: produced 1 of 1; cells correct 24 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 25 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 30 gold cells wrong, strict 0 of 1; twin 2 of 30 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 27 of 30 gold cells wrong, strict 0 of 1; twin 24 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
+  arm S, stage T: 1 of 7 decisions to change (tfl.columns.total); visible: produced 1 of 1; cells correct 24 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 25 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1; visible owned by L5 (tfl.columns.total): 6; twin owned by L5 (tfl.columns.total): 5
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 30 gold cells wrong, strict 0 of 1; twin 2 of 30 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 27 of 30 gold cells wrong, strict 0 of 1; twin 24 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 27; twin owned by L5 (tfl.population): 24; the matrix: separated on the twin
   S2-set-rule (L4): silent: pop.safety.rule (mod-populations): {"rule": "at_least_one_dose"} becomes {"rule": "randomized_and_dosed"}. visible every score 100%; twin every score 100%; the matrix: unseparated on the twin
   S3-window (L4): not planted: the gold decision ae.teae.end names no window of days
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 30 gold cells wrong, strict 0 of 1; twin 5 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 30 gold cells wrong, strict 0 of 1; twin 6 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 30 gold cells wrong, strict 0 of 1; twin 0 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
-  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["PROBABLY RELATED", "RELATED"]} becomes {"rule": "stated_list", "values": ["RELATED"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 69 adverse event records with the causality PROBABLY RELATED. visible every score 100%; twin 5 of 30 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values); the matrix: separated on the twin
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 30 gold cells wrong, strict 0 of 1; twin 5 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 4; twin owned by L5 (no decision): 5
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 30 gold cells wrong, strict 0 of 1; twin 6 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 7; twin owned by L7 (no decision): 7
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 22 of 30 gold cells wrong, strict 0 of 1; twin 19 of 30 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 22; twin owned by L6 (no decision): 19
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 30 gold cells wrong, strict 0 of 1; twin 0 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 30 gold cells wrong, strict 0 of 1; twin 0 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
+  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["PROBABLY RELATED", "RELATED"]} becomes {"rule": "stated_list", "values": ["RELATED"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 69 adverse event records with the causality PROBABLY RELATED. visible every score 100%; twin 5 of 30 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values): 5; the matrix: separated on the twin
   S11-quote (L0): passed: trt.actual.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.actual.source
   S12-span (L0): passed: trt.actual.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.actual.source
-  sweep of the matrix: 31 other values of 22 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 10 silent, as the matrix says; 0 shown on the visible data only; 343 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 31 other values of 22 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 10 silent, as the matrix says; 0 shown on the visible data only; 343 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 26 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 521 wrong cells and axes; 397 owned by the one decision that changes them alone, 124 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sfmyncmq (kit-002), train: 3 arms; 73 subjects in the visible data, 79 in the twin; 22 decisions of the slice, 9 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 7: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 18 cells, 33 results, 59 ADaM columns; twin 18 cells, 33 results, 59 ADaM columns
   arm C, stage C: 22 decisions: value 22 of 22; status 22 of 22; quote 22 of 22; span 22 of 22; visible: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 9 of 22 decisions to change (trt.planned.source, trt.start.source, trt.date.imputation, pop.safety.grouping, pop.efficacy.rule, ae.related.values, tfl.population, tfl.columns.total, tfl.percent.format); visible: produced 0 of 1; cells correct 0 of 0, 0 and 18; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 18; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 3 of 7 decisions to change (tfl.population, tfl.columns.total, tfl.percent.format); visible: produced 1 of 1; cells correct 12 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 8 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 18 gold cells wrong, strict 0 of 1; twin 2 of 18 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "randomized"} becomes {"rule": "safety"}. visible every score 100%; twin 4 of 18 gold cells wrong, strict 0 of 1; twin owned by L5 (tfl.population); the matrix: separated on the twin
-  S2-set-rule (L4): passed: pop.randomized.rule (mod-populations): {"rule": "all_randomized"} becomes {"rule": "randomized_with_postbaseline", "test": "SYSBP"}. visible 8 of 18 gold cells wrong, strict 0 of 1; twin 8 of 18 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.randomized.rule); twin owned by L4 (pop.randomized.rule); the matrix: separated on the twin
+  arm S, stage T: 3 of 7 decisions to change (tfl.population, tfl.columns.total, tfl.percent.format); visible: produced 1 of 1; cells correct 12 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 8 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1; visible owned by L5 (tfl.columns.total): 1 and L7 (tfl.percent.format): 6; twin owned by L5 (tfl.columns.total): 1 and L5 (tfl.population): 4 and L7 (tfl.percent.format): 6
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 18 gold cells wrong, strict 0 of 1; twin 2 of 18 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "randomized"} becomes {"rule": "safety"}. visible every score 100%; twin 4 of 18 gold cells wrong, strict 0 of 1; twin owned by L5 (tfl.population): 4; the matrix: separated on the twin
+  S2-set-rule (L4): passed: pop.randomized.rule (mod-populations): {"rule": "all_randomized"} becomes {"rule": "randomized_with_postbaseline", "test": "SYSBP"}. visible 8 of 18 gold cells wrong, strict 0 of 1; twin 8 of 18 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.randomized.rule): 8; twin owned by L4 (pop.randomized.rule): 8; the matrix: separated on the twin
   S3-window (L4): not planted: the gold decision ae.teae.end names no window of days
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 3 of 18 gold cells wrong, strict 0 of 1; twin 3 of 18 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 3 of 18 gold cells wrong, strict 0 of 1; twin 3 of 18 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 3; twin owned by L5 (no decision): 3
   S5-column (L7): not planted: the gold table has no total column to leave out
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 18 gold cells wrong, strict 0 of 1; twin 0 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
-  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]} becomes {"rule": "stated_list", "values": ["PROBABLE"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 17 adverse event records with the causality POSSIBLE. visible every score 100%; twin 3 of 18 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values); the matrix: separated on the twin
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 5 of 18 gold cells wrong, strict 0 of 1; twin 9 of 18 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 5; twin owned by L6 (no decision): 9
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 18 gold cells wrong, strict 0 of 1; twin 0 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 18 gold cells wrong, strict 0 of 1; twin 0 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
+  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]} becomes {"rule": "stated_list", "values": ["PROBABLE"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 17 adverse event records with the causality POSSIBLE. visible every score 100%; twin 3 of 18 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values): 3; the matrix: separated on the twin
   S11-quote (L0): passed: trt.planned.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.planned.source
   S12-span (L0): passed: trt.planned.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.planned.source
-  sweep of the matrix: 30 other values of 22 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 9 silent, as the matrix says; 0 shown on the visible data only; 164 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 30 other values of 22 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 9 silent, as the matrix says; 0 shown on the visible data only; 164 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 24 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 234 wrong cells and axes; 179 owned by the one decision that changes them alone, 55 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sfg5vbvq (kit-003), train: 4 arms; 92 subjects in the visible data, 109 in the twin; 21 decisions of the slice, 11 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 6: ae.related.values, date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, pop.safety.rule (read by the table: pop.safety.grouping, pop.safety.rule)
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 16 cells, 28 results, 58 ADaM columns; twin 16 cells, 28 results, 58 ADaM columns
   arm C, stage C: 21 decisions: value 21 of 21; status 21 of 21; quote 21 of 21; span 21 of 21; visible: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 11 of 21 decisions to change (trt.actual.source, trt.date.imputation, date.studyday.origin, pop.randomized.rule, ae.start.imputation, ae.teae.end, ae.related.values, tfl.columns.total, tfl.percent.format, tfl.rounding.rule, tfl.ae.summary.rows); visible: produced 0 of 1; cells correct 0 of 0, 0 and 16; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 16; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 4 of 7 decisions to change (tfl.columns.total, tfl.percent.format, tfl.rounding.rule, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 12 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 9 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 16 gold cells wrong, strict 0 of 1; twin 2 of 16 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 6 of 16 gold cells wrong, strict 0 of 1; twin 11 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
+  arm S, stage T: 4 of 7 decisions to change (tfl.columns.total, tfl.percent.format, tfl.rounding.rule, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 12 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 9 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1; visible owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.columns.total): 1 and L7 (tfl.percent.format): 4; twin owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.columns.total): 1 and L7 (tfl.percent.format): 5 and L7 (tfl.rounding.rule): 2
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 16 gold cells wrong, strict 0 of 1; twin 2 of 16 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 6 of 16 gold cells wrong, strict 0 of 1; twin 11 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 6; twin owned by L5 (tfl.population): 11; the matrix: separated on the twin
   S2-set-rule (L4): silent: pop.safety.rule (mod-populations): {"rule": "at_least_one_dose"} becomes {"rule": "randomized_and_dosed"}. visible every score 100%; twin every score 100%; the matrix: unseparated on the twin
-  S3-window (L4): passed: ae.teae.end (mod-ae-emergence): {"days": 14, "rule": "last_dose_plus_days"} becomes {"days": 15, "rule": "last_dose_plus_days"}. visible every score 100%; twin 1 of 16 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.teae.end); the matrix holds no such pair
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 16 gold cells wrong, strict 0 of 1; twin 3 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
+  S3-window (L4): passed: ae.teae.end (mod-ae-emergence): {"days": 14, "rule": "last_dose_plus_days"} becomes {"days": 15, "rule": "last_dose_plus_days"}. visible every score 100%; twin 1 of 16 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.teae.end): 1; the matrix holds no such pair
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 16 gold cells wrong, strict 0 of 1; twin 3 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 4; twin owned by L5 (no decision): 3
   S5-column (L7): not planted: the gold table has no total column to leave out
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 16 gold cells wrong, strict 0 of 1; twin 0 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 6 of 16 gold cells wrong, strict 0 of 1; twin 7 of 16 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 6; twin owned by L6 (no decision): 7
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 16 gold cells wrong, strict 0 of 1; twin 0 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 16 gold cells wrong, strict 0 of 1; twin 0 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
   S10-frozen (L4): silent: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["PROBABLY RELATED", "RELATED"]} becomes {"rule": "stated_list", "values": ["RELATED"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 12 adverse event records with the causality PROBABLY RELATED. visible every score 100%; twin every score 100%; the matrix: unseparated on the twin
   S11-quote (L0): passed: trt.actual.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.actual.source
   S12-span (L0): passed: trt.actual.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.actual.source
-  sweep of the matrix: 29 other values of 21 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 8 silent, as the matrix says; 0 shown on the visible data only; 172 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 29 other values of 21 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 8 silent, as the matrix says; 0 shown on the visible data only; 172 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 22 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 264 wrong cells and axes; 185 owned by the one decision that changes them alone, 79 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sfrrl2uh (kit-004), train: 2 arms; 97 subjects in the visible data, 113 in the twin; 22 decisions of the slice, 9 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 8: date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, trt.actual.source, trt.end.source, pop.safety.rule, tfl.rounding.rule (read by the table: pop.safety.rule, tfl.rounding.rule)
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 15 cells, 27 results, 59 ADaM columns; twin 15 cells, 27 results, 59 ADaM columns
   arm C, stage C: 22 decisions: value 22 of 22; status 22 of 22; quote 22 of 22; span 22 of 22; visible: produced 1 of 1; cells correct 15 of 15, 15 and 15; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 15 of 15, 15 and 15; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 15 of 15, 15 and 15; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 15 of 15, 15 and 15; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 9 of 22 decisions to change (trt.actual.source, trt.start.source, pop.randomized.rule, pop.efficacy.rule, ae.start.imputation, ae.related.values, tfl.population, tfl.columns.total, tfl.ae.summary.rows); visible: produced 0 of 1; cells correct 0 of 0, 0 and 15; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 15; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 3 of 7 decisions to change (tfl.population, tfl.columns.total, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 4 of 15, 15 and 15; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 7 of 15, 15 and 15; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 15 gold cells wrong, strict 0 of 1; twin 2 of 15 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "efficacy"} becomes {"rule": "safety"}. visible 11 of 15 gold cells wrong, strict 0 of 1; twin 8 of 15 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
-  S2-set-rule (L4): passed: pop.efficacy.rule (mod-populations): {"rule": "baseline_and_postbaseline", "test": "WEIGHT"} becomes {"rule": "attended_visit", "visit": "WEEK 4"}. visible 8 of 15 gold cells wrong, strict 0 of 1; twin 12 of 15 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.efficacy.rule); twin owned by L4 (pop.efficacy.rule); the matrix: separated on the twin
+  arm S, stage T: 3 of 7 decisions to change (tfl.population, tfl.columns.total, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 4 of 15, 15 and 15; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 7 of 15, 15 and 15; strict 0 of 1; lenient 0 of 1; visible owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.population): 7 and L5 (tfl.population, tfl.columns.total): 4; twin owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.population): 4 and L5 (tfl.population, tfl.columns.total): 4
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 15 gold cells wrong, strict 0 of 1; twin 2 of 15 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "efficacy"} becomes {"rule": "safety"}. visible 11 of 15 gold cells wrong, strict 0 of 1; twin 8 of 15 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 11; twin owned by L5 (tfl.population): 8; the matrix: separated on the twin
+  S2-set-rule (L4): passed: pop.efficacy.rule (mod-populations): {"rule": "baseline_and_postbaseline", "test": "WEIGHT"} becomes {"rule": "attended_visit", "visit": "WEEK 4"}. visible 8 of 15 gold cells wrong, strict 0 of 1; twin 12 of 15 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.efficacy.rule): 8; twin owned by L4 (pop.efficacy.rule): 12; the matrix: separated on the twin
   S3-window (L4): not planted: the gold decision ae.teae.end names no window of days
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 2 of 15 gold cells wrong, strict 0 of 1; twin 3 of 15 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 5 of 15 gold cells wrong, strict 0 of 1; twin 5 of 15 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 15 gold cells wrong, strict 0 of 1; twin 0 of 15 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
-  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["PROBABLY RELATED", "RELATED"]} becomes {"rule": "stated_list", "values": ["RELATED"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 11 adverse event records with the causality PROBABLY RELATED. visible every score 100%; twin 3 of 15 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values); the matrix: separated on the twin
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 2 of 15 gold cells wrong, strict 0 of 1; twin 3 of 15 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 2; twin owned by L5 (no decision): 3
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 5 of 15 gold cells wrong, strict 0 of 1; twin 5 of 15 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 6; twin owned by L7 (no decision): 6
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 6 of 15 gold cells wrong, strict 0 of 1; twin 9 of 15 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 6; twin owned by L6 (no decision): 9
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 15 gold cells wrong, strict 0 of 1; twin 0 of 15 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 15 gold cells wrong, strict 0 of 1; twin 0 of 15 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
+  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["PROBABLY RELATED", "RELATED"]} becomes {"rule": "stated_list", "values": ["RELATED"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 11 adverse event records with the causality PROBABLY RELATED. visible every score 100%; twin 3 of 15 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values): 3; the matrix: separated on the twin
   S11-quote (L0): passed: trt.actual.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.actual.source
   S12-span (L0): passed: trt.actual.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.actual.source
-  sweep of the matrix: 31 other values of 22 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 10 silent, as the matrix says; 0 shown on the visible data only; 190 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 31 other values of 22 decisions, each as the one wrong decision of a candidate: 21 shown on the twin and 10 silent, as the matrix says; 0 shown on the visible data only; 190 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 26 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 256 wrong cells and axes; 164 owned by the one decision that changes them alone, 92 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sflnykvq (kit-005), dev: 3 arms; 69 subjects in the visible data, 82 in the twin; 21 decisions of the slice, 8 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 5: date.studyday.origin, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 20 cells, 36 results, 58 ADaM columns; twin 20 cells, 36 results, 58 ADaM columns
   arm C, stage C: 21 decisions: value 21 of 21; status 21 of 21; quote 21 of 21; span 21 of 21; visible: produced 1 of 1; cells correct 20 of 20, 20 and 20; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 20 of 20, 20 and 20; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 20 of 20, 20 and 20; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 20 of 20, 20 and 20; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 8 of 21 decisions to change (trt.end.source, ae.start.imputation, ae.teae.end, ae.related.values, tfl.population, tfl.columns.arms, tfl.percent.format, tfl.ae.summary.rows); visible: produced 0 of 1; cells correct 0 of 0, 0 and 20; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 20; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 4 of 7 decisions to change (tfl.population, tfl.columns.arms, tfl.percent.format, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 7 of 20, 20 and 20; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 7 of 20, 20 and 20; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 20 gold cells wrong, strict 0 of 1; twin 2 of 20 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "randomized"} becomes {"rule": "safety"}. visible 7 of 20 gold cells wrong, strict 0 of 1; twin 8 of 20 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
-  S2-set-rule (L4): passed: pop.randomized.rule (mod-populations): {"rule": "all_randomized"} becomes {"rule": "randomized_with_postbaseline", "test": "SYSBP"}. visible 11 of 20 gold cells wrong, strict 0 of 1; twin 15 of 20 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.randomized.rule); twin owned by L4 (pop.randomized.rule); the matrix: separated on the twin
+  arm S, stage T: 4 of 7 decisions to change (tfl.population, tfl.columns.arms, tfl.percent.format, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 7 of 20, 20 and 20; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 7 of 20, 20 and 20; strict 0 of 1; lenient 0 of 1; visible owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.population): 7 and L7 (tfl.columns.arms): 1 and L7 (tfl.percent.format): 6; twin owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.population): 8 and L7 (tfl.columns.arms): 1 and L7 (tfl.percent.format): 5
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 20 gold cells wrong, strict 0 of 1; twin 2 of 20 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "randomized"} becomes {"rule": "safety"}. visible 7 of 20 gold cells wrong, strict 0 of 1; twin 8 of 20 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 7; twin owned by L5 (tfl.population): 8; the matrix: separated on the twin
+  S2-set-rule (L4): passed: pop.randomized.rule (mod-populations): {"rule": "all_randomized"} becomes {"rule": "randomized_with_postbaseline", "test": "SYSBP"}. visible 11 of 20 gold cells wrong, strict 0 of 1; twin 15 of 20 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.randomized.rule): 11; twin owned by L4 (pop.randomized.rule): 15; the matrix: separated on the twin
   S3-window (L4): not planted: the gold decision ae.teae.end names no window of days
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 20 gold cells wrong, strict 0 of 1; twin 4 of 20 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 5 of 20 gold cells wrong, strict 0 of 1; twin 5 of 20 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "protocol_order"} becomes {"rule": "ascending_dose_placebo_first"}. visible 0 of 20 gold cells wrong, strict 0 of 1; twin 0 of 20 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 20 gold cells wrong, strict 0 of 1; twin 4 of 20 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 4; twin owned by L5 (no decision): 4
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 5 of 20 gold cells wrong, strict 0 of 1; twin 5 of 20 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 6; twin owned by L7 (no decision): 6
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 8 of 20 gold cells wrong, strict 0 of 1; twin 11 of 20 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 8; twin owned by L6 (no decision): 11
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "protocol_order"} becomes {"rule": "ascending_dose_placebo_first"}. visible 0 of 20 gold cells wrong, strict 0 of 1; twin 0 of 20 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 20 gold cells wrong, strict 0 of 1; twin 0 of 20 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
   S10-frozen (L4): not planted: the gold list has one value, and the visible data hold it: a list frozen from them is the gold list
   S11-quote (L0): passed: trt.end.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.end.source
   S12-span (L0): passed: trt.end.source (mod-treatment): the citation names the anchor 2/s1, that of another decision; the quote is unchanged. reading span: wrong for trt.end.source
-  sweep of the matrix: 29 other values of 21 decisions, each as the one wrong decision of a candidate: 22 shown on the twin and 7 silent, as the matrix says; 0 shown on the visible data only; 200 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 29 other values of 21 decisions, each as the one wrong decision of a candidate: 22 shown on the twin and 7 silent, as the matrix says; 0 shown on the visible data only; 200 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 24 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 280 wrong cells and axes; 196 owned by the one decision that changes them alone, 84 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sfphbktr (kit-006), dev: 4 arms; 79 subjects in the visible data, 95 in the twin; 21 decisions of the slice, 8 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 6: date.studyday.origin, disp.status.record, pop.randomized.rule, trt.actual.source, trt.end.source, pop.safety.rule (read by the table: pop.safety.rule)
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 30 cells, 55 results, 58 ADaM columns; twin 30 cells, 55 results, 58 ADaM columns
   arm C, stage C: 21 decisions: value 21 of 21; status 21 of 21; quote 21 of 21; span 21 of 21; visible: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 30 of 30, 30 and 30; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 8 of 21 decisions to change (trt.start.source, date.studyday.origin, pop.randomized.rule, pop.safety.grouping, ae.start.imputation, ae.related.values, tfl.percent.format, tfl.rounding.rule); visible: produced 0 of 1; cells correct 0 of 0, 0 and 30; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 30; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 2 of 7 decisions to change (tfl.percent.format, tfl.rounding.rule); visible: produced 1 of 1; cells correct 18 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 21 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 30 gold cells wrong, strict 0 of 1; twin 2 of 30 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 15 of 30 gold cells wrong, strict 0 of 1; twin 19 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
+  arm S, stage T: 2 of 7 decisions to change (tfl.percent.format, tfl.rounding.rule); visible: produced 1 of 1; cells correct 18 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 21 of 30, 30 and 30; strict 0 of 1; lenient 0 of 1; visible owned by L7 (tfl.percent.format): 12; twin owned by L7 (tfl.percent.format): 7 and L7 (tfl.rounding.rule): 2
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 30 gold cells wrong, strict 0 of 1; twin 2 of 30 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 15 of 30 gold cells wrong, strict 0 of 1; twin 19 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 15; twin owned by L5 (tfl.population): 19; the matrix: separated on the twin
   S2-set-rule (L4): silent: pop.safety.rule (mod-populations): {"rule": "at_least_one_dose"} becomes {"rule": "randomized_and_dosed"}. visible every score 100%; twin every score 100%; the matrix: unseparated on the twin
   S3-window (L4): not planted: the gold decision ae.teae.end names no window of days
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 5 of 30 gold cells wrong, strict 0 of 1; twin 5 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 30 gold cells wrong, strict 0 of 1; twin 6 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 30 gold cells wrong, strict 0 of 1; twin 0 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
-  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["REMOTE", "POSSIBLE", "PROBABLE"]} becomes {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 43 adverse event records with the causality REMOTE. visible every score 100%; twin 5 of 30 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values); the matrix: separated on the twin
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 5 of 30 gold cells wrong, strict 0 of 1; twin 5 of 30 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 5; twin owned by L5 (no decision): 5
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 30 gold cells wrong, strict 0 of 1; twin 6 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 7; twin owned by L7 (no decision): 7
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 12 of 30 gold cells wrong, strict 0 of 1; twin 15 of 30 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 12; twin owned by L6 (no decision): 15
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 30 gold cells wrong, strict 0 of 1; twin 0 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 30 gold cells wrong, strict 0 of 1; twin 0 of 30 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
+  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["REMOTE", "POSSIBLE", "PROBABLE"]} becomes {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 43 adverse event records with the causality REMOTE. visible every score 100%; twin 5 of 30 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values): 5; the matrix: separated on the twin
   S11-quote (L0): passed: trt.start.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.start.source
   S12-span (L0): passed: trt.start.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.start.source
-  sweep of the matrix: 28 other values of 21 decisions, each as the one wrong decision of a candidate: 20 shown on the twin and 8 silent, as the matrix says; 0 shown on the visible data only; 270 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 28 other values of 21 decisions, each as the one wrong decision of a candidate: 20 shown on the twin and 8 silent, as the matrix says; 0 shown on the visible data only; 270 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 23 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 452 wrong cells and axes; 351 owned by the one decision that changes them alone, 101 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sfp6x45g (kit-007), dev: 3 arms; 71 subjects in the visible data, 84 in the twin; 22 decisions of the slice, 10 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 5: date.studyday.origin, pop.efficacy.rule, pop.randomized.rule, trt.actual.source, pop.safety.rule (read by the table: pop.safety.rule)
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 24 cells, 44 results, 59 ADaM columns; twin 24 cells, 44 results, 59 ADaM columns
   arm C, stage C: 22 decisions: value 22 of 22; status 22 of 22; quote 22 of 22; span 22 of 22; visible: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 10 of 22 decisions to change (trt.planned.source, trt.end.source, trt.date.imputation, date.studyday.origin, pop.safety.rule, pop.safety.grouping, pop.efficacy.rule, ae.teae.end, ae.related.values, tfl.percent.format); visible: produced 0 of 1; cells correct 0 of 0, 0 and 24; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 24; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 1 of 7 decisions to change (tfl.percent.format); visible: produced 1 of 1; cells correct 18 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 19 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 24 gold cells wrong, strict 0 of 1; twin 2 of 24 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 8 of 24 gold cells wrong, strict 0 of 1; twin 9 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
+  arm S, stage T: 1 of 7 decisions to change (tfl.percent.format); visible: produced 1 of 1; cells correct 18 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 19 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1; visible owned by L7 (tfl.percent.format): 6; twin owned by L7 (tfl.percent.format): 5
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 24 gold cells wrong, strict 0 of 1; twin 2 of 24 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 8 of 24 gold cells wrong, strict 0 of 1; twin 9 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 8; twin owned by L5 (tfl.population): 9; the matrix: separated on the twin
   S2-set-rule (L4): silent: pop.safety.rule (mod-populations): {"rule": "randomized_and_dosed"} becomes {"rule": "at_least_one_dose"}. visible every score 100%; twin every score 100%; the matrix: unseparated on the twin
-  S3-window (L4): passed: ae.teae.end (mod-ae-emergence): {"days": 30, "rule": "last_dose_plus_days"} becomes {"days": 31, "rule": "last_dose_plus_days"}. visible 2 of 24 gold cells wrong, strict 0 of 1; twin 2 of 24 gold cells wrong, strict 0 of 1; visible owned by L4 (ae.teae.end); twin owned by L4 (ae.teae.end); the matrix holds no such pair
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 24 gold cells wrong, strict 0 of 1; twin 4 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 24 gold cells wrong, strict 0 of 1; twin 6 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 24 gold cells wrong, strict 0 of 1; twin 0 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
+  S3-window (L4): passed: ae.teae.end (mod-ae-emergence): {"days": 30, "rule": "last_dose_plus_days"} becomes {"days": 31, "rule": "last_dose_plus_days"}. visible 2 of 24 gold cells wrong, strict 0 of 1; twin 2 of 24 gold cells wrong, strict 0 of 1; visible owned by L4 (ae.teae.end): 2; twin owned by L4 (ae.teae.end): 2; the matrix holds no such pair
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 24 gold cells wrong, strict 0 of 1; twin 4 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 4; twin owned by L5 (no decision): 4
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 24 gold cells wrong, strict 0 of 1; twin 6 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 7; twin owned by L7 (no decision): 7
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 11 of 24 gold cells wrong, strict 0 of 1; twin 14 of 24 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 11; twin owned by L6 (no decision): 14
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 24 gold cells wrong, strict 0 of 1; twin 0 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 24 gold cells wrong, strict 0 of 1; twin 0 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
   S10-frozen (L4): not planted: the gold list has one value, and the visible data hold it: a list frozen from them is the gold list
   S11-quote (L0): passed: trt.planned.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.planned.source
   S12-span (L0): passed: trt.planned.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.planned.source
-  sweep of the matrix: 28 other values of 22 decisions, each as the one wrong decision of a candidate: 22 shown on the twin and 6 silent, as the matrix says; 0 shown on the visible data only; 244 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 28 other values of 22 decisions, each as the one wrong decision of a candidate: 22 shown on the twin and 6 silent, as the matrix says; 0 shown on the visible data only; 244 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 22 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 322 wrong cells and axes; 270 owned by the one decision that changes them alone, 52 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sf6xjw92 (kit-008), test: 3 arms; 66 subjects in the visible data, 78 in the twin; 21 decisions of the slice, 10 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 6: ae.related.values, date.studyday.origin, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 16 cells, 28 results, 58 ADaM columns; twin 16 cells, 28 results, 58 ADaM columns
   arm C, stage C: 21 decisions: value 21 of 21; status 21 of 21; quote 21 of 21; span 21 of 21; visible: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 16 of 16, 16 and 16; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 10 of 21 decisions to change (trt.start.source, date.studyday.origin, pop.safety.grouping, ae.teae.end, ae.related.values, tfl.population, tfl.columns.arms, tfl.percent.format, tfl.rounding.rule, tfl.ae.summary.rows); visible: produced 0 of 1; cells correct 0 of 0, 0 and 16; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 16; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 5 of 7 decisions to change (tfl.population, tfl.columns.arms, tfl.percent.format, tfl.rounding.rule, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 6 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 1 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 16 gold cells wrong, strict 0 of 1; twin 2 of 16 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "randomized"} becomes {"rule": "safety"}. visible 6 of 16 gold cells wrong, strict 0 of 1; twin 9 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
-  S2-set-rule (L4): passed: pop.randomized.rule (mod-populations): {"rule": "all_randomized"} becomes {"rule": "randomized_with_postbaseline", "test": "SYSBP"}. visible 6 of 16 gold cells wrong, strict 0 of 1; twin 12 of 16 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.randomized.rule); twin owned by L4 (pop.randomized.rule); the matrix: separated on the twin
+  arm S, stage T: 5 of 7 decisions to change (tfl.population, tfl.columns.arms, tfl.percent.format, tfl.rounding.rule, tfl.ae.summary.rows); visible: produced 1 of 1; cells correct 6 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 1 of 16, 16 and 16; strict 0 of 1; lenient 0 of 1; visible owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.population): 6 and L7 (tfl.columns.arms): 1 and L7 (tfl.percent.format): 4; twin owned by L5 (tfl.ae.summary.rows): 1 and L5 (tfl.population): 9 and L7 (tfl.columns.arms): 1 and L7 (tfl.percent.format): 4 and L7 (tfl.rounding.rule): 2
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 16 gold cells wrong, strict 0 of 1; twin 2 of 16 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "randomized"} becomes {"rule": "safety"}. visible 6 of 16 gold cells wrong, strict 0 of 1; twin 9 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 6; twin owned by L5 (tfl.population): 9; the matrix: separated on the twin
+  S2-set-rule (L4): passed: pop.randomized.rule (mod-populations): {"rule": "all_randomized"} becomes {"rule": "randomized_with_postbaseline", "test": "SYSBP"}. visible 6 of 16 gold cells wrong, strict 0 of 1; twin 12 of 16 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.randomized.rule): 6; twin owned by L4 (pop.randomized.rule): 12; the matrix: separated on the twin
   S3-window (L4): not planted: the gold decision ae.teae.end names no window of days
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 16 gold cells wrong, strict 0 of 1; twin 4 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 4 of 16 gold cells wrong, strict 0 of 1; twin 4 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "protocol_order"} becomes {"rule": "ascending_dose_placebo_first"}. visible 0 of 16 gold cells wrong, strict 0 of 1; twin 0 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 16 gold cells wrong, strict 0 of 1; twin 4 of 16 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 4; twin owned by L5 (no decision): 4
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 4 of 16 gold cells wrong, strict 0 of 1; twin 4 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 5; twin owned by L7 (no decision): 5
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 8 of 16 gold cells wrong, strict 0 of 1; twin 6 of 16 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 8; twin owned by L6 (no decision): 6
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "protocol_order"} becomes {"rule": "ascending_dose_placebo_first"}. visible 0 of 16 gold cells wrong, strict 0 of 1; twin 0 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 16 gold cells wrong, strict 0 of 1; twin 0 of 16 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
   S10-frozen (L4): silent: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["PROBABLY RELATED", "RELATED"]} becomes {"rule": "stated_list", "values": ["RELATED"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 22 adverse event records with the causality PROBABLY RELATED. visible every score 100%; twin every score 100%; the matrix: unseparated on the twin
   S11-quote (L0): passed: trt.start.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.start.source
   S12-span (L0): passed: trt.start.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.start.source
-  sweep of the matrix: 29 other values of 21 decisions, each as the one wrong decision of a candidate: 19 shown on the twin and 10 silent, as the matrix says; 0 shown on the visible data only; 143 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 29 other values of 21 decisions, each as the one wrong decision of a candidate: 19 shown on the twin and 10 silent, as the matrix says; 0 shown on the visible data only; 143 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 24 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 242 wrong cells and axes; 168 owned by the one decision that changes them alone, 74 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sfyf9ekd (kit-009), test: 3 arms; 114 subjects in the visible data, 137 in the twin; 22 decisions of the slice, 13 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 8: date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, trt.actual.source, pop.safety.rule, tfl.rounding.rule, trt.end.source (read by the table: pop.safety.rule, tfl.rounding.rule, trt.end.source)
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 24 cells, 44 results, 59 ADaM columns; twin 24 cells, 44 results, 59 ADaM columns
   arm C, stage C: 22 decisions: value 22 of 22; status 22 of 22; quote 22 of 22; span 22 of 22; visible: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 24 of 24, 24 and 24; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 13 of 22 decisions to change (trt.planned.source, trt.start.source, pop.randomized.rule, pop.safety.rule, pop.efficacy.rule, ae.start.imputation, ae.teae.end, ae.related.values, tfl.population, tfl.columns.arms, tfl.columns.total, tfl.percent.format, tfl.rounding.rule); visible: produced 0 of 1; cells correct 0 of 0, 0 and 24; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 24; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 5 of 7 decisions to change (tfl.population, tfl.columns.arms, tfl.columns.total, tfl.percent.format, tfl.rounding.rule); visible: produced 1 of 1; cells correct 3 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 0 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 24 gold cells wrong, strict 0 of 1; twin 2 of 24 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "efficacy"} becomes {"rule": "safety"}. visible 18 of 24 gold cells wrong, strict 0 of 1; twin 22 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
-  S2-set-rule (L4): passed: pop.efficacy.rule (mod-populations): {"rule": "baseline_and_postbaseline", "test": "SYSBP"} becomes {"rule": "attended_visit", "visit": "WEEK 2"}. visible 15 of 24 gold cells wrong, strict 0 of 1; twin 19 of 24 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.efficacy.rule); twin owned by L4 (pop.efficacy.rule); the matrix: separated on the twin
-  S3-window (L4): passed: ae.teae.end (mod-ae-emergence): {"days": 14, "rule": "last_dose_plus_days"} becomes {"days": 15, "rule": "last_dose_plus_days"}. visible every score 100%; twin 2 of 24 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.teae.end); the matrix holds no such pair
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 24 gold cells wrong, strict 0 of 1; twin 4 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 24 gold cells wrong, strict 0 of 1; twin 6 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "protocol_order"} becomes {"rule": "ascending_dose_placebo_first"}. visible 0 of 24 gold cells wrong, strict 0 of 1; twin 0 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
+  arm S, stage T: 5 of 7 decisions to change (tfl.population, tfl.columns.arms, tfl.columns.total, tfl.percent.format, tfl.rounding.rule); visible: produced 1 of 1; cells correct 3 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 0 of 24, 24 and 24; strict 0 of 1; lenient 0 of 1; visible owned by L5 (tfl.population): 11 and L5 (tfl.population, tfl.columns.arms): 1 and L5 (tfl.population, tfl.columns.total): 6 and L5 (tfl.population, tfl.percent.format): 1 and L7 (tfl.percent.format): 1 and L7 (tfl.rounding.rule): 2; twin owned by L5 (tfl.population): 14 and L5 (tfl.population, tfl.columns.arms): 1 and L5 (tfl.population, tfl.columns.total): 5 and L5 (tfl.population, tfl.percent.format): 3 and L7 (tfl.percent.format): 2
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 24 gold cells wrong, strict 0 of 1; twin 2 of 24 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "efficacy"} becomes {"rule": "safety"}. visible 18 of 24 gold cells wrong, strict 0 of 1; twin 22 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 19; twin owned by L5 (tfl.population): 23; the matrix: separated on the twin
+  S2-set-rule (L4): passed: pop.efficacy.rule (mod-populations): {"rule": "baseline_and_postbaseline", "test": "SYSBP"} becomes {"rule": "attended_visit", "visit": "WEEK 2"}. visible 15 of 24 gold cells wrong, strict 0 of 1; twin 19 of 24 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.efficacy.rule): 15; twin owned by L4 (pop.efficacy.rule): 19; the matrix: separated on the twin
+  S3-window (L4): passed: ae.teae.end (mod-ae-emergence): {"days": 14, "rule": "last_dose_plus_days"} becomes {"days": 15, "rule": "last_dose_plus_days"}. visible every score 100%; twin 2 of 24 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.teae.end): 2; the matrix holds no such pair
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 4 of 24 gold cells wrong, strict 0 of 1; twin 4 of 24 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 4; twin owned by L5 (no decision): 4
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 24 gold cells wrong, strict 0 of 1; twin 6 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 7; twin owned by L7 (no decision): 7
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 16 of 24 gold cells wrong, strict 0 of 1; twin 15 of 24 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 16; twin owned by L6 (no decision): 15
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "protocol_order"} becomes {"rule": "ascending_dose_placebo_first"}. visible 0 of 24 gold cells wrong, strict 0 of 1; twin 0 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 24 gold cells wrong, strict 0 of 1; twin 0 of 24 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
   S10-frozen (L4): not planted: the gold list has one value, and the visible data hold it: a list frozen from them is the gold list
   S11-quote (L0): passed: trt.planned.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.planned.source
   S12-span (L0): passed: trt.planned.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.planned.source
-  sweep of the matrix: 28 other values of 22 decisions, each as the one wrong decision of a candidate: 19 shown on the twin and 8 silent, as the matrix says; 1 shown on the visible data only; 273 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 28 other values of 22 decisions, each as the one wrong decision of a candidate: 19 shown on the twin and 8 silent, as the matrix says; 1 shown on the visible data only; 273 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 22 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 418 wrong cells and axes; 317 owned by the one decision that changes them alone, 101 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 kit sf4tvbdp (kit-010), test: 2 arms; 115 subjects in the visible data, 128 in the twin; 22 decisions of the slice, 8 stated
   unseparated on the twin by the matrix of the kit, compared by value only: 6: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.randomized.rule, trt.end.source, trt.planned.source
   gold: built again from the gold decisions, it is the gold of the kit on both datasets: visible 18 cells, 33 results, 59 ADaM columns; twin 18 cells, 33 results, 59 ADaM columns
   arm C, stage C: 22 decisions: value 22 of 22; status 22 of 22; quote 22 of 22; span 22 of 22; visible: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1: 100%
   arm C, stage T: 7 decisions: value 7 of 7; status 7 of 7; quote 7 of 7; span 7 of 7; visible: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1; twin: produced 1 of 1; cells correct 18 of 18, 18 and 18; strict 1 of 1; lenient 1 of 1: 100%
   arm S, stage C: 8 of 22 decisions to change (trt.planned.source, trt.date.imputation, date.studyday.origin, pop.randomized.rule, pop.efficacy.rule, disp.status.record, ae.related.values, tfl.rounding.rule); visible: produced 0 of 1; cells correct 0 of 0, 0 and 18; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values); twin: produced 0 of 1; cells correct 0 of 0, 0 and 18; strict 0 of 1; lenient 0 of 1 (not valid: compile: ADAE: no value for ae.related.values)
-  arm S, stage T: 1 of 7 decisions to change (tfl.rounding.rule); visible: produced 1 of 1; cells correct 17 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 16 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1
-  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 18 gold cells wrong, strict 0 of 1; twin 2 of 18 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision); twin owned by L6 (no decision)
-  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 17 of 18 gold cells wrong, strict 0 of 1; twin 16 of 18 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population); twin owned by L5 (tfl.population); the matrix: separated on the twin
-  S2-set-rule (L4): passed: pop.safety.rule (mod-populations): {"rule": "at_least_one_dose"} becomes {"rule": "randomized_and_dosed"}. visible 9 of 18 gold cells wrong, strict 0 of 1; twin 8 of 18 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.safety.rule); twin owned by L4 (pop.safety.rule); the matrix: separated on the twin
+  arm S, stage T: 1 of 7 decisions to change (tfl.rounding.rule); visible: produced 1 of 1; cells correct 17 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1; twin: produced 1 of 1; cells correct 16 of 18, 18 and 18; strict 0 of 1; lenient 0 of 1; visible owned by L7 (tfl.rounding.rule): 1; twin owned by L7 (tfl.rounding.rule): 2
+  S1-arms (L6): passed: in the results of the first analysis in which two arms differ, the results of the two arms are exchanged. visible 2 of 18 gold cells wrong, strict 0 of 1; twin 2 of 18 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 2; twin owned by L6 (no decision): 2
+  S2-set (L5): passed: tfl.population (tfl-ae-summary): {"rule": "safety"} becomes {"rule": "randomized"}. visible 17 of 18 gold cells wrong, strict 0 of 1; twin 16 of 18 gold cells wrong, strict 0 of 1; visible owned by L5 (tfl.population): 18; twin owned by L5 (tfl.population): 17; the matrix: separated on the twin
+  S2-set-rule (L4): passed: pop.safety.rule (mod-populations): {"rule": "at_least_one_dose"} becomes {"rule": "randomized_and_dosed"}. visible 9 of 18 gold cells wrong, strict 0 of 1; twin 8 of 18 gold cells wrong, strict 0 of 1; visible owned by L4 (pop.safety.rule): 9; twin owned by L4 (pop.safety.rule): 8; the matrix: separated on the twin
   S3-window (L4): not planted: the gold decision ae.teae.end names no window of days
-  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 3 of 18 gold cells wrong, strict 0 of 1; twin 3 of 18 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision); twin owned by L5 (no decision)
-  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 18 gold cells wrong, strict 0 of 1; twin 6 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision); twin owned by L7 (no decision)
-  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 18 gold cells wrong, strict 0 of 1; twin 0 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms); twin owned by L7 (tfl.columns.arms); the matrix: separated on the twin
-  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]} becomes {"rule": "stated_list", "values": ["PROBABLE"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 36 adverse event records with the causality POSSIBLE. visible every score 100%; twin 3 of 18 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values); the matrix: separated on the twin
+  S4-denominator (L5): passed: in the ARS file, the percent of the second row takes its denominator from the subjects counted in the first row, not from the subjects of the analysis set. visible 3 of 18 gold cells wrong, strict 0 of 1; twin 3 of 18 gold cells wrong, strict 0 of 1; visible owned by L5 (no decision): 3; twin owned by L5 (no decision): 3
+  S5-column (L7): passed: in the layout, the total column is left out; the ARS file still has its analyses. visible 6 of 18 gold cells wrong, strict 0 of 1; twin 6 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 7; twin owned by L7 (no decision): 7
+  S7-rounded (L6): passed: in the results, every percent is rounded to a whole number before the grid rounds it to one decimal. visible 14 of 18 gold cells wrong, strict 0 of 1; twin 10 of 18 gold cells wrong, strict 0 of 1; visible owned by L6 (no decision): 14; twin owned by L6 (no decision): 10
+  S9-sort (L7): passed: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible 0 of 18 gold cells wrong, strict 0 of 1; twin 0 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (tfl.columns.arms): 1; twin owned by L7 (tfl.columns.arms): 1; the matrix: separated on the twin
+  S9-sort-build (L7): passed: in the layout, the treatment columns are ordered by the other rule; every decision is the gold decision. visible 0 of 18 gold cells wrong, strict 0 of 1; twin 0 of 18 gold cells wrong, strict 0 of 1; visible owned by L7 (no decision): 1; twin owned by L7 (no decision): 1
+  S10-frozen (L4): passed: ae.related.values (mod-ae-emergence): {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]} becomes {"rule": "stated_list", "values": ["PROBABLE"]}; the visible data hold every value of the list, so the case is scored with visible data that lack the 36 adverse event records with the causality POSSIBLE. visible every score 100%; twin 3 of 18 gold cells wrong, strict 0 of 1; twin owned by L4 (ae.related.values): 3; the matrix: separated on the twin
   S11-quote (L0): passed: trt.planned.source (mod-treatment): the quote gets words the document does not have. reading quote: wrong for trt.planned.source
   S12-span (L0): passed: trt.planned.source (mod-treatment): the citation names the anchor 1/s2, that of another decision; the quote is unchanged. reading span: wrong for trt.planned.source
-  sweep of the matrix: 30 other values of 22 decisions, each as the one wrong decision of a candidate: 23 shown on the twin and 7 silent, as the matrix says; 0 shown on the visible data only; 308 wrong cells and axes, each owned by the changed decision and confirmed; 0 problems
+  sweep of the matrix: 30 other values of 22 decisions, each as the one wrong decision of a candidate: 23 shown on the twin and 7 silent, as the matrix says; 0 shown on the visible data only; 308 wrong cells and axes, each owned by the changed decision at its layer; the cells of the twin counted against the matrix for 21 values
+  sweep of pairs: 12 candidates with a module decision and a table decision wrong at once: 341 wrong cells and axes; 241 owned by the one decision that changes them alone, 100 by both where each does, 0 by one of the two where neither does alone; 0 problems in both sweeps
 
 the checks on planted defects, on the first kit that passes:
   planted in the gold of the kit: the first cell of the twin's grid reads '(N=48)9': the gold check fails: yes
@@ -576,11 +619,15 @@ planted defects on 10 kits: per defect, the kits by outcome
   S3-window (L4): detected and attributed on 3 kits; not planted on 7
   S4-denominator (L5): detected and attributed on 10 kits; 
   S5-column (L7): detected and attributed on 8 kits; not planted on 2
+  S7-rounded (L6): detected and attributed on 10 kits; 
   S9-sort (L7): detected and attributed on 10 kits; 
+  S9-sort-build (L7): detected and attributed on 10 kits; 
   S10-frozen (L4): detected and attributed on 5 kits; not planted on 3; silent on 2
   S11-quote (L0): detected and attributed on 10 kits; 
   S12-span (L0): detected and attributed on 10 kits; 
-sweep of the matrices: 293 other values, each as the one wrong decision of a candidate: 209 shown on the twin, 1 on the visible data only, 83 silent; 2307 wrong cells and axes owned by the changed decision and confirmed; 0 problems
+sweep of the matrices: 293 other values, each as the one wrong decision of a candidate: 209 shown on the twin, 1 on the visible data only, 83 silent; 2307 wrong cells and axes owned by the changed decision at its layer; the cells of the twin counted against the matrix for 234 values
+sweep of pairs: 120 candidates with two wrong decisions: 3330 wrong cells and axes; 2468 owned by the one decision that changes them alone, 862 by both, 0 by one of the two where neither does alone
+problems of the sweeps: 0
   the layer at which each decision owns its cells: ae.related.values L4; ae.start.imputation L4; ae.teae.end L4; ae.teae.start L4; disp.status.record L4; pop.efficacy.rule L4; pop.randomized.rule L4; pop.safety.grouping L5; pop.safety.rule L4; tfl.ae.summary.rows L5; tfl.columns.arms L7; tfl.columns.total L5; tfl.output.include L5; tfl.percent.format L7; tfl.population L5; tfl.rounding.rule L7; trt.actual.source L4; trt.date.imputation L4; trt.end.source L4; trt.planned.source L4; trt.start.source L4
 gold built again is the gold of the kit: 10 of 10 kits
 parser control 100% in both stages: 10 of 10 kits
@@ -589,10 +636,10 @@ disagreements with the matrices of the kits: 0
 every defect that applies is detected and attributed on at least one kit: yes
 the checks fail on their planted defects: yes
 kits: PASS
--- PASS kits of gen-2a (265.2 s)
+-- PASS kits of gen-2a (509.3 s)
 
 == [13/14] cache untouched: specfirst fetch --verify
-cache: /tmp/specfirst-clean-1v6CL8/env/cache
+cache: /tmp/specfirst-clean-OFi1xo/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -613,26 +660,26 @@ fetch: every pin verified
 -- PASS cache untouched (0.1 s)
 
 == [14/14] ASCII: python -m specfirst.asciicheck
-ASCII check: 464 files checked, 0 with non-ASCII bytes
+ASCII check: 466 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.4 s
-PASS  pins                 1.1 s
-PASS  lint                 0.1 s
-PASS  unit tests         213.5 s
+PASS  environment          0.3 s
+PASS  pins                 0.8 s
+PASS  lint                 0.0 s
+PASS  unit tests         254.1 s
 PASS  hand-made study      1.1 s
-PASS  separation          31.9 s
+PASS  separation          31.7 s
 PASS  parser control       1.0 s
 PASS  standard alone       0.1 s
-PASS  planted defects      2.9 s
+PASS  planted defects      4.7 s
 PASS  pilot                0.4 s
 PASS  pilot tests          1.0 s
-PASS  kits of gen-2a     265.2 s
+PASS  kits of gen-2a     509.3 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE read-1a: PASS
 
-clean clone gate read-1a: PASS (clone: /tmp/specfirst-clean-1v6CL8/specfirst)
+clean clone gate read-1a: PASS (clone: /tmp/specfirst-clean-OFi1xo/specfirst)
 The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
 minute after the last command ends. Copy what must be kept in the same command that
 runs this script (docs/lessons.md, lesson 39). The log is in build/gates/read-1a/ here.
