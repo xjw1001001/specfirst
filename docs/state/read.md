@@ -102,9 +102,10 @@ read-1a (2026-11-18): the scorer for the slice is written. Its gate passed
 on a clean clone of `55dba60`. Pass 1 of the review
 (docs/reports/read-1a.review.md) did not sign: one finding blocks (R1: how
 the part reads the text of its gate is the owner's to accept), six do not.
-R2 to R7 are settled in the code and the records. The question of R1 is
-put to the owner (the last section of docs/decisions/ADR-008.md); the gate
-runs again on this code after the answer, then pass 2 of the review.
+R2 to R7 are settled in the code and the records. The question of R1 was
+put to the owner, who approved the reading on 2026-11-18 (the last section
+of docs/decisions/ADR-008.md). The gate runs again on a clean clone of the
+commit that records the answer; then pass 2 of the review.
 
 For the owner (docs/decisions/ADR-008.md):
 
