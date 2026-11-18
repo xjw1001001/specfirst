@@ -14,6 +14,7 @@ import pytest
 from specfirst import doctor
 
 LOCK = {"cards": "0.9.0", "mmrm": "0.3.19"}
+BACKSLASH, NEWLINE = chr(92), chr(10)
 
 
 def test_table_drift_is_empty_when_everything_matches():
@@ -161,3 +162,61 @@ def test_r_check_fails_without_rscript(root, monkeypatch, tmp_path):
     lines: list[str] = []
     assert doctor.load_r_packages(root, lines.append) is False
     assert lines == ["Rscript not found"]
+
+
+# -- env/lock.sh (review of gen-1a, findings F1 and F28) -----------------------------
+
+
+def test_the_lock_script_writes_every_lock_the_doctor_reads(root):
+    text = (root / doctor.LOCK_SCRIPT).read_text(encoding="ascii")
+    assert doctor.lock_script_problems(text, root) == []
+    assert set(doctor.LOCKS) == {"env/requirements.lock", "env/core-requirements.lock",
+                                 "env/r-packages.lock", "env/system.lock"}
+    for lock in doctor.LOCKS:
+        assert (root / lock).is_file(), lock
+    # The two commands of uv are read as one command each, options included.
+    compiles = [c for c in doctor.shell_commands(text) if " pip compile " in c]
+    assert len(compiles) == 2 and all("--output-file env/" in c for c in compiles)
+
+
+def test_a_broken_lock_script_is_seen(root):
+    """Planted: the defects that `bash -n` accepts. The first is the one that was committed."""
+    text = (root / doctor.LOCK_SCRIPT).read_text(encoding="ascii")
+    lines = text.splitlines()
+    start = next(i for i, line in enumerate(lines) if "pip compile env/core-requirements.in"
+                 in line)
+    stop = next(i for i in range(start, len(lines)) if not lines[i].endswith(BACKSLASH))
+    # As committed before the review of gen-1a: one line with the characters backslash
+    # and n where the line breaks were meant.
+    one_line = (" " + BACKSLASH + "n").join(
+        line.rstrip(BACKSLASH).strip() for line in lines[start:stop + 1])
+    broken = NEWLINE.join([*lines[:start], one_line, *lines[stop + 1:]]) + NEWLINE
+    found = doctor.lock_script_problems(broken, root)
+    assert found and found[0].startswith("a backslash inside a line, outside quotes")
+    # A continuation that lost its backslash: the options become commands of their own.
+    broken = text.replace("--generate-hashes " + BACKSLASH + NEWLINE,
+                          "--generate-hashes" + NEWLINE, 1)
+    found = doctor.lock_script_problems(broken, root)
+    assert any(line.startswith("a command starts with an option") for line in found)
+    assert "0 `pip compile` commands write env/requirements.lock, not one" in found
+    # A blank after the backslash.
+    broken = text.replace("--no-annotate " + BACKSLASH + NEWLINE,
+                          "--no-annotate " + BACKSLASH + " " + NEWLINE, 1)
+    assert any("followed by blanks" in line for line in doctor.lock_script_problems(broken, root))
+    # A lock that no command writes, a lock without hashes, a lock from another input.
+    assert "no command writes env/system.lock" in doctor.lock_script_problems(
+        text.replace("env/system.lock", "env/system.txt"), root)
+    broken = text.replace("  --generate-hashes " + BACKSLASH + NEWLINE, "", 1)
+    assert doctor.lock_script_problems(broken, root) == [
+        "env/requirements.lock is written without hashes"]
+    broken = text.replace("pip compile env/core-requirements.in", "pip compile env/core.in")
+    assert doctor.lock_script_problems(broken, root) == [
+        "env/core-requirements.lock is not resolved from env/core.in"
+        .replace("core.in", "core-requirements.in")]
+
+
+def test_the_doctor_reads_the_lock_script(root):
+    """The first check of every gate fails on a lock script that cannot write a lock."""
+    said: list[str] = []
+    doctor.run(root, said.append)
+    assert f"lock script: {doctor.LOCK_SCRIPT} writes 4 lock files, 0 problems" in said

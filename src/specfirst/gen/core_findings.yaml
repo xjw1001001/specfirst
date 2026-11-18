@@ -11,7 +11,9 @@
 #   every_record  the rule reports every record of the dataset: it cannot be
 #                 about particular records.
 #   repeated_key  the rule reports every record whose values of `key` occur
-#                 more than once in the dataset, and no other record.
+#                 more than once in the dataset, and no other record: as many
+#                 issues as there are such records, each a detail row that
+#                 names its subject, and the subjects named are theirs.
 #   study         one issue for the study as a whole, with no subject.
 #   probe         every issue of the rule is a record of a subject that one
 #                 of the named probes planted, as probes.jsonl of the same
@@ -158,7 +160,11 @@ explained:
     reason: >-
       A subject who was dosed without being randomized has no planned arm,
       an actual arm and a reference period. The probe separates the two
-      rules of the safety set.
+      rules of the safety set. By these four rules the record is not an edge
+      case of conformant data: SDTMIG v3.4 does not allow an actual arm and
+      a reference period beside the reason NOT ASSIGNED. The recipe of the
+      catalog is older than v3.4; whether the probe can be a conformant
+      record is a question for the std track (docs/state/gen.md).
   - id: probe-first-exposure-date-differs
     kind: probe
     datasets: [DM]

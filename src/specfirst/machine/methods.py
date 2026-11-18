@@ -15,7 +15,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Iterable, Sequence
-from decimal import ROUND_HALF_UP, Decimal, localcontext
+from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal, localcontext
 
 QUANTILE_DEFINITIONS = ("sas5", "r7")
 # test.fisher.exact, statement 5: the relative excess that still counts as "not larger".
@@ -220,11 +220,16 @@ def fisher_exact_p(table: Sequence[Sequence[int]]) -> float | None:
     return min(1.0, math.fsum(terms))
 
 
-# ---- display.round.half_away_from_zero ------------------------------------------
+# ---- display.round.half_away_from_zero, display.round.half_even ------------------
+
+ROUNDING_RULES = {"half_away_from_zero": ROUND_HALF_UP, "half_even": ROUND_HALF_EVEN}
 
 
-def round_half_away(value: float | int | None, decimals: int) -> str | None:
-    """display.round.half_away_from_zero: the number as text with `decimals` decimals."""
+def _rounded(value: float | int | None, decimals: int, rule: str) -> str | None:
+    """A number as text with `decimals` decimals, by a rounding rule of the registry."""
+    if rule not in ROUNDING_RULES:
+        raise MethodError(f"unknown rounding rule '{rule}'; the registry has "
+                          f"{', '.join(sorted(ROUNDING_RULES))}")
     if isinstance(decimals, bool) or not isinstance(decimals, int) or not 0 <= decimals <= 15:
         raise MethodError(f"decimals must be a whole number from 0 to 15, not {decimals!r}")
     if value is None:
@@ -237,10 +242,20 @@ def round_half_away(value: float | int | None, decimals: int) -> str | None:
     exact = Decimal(repr(value)) if isinstance(value, float) else Decimal(value)
     with localcontext() as context:
         context.prec = 400  # a double has at most 309 digits before the point
-        rounded = exact.quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
+        rounded = exact.quantize(Decimal(1).scaleb(-decimals), rounding=ROUNDING_RULES[rule])
     if rounded == 0:
         rounded = abs(rounded)  # a zero has no sign
     return format(rounded, "f")
+
+
+def round_half_away(value: float | int | None, decimals: int) -> str | None:
+    """display.round.half_away_from_zero: the number as text with `decimals` decimals."""
+    return _rounded(value, decimals, "half_away_from_zero")
+
+
+def round_half_even(value: float | int | None, decimals: int) -> str | None:
+    """display.round.half_even: the number as text with `decimals` decimals."""
+    return _rounded(value, decimals, "half_even")
 
 
 # ---- display.pattern ------------------------------------------------------------
@@ -257,18 +272,21 @@ def pattern_mask(pattern: object) -> tuple[str, str, str]:
     return pattern[:found[0].start()], found[0].group(), pattern[found[0].end():]
 
 
-def pattern_text(value: float | int | None, pattern: str, mock: bool = False) -> str | None:
+def pattern_text(value: float | int | None, pattern: str, mock: bool = False,
+                 rounding: str = "half_away_from_zero") -> str | None:
     """display.pattern: a number as the text a result pattern asks for.
 
     With `mock` the mask itself is shown, in lower case, in place of the
-    number: the text of a mock shell.
+    number: the text of a mock shell. `rounding` is the option of that name.
     """
     before, mask, after = pattern_mask(pattern)
+    if rounding not in ROUNDING_RULES:
+        raise MethodError(f"unknown rounding rule '{rounding}'")
     if mock:
         return before + mask.lower() + after
     if value is None:
         return None
-    rounded = round_half_away(value, len(mask.partition(".")[2]))
+    rounded = _rounded(value, len(mask.partition(".")[2]), rounding)
     sign = "-" if rounded.startswith("-") else ""
     digits = rounded.removeprefix("-")
     if "." in mask:
