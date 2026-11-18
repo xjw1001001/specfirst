@@ -10,7 +10,8 @@ code is that of `55dba60`, the commit on which the gate ran: `git diff
 was clean when I began (`git status --short` printed nothing) and has
 this file as its one change now; `origin/track/read` is `fd02360`.
 
-Result: NOT SIGNED. One finding blocks (R1). Six do not (R2 to R7).
+Result of pass 1, on `fd02360`: NOT SIGNED. One finding blocks (R1). Six
+do not (R2 to R7).
 
 What blocks is not a defect of the code. The part reads the text of its
 own gate by a table that it wrote, and ran the gate before the owner was
@@ -26,6 +27,15 @@ step of the build, is owned by the right layer in everything I ran. Arm C
 reads the document of the kit. Three kits of a seed of my own pass what
 the gate asks of the ten. What I would not rely on yet is the owner of a
 wrong cell when two decisions are wrong at once (R2).
+
+Result of pass 2, on `1233570`: SIGNED. The owner approved the reading
+that R1 is about, for the slice, and the question and the answer are
+recorded. R2, R3, R5, R6 and R7 are settled; R4 is not changed, on
+purpose, and is listed where it belongs. Three new findings, R8 to R10,
+do not block. Pass 2 is the last section of this file. Everything before
+it is pass 1 as it was written on `fd02360`; two places of it were
+touched for pass 2: the result paragraphs above, which now name their
+pass, and the name of the verdict line of pass 1.
 
 ## How the review was done
 
@@ -857,4 +867,528 @@ that the documents say what the scorer does (the sentence of ADR-008, the
 limits of the report, the handover for read-2a). After that I read the
 diff, the new log and the report again.
 
-Verdict: NOT SIGNED
+Verdict of pass 1: NOT SIGNED
+
+## Pass 2
+
+Commit reviewed: `1233570` on `track/read`; the tree was clean when I
+began, and `origin/track/read` is the same commit; `main` is `d5c7e50`
+(for the tree at the end, see the last part of this section). Since pass 1
+there are three commits and 16 changed files (`git diff --stat fd02360
+1233570`). The code changed in `04fe07d` only: `a95d9a9` changes ADR-008
+and the handover, `1233570` the gate log and the report. The gate log is
+that of a clean clone of `a95d9a9`. This file was committed in `04fe07d`
+with the 860 lines of pass 1.
+
+### How pass 2 was done
+
+- Under the rules of pass 1. Windows git, read only. Everything that runs,
+  under WSL from script files; every build, test run and scoring inside
+  `flock /run/lock/specfirst-heavy.lock taskset -c 0-3`, one at a time.
+  Nothing installed; the fetch cache read (the pilot) and not written. The
+  gate was not run again. The ten kits the author kept were read and never
+  written; their manifests have the hashes the new gate log prints (M). I
+  changed no file of the repository but this one, and committed nothing.
+- The scripts of pass 1 again where the code still has what they call,
+  and new ones where it does not (`attribute.confirm` and `attribute._own`
+  are gone).
+- One thing is new. In pass 1 I asked of a wrong cell which decision
+  changes it alone on gold. With three wrong decisions that is not enough.
+  My script now builds the candidate with every subset of its wrong
+  decisions at their gold values (its own loop over `Machine.build` and
+  `build.score`, no attribution), so for every wrong cell and every axis
+  it knows which sets of decisions give the gold text. Every owner that
+  `scorer.run` reports is held against that: is it honest (its decisions
+  at gold give the gold text), is it minimal (no part of it does), would
+  a smaller set do, is it the one decision that changes the mark alone
+  where there is one, does an owner of one decision stand at the layer of
+  that decision (`kit.OWNING_LAYER`), and is every wrong decision an
+  owner, or listed as silent or behind. A "mark" below is a wrong cell,
+  or an axis that is not the gold axis.
+- The first version of that check had a fault of its own: an axis of an
+  output that a build did not produce counted as restored. It showed as
+  two owners of arm S with "a decision that can be left out", which was
+  wrong. Corrected, and every run that had used it was made again. The
+  numbers below are those of the corrected check; they are the numbers of
+  the first runs in every case but those two.
+
+### What I read
+
+- `git diff fd02360 1233570`. `src/specfirst/score/attribute.py` as it is
+  now, in full. The diffs of `candidate.py`, `scorer.py`, `defects.py`,
+  `gate.py`, `kit.py` and `pilot.py`, in full; those of
+  `tests/unit/test_score_hand.py` and `test_score_kit.py`, in full;
+  lessons 53 and 54; `tests/defects/README.md`. `report.py`, `command.py`,
+  `build.py`, `reading.py` and `src/specfirst/gates.py` did not change.
+- `docs/decisions/ADR-008.md`, all of it again. `docs/state/read.md`, all
+  of it. `docs/reports/read-1a.md`: everything outside its code blocks,
+  and the code blocks by the script of section N.
+  `docs/reports/read-1a.gate.log`: lines 1 to 54, the summary of every
+  check, the lines of kits 6 and 9, the ten lines of arm S at stage T and
+  the line of the pilot; the other lines by the scripts of M and N.
+
+### What I ran
+
+L. The tests of the scorer, and how many tests check 4 selects (the
+second command runs none).
+
+```text
+$ SPECFIRST_STRICT=1 flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -m pytest
+    -p no:cacheprovider -q -m "evidence or not evidence" tests/unit/test_score_hand.py
+    tests/unit/test_score_build.py tests/unit/test_score_reading.py tests/unit/test_score_kit.py
+    tests/unit/test_score_pilot_pins.py tests/score
+96 passed in 290.01s (0:04:50)
+$ flock ... python -m pytest -p no:cacheprovider -q -m "not evidence" --collect-only
+1040/1063 tests collected (23 deselected) in 5.04s
+```
+
+M. The new gate log against the code (`parts2.py`, as section B: the
+functions of checks 5 to 10, then `kit.score_kit` on three of the kept
+kits, each line held against `docs/reports/read-1a.gate.log`).
+
+```text
+kit.yaml of the kept kits has the hash the gate log prints: 10 of 10
+hand_table: returns True; 16 lines, 0 not in the gate log (4 s)
+separated: returns True; 24 lines, 0 not in the gate log (67 s)
+control: returns True; 11 lines, 0 not in the gate log (3 s)
+arms: returns True; 71 lines, 0 not in the gate log (2 s)
+planted_defects: returns True; 85 lines, 0 not in the gate log (11 s)
+pilot_report: returns True; 46 lines, 0 not in the gate log (5 s)
+score_kit kit-001: passed True; 21 lines, 0 not in the gate log (146 s)
+score_kit kit-006: passed True; 21 lines, 0 not in the gate log (113 s)
+score_kit kit-009: passed True; 21 lines, 0 not in the gate log (190 s)
+```
+
+N. The report against the new gate log (`r8b.py`).
+
+```text
+15 code blocks, 407 lines in them; not a line of the gate log: 1
+  report line 736: $ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh read-1a
+sweeps per kit: 10 values 293 shown 209 silent 83 visible only 1 cells 2307 counted 234
+pairs per kit: 10 candidates 120 cells 3330 one 2468 both 862 together 0 problems 0
+arm S, stage T: lines with 'no owner found': 0 of 10
+  S2-set-rule: detected and attributed on 6; silent on 4
+  S3-window: detected and attributed on 3; not planted on 7
+  S5-column: detected and attributed on 8; not planted on 2
+  S10-frozen: detected and attributed on 5; not planted on 3; silent on 2
+  (the eight other plants, S7-rounded and S9-sort-build among them: detected and attributed on 10)
+plants on all ten: 8 of 12
+log lines: 686 ; tests: ['1040 passed, 23 deselected in 253.59s (0:04:13)', '1 passed in 0.81s']
+seconds of the 14 checks: 804.6 in 14
+  docs/state/read.md has 'about 9 minutes': True
+  docs/state/read.md has '4 and a half': True
+  docs/state/read.md has 'half a minute per kit': True
+```
+
+O. HAND01. The candidates of pass 1 again (`hand_probes.py`), and nine
+candidates with two to five wrong decisions under the check of every
+subset (`hand_probes2.py`).
+
+```text
+a   ae.teae.end = no_end and tfl.percent.format = one_decimal_always          (pass 1: twin "L4 ... ae.teae.end 12  2 of 12")
+    visible: "L7 tfl-ae-summary   tfl.percent.format  6  6 of 6    layout:tfl-ae-summary/formats"
+    twin:    "L4 mod-ae-emergence ae.teae.end         2  2 of 2    adam:ADAE.TRTEMFL"
+             "L7 tfl-ae-summary   tfl.percent.format 10  10 of 10  layout:tfl-ae-summary/formats"
+g4  every percent rounded twice (the plant S7-rounded) and tfl.population = randomized
+    twin: 11 wrong cells; L5 [tfl.population] confirmed True: 5 cells; L6 [-] confirmed None: 6 cells
+f1  rows ANY, SERIOUS, FATAL and no total column: the scores as in pass 1;
+    axis rows: L5 tfl.ae.summary.rows; axis columns: L5 tfl.columns.total    (pass 1: both decisions for each)
+== four: pop.safety.rule = randomized_and_dosed, tfl.population = randomized, tfl.percent.format = one_decimal_always, ae.teae.end = no_end
+   twin: 18 wrong cells; L4 [ae.teae.end] confirmed True: 1 cell; L4 [pop.safety.rule, tfl.population] confirmed True (only with all of these decisions ...): 3 cells; L5 [tfl.population] confirmed True: 4 cells; L7 [tfl.percent.format] confirmed True: 10 cells
+== one hides the other: trt.actual.source = first_ex_treatment, pop.safety.grouping = planned
+   visible: 0 wrong cells
+   twin: 3 wrong cells; L4 [trt.actual.source, pop.safety.grouping] confirmed True (only with all of these decisions ...): 1 axis, 3 cells
+   marks wrong alone under some decision and right in the candidate: 34
+== one cannot show: trt.start.source = dm_rfxstdtc, tfl.percent.format = one_decimal_always
+   twin: 10 wrong cells; L7 [tfl.percent.format] confirmed True: 10 cells;  silent: ['trt.start.source']
+HAND01, all candidates without a hook
+   candidates: 9; marks: 188; confirmed: 188; honest: 188; NOT honest: 0; minimal: 188; NOT minimal: 0
+   one cause: 161; one cause and the owner is it: 161; one cause and the owner is NOT it: 0
+   owner of one decision: 166; at the layer of its decision: 166; NOT at its layer: 0
+   owner of two or more: 22; wrong decisions: 24; listed NOWHERE: 0
+== the layout shows percents without a decimal (a hook of mine) + tfl.percent.format wrong: a claim that must fail
+   visible: 20 wrong cells; L7 [tfl.percent.format] confirmed False (a claim that failed when it was run ...): 14 cells; L7 [tfl.percent.format] confirmed True: 6 cells
+   `report.lines`: "L7     tfl-ae-summary     tfl.percent.format          20  6 of 20    layout:tfl-ae-summary/formats"
+```
+
+P. The kits (`kit_probes2.py`), each candidate under the check of every
+subset. K2 and K11 are the candidates of pass 1. K12 is new: per kit 24
+candidates with two, three and four wrong decisions (two module
+decisions; two table decisions; two and one; one and two; two and two;
+one that the twin cannot show with two that it can; three module
+decisions), on the ten kits of the gate and on the three of my seed. K13:
+arm S on the chain with its one open decision given, eight to twelve
+wrong decisions; there are too many subsets, so each owner is held
+against two builds, with its decisions at gold and without each one of
+them.
+
+```text
+K2, all kits      (pass 1: of 2,018 wrong cells 464 owned by the decision that alone leaves the cell right)
+   candidates: 120; marks: 2180; confirmed: 2180; honest: 2180; NOT honest: 0; minimal: 2180; NOT minimal: 0
+   one cause: 2010; one cause and the owner is it: 2010; one cause and the owner is NOT it: 0
+   owner of one decision: 2010; at the layer of its decision: 2010; NOT at its layer: 0
+   owner of two or more: 170; wrong decisions: 240; listed NOWHERE: 0
+K11, all kits     (pass 1: 69 wrong cells owned by the decision that the twin cannot show)
+   candidates: 82; marks: 782; confirmed: 782; honest: 782; one cause and the owner is it: 782
+   wrong decisions: 164; listed NOWHERE: 0
+wrong cells and axes owned by the decision that changes nothing alone: 0   (and it is listed as silent in all 82)
+K1  arm S, stage T, 10 kits: {'marks': 206, 'confirmed': 206, 'not confirmed': 0, 'no decision': 0, 'listed': 29, 'wrong': 29}
+kit 2 (sfmyncmq), arm S, stage T: wrong by value: tfl.population, tfl.columns.total, tfl.percent.format
+   visible: L5 tfl.columns.total (confirmed): 1; L7 tfl.percent.format (confirmed): 6      (pass 1: "L5 tfl.population: 6 cells, confirmed 0")
+K12, the ten kits of the gate (kits 1, 6, 9: 72 candidates, 2715 marks; the seven others: 168 candidates, 3700 marks)
+   candidates: 240; marks: 6415; confirmed: 6415; honest: 6415; NOT honest: 0; minimal: 6415; NOT minimal: 0
+   a smaller set would do: 7
+   one cause: 4247; one cause and the owner is it: 4230; one cause and the owner is NOT it: 17
+   owner of one decision: 4324; at the layer of its decision: 4324; NOT at its layer: 0
+   owner of two or more: 2091; wrong decisions: 640; listed NOWHERE: 0
+     kit 5 trt.actual.source=first_ex_treatment + trt.planned.source=dm_armcd_map + tfl.population=safety: visible, Fatal adverse event / KRD-444 5 mg once daily: owned by L4 trt.planned.source, tfl.population (confirmed True): a smaller set restores it: trt.actual.source
+     kit 7 pop.randomized.rule=randomized_with_postbaseline + trt.planned.source=dm_arm + tfl.population=randomized: visible, (header) / High Dose: owned by L4 trt.planned.source, tfl.population (confirmed True): alone on gold only trt.planned.source changes it
+K12, my three kits
+   candidates: 72; marks: 2030; confirmed: 2030; honest: 2030; NOT honest: 0; minimal: 2030; NOT minimal: 0
+   one cause: 1294; one cause and the owner is it: 1294; owner of one decision: 1308; at the layer of its decision: 1308
+   owner of two or more: 722; wrong decisions: 192; listed NOWHERE: 0
+K13 kit 9 (sfyf9ekd): the standard alone with ae.related.values given: 12 wrong decisions (...)
+     14 owned at L4 by trt.planned.source, pop.efficacy.rule, tfl.population
+     7 owned at L4 by pop.efficacy.rule, tfl.population, tfl.columns.total
+     3 owned at L7 by tfl.percent.format
+   silent: ['pop.randomized.rule', 'pop.safety.rule']; behind: {}
+K13, all kits: {"NOT honest": 0, "a decision can be left out": 0, "confirmed": 102, "every decision needed": 102, "honest": 102, "kits": 3, "listed NOWHERE": 0, "marks": 102, "no decision": 0, "not confirmed": 0, "wrong decisions": 28}
+```
+
+The 17 of K12 where the owner is not the one decision that changes the
+mark alone are two candidates, each with three wrong decisions. In both
+the owner has that decision and one more, is confirmed and is minimal. In
+kit 7 (10 marks) no smaller set gives the gold text: the two other
+decisions change the mark only together, so one of them is needed beside
+the first. That is right. In kit 5 (7 marks) one decision that the owner
+does not have gives the gold text alone: finding R9.
+
+Q. The mutants again (`mutants2.py`): the checks 5, 7, 8 and 9 on HAND01,
+then `kit.score_kit` and `kit.planted` on kit 7 of the gate seed, each
+with new machines. `attribute.confirm` is gone, so M2 is now "no claim is
+run: the first claim is the owner and is called confirmed". M13 to M15
+are new.
+
+```text
+M0  nothing planted                                 nothing fails; kit 7: 28 values, 244 owned, counted 22; 12 pairs, 322 cells: 270 one, 52 both
+M2  no claim is run, the first is called confirmed  HAND01: nothing. Kit: FAILS, 195 problems of the sweep of pairs
+       "trt.planned.source with tfl.output.include: visible, cell:Out_AESUM/r1/c1: owned by trt.planned.source at layer L4, confirmed True; alone, it is wrong under tfl.output.in..."
+M3  every second wrong cell gets no owner           HAND01: check 9 FAILS. Kit: FAILS, six plants; 36 and 22 problems "wrong cells and axes have ... owners"
+M5  the cells of the header row always count right  HAND01: nothing. Kit: FAILS: "tfl.population = randomized: the matrix counts 9 changed cells on the twin, the scorer 7"
+M7  arm C takes the gold records, reads no document HAND01: check 7 FAILS ("the control fails on the changed document: NO"). Kit: kit.planted FAILS
+M8  every claim names the first differing decision  HAND01: nothing. Kit: nothing; the sweep of pairs is as in M0 (also on kit 6)
+M11 layers L5 and L7 exchange their names           HAND01: check 9 FAILS. Kit: FAILS, five plants; 178 problems "owned at layer L7; the decision acts at L5"
+M13 the decisions found together are not pruned     HAND01: nothing. Kit: nothing (also on kit 6)
+M14 every layer claims every cell, reached or not   HAND01: nothing. Kit: nothing; the sweep of pairs is as in M0
+M15 every claim names the last differing decision   HAND01: nothing. Kit: nothing; the sweep of pairs is as in M0
+```
+
+M8 and M13 under my own check (`m8_layers.py`: the 24 candidates of K12
+on kit 7; `m13_tests.py`: the unit tests of the scorer, then the nine
+candidates of O):
+
+```text
+mutant: every claim names the first differing decision, whatever it decides
+   candidates: 24; marks: 604; confirmed: 604; honest: 604; NOT honest: 0; minimal: 604; NOT minimal: 0
+   one cause and the owner is NOT it: 10      (the ten of kit 7 above: the same without the mutant)
+   owner of one decision: 473; at the layer of its decision: 391; NOT at its layer: 82
+     kit 7 tfl.population=randomized + tfl.columns.arms=protocol_order: visible, axis columns: owned by L5 tfl.columns.arms (confirmed True): the decision acts at L7
+     kit 7 trt.planned.source=dm_arm + trt.start.source=first_ex_record + tfl.population=randomized: visible, (header) / Total: owned by L4 tfl.population (confirmed True): the decision acts at L5
+(with the last differing decision: NOT at its layer: 83)
+mutant M13: `attribute._fewest` returns the decisions as they were found
+unit tests of the scorer on HAND01 and on its kit: exit 0
+   60 passed in 303.58s (0:05:03)
+HAND01, all candidates without a hook
+   marks: 188; NOT honest: 0; NOT minimal: 13; a smaller set would do: 13
+     four: twin, (header) / High Dose: owned by L4 pop.safety.rule, tfl.population, tfl.percent.format (confirmed True): a smaller set restores it: pop.safety.rule, tfl.population
+```
+
+R. The rest. A kit whose files are not those of its manifest (`drift.py`
+of pass 1, a copy of kit 2 of my seed); three kits of my seed through
+what the gate runs on a set; the pilot (`pilot_probe.py`).
+
+```text
+== unchanged: no change
+   specfirst score kit --arm C: exit 0;  specfirst score kit: exit 0;  specfirst gen verify --no-mutation: exit 0
+== class: gold/decisions.jsonl: the class of tfl.population (stated) is now gold_quirk
+   specfirst score kit --arm C: exit 1;  specfirst score kit: exit 1;  specfirst gen verify --no-mutation: exit 1
+== identifiable: gold/decisions.jsonl: tfl.output.include is now marked unseparated (the matrix file is not changed)
+   specfirst score kit --arm C: exit 1;  specfirst score kit: exit 1;  specfirst gen verify --no-mutation: exit 1
+== truth: twin/truth/subjects.jsonl: one byte more
+   specfirst score kit --arm C: exit 1;  specfirst score kit: exit 1;  specfirst gen verify --no-mutation: exit 1
+$ flock ... specfirst score kits /root/scratch-review-read1a/kits
+kit sfhxnu89 (kit-001), train: 3 arms; 167 subjects in the visible data, 179 in the twin; 22 decisions of the slice, 10 stated
+  S9-sort (L7): silent: tfl.columns.arms (tfl-ae-summary): {"rule": "ascending_dose_placebo_first"} becomes {"rule": "protocol_order"}. visible every score 100%; twin every score 100%; the matrix: unseparated on the twin
+  S9-sort-build (L7): not planted: the two orders give this study the same columns
+planted defects on 3 kits: per defect, the kits by outcome
+  S3-window (L4): detected and attributed on 1 kits; not planted on 2
+  S5-column (L7): detected and attributed on 2 kits; not planted on 1
+  S7-rounded (L6): detected and attributed on 3 kits; 
+  S9-sort (L7): detected and attributed on 2 kits; silent on 1
+  S9-sort-build (L7): detected and attributed on 2 kits; not planted on 1
+  S10-frozen (L4): detected and attributed on 1 kits; not planted on 2
+  (the six others: detected and attributed on 3 kits)
+sweep of the matrices: 83 other values, each as the one wrong decision of a candidate: 61 shown on the twin, 0 on the visible data only, 22 silent; 666 wrong cells and axes owned by the changed decision at its layer; the cells of the twin counted against the matrix for 63 values
+sweep of pairs: 36 candidates with two wrong decisions: 1030 wrong cells and axes; 785 owned by the one decision that changes them alone, 245 by both, 0 by one of the two where neither does alone
+problems of the sweeps: 0
+gold built again is the gold of the kit: 3 of 3 kits
+parser control 100% in both stages: 3 of 3 kits
+planted defects that failed: 0
+disagreements with the matrices of the kits: 0
+every defect that applies is detected and attributed on at least one kit: yes
+the checks fail on their planted defects: yes
+kits: PASS
+`pilot.lines`: 45 lines; not in the gate log: []
+  cells of the key that differ or are missing: 17. Of the 15 cells of the rows both tables have, 5 differ and are explained by another value of one table decision, and 0 are unexplained. 12 are in rows that arm S does not build: 3 for a variable the reference ADaM lacks, 9 in rows the catalog does not have; these are classed by the crosswalk of rows, not by a build
+```
+
+### The findings of pass 1
+
+R1, the reading of the gate text: settled, on the record. Three things
+had to be there, and each is.
+
+- The owner was asked before the gate ran on the new code. The last
+  section of ADR-008 has the question, the two options and the choice,
+  "Approve (recommended)", given on 2026-11-18. The commits agree with
+  that order: the code with the two added plants is `04fe07d` (02:56),
+  the record of the answer `a95d9a9` (07:54), and the gate ran on a clean
+  clone of `a95d9a9`.
+- The question says what the reading is, and says it as I found it: ten
+  of the twelve defects planted, three of them as the nearest thing the
+  table has; all twelve plants on the hand-made study; on the kits no
+  plant may fail, `silent` and `not planted` are no failure, each defect
+  on at least one kit. It tells the owner that the review did not sign
+  and why. Nothing in it is softer than the finding.
+- The reading that was approved is the reading the gate implements. I
+  held decisions 7 and 8 against the code. `defects.DEFECTS` has fourteen
+  entries for the twelve defects: two without a plant (a quantile, a
+  baseline) and twelve plants, at the layers of the table of decision 7.
+  `gate.planted_defects` fails unless every one of the twelve is planted,
+  detected and attributed on HAND01 (M3 and M11 fail it, and so does the
+  unit test that takes one plant away). `kit.score_set` asks what
+  decision 8 lists, and it asks "on at least one kit" of each of the
+  twelve plants, which is more than the question promised.
+
+The two plants that I named in pass 1 are there and pass on all ten kits
+(N). The criterion for "applies" is now one: the table has the thing, or
+something near it that can go wrong in the same way. By that criterion I
+find the table of decision 7 complete.
+
+Two remarks; neither holds the signature back. The question does not say
+how the frozen list is planted on a kit (records taken out of the visible
+data); decision 7 says it, and so do the limits of the report. And
+decision 8 asks that the matrix of a kit say the same as a `silent`
+plant: for the window off by one day no matrix holds the pair, so a
+silent window would pass on the scorer's word alone. In the ten kits the
+window is never silent: three passed, seven not planted.
+
+What limits my signature here. I have the owner's answer as ADR-008
+records it, in the executor's translation, and as the coordinator of this
+review told me. The owner's own words are in the transcript of another
+session, which I cannot read. I sign on the record. If the record is not
+what the owner chose, the signature does not stand for R1.
+
+R2, the owner of a wrong cell when more than one decision is wrong:
+settled in fact, in the first of the two ways I named. A layer above the
+display claims a cell only when a result of the cell, or a group of a
+result, differs; every claim is run; the owner is a claim that held
+(`attribute._settle`). What I counted in pass 1, counted again:
+
+- The first case (D, a): the ten cells of the display are the display's,
+  the two of the module the module's, all confirmed (O).
+- The 120 pairs on the ten kits (K2): 464 wrong owners then, none now. Of
+  2,180 marks, 2,010 have one decision that changes them alone, and that
+  decision is the owner in all 2,010, at its layer.
+- The decision that the twin cannot show (K11): 69 cells then, none now,
+  and the decision is listed as silent in all 82 candidates.
+- The gate's own arm S at stage T (K1): 146 of 188 owners confirmed then,
+  206 of 206 marks now.
+- Beyond pass 1, 312 candidates with two, three and four wrong decisions
+  on thirteen kits, nine on HAND01, and arm S with eight to twelve (K12,
+  K13, O): 8,735 marks. Every owner is confirmed. Every one is honest by
+  my own builds. None has a part that would do. No claim failed. No
+  wrong decision goes unlisted: 884 of them, each an owner, or silent, or
+  behind.
+
+The cases the coordinator asked for. Three and four wrong decisions, and
+two module decisions, are in K12 and O. A pair that cancels is in O ("one
+hides the other": 34 marks that one decision alone makes wrong are right
+in the candidate, the three cells and the axis that are wrong need both
+decisions, and the owner is both, at the far end). What I found that is
+not as the documents say is R9, in 7 marks.
+
+ADR-008, decision 5, the report and the handover now say what the scorer
+does; `docs/state/read.md` tells read-2a how to read an owner, and to
+report none from a run with `prove=False`.
+
+R3, what the checks print and cannot fail on: settled for the clauses I
+named. M2, M3, M5, M7 and M11 now fail a check of the gate on the kit,
+not only a unit test; M3, M7 and M11 fail on HAND01 as well (Q). The
+sweep holds the number of owners against the number of marks, the layer
+of every owner of the first pass against the layer where its decision
+acts, and the wrong cells of the twin against the matrix (234 of the 293
+values); the pairs give "confirmed" something to fail on; check 7 goes
+through `scorer.control`; check 9 fails when a plant cannot be planted.
+The report no longer says "confirmed" of the 2,307.
+
+M8 is the one mutant that still fails nothing. That is no longer a hole of
+the same kind: with every claim run, the decisions of an owner do not
+depend on which decision a claim names, and under M8 they are the
+decisions of the scorer as it is (Q). What M8 does change is the layer,
+and that is R8.
+
+R4, two measures of the reading score: not changed, on purpose, and that
+is the right place for both. The order of a list is the catalog's to
+settle, and ADR-008 hands it to the std track. The short quote is listed
+with the citations into natural-form documents. Both are in the limits
+of the report and in the handover. Open, and it does not block.
+
+R5, "0 unexplained" on the pilot: settled. The line counts what can be
+counted (R).
+
+R6, the files of a kit against its manifest: settled. `kit.load` refuses
+a kit with a file that is not the file of `kit.yaml`; the three changed
+copies of pass 1, each scored with exit 0 then, are refused now (R).
+
+R7, records: settled. At `1233570` the handover has read-1a under "Open"
+until this file is signed. Decision 5 of ADR-008 is written again (but
+see R10). The question to the owner, the options and the choice are
+recorded, in translation. The lines of arm S at stage T end with their
+owners. The handover says what happens to a record of a decision that
+gold does not make.
+
+Three findings are new in pass 2: R8, R9 and R10.
+
+### R8. Does not block: where more than one decision is wrong, nothing holds the layer of an owner, and nothing holds "the fewest"
+
+Two things that the scorer does right in everything I ran, and that no
+check and no test would miss if it did them wrong.
+
+- The layer. The sweep holds the layer of an owner where one decision is
+  wrong. In the pairs it holds the decisions of an owner and that the
+  claim held, not its layer (the 178 problems of M11 are all of the first
+  pass). Under M8 and M15 the gate passes, and 82 and 83 of 473 owners of
+  one decision stand at a layer where that decision does not act: the set
+  the table names owned at L4, the order of the columns at L5 (Q). In the
+  scorer as it is: 8,590 owners of one decision in my runs, every one at
+  the layer of its decision.
+- The fewest. `attribute._fewest` takes out of an owner the decisions it
+  does not need. With it switched off (M13) the gate passes on kits 6 and
+  7 and on HAND01, and the 60 unit tests of the scorer on HAND01 and on
+  its kit pass as well; my check of every subset then finds 13 owners on
+  HAND01 with a decision too many. The limits of the report say that
+  three or more wrong decisions are "held by nothing but the unit tests
+  on HAND01 and the lines of arm S"; no unit test holds this, and the
+  lines of arm S are printed, not checked.
+
+What would settle it: in the sweep of pairs, an owner of one decision is
+held against `OWNING_LAYER` as in the first pass; and one test with three
+wrong decisions whose owners are worked out by hand (on HAND01 the case
+"four" of O has three such cells). The limit should say what holds it.
+
+### R9. Does not block: "the fewest decisions" is the fewest of those that a claim names
+
+Kit 5, three wrong decisions: the source of actual treatment, the source
+of planned treatment, and the set the table names. Seven marks (five
+cells, and the axis of the columns on both datasets) are owned by the
+last two together, confirmed, and neither alone is enough. But the first
+decision alone, at its gold value, gives all seven the gold text (P). No
+claim names it: the gold table does not read actual treatment, the
+candidate's table does, and the walk goes along the gold path. So it is
+tried only when the named decisions fail, and here they do not fail.
+
+Both owners are true. With all three decisions wrong a reviewer has
+three things to change either way, and the decision that is passed over
+is not lost: no wrong decision of K12 is listed nowhere. It is 7 marks of
+8,445 in the 312 candidates of K12. But ADR-008, the handover ("the
+decisions are the fewest found") and the limits of the report ("Where
+two different sets would do, one is reported") read as if the owner were
+the smallest set there is. It is the smallest among the decisions that
+the claims name. Either the documents say that, or every wrong decision
+is tried alone before two are taken together.
+
+### R10. Does not block: records
+
+- `docs/state/read.md`, "How to run things": the gate "takes about 9
+  minutes ... 3 and a half for the unit tests, 4 and a half for the
+  kits", and a kit "half a minute". The log of `a95d9a9`: 804.6 seconds
+  in its fourteen checks, 254 for the unit tests and 509 for the kits
+  (N). From the worktree one kit took me two to three minutes (M).
+- ADR-008, decision 5, gives an owner four ways to come about. The code
+  has five: the wrong decision that another hides, found by adding
+  decisions that no claim names (the report, "What the sweep found",
+  point 3, and the docstring of `attribute.py` have it). And "or else all
+  its decisions" is not what the code does: it takes the fewest of the
+  decisions that all the claims name.
+- ADR-008, decision 5, and the handover say that the reports count a
+  claim that failed apart, "as `report.lines` does". `report.py` did not
+  change: it prints such a claim in the line of the owners that held, as
+  "6 of 20" (O). The lines of a kit count it apart. It can only happen
+  where a defect is planted in a step of the build: without one the gold
+  decisions give the gold text, and in the 11,697 marks of O and P no
+  claim failed.
+- `docs/state/read.md`, "Open", says that the gate "runs again"; at
+  `1233570` it has run. The author moves the part to "Passed" after a
+  signature, and can set this right in the same commit.
+
+### What I could not check in pass 2
+
+- The owner's own words (R1, above).
+- The gate run itself. I read the log; M shows that the code prints the
+  lines of checks 5 to 10 and of three of the ten kits, and L that check 4
+  selects 1040 tests. One thing I can only state. The commit that the
+  gate ran on is of 07:54:47, the commit with its log of 08:10:56: 16
+  minutes and 9 seconds. The fourteen checks of the log take 804.6
+  seconds. That leaves 2 minutes and 44 seconds for the clone, the fresh
+  install, the fresh fetch and the commit of the log and the report. In
+  pass 1 the same difference was 5 minutes and 44 seconds. The log has no
+  times of day, so I cannot hold this against anything.
+- The seven kits of the gate that M did not score again, and the lines of
+  the set: I summed the lines of the ten kits in the log (N), and they are
+  the lines of the set.
+- The runs of CI that the report names.
+
+### Checked and found correct in pass 2
+
+- The report against the log, and the log against the code (M, N). The
+  numbers of the verdict of the report are sums of lines of the log: 293,
+  209, 83 and 1, 2,307; 120, 3,330, 2,468 and 862; eight plants on all
+  ten kits; 1040 tests.
+- The two new plants. S7-rounded changes every percent that is no whole
+  number, five cells and six on HAND01 as I count them from the tables,
+  and is owned by the results with no decision. S9-sort-build leaves
+  every cell and is owned by the layout with no decision.
+- The hash check of a kit stands before anything is read (R).
+- `kit.OWNING_LAYER`, the table that the sweep holds layers against, is
+  held against the compile manifest of a kit by a unit test, and my
+  8,590 owners agree with it.
+- Kits of another seed pass what the gate asks of a set, with the sweep
+  of pairs (R).
+- Arm C, the four scores, the reading score and the gold check did not
+  change, and their tests pass (L).
+
+### The worktree at the end of pass 2
+
+The tree was clean when pass 2 began. When I ended it, three documents
+had changes that are not mine and are not committed: ADR-008, the report
+and the handover (`git status --short`; HEAD is still `1233570`). Another
+session wrote them while this file was being written, from the text of
+this file as it then stood.
+
+My signature is for `1233570`. I read the diff of the three files once,
+at the end, and did not review it as part of the commit. It changes no
+code. It writes decision 5 of ADR-008 with its five ways and with what
+"the fewest" means (R9, R10); it corrects the times of the gate and what
+`report.lines` prints in the handover (R10); it says in the limits what
+holds three wrong decisions (R8); it books R8 and R9 under "Open"; and it
+moves read-1a to "Passed" and writes "Pass 2 signed" into the report.
+
+Two things about it. One number is not as I have it: the 8,735 marks are
+those of the 312 candidates, of the nine on HAND01 and of arm S on three
+kits together; the 312 alone have 8,445. And this file was not final when
+those lines were written: its last line already read as it reads now, and
+the last run (my three kits through `specfirst score kits`, section R)
+ended after them. That run changed nothing. A verdict is this file as it
+is handed over, not a line of it read while it is written.
+
+Verdict: SIGNED

@@ -7,15 +7,15 @@ finish on the kits of gen-2". The first half (2026-11-17, `134c6f7`) was the
 start; this report is the whole part and replaces the report of the first
 half. It was written again after pass 1 of the independent review, which
 did not sign (`docs/reports/read-1a.review.md`): the section "The review"
-says what changed for each finding.
+says what changed for each finding. Pass 2 signed.
 
 ## Verdict
 
 The gate passed: `scripts/clean_clone_gate.sh read-1a` exited 0 on a clean
 clone of `a95d9a9` (fresh install, fresh fetch), 14 of 14 checks.
-The independent review did not sign in its first pass (one blocking finding, the
-reading of the gate text, which the owner has since approved; six that do
-not block, settled). Pass 2 has not run yet: nothing is merged.
+The independent review signed in its second pass
+(`docs/reports/read-1a.review.md`). Its first pass did not: one finding
+blocked, the reading of the gate text, which the owner then approved.
 
 - On the hand-made study HAND01 the gold decisions build the table that
   was worked out by hand, 24 of 24 cells on each dataset. The parser
@@ -785,7 +785,8 @@ The complete output is `docs/reports/read-1a.gate.log`.
 
 `track/read` is pushed to the private origin. CI (`make lint`, `make
 ascii`, `make test`) on `track/read`: success on `a95d9a9`, the
-commit of the gate (run 44308460293), and before it on `04fe07d` (run
+commit of the gate (run 44308460293), on `1233570`, the commit pass 2 of
+the review read (run 44311105413), and before them on `04fe07d` (run
 44262790393), `fd02360` (run 44246093269) and `55dba60` (run 44244463001).
 
 ## The review
@@ -803,8 +804,27 @@ commit of the gate (run 44308460293), and before it on `04fe07d` (run
 | R6: the scorer does not hold the files of a kit against its manifest | `kit.load` checks every hash and refuses a kit that differs; a unit test changes `identifiable` in a copy. |
 | R7: records | `docs/state/read.md` lists read-1a under "Open" until the review signs. ADR-008, decision 5, is written again. The question to the owner and the answer are in ADR-008 in full. The lines of arm S at stage T end with the owners. The handover says what happens to a record of a decision gold does not make. |
 
-Pass 2 has not run yet. It reads the diff since `fd02360`, the gate log of
-`a95d9a9` and this report.
+Pass 2, on `1233570` (the code of `04fe07d`; the gate log of `a95d9a9`):
+signed. R1 is settled on the record of the owner's answer; the reviewer
+cannot read the owner's own words and signs on the record. R2, R3 and R5
+to R7 are settled; R4 is open on purpose. The reviewer ran its candidates
+again, and more: 312 candidates with two to four wrong decisions on
+thirteen kits, nine on HAND01, and arm S with eight to twelve wrong
+decisions. In their 8,735 wrong cells and axes every owner is confirmed,
+no claim failed, and no wrong decision is unlisted. Three new findings,
+none blocks:
+
+| Finding | State |
+| --- | --- |
+| R8: where more than one decision is wrong, nothing holds the layer of an owner, and nothing holds "the fewest" | Booked in `docs/state/read.md`, "Open", with what settles it: the pairs held against `kit.OWNING_LAYER`, and a test with three wrong decisions by hand. In the reviewer's runs both were right. |
+| R9: "the fewest decisions" is the fewest of those that a claim names | The documents say so now (ADR-008 decision 5, the handover, "Limits" below). Trying every wrong decision alone first is booked with R8. It showed in 7 of 8,445 wrong cells and axes of the reviewer's candidates. |
+| R10: records | Settled in the commit that records the signature: the times of the gate in the handover; the five ways an owner comes about in ADR-008, decision 5; what `report.lines` prints of a claim that failed; read-1a under "Passed". |
+
+No code changed after the gate ran: the commits after `a95d9a9` are
+records. The reviewer signed `1233570`; the records written after it (this
+section, the handover, ADR-008 decision 5, lesson 55) are not part of
+what was signed. They were begun before the reviewer had handed its file
+over, which the last section of the review says and lesson 55 records.
 
 ## For the owner
 
@@ -835,14 +855,18 @@ Pass 2 has not run yet. It reads the diff since `fd02360`, the gate log of
   the scorer does on kits of another seed is not in the gate; the unit
   tests write one kit of another seed.
 - The matrix of a kit changes one decision at a time. The sweep adds
-  pairs of a module decision with a table decision, twelve a kit; pairs
+  pairs of a module decision with a table decision, twelve a kit. Pairs
   of two module decisions, and three or more wrong decisions at once,
-  are attributed by the same code and held by nothing but the unit tests
-  on HAND01 and the lines of arm S. Two wrong decisions can cancel in a
-  table (docs/state/gen.md): such a cell is no wrong cell.
-- The fewest decisions that give a cell its gold text are found by taking
-  decisions out one at a time. Where two different sets would do, one is
-  reported.
+  are attributed by the same code, and no check of the gate and no unit
+  test holds them: the lines of arm S are printed, not checked. The
+  reviewer ran 312 such candidates and found every owner confirmed and
+  honest (review, pass 2). In the pairs the sweep holds the decisions of
+  an owner, not its layer (review, R8). Two wrong decisions can cancel
+  in a table (docs/state/gen.md): such a cell is no wrong cell.
+- The decisions of an owner are the fewest among those that a claim
+  names, found by taking decisions out one at a time. A wrong decision
+  that no claim names is tried only when the named ones fail, so another
+  set, even a smaller one, can exist (review, R9).
 - A wrong value of a slot of the gold alternative is in the matrix for one
   decision only (`ae.related.values`). The window off by one day is such a
   value: it is planted where the gold decision names a window, and nothing

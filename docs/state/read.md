@@ -5,7 +5,16 @@ first for the slice "adverse event summary first" (ADR-005).
 
 ## Passed
 
-- Nothing yet. read-1a is under "Open" until its review signs.
+- read-1a (2026-11-18): the scorer for the slice. Reading score, build
+  score with the four scores of ADR-005, decision 4, attribution, the arms
+  S and C, the planted defects of section 9.5 that apply to the slice; on
+  a hand-made study, on the pilot (report only) and on the ten kits of the
+  gate of gen-2a; the gate `read-1a`; `specfirst score ...`. Report:
+  docs/reports/read-1a.md (the gate on a clean clone of `a95d9a9`, its
+  numbers, the pilot table, the limits). Review:
+  docs/reports/read-1a.review.md (signed in its second pass). Choices:
+  docs/decisions/ADR-008.md; the owner approved its reading of the gate
+  text, for the slice of ADR-005 only.
 
 ## What exists (`src/specfirst/score/`; each module says what it does)
 
@@ -59,13 +68,16 @@ print("\n".join(report.lines(result)))
   `result.behind` those that stand behind another owner.
 - An owner has `layer`, `element`, `decisions`, `confirmed` and `note`.
   `confirmed` True: with these decisions at their gold values the cell has
-  the gold text; the decisions are the fewest found, so two decisions mean
-  that neither is enough (`note`: JOINT, or HIDDEN when another wrong
-  decision hides one of them). None: no decision is named (a step of the
-  build). False: a claim that failed when it was run; read it as "no
-  owner was found" and count it apart, as `report.lines` does. A table of
-  errors by unit and layer takes the first decision of an owner as its
-  unit.
+  the gold text; they are the fewest among the decisions that the claims
+  name, so two decisions mean that neither is enough (`note`: JOINT, or
+  HIDDEN when another wrong decision hides one of them). None: no
+  decision is named (a step of the build). False: a claim that failed
+  when it was run; read it as "no owner was found" and count it apart.
+  The lines of a kit do (`kit._owned`); `report.lines` prints such a
+  claim in the line of its layer and decision, as "confirmed 6 of 20". It
+  can happen only where a step of the build was changed: without that the
+  gold decisions give the gold text. A table of errors by unit and layer
+  takes the first decision of an owner as its unit.
 - `scorer.run(..., prove=False)` runs no claim: fast, and every owner is
   the far-end claim, unconfirmed. Do not report owners from it.
 - The arms that need no reader: `scorer.standard_alone(machine, case)` and
@@ -98,14 +110,25 @@ Numbers are in docs/reports/read-1a.md. In short:
 
 ## Open
 
-read-1a (2026-11-18): the scorer for the slice is written. Its gate passed
-on a clean clone of `55dba60`. Pass 1 of the review
-(docs/reports/read-1a.review.md) did not sign: one finding blocks (R1: how
-the part reads the text of its gate is the owner's to accept), six do not.
-R2 to R7 are settled in the code and the records. The question of R1 was
-put to the owner, who approved the reading on 2026-11-18 (the last section
-of docs/decisions/ADR-008.md). The gate runs again on a clean clone of the
-commit that records the answer; then pass 2 of the review.
+From the review, booked for the rest of read-1 (they did not block;
+docs/reports/read-1a.review.md, findings R8 and R9):
+
+- Where more than one decision is wrong, nothing holds the layer of an
+  owner (the sweep of pairs holds the decisions of an owner and that the
+  claim held), and nothing holds that an owner has no decision too many.
+  In the reviewer's runs both were right: 8,590 owners of one decision,
+  each at the layer of its decision, and no owner with a part that would
+  do. What settles it: the pairs held against `kit.OWNING_LAYER`, and a
+  test with three wrong decisions whose owners are worked out by hand.
+- The decisions of an owner are the fewest among those that a claim
+  names. A wrong decision that no claim names (the gold table does not
+  read what it sets, the candidate's table does) is tried only when the
+  named ones fail. In 7 of 8,445 wrong cells and axes of the reviewer's
+  312 candidates with two to four wrong decisions, one such decision
+  alone would have done, and the owner was two others together. Both are
+  true. What
+  settles it: every wrong decision is tried alone before two are taken
+  together.
 
 For the owner (docs/decisions/ADR-008.md):
 
@@ -142,8 +165,10 @@ Not done, and not part of read-1a:
   what it changes alone.
 - Three or more wrong decisions behind one cell are attributed (the
   decisions are added one by one until the cell has the gold text, then
-  pruned), and nothing but unit tests on HAND01 and arm S on the kits
-  holds it: the sweep has pairs.
+  pruned). No check of the gate and no unit test holds that: the sweep
+  has pairs, and the lines of arm S are printed, not checked. The
+  reviewer ran 312 candidates with two to four wrong decisions and found
+  every owner confirmed and honest (review, pass 2).
 - The reading score compares a list in its order (`ae.related.values`:
   the same values in another order count as a decision to change), and a
   quote passes when it stands in the document and inside the gold anchor,
@@ -186,13 +211,13 @@ How to run things:
 - `specfirst gen kits --seed gen-2a --count 10 --out DIR` writes the kits
   of the gate, each twice (P1). `specfirst.score.gate.write_kits` writes
   each once, four at a time: a minute and a half. `specfirst score kits
-  DIR` is what the gate runs on them (half a minute per kit on the Linux
-  file system, a minute from the worktree on `/mnt/d`); `specfirst score
-  kit DIR/kit-001` scores one kit.
-- `specfirst gate read-1a` takes about 9 minutes on a clone in the Linux
-  file system: 3 and a half for the unit tests, 4 and a half for the kits.
-  Wrap a gate, a test suite or a build of kits in `flock
-  /run/lock/specfirst-heavy.lock <command>` (lesson 32).
+  DIR` is what the gate runs on them (under a minute per kit on the Linux
+  file system, two to three minutes from the worktree on `/mnt/d`);
+  `specfirst score kit DIR/kit-001` scores one kit.
+- `specfirst gate read-1a` takes about 14 minutes on a clone in the Linux
+  file system (the log of `a95d9a9`: 805 seconds, 254 of them the unit
+  tests and 509 the kits). Wrap a gate, a test suite or a build of kits
+  in `flock /run/lock/specfirst-heavy.lock <command>` (lesson 32).
 - A gate of a commit runs on a clone (lesson 28). On this machine a clone
   in the Linux file system that uses the environment of the worktree is
   four times faster than the worktree on `/mnt/d`; it is not the clean
