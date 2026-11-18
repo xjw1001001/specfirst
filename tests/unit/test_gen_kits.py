@@ -17,7 +17,7 @@ import yaml
 from specfirst import cli, gates
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import house as houses
-from specfirst.gen import decisions, gate2, gold, kits, study, verify
+from specfirst.gen import decisions, documents, gate2, gold, kits, natural, study, verify
 from specfirst.gen import design as designs
 from specfirst.machine.canonical import read_jsonl, write_json
 
@@ -30,13 +30,46 @@ def catalog(root):
     return catalogs.load(catalogs.default_dir(root))
 
 
+def fill_store(root, folder, store_dir):
+    """A store of model text for the statements of a kit, written by the test in the
+    place of the rewriter and the verifier: the phrasing template of each statement, read
+    back as its alternative, and one neutral paragraph per filler heading."""
+    catalog = catalogs.load(catalogs.default_dir(root))
+    store = natural.Store.load(store_dir)
+    for key, item in natural.statements_of([kits.read_decisions(folder)]).items():
+        text = natural.phrasing(catalog, item["entry"], item["unit"], item["value"])
+        store.paragraphs[key] = {
+            "key": key, "entry": item["entry"], "unit": item["unit"], "value": item["value"],
+            "statement": item["statement"], "accepted": 1,
+            "attempts": [{"n": 1, "by": "unit-test", "text": text, "slots": [],
+                          "readback": {"pick": item["value"]["rule"], "agrees": True,
+                                       "by": "unit-test"}}]}
+    for item in documents.filler_wanted():
+        store.filler[item["key"]] = {
+            **item, "text": f"This section is about {item['heading'].lower()}.",
+            "by": "unit-test", "problems": [], "readback": {"states": [], "by": "unit-test"}}
+    store.save()
+
+
 @pytest.fixture(scope="module")
 def kit(root, tmp_path_factory):
-    out = tmp_path_factory.mktemp("kits") / "kit"
-    said: list[str] = []
-    manifest = kits.generate(root, kits.kit_seed(SEED, NUMBER), out, kits.split_of(NUMBER),
-                             with_r=False, say=said.append, number=NUMBER)
-    return out, manifest, said
+    """The kit of the module, written twice: once to learn its statements, once with a
+    store that holds them (the statements of this seed are not in the store of the
+    repository)."""
+    base = tmp_path_factory.mktemp("kits")
+    store_dir = base / "store"
+    store_dir.mkdir(parents=True)
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv("SPECFIRST_REWRITES", str(store_dir))
+        first = base / "first"
+        kits.generate(root, kits.kit_seed(SEED, NUMBER), first, kits.split_of(NUMBER),
+                      with_r=False, number=NUMBER)
+        fill_store(root, first, store_dir)
+        out = base / "kit"
+        said: list[str] = []
+        manifest = kits.generate(root, kits.kit_seed(SEED, NUMBER), out, kits.split_of(NUMBER),
+                                 with_r=False, say=said.append, number=NUMBER)
+        yield out, manifest, said
 
 
 def test_the_gate_has_the_checks_of_the_plan():
@@ -132,7 +165,9 @@ def test_the_properties_of_the_kit(root, kit, catalog):
     # check reports unless it is told not to ask for them.
     said: list[str] = []
     assert kits.check(root, out, said.append, engines=False) == []
-    assert any("stated in gold/docs/sap.md and read back by the parser" in line for line in said)
+    assert any(" decisions recovered by the parser with the house standard and the oracle"
+               in line and "natural paragraphs pass the slot and read-back checks" in line
+               for line in said)
     assert any("P4 " in line and "0 applicable and unseparated" in line for line in said)
     assert kits.check(root, out, mutation=False) == [
         "visible: the kit has no results of the R engine",
@@ -184,7 +219,7 @@ def test_planted_defects_of_the_splits_and_of_the_matrix_are_seen(root, kit):
     assert gate2.planted_matrix(root, said.append, out, engines=False) is True
     planted = [line for line in said if line.startswith("planted defect:")]
     assert len(planted) == 4, said
-    assert "gold/docs/sap.md holds the seed" in planted[0]
+    assert "inputs/docs/sap.md holds the seed" in planted[0]
     assert "date.studyday.origin" in planted[3] and "a new mutation 3" in planted[3]
     # A kit that is not sound itself is no ground for a planted defect.
     assert gate2.planted_splits(said.append, out, SEED, NUMBER + 1) is False
@@ -238,8 +273,7 @@ def test_a_changed_kit_fails_its_check(root, kit, tmp_path):
     gold.write_decisions(copy_of, records)
     refresh()
     found = problems()
-    assert any(p.startswith("decision tfl.columns.total") or "does not read back" in p
-               for p in found)
+    assert any(p.startswith("documents, parser: ") and "tfl.columns.total" in p for p in found)
     assert any(p.startswith("twin: P2: columns") for p in found)
     # A kit of another generator or catalog version is not judged at all.
     shutil.rmtree(copy_of)

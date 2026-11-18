@@ -8,7 +8,7 @@ from specfirst import schemas
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import house as houses
 from specfirst.compile.standard_form import StandardForm
-from specfirst.gen import decisions, kits, pgfix, probes, study
+from specfirst.gen import decisions, documents, kits, pgfix, probes, study
 from specfirst.gen import design as designs
 from specfirst.gen.rng import Stream
 
@@ -129,12 +129,14 @@ def test_fits_names_the_interplays_of_the_log(catalog, house):
         assert len(found) == 1 and "nearly no subject has an end-of-study date" in found[0]
 
 
-def test_the_records_of_a_kit_fit_the_schema_and_read_back(root, catalog, house):
+def test_the_records_of_a_kit_fit_the_schema_and_read_back(root, catalog, house, tmp_path):
     design = _design(catalog)
     parameters = probes.Parameters.of(design).as_record()
     values = decisions.sample(catalog, house, design, parameters, Stream("records"),
                               stated_share=0.6)
-    records, document = decisions.records(catalog, house, design, values)
+    listed = decisions.vector(catalog, house, design, values)
+    records, _ = documents.write(catalog, house, design, listed, "standard",
+                                 decisions.SLICE_UNITS, Stream("records", "documents"), tmp_path)
     for record in records:
         assert schemas.problems("decision-record", record, root=root) == [], record["id"]
     by_key = {(r["id"], r["unit"]): r for r in records}
@@ -150,18 +152,27 @@ def test_the_records_of_a_kit_fit_the_schema_and_read_back(root, catalog, house)
     assert not [r for r in records if r["unit"] == "mod-bds-visits"]
     assert {r["unit"] for r in records if r["unit"].startswith("tfl-") and r["id"]
             != "tfl.output.include"} == {decisions.OUTPUT_UNIT}
-    # A default cites the standards document of the house, a stated decision the document
-    # of the study; the parser reads the document back to exactly the stated decisions.
+    # A default cites the standards document of the house; a stated decision its
+    # statement in a standard-form document, then its paragraph in the natural form. The
+    # parser reads the standard-form documents back to exactly the stated decisions.
     form = StandardForm(catalog)
-    doc, parsed = form.parse_document(document)
     stated = [r for r in records if r["status"] == "stated"]
-    assert doc == decisions.DOCUMENT and len(parsed) == len(stated) >= 5
+    parsed = []
+    for doc in ("protocol", "sap"):
+        name, items = form.parse_document((tmp_path / documents.STANDARD[doc]).read_text())
+        assert name == documents.standard_id(doc)
+        parsed += items
+    assert len(parsed) == len(stated) >= 5
     assert {(p["id"], p["unit"]): p["value"] for p in parsed} == {
         (r["id"], r["unit"]): r["value"] for r in stated}
     for record in records:
         cited = record["citations"][0]
         assert cited["quote"] == record["statement"]
-        assert cited["doc"] == (decisions.DOCUMENT if record["status"] == "stated" else "house")
+        if record["status"] == "stated":
+            home = documents.home_of(record["id"])[0]
+            assert [c["doc"] for c in record["citations"]] == [documents.standard_id(home), home]
+        else:
+            assert cited["doc"] == "house"
         assert (record["status"], record["class"]) in (("stated", "document_rule"),
                                                        ("default", "house_default"))
     assert "pop.efficacy.rule" in {r["id"] for r in stated}     # no house default: stated

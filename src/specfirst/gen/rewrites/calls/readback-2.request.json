@@ -1,0 +1,75 @@
+{
+ "rules": [
+  "For each item, read the paragraph alone and pick the one alternative whose rule the paragraph states for the question, by its id. Values in angle brackets may be any value. If the paragraph states none of them, or more than one, answer '(none)'.",
+  "For each filler item, list the questions (by their text) whose answer the paragraph states, or an empty list.",
+  "Judge from the text only; do not read any other file."
+ ],
+ "items": [
+  {
+   "item": "rc04e6216ef90",
+   "paragraph": "The adverse event summary table will not include a total column.",
+   "question": "Is there a total column? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "all_arms",
+     "rule": "A total column of the adverse event summary table pools all treatment arms."
+    },
+    {
+     "id": "none",
+     "rule": "There is no total column in the adverse event summary table."
+    },
+    {
+     "id": "active_arms",
+     "rule": "A total column of the adverse event summary table pools the treatment arms other than <control>.",
+     "meaning": "The control is named by its treatment label as the treatment columns show it."
+    }
+   ]
+  }
+ ],
+ "filler": [],
+ "filler_questions": [
+  "Are small race categories pooled?",
+  "How are displayed numbers rounded? (for the adverse event summary table)",
+  "How are partial adverse event start dates completed?",
+  "How are partial exposure dates completed?",
+  "How are percentages displayed? (for the adverse event summary table)",
+  "How is baseline body mass index obtained?",
+  "In which order are the treatment columns? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event table by system organ class and preferred term)",
+  "Is the output part of the planned outputs of the study? (for the demographics table)",
+  "Is the output part of the planned outputs of the study? (for the vital signs table by visit)",
+  "Is there a total column? (for the adverse event summary table)",
+  "What is the treatment end date?",
+  "What is the treatment start date?",
+  "When does treatment emergence begin?",
+  "When does treatment emergence end?",
+  "Where does actual treatment come from?",
+  "Where does planned treatment come from?",
+  "Which age groups are used?",
+  "Which analysis set does the output use? (for the adverse event summary table)",
+  "Which causality values count as related to study treatment?",
+  "Which date is study day 1?",
+  "Which record gives baseline weight and height?",
+  "Which record gives the end-of-study status?",
+  "Which rows does the adverse event summary table have?",
+  "Which treatment groups the safety analyses?",
+  "Who is efficacy-evaluable?",
+  "Who is in the randomized set?",
+  "Who is in the safety set?"
+ ],
+ "answer": {
+  "items": [
+   {
+    "item": "<id>",
+    "pick": "<alternative id or none>"
+   }
+  ],
+  "filler": [
+   {
+    "item": "<id>",
+    "states": []
+   }
+  ]
+ }
+}

@@ -1,0 +1,1 @@
+Answered 60 items and 10 filler items; 0 items answered "none" as an abstention. One item (rc04e6216ef90) has the alternative id "none", which I picked because the paragraph states there is no total column.

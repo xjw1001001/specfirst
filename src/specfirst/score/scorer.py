@@ -13,8 +13,10 @@ The arms that need no reader (ADR-005, decision 3):
         document that `specfirst render` writes for the stated decisions,
         and on the house standards document for the defaults. It must
         score 100%; if it does not, the kit or the scorer is wrong. A case
-        that ships a standard-form document (a generated kit:
-        gold/docs/sap.md) is read from that document.
+        that ships standard-form documents (a generated kit: the protocol
+        and the SAP in gold/docs/) is read from them. A decision that no
+        document states and that has no house default is asked, and the
+        oracle of the case answers it (section 11.3; ADR-009, decision 4).
 
 Stages (ADR-005, decision 2). In the chain (`C`) both vectors are built
 from SDTM. In stage `T` both are built on the ADaM datasets of gold: the
@@ -52,11 +54,13 @@ class Case:
     data: dict[str, Data]  # visible, twin -> the dataset
     documents: reading.Documents = field(default_factory=reading.Documents)
     stage: str = "C"
-    # The ID of the standard-form document of the study, when the case ships one.
-    standard_form: str | None = None
+    # The IDs of the standard-form documents of the study, when the case ships them.
+    standard_form: str | tuple[str, ...] | None = None
     # The other values a study of this design can decide for a decision (a kit knows
     # its design); None: the planted defects take an alternative without a slot.
     variants: Callable[[Key], list[dict]] | None = None
+    # What the oracle answers when asked (section 11.3): decision -> value.
+    oracle: dict[Key, dict] = field(default_factory=dict)
 
     def gold_vector(self) -> list[dict]:
         return [{"id": r["id"], "unit": r["unit"], "value": r["value"]} for r in self.gold
@@ -109,7 +113,13 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
     `hooks` plants a defect in the candidate's builds. With `prove`, every
     claim of the attribution is run: the candidate is built again with
     decisions at their gold values, and an owner is a claim that held.
+    Without `asked`, a record of the candidate with the status `asked` counts
+    as asked (the arms and the plants of the scorer); a run of a reader gives
+    the questions it asked, and then only they count.
     """
+    if asked is None:
+        asked = {(str(r.get("id")), str(r.get("unit"))) for r in candidate
+                 if r.get("status") == "asked"}
     if case.stage not in STAGES:
         raise ScoreError(f"unknown stage '{case.stage}'")
     modules = [unit for unit in case.units
@@ -220,20 +230,36 @@ def control_records(machine: Machine, case: Case) -> tuple[list[dict], reading.D
     """
     form = StandardForm(machine.catalog)
     if case.standard_form is not None:
-        text = case.documents.texts[case.standard_form]
+        names = ((case.standard_form,) if isinstance(case.standard_form, str)
+                 else tuple(case.standard_form))
+        texts = {name: case.documents.texts[name] for name in names}
     else:
         stated = [{"id": r["id"], "unit": r["unit"], "value": r["value"]} for r in case.gold
                   if r.get("status") == "stated" and r.get("value") is not None]
-        text = form.render_document(CONTROL_DOCUMENT, CONTROL_TITLE, stated)
-    doc, parsed = form.parse_document(text)
-    records = [decision_record(item, doc, "stated", "document_rule") for item in parsed]
+        texts = {CONTROL_DOCUMENT: form.render_document(CONTROL_DOCUMENT, CONTROL_TITLE,
+                                                        stated)}
+    records = []
+    read = {}
+    for text in texts.values():
+        doc, parsed = form.parse_document(text)
+        read[doc] = text
+        records += [decision_record(item, doc, "stated", "document_rule") for item in parsed]
     have = {(r["id"], r["unit"]) for r in records}
     wanted = {(r["id"], r["unit"]) for r in case.gold if r.get("status") == "default"}
-    records += [r for r in houses.default_decisions(machine.catalog, machine.house)
-                if (r["id"], r["unit"]) in wanted - have]
+    defaults = houses.default_decisions(machine.catalog, machine.house)
+    records += [r for r in defaults if (r["id"], r["unit"]) in wanted - have]
+    # What neither the documents nor the house standard decide is asked; the oracle
+    # answers it, as the oracle file of the case holds the answer.
+    known = have | {(r["id"], r["unit"]) for r in defaults}
+    for key in sorted({(r["id"], r["unit"]) for r in case.gold} - known):
+        if key in case.oracle:
+            value = case.oracle[key]
+            records.append({"id": key[0], "unit": key[1], "value": value, "status": "asked",
+                            "class": "study_input",
+                            "statement": form.render(key[0], key[1], value)})
     documents = reading.Documents({
         houses.DOCUMENT_ID: houses.standards_document(machine.catalog, machine.house),
-        **case.documents.texts, doc: text})
+        **case.documents.texts, **read})
     return records, documents
 
 

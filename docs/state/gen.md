@@ -20,6 +20,17 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   Choices: docs/decisions/ADR-007.md; the owner approved the gate's
   reading of "applicable" for the slice only, and a rework is owed before
   the gate of the full gen-2 (see "Next").
+- gen-3a (2026-11-18), gate passed, review signed, merged into `main`
+  after the owner approved the two choices the review left to the owner,
+  for the slice only (ADR-009, "The owner's answers on items 4 and 5").
+  The protocol and the SAP of each kit in standard form and in natural
+  form; the tiers full, standard and the ask demo with the oracle; a
+  one-page summary; the visible probes in `kit.yaml`; the store of model
+  text and the loop of section 6.6 (`specfirst gen natural`); the gate
+  `gen-3a`. Gates on clean clones of `901be3d`: gen-3a 15 of 15, gen-2a 13
+  of 13, read-1a 14 of 14. Report: docs/reports/gen-3a.md. Review:
+  docs/reports/gen-3a.review.md (signed in pass 2). Choices:
+  docs/decisions/ADR-009.md.
 
 ## A kit: what the folder holds
 
@@ -33,10 +44,12 @@ kit.yaml                    id, tier A, archetype, slice, split, generator, cata
 study.json                  the manifest of the data (gen-1a)
 inputs/data/sdtm/           visible SDTM: <domain>.parquet, <domain>.json, define.xml
 inputs/house/               the house standard, as in standard/houses/open-default@1
+inputs/docs/                protocol.md and sap.md in natural form (gen-3a, below)
 gold/design.yaml  probes.jsonl  truth/subjects.jsonl
 gold/decisions.jsonl        one record per decision: value, status, class, statement,
                             citations, binds, identifiable
-gold/docs/sap.md            the stated decisions in standard form (document ID sap)
+gold/docs/                  protocol.md and sap.md in standard form, natural.json
+gold/oracle.yaml  gold/summary.md     the oracle's answers; one page about the kit
 gold/spec/                  adam/*.yaml with fragments/ and project.yaml,
                             ars/reporting-event.json, layout/tfl-ae-summary.json, compile.json
 gold/resolved/  data/adam/  ars/  ard/  grid/  out/  graph/      built on the visible data
@@ -135,20 +148,120 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
   (`gold.arms_of(design, values)`). A reader cannot state the order of the
   arms: the alternative `protocol_order` has no slot for it.
 
-## For gen-3a
+## The documents of a kit (gen-3a; for read-2a)
 
-- `gold/docs/sap.md` is one standard-form document with every stated
-  decision; the records cite it by anchor, the defaults cite
-  `inputs/house/STANDARD.md` (document ID `house`). gen-3a owns the
-  documents of a kit (protocol and SAP, natural form, tiers): it replaces
-  that file and the citations, in `kits._attempt`, where stage S6 belongs.
-- A decision is `stated` when its value is not the house default, else
-  `default`. The tier `full` states defaults too; that changes `status`
-  and `citations`, not values.
+Choices: docs/decisions/ADR-009.md. Code: `specfirst.gen.documents` (stage
+S6, the checks of a written kit), `specfirst.gen.natural` (the store, the
+slot check, the read-back, the loop), `specfirst.gen.gate3` (the gate).
+
+```text
+inputs/docs/protocol.md     natural form, document ID protocol: what a reader gets
+inputs/docs/sap.md          natural form, document ID sap
+gold/docs/protocol.md       standard form, document ID protocol-standard
+gold/docs/sap.md            standard form, document ID sap-standard
+gold/docs/natural.json      every paragraph of the natural form: anchor, kind (design,
+                            decision, filler), the decision, where its text came from
+                            (model, template, missing), the SHA-256 of its text
+gold/oracle.yaml            the answers of the oracle (empty outside the ask demo)
+gold/summary.md             one page about the kit, for people
+```
+
+- Every decision a kit's documents state is stated once, in the document of
+  its entry (`documents.home_of`): the protocol states `pop.randomized.rule`,
+  `pop.safety.rule`, `pop.efficacy.rule` and `ae.related.values`; the SAP the
+  rest. The natural protocol also describes the design: the arms in the
+  order of the protocol (code, label, description, treatment name, dose),
+  the visits with their planned days, the vital signs with their codes, the
+  causality scale, the disposition subcategories. A reader needs it: the
+  order of the arms is in no decision (ADR-007, decision 2).
+- Anchors. The standard form: `[<section>/s<n>]` (ADR-004). The natural
+  form: every paragraph of the body, design and filler included, starts
+  with `[<section>/p<n>]`, where `<section>` is the number of its heading
+  (`4.1`). A decision paragraph is one line. `Documents.span` of the scorer
+  reads both.
+- Citations. A stated decision cites first its standard-form statement
+  (`sap-standard`, `3/s2`, the statement), then its natural paragraph
+  (`sap`, `4.1/p2`, the whole paragraph). A reader cites the natural form;
+  the reading score accepts either (a citation that names an anchor gold
+  cites, with a quote inside its span).
+- Tiers (`documents.TIER_PLAN`, by the number of a kit in a set): full in
+  kits 1, 3, 6, 9; standard in 2, 5, 8, 10; the ask demo in 4 (train) and 7
+  (dev). In a full kit every decision is `stated` (`document_rule`), house
+  defaults included. In the ask demo every decision of the slice without a
+  house default (`ae.related.values`; `pop.efficacy.rule` where the design
+  has the efficacy-evaluable set) is in no document: status `asked`, class
+  `study_input`, the gold value, no citation; `gold/oracle.yaml` holds its
+  value and the answer the oracle gives (the standard-form statement).
+- `specfirst ask` (section 11.3) is read-2a's: answer from
+  `gold/oracle.yaml`, only for a decision that it lists.
+- The parser control asks the oracle for what neither the standard-form
+  documents nor the house standard decide (`scorer.control_records`). A
+  candidate record with the status `asked` counts as asked when the run
+  gives no list of questions; `specfirst score kit --decisions` always
+  gives one (empty without `--questions`).
+- `kit.yaml` has `documents` (the tier, the files, how many decisions are
+  stated and which are asked, the paragraphs by source) and `probes`
+  (`visible` and `twin`: the probes of the log by dataset).
+
+How to load them:
+
+```python
+from specfirst.gen import documents
+texts = documents.read_texts(kit_dir)        # {protocol, sap, protocol-standard, sap-standard}
+oracle = documents.read_oracle(kit_dir)      # {"answers": [{decision, unit, value, answer}]}
+paragraphs = documents.paragraphs(texts["sap"])   # anchor -> text
+kit = specfirst.score.kit.load(kit_dir)      # kit.documents has the four and house;
+                                             # kit.oracle (entry, unit) -> value
+```
+
+How the natural form is made (ADR-009): a model rewrites each statement
+once; the text, the slot check and the verifier's read-back are frozen in
+`src/specfirst/gen/rewrites/` (append only; README there), and a kit takes
+the accepted text of each statement. The store holds the 61 statements of
+the ten kits of the gate seed. A kit of another seed states statements the
+store may not have: its paragraph is the phrasing template, marked
+`missing`, and the kit fails the gate gen-3a until the loop has run for it
+(`specfirst gen natural`, with `SPECFIRST_REWRITES` naming a store outside
+every checkout for dev, test and sealed kits). The model is reached through
+subagents of a Claude Code session; the CLI on this machine is not logged
+in (ADR-009, decision 1).
+
 - Change `GENERATOR` with any change that gives other bytes. Kits are
-  generated again, never patched.
+  generated again, never patched. It is `gen-3a.2` now.
+- `specfirst gate` refuses to run while `SPECFIRST_REWRITES` is set, and
+  `specfirst gen natural requests|propose` refuses dev, test and sealed
+  kits (but those of the gate seed) while the store lies inside a
+  checkout.
+
+For read-2a, from the review of gen-3a:
+
+- A run of the reader must give `scorer.run` the questions it asked
+  (`asked=`); with `asked=None` a record with the status `asked` counts as
+  asked (finding D8). `specfirst score kit --decisions` always gives the
+  questions file (empty without `--questions`).
+- Kits 5 to 10 of the gate seed carry the splits dev and test, but their
+  seed is in the repository and their statements are in the store: never
+  score on them as dev or test kits (finding D7).
+- The store maps every natural paragraph back to its statement: keep it
+  out of a task folder and under the canary scan (section 11.2).
 
 ## Open
+
+From the review of gen-3a, to settle before the loop of the natural form
+runs for another seed (docs/reports/gen-3a.review.md, pass 2):
+
+- D14: a pick `(none)` (the paragraph states none of the alternatives)
+  counts neither as agreement nor as failure, so the loop never falls back
+  to the phrasing template for it. Drop a pick equal to the abstention only
+  when an alternative of the entry has that ID; count it as a failure
+  otherwise; plant three abstentions in the loop test.
+- D13: the answer template of the read-back request writes `none`; it
+  should write `(none)`.
+- D15: plant a natural document with one filler section and a summary line
+  of 101 characters (rule R5).
+- D5, the known limit of the slot check: an ordinary word added to a value
+  or a rule passes both checks; the verifier should also read back the slot
+  values before rewrites that move further from the standard form.
 
 - The data of a kit are a function of the design and the seed (gen-1a);
   the decisions are sampled to fit them. A probe that holds for one
@@ -207,10 +320,13 @@ For the real track:
 
 ## Next
 
-- gen-3a (needs gen-2a): protocol and SAP in standard form and in natural
-  form for the decisions of the slice.
-- read-1a (needs real-3a and gen-2a): the scorer.
-- Then the rest of gen-1, gen-2 and gen-3.
+- read-2a (needs read-1a and gen-3a): the task folder takes `inputs/` of a
+  kit (the natural documents in `inputs/docs/`); `specfirst ask` answers from
+  `gold/oracle.yaml`. See "The documents of a kit".
+- Then the rest of gen-1, gen-2 and gen-3. For gen-3: the documents of the
+  other three table families; more than one rewrite per statement, and a
+  phrasing family held out for an exam (section 6.7); rewrites that move
+  further from the standard form (ADR-009, "For the owner").
 - Owed before the gate of the full gen-2 is run (the owner's answer of
   2026-11-17 on finding G1 of the gen-2a review; ADR-007): the probes
   follow the decisions of the kit. The decisions are sampled first and

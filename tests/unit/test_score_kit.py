@@ -53,8 +53,15 @@ def scored(machine, kit):
 def test_a_kit_is_read_as_a_case(machine, kit):
     assert kit.units == decisions.SLICE_UNITS and set(kit.data) == {"visible", "twin"}
     case = kits.case(kit, machine.catalog)
-    assert case.units == kit.units and case.standard_form == "sap"
-    assert set(case.documents.texts) == {"sap", "house"}
+    assert case.units == kit.units
+    assert case.standard_form == ("protocol-standard", "sap-standard")
+    assert set(case.documents.texts) == {"protocol", "sap", "protocol-standard", "sap-standard",
+                                         "house"}
+    # Kit 7 of a set is a kit of the ask demo: the oracle answers what the documents leave
+    # out, and the parser control asks for it (docs/decisions/ADR-009.md, decision 4).
+    assert kit.manifest["documents"]["tier"] == "ask" and case.oracle
+    assert set(case.oracle) == {(r["id"], r["unit"]) for r in kit.records
+                                if r["status"] == "asked"}
     assert kits.case(kit, machine.catalog, "T").units == ("tfl-ae-summary",)
     arms = case.arms(case.gold_vector())
     assert len(arms) == kit.manifest["study"]["arms"]
@@ -133,11 +140,19 @@ def test_the_parser_control_scores_100_percent_on_the_kit(scored, kit):
     found, lines = scored
     assert found.gold == [] and found.control_holds
     scoped = sum(1 for r in kit.records if r["unit"] in kit.units)
+    # A decision the oracle answers (the ask demo of kit 7) is scored as asked, not on
+    # quote and span (section 4.5: study_input).
+    asked = sum(1 for r in kit.records if r["unit"] in kit.units and r["status"] == "asked")
+    assert asked == 2
     for stage, decisions_scored in (("C", scoped), ("T", 7)):
         result = found.control[stage]
         assert result.perfect and result.silent == [] and result.behind == {}
-        for name in ("value", "status", "quote", "span"):
-            assert result.reading.total(name) == (decisions_scored, decisions_scored)
+        cited = decisions_scored - (asked if stage == "C" else 0)
+        for name, wanted in (("value", decisions_scored), ("status", decisions_scored),
+                             ("quote", cited), ("span", cited)):
+            assert result.reading.total(name) == (wanted, wanted)
+        if stage == "C":
+            assert result.reading.asks.exact and result.reading.asks.gold == asked
     assert any(line.startswith("  arm C, stage T:") and line.endswith(": 100%") for line in lines)
 
 
@@ -174,18 +189,18 @@ def test_the_checks_of_a_kit_fail_on_their_planted_defects(machine, kit, scored)
     lines: list[str] = []
     assert kits.planted(machine, kit, scored[0], lines.append)
     assert len(lines) == 3 and all(line.endswith("fails: yes") for line in lines)
-    assert _without(kit, "no-such-anchor") == kit.documents.texts["sap"]
+    assert _without(kit, "no-such-anchor") == kit.documents.texts["sap-standard"]
 
 
-def _without(kit, anchor):
-    return kits._without_statement(kit.documents.texts["sap"], anchor)
+def _without(kit, anchor, doc="sap-standard"):
+    return kits._without_statement(kit.documents.texts[doc], anchor)
 
 
 def test_a_statement_is_taken_out_of_a_document(kit):
     stated = next(r for r in kit.records if r["status"] == "stated")
-    anchor = stated["citations"][0]["anchor"]
-    text = _without(kit, anchor)
-    assert f"[{anchor}] " in kit.documents.texts["sap"] and f"[{anchor}] " not in text
+    doc, anchor = stated["citations"][0]["doc"], stated["citations"][0]["anchor"]
+    text = _without(kit, anchor, doc)
+    assert f"[{anchor}] " in kit.documents.texts[doc] and f"[{anchor}] " not in text
     assert stated["statement"] not in " ".join(text.split())
 
 

@@ -9,8 +9,8 @@ or states another alternative of its catalog entry.
                   (the length of the emergence window is the follow-up length,
                   the vital sign of a population rule is one the study measures)
     sample        the decision vector of one kit
-    records       the vector as decision records, each with its statement and
-                  its citation
+    vector        the vector as (id, unit, value) for every decision of a kit; the
+                  documents of a kit make the records (specfirst.gen.documents)
 
 The scope is a list of units (the slice of ADR-005: three modules and the
 adverse event summary). What the vector holds beyond the units:
@@ -40,7 +40,6 @@ from __future__ import annotations
 
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import house as houses
-from specfirst.compile.standard_form import StandardForm
 from specfirst.gen import design as designs
 from specfirst.gen import probes
 from specfirst.gen.rng import Stream
@@ -51,7 +50,6 @@ SLICE_UNITS = probes.SLICE_UNITS
 # variables of a dataset the slice needs and reach none of its outputs.
 DEFAULT_UNITS = ("mod-demographics",)
 SPLITS = ("train", "dev", "test", "sealed")
-DOCUMENT = "sap"   # the standard-form document that states the decisions of the study
 
 # The chance that a decision of a kit is another alternative than the house default.
 STATED_SHARE = 0.45
@@ -327,47 +325,3 @@ def as_values(records: list[dict]) -> Values:
             continue
         values[record["id"]] = record["value"]
     return values
-
-
-def records(catalog: catalogs.Catalog, house: houses.House, design: dict,
-            values: Values) -> tuple[list[dict], str]:
-    """The decision records of a kit, and the standard-form document that states them.
-
-    A decision that equals the house default has the status `default` and
-    cites the standards document of the house. Every other decision has the
-    status `stated` and cites the standard-form document of the study, which
-    holds one anchored statement per stated decision.
-    """
-    form = StandardForm(catalog)
-    base = {(r["id"], r["unit"]): r for r in houses.default_decisions(catalog, house)}
-    listed = vector(catalog, house, design, values)
-    stated = [r for r in listed if base.get((r["id"], r["unit"]), {}).get("value") != r["value"]]
-    title = f"Statistical analysis plan of study {designs.study_id(design)}: standard form"
-    preface = (
-        "This document states the decisions of the study that differ from the house "
-        f"standard {house.label}, one statement each, in the standard form of the decision "
-        "catalog. A decision that is not stated here takes the default of the house "
-        "standard.",
-    )
-    document = form.render_document(DOCUMENT, title, stated, preface)
-    doc, parsed = form.parse_document(document)
-    anchors = {(item["id"], item["unit"]): item for item in parsed}
-    if doc != DOCUMENT or set(anchors) != {(r["id"], r["unit"]) for r in stated}:
-        raise DecisionError("the standard-form document does not read back as its decisions")
-    found = []
-    for record in listed:
-        key = (record["id"], record["unit"])
-        if key in anchors:
-            item = anchors[key]
-            if item["value"] != record["value"]:
-                raise DecisionError(f"{key[0]}: the statement does not read back as its value")
-            found.append({"id": key[0], "unit": key[1], "value": record["value"],
-                          "status": "stated", "class": "document_rule",
-                          "statement": item["statement"],
-                          "citations": [{"doc": DOCUMENT, "anchor": item["anchor"],
-                                         "quote": item["statement"]}]})
-        else:
-            default = base[key]
-            found.append({name: default[name] for name in
-                          ("id", "unit", "value", "status", "class", "statement", "citations")})
-    return found, document
