@@ -16,7 +16,7 @@ the same in both runs, but for the planted defects: 17 in the first.
 
 - Ten kits were each written twice by processes of their own: 1,216 files,
   none differs (P1).
-- Every cell of every grid equals a hand calculation that shares nothing
+- Every cell of every grid equals a hand calculation that shares no code
   with the machine: 422 cells of the gold grids, visible and twin, and the
   grids of 509 mutated builds (P2).
 - Every cell that prints a number has a complete path to SDTM columns and
@@ -38,8 +38,11 @@ is read as "the log of probes claims a probe for it under the decisions of
 the kit"; a decision that the output reads without such a claim may stay
 unseparated in a kit, and the log lists each case. In the ten kits of the
 gate three such cases are ones that other data could separate:
-`tfl.rounding.rule` in kits 4 and 9, `trt.end.source` in kit 9. What is
-left for the owner is at the end.
+`tfl.rounding.rule` in kits 4 and 9, `trt.end.source` in kit 9. That is
+the set of the gate, not a bound: the reading holds for every kit of this
+generator, and in two sets of ten kits from seeds of the reviewer 2 and 4
+kits had such a case (finding G9). What is left for the owner is at the
+end.
 
 The independent review (rule R7) is in `docs/reports/gen-2a.review.md`.
 Pass 1 did not sign: one finding blocked (G1, the reading of "applicable"
@@ -49,8 +52,8 @@ the gate for this slice only, and the rework, in which the probes follow
 the decisions of a kit, is owed before the gate of the full gen-2
 (ADR-007, "The owner's answer on decision 6"). The section "Review" says
 what the review found and what was done about it. By PLAN.md section 2.3
-a part has passed when its gate script exits 0 and the reviewer signs;
-the verdict of pass 2 is the last line of the review file.
+a part has passed when its gate script exits 0 and the reviewer signs.
+Pass 2 signed, for the slice of ADR-005: gen-2a has passed.
 
 ## What gen-2a asks for, and where it stands
 
@@ -448,7 +451,7 @@ parts met here for the first time (ADR-007):
 | Property | What is checked | Planted defects (rule R5) |
 | --- | --- | --- |
 | P1 determinism | Every kit is written twice, by two processes: hash seed 1 against 2, the time zone and locale of the gate against Pacific/Kiritimati and the C locale, two working folders. Every file is compared by SHA-256, `kit.yaml` included. | A build that stamps its data with a time that depends on its process; a build whose manifest names its folder (it must differ in `kit.yaml` and in nothing else). |
-| P2 reproduction | The reference of a generated study is a hand calculation (`gen/reference.py`): SDTM rows and decision values in, the texts of the table out, about 460 lines that share nothing with the compiler, the templates, yamaa, the engines, the registry or the grid builder. Every cell, the columns and the rows of the grid must equal it: on the visible data, on the twin, and for every mutated build of P4. | One changed cell; a grid built by another rule than the reference follows, for three decisions; a mock shell that shows a number. On the tiny hand-made study the unit tests compare 224 decision vectors. |
+| P2 reproduction | The reference of a generated study is a hand calculation (`gen/reference.py`): SDTM rows and decision values in, the texts of the table out, about 480 lines that share no code with the compiler, the templates, yamaa, the engines, the registry or the grid builder. Every cell, the columns and the rows of the grid must equal it: on the visible data, on the twin, and for every mutated build of P4. | One changed cell; a grid built by another rule than the reference follows, for three decisions; a mock shell that shows a number. On the tiny hand-made study the unit tests compare 224 decision vectors. |
 | P3 traceability | `graph.check_graph` with no accepted gap; `graph.check_cells`: every cell that prints a number has a complete path to SDTM columns; the `reads` edges of every analysis are what the ARS file names; every decision has a node, and every numeric cell an analysis that a decision sets. | A cell without a `shows` edge; an analysis without a `reads` edge; a column without its derivation; a decision without a node. |
 | P4 identifiability | Mutation on the twin: every alternative of every decision is compiled and built, and the grids are compared pair by pair (section "Separation"). The matrix of a kit counts because a new mutation gives it again. | A log of probes that claims a difference for `date.studyday.origin`; a twin whose planted subjects lost their events; a kit whose matrix, decision record and manifest call an unseparated decision separated, with the hashes written again; matrices in which no kit separates a decision. |
 | Engines (R11) | The ARD of the Python engine and of the R engine, row by row, for every kit, visible and twin. | A result that differs; a result that is missing. |
@@ -617,7 +620,14 @@ so a new version of yamaa that reads `not_before` otherwise fails a test.
   actual treatment (its planted subject has no planned treatment),
   `pop.safety.grouping` where actual treatment is the same as planned, and
   `trt.end.source` in one kit on the efficacy-evaluable set (its planted
-  subject stops early). The log of the gate lists them per kit.
+  subject stops early). The log of the gate lists them per kit. Another
+  set has other kits and other counts. In two sets of ten kits from seeds
+  of the reviewer, 2 and 4 kits had a decision that the table reads, that
+  data could separate and that the twin does not: the rounding rule five
+  times, `trt.end.source` twice, one of the seven stated in the document
+  of a dev kit (finding G9 of the review). Nobody should plan a set of dev
+  and test kits on "2 of 10": until the rework, look at the matrices of a
+  set before it is used.
 - `date.studyday.origin` is unseparated in every kit of this slice: no
   cell reads a study day.
 - `disp.status.record`: a gold vector never names the treatment record,
@@ -659,7 +669,12 @@ so a new version of yamaa that reads `not_before` otherwise fails a test.
   treatment in the grouping stands in no column, the total included, and
   an arm without a subject in the set has no column. The last one is why
   `pop.safety.rule` cannot be separated on a table by planned treatment.
-  A wrong reading that the machine shares would not show.
+  A wrong reading that the machine shares would not show. Two of the
+  readings meet no record in the data, the partial end date and the event
+  without an analysis start date that ended before the treatment start:
+  the ten twins of the gate hold 2,012 events, none with a partial end
+  date and none with a partial start date that ended before the first
+  dose (the reviewer's count). Nothing shows what the machine does there.
 - The hand calculation and the grid builder agree on the form of a cell
   ("12 ( 37.5)") by construction.
 - What the sampler never draws (`decisions.slot_values`, `decisions.fits`).
@@ -711,6 +726,7 @@ reviewer established that the author could not:
 | G5 values the sampler never draws were not under the limits | They are. |
 | G6 the two builds of P1 ran at the same moment | `gate2.write_all` ends every first build before a second build starts. |
 | G7 records | 943, not 942. `kits.generate` removes the folder of a kit that cannot be written, with a test. The line "Passed" of the handover is true once the review is signed; the merge waits for that. |
+| G9 (pass 2) "2 of the 10 kits" is the set of the gate, not a bound | Said in the verdict and under "Limits", with the reviewer's counts for two sets of seeds of the reviewer's own; the handover says it under "Open". |
 | G8 a false claim for `disp.status.record` on vectors the sampler refuses | `REACHES` does not claim the pair when the end-of-study record is the one with the subcategory of the study participation; a test. The log of probes carries the table, so `GENERATOR` is `gen-2a.2`. |
 
 The code changed after the first gate run (G4, G6, G7, G8, the comments of
@@ -725,9 +741,32 @@ $ git diff --stat f2dac3b HEAD -- src tests standard scripts env r kits
 (no output)
 ```
 
-Pass 2 of the review read the changes since `ce70734`, the two new gate
-logs, this report, ADR-007 and the handover. Its verdict is the last line
-of `docs/reports/gen-2a.review.md`.
+Pass 2 of the review read `d20cab2`: the changes since `ce70734`, the two
+new gate logs, this report, ADR-007 and the handover. Verdict: SIGNED, for
+the slice of ADR-005: "It is not a signature under the reading for the
+full gen-2". What the reviewer established in pass 2:
+
+- The owner's answer is in the transcript of the session that asked: the
+  question that ADR-007 quotes, and the option "approve the reading, merge
+  today". The translation in ADR-007 is faithful. The description of the
+  option the reviewer has only as it was relayed.
+- The logs in the repository are the files the two gate runs left (the
+  same SHA-256), and the change of `reference.py` is comments only (the
+  same syntax tree).
+- Kit 9 of the gate seed, built again with the changed code: no file
+  differs between its two builds, the second build starts after the first
+  has ended, and its gold is byte for byte that of the kit of `gen-2a.1`.
+  A kit that cannot be written leaves no folder.
+- No claim of `probes.REACHES` fails on the 366 vectors on which pass 1
+  found four false claims; 200 more random vectors on two twins equal the
+  hand calculation.
+- G1 to G8 are settled. One new finding, G9, does not block.
+
+G9 and three small things that the reviewer left under G3 (the words
+"shares no code", the number of lines of the reference, the two readings
+that meet no record) were put into this report, ADR-007 and the handover
+after the signature, in the commit that holds the signed review. The
+reviewer has not read these last changes; they change records only.
 
 ## GitHub and CI
 

@@ -12,9 +12,18 @@ and three lines of `docs/state/gen.md` were not committed, and
 `docs/reports/gen-2a.real-3a.gate.log` was a new file. I read these texts
 as they stood in the worktree at the end of the review.
 
-Result: NOT SIGNED. One finding blocks (G1). Seven do not (G2 to G8). The
-machine, the hand calculation and the checks of P1, P2 and P3 held under
-everything I tried. What blocks is what the gate asks of P4.
+Result of pass 1, on `ce70734`: NOT SIGNED. One finding blocks (G1).
+Seven do not (G2 to G8). The machine, the hand calculation and the checks
+of P1, P2 and P3 held under everything I tried. What blocks is what the
+gate asks of P4.
+
+Result of pass 2, on `d20cab2`: SIGNED. The owner approved the reading
+that G1 is about, for the slice only, and the rework is booked before the
+gate of the full gen-2. G2 to G8 are settled. One new finding, G9, does
+not block. Pass 2 is the last section of this file. Everything before it
+is pass 1 as it was written on `ce70734`; two places of it were touched
+for pass 2, the paragraph above and the name of the verdict line of pass
+1.
 
 ## How the review was done
 
@@ -650,4 +659,342 @@ One of two, and it is not mine to choose.
 G4 and the wrong number of G7 can be settled in the same pass. After
 that I read the diff, the new log and the report again.
 
-Verdict: NOT SIGNED
+Verdict of pass 1: NOT SIGNED
+
+## Pass 2
+
+Commit reviewed: `d20cab2` on `track/gen`; `main` is `843c890`. Since
+pass 1 (`ce70734`) there are three commits: `f2dac3b`, the review of pass
+1 and the changes for G2 to G8; `f5381da`, the logs of the two gates on
+`f2dac3b`, in the report; `d20cab2`, the owner's answer on G1, records
+only. The file of pass 1 is in `f2dac3b` with the 653 lines I wrote, and
+the two later commits did not touch it. `git diff --stat f2dac3b d20cab2
+-- src tests standard scripts env r kits` prints nothing: the code of
+`d20cab2` is the code on which both gates ran. Since `ce70734` no file
+changed under `src/specfirst/machine`, `src/specfirst/compile`, `r/`,
+`standard/`, `env/` or `scripts/`, and `PLAN.md` did not change.
+
+I was told the owner's answer by the session of gen-2a, which had it from
+the base session. I did not take it from either; what I checked is under
+G1.
+
+### How pass 2 was done
+
+As pass 1: in the worktree, with Windows git; everything that runs, under
+WSL in the environment of the worktree, each command inside the shared
+lock, one at a time, and where kits of a set are built, four processes at
+a time. No run of CORE, no run of a gate, nothing installed, the fetch
+cache not written. The kits the author kept were read only; mine are
+under `/root/scratch-review-gen2a/`. No file of the repository was
+changed but this one; nothing was committed.
+
+One thing is new. To check the owner's answer I searched the transcripts
+of the owner's other sessions with the session tool of the desktop app:
+six searches for words of the question and of its options. A search
+returns a few words around a hit. I opened no transcript.
+
+### What I read
+
+- The diff `ce70734..d20cab2`, 15 files. Every changed line of
+  `gen/gate2.py`, `gen/kits.py`, `gen/probes.py`, `gen/reference.py`,
+  `gen/__init__.py`, the two test files, ADR-007, `docs/lessons.md`
+  (lesson 47) and `docs/state/gen.md`. Of the report, as it stands now:
+  "Verdict", "The gate", "The pilot kit", "What was built", "The four
+  properties", "Separation", "Limits", "Review", "GitHub and CI", "For
+  the owner".
+- The two gate logs of `f2dac3b`, each as a diff against the log of
+  `ce70734`, and their summary lines.
+
+### What I ran
+
+Outputs are cut as in pass 1.
+
+K. The logs in the repository against the logs the gate runs left.
+
+```text
+$ sha256sum docs/reports/gen-2a.gate.log /root/scratch-gen2a/gate-gen-2a/clean-clone.log
+77d3ea8651d632579364dba650858ba41035e873e87d8301a82b5acdae231e2c  (both)
+$ sha256sum docs/reports/gen-2a.gen-1a.gate.log /root/scratch-gen2a/gate-gen-1a/clean-clone.log
+472ff5177b0041e1d03cccaef09087c520bafc7ab7e085b90bb5182f659b8b24  (both)
+$ grep -c "^planted defect" docs/reports/gen-2a.gate.log
+21
+$ grep "^GATE\|^commit" docs/reports/gen-2a.gate.log docs/reports/gen-2a.gen-1a.gate.log
+commit:     f2dac3b07f6614c37de47233e0edfe135574fc65      (both)
+GATE gen-2a: PASS
+GATE gen-1a: PASS
+```
+
+The log of gen-2a differs from the one of `ce70734` in the commit, the
+folder of the clone, the times, 945 tests for 943, 443 files for 438 in
+the ASCII check and four new lines "planted defect". No line of a kit and
+no line of the matrix differs. The log of gen-1a differs in the same
+kinds of lines; none of its 30 lines "seed gen-1a-..." differs.
+
+L. Is the change of `reference.py` comments only? (`p2_ast.py`: the syntax
+trees of the two versions without their docstrings.)
+
+```text
+reference.py, ce70734 against d20cab2, without comments and docstrings: the same code: True (75188 characters of syntax tree)
+```
+
+M. The unit tests of pass 1 again (experiment A), with the two new tests.
+
+```text
+180 passed in 277.60s (0:04:37)
+```
+
+N. The changed code, run by me (`p2_build.py`): `gate2.write_all` for kit
+9 of the gate seed; `kits.check` on what it wrote; the kit against the kit
+of the old generator that the author kept; then three kits that cannot be
+written.
+
+```text
+GENERATOR: gen-2a.2
+== 1: write_all, kit 9, two builds
+  failed: {}; 64 s
+  first build: files written from 19:20:07 to 19:20:39; second build: from 19:20:40 to 19:21:10; the second starts 1.4 s after the first has ended
+  122 files, the manifest included; differ between the two builds: 0 []
+  kit sfyf9ekd (test), generator gen-2a.2
+      twin: P4 50 builds of 22 decisions: 13 separated, 8 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, trt.actual.source; read without a probe: pop.safety.rule, tfl.rounding.rule, trt.end.source
+  kits.check with a new mutation: 0 problems []
+  visible: the table of the new kit equals the table of the kept kit of gen-2a.1: True
+  twin: the table of the new kit equals the table of the kept kit of gen-2a.1: True
+  the matrix equals that of the kept kit: True
+  files: 122 now, 122 before, the same names: True; with other bytes than before: 52
+== 3: the log of probes of the new kit
+  reaches of disp.status.record in the log equals probes.REACHES: True; it names the study record: True
+== 2: a kit that cannot be written
+  planted P2 difference on the twin: KitError: study SFAZE6C8, decision vector 0: 1 defects: twin: P2: a planted difference
+  the folder exists afterwards: False
+  planted error of another kind: ZeroDivisionError: a planted error that is no KitError
+  the folder exists afterwards: False
+  a folder that is not empty: KitError: eview-gen2a/pass2/not-empty is not empty
+  the folder and its file are still there: True; files in it: ['mine.txt']
+```
+
+The 52 files with other bytes (`p2_changed.py`): the 22 Dataset-JSON
+files, the 22 Parquet files and the two Define-XML files of the SDTM,
+`gold/design.yaml`, `gold/probes.jsonl`, the two truth files, `study.json`
+and `kit.yaml`. The Parquet files hold the same data. The text files are
+the same once the name of the generator is put back, but for the log of
+probes, where the table of `disp.status.record` differs on two lines, and
+the two manifests, which hold hashes. The 70 other files, every ADaM
+dataset, result, grid, page, graph file, reference, compiled spec, the
+matrix and the decision records among them, are the same bytes as under
+`gen-2a.1`.
+
+O. The claims of the new table (`p2_scan2.py`: experiment G of pass 1,
+with `probes.REACHES` of the code in place of the table in the logs of the
+kept kits).
+
+```text
+366 vectors on 10 twins
+  pairs claimed and separated: 6068
+  pairs not claimed and separated: 1009
+  pairs not claimed and not separated: 2901
+claims that do not hold: 0
+```
+
+P. The machine against the hand calculation again (experiment C), on the
+twin of the new kit 9 and on the twin of the kept kit 10.
+
+```text
+kit 9 twin: 100 random vectors: {'built': 100, 'equal': 100, 'differ': 0, 'not built': 0, 'not calculated': 0, 'sampler would refuse': 81}; runs of yamaa: 100
+kit 10 twin: 100 random vectors: {'built': 100, 'equal': 100, 'differ': 0, 'not built': 0, 'not calculated': 0, 'sampler would refuse': 79}; runs of yamaa: 100
+```
+
+Q. The commands.
+
+```text
+$ specfirst gen kit --seed review-g2a-p2 --number 4 --out /root/scratch-review-gen2a/p2-cli-kit
+kit sfvcqbcw (train): 121 files in /root/scratch-review-gen2a/p2-cli-kit; P1: two builds have the same bytes; P2 to P4 hold; 14 of 22 decisions separated on the twin
+$ specfirst gen verify /root/scratch-review-gen2a/p2-cli-kit
+  visible: P2 20 of 20 cells equal the hand calculation; ... 0 disagree ...
+  twin: P2 20 of 20 cells equal the hand calculation; ... 0 disagree ...
+  twin: P4 53 builds of 22 decisions: 14 separated, 8 applicable, 0 applicable and unseparated; ... read without a probe: pop.safety.rule
+kit: ok
+$ specfirst gen verify /root/scratch-review-gen2a/cli-kit --no-mutation       (a kit of pass 1, generator gen-2a.1)
+kit.yaml: 'generator' is 'gen-2a.1', this checkout has 'gen-2a.2'
+kit: FAILED
+```
+
+R. Two sets of ten kits of seeds of my own (`p2_set.py`): the ten
+scenarios, each kit built once in a process of its own. Per kit, the
+decisions that the output reads and that its twin does not separate. Kind
+(a) and kind (b) are those of G1; `pop.safety.rule` and
+`pop.safety.grouping` are the cases of kind (a).
+
+```text
+set 'review-g2a-set'
+kit 7 (dev, scenario 7 ...): 21 decisions, read 17, applicable 15, separated 16
+    read and unseparated, kind (a): none; kind (b): tfl.rounding.rule = half_away_from_zero (default)
+kit 9 (test, scenario 9 ...): 22 decisions, read 17, applicable 8, separated 15
+    read and unseparated, kind (a): pop.safety.rule; kind (b): trt.end.source = last_ex_end_date (default)
+(the eight other kits: kind (b): none)
+set 'review-g2a-set': kits with a decision of kind (b) read and unseparated: 2 of 10; such cases: 2, of them stated in the document of the kit: 0
+
+set 'review-g2a-set2'
+kit 1 (train, scenario 1 (all drawn)): ... kind (b): tfl.rounding.rule = half_away_from_zero (default)
+kit 3 (train, scenario 3 ...): ... kind (b): tfl.rounding.rule = half_away_from_zero (default)
+kit 5 (dev, scenario 5 ...): ... kind (b): tfl.rounding.rule = half_even (stated)
+kit 9 (test, scenario 9 ...): ... kind (b): trt.end.source = last_ex_end_date (default), tfl.rounding.rule = half_away_from_zero (default)
+(the six other kits: kind (b): none)
+set 'review-g2a-set2': kits with a decision of kind (b) read and unseparated: 4 of 10; such cases: 5, of them stated in the document of the kit: 1
+```
+
+All twenty kits were written from the first decision vector.
+
+S. The owner's answer in the transcripts. The question was put in
+Chinese and this file is ASCII (rule R10), so I give the searches in my
+own translation. Of six searches two had a hit, both in one session, the
+base session, whose last activity was 2026-11-18 00:06 UTC, the evening
+of 2026-11-17 on this machine.
+
+- The label of the chosen option, "A approve the reading, merge today".
+  The hit is the end of the question ("... holds that this reading needs
+  your approval. Which do you choose?"), then an equals sign, then that
+  label with "(Recommended)", then the sentence "You can now continue
+  with these answers in mind." That is the form in which the question
+  dialog hands an answer back to a session.
+- The words "2 of the 10 kits" of the question. The hit is the first half
+  of the question as it was relayed to me, word for word: the gate passes
+  in full, the review did not sign, kits 4 and 9, one or two decisions
+  each (the rounding rule, the source of the treatment end date), other
+  data could have told them apart.
+- Four searches for words of the description of option A (accept decision
+  6 as the reading for this slice; the rework booked as a later part) had
+  no hit. The search reaches what a session was told, and the description
+  of an option stands in what a session asked.
+
+### The findings of pass 1
+
+G1, settled, by the owner. Way 1 of pass 1 was taken; no code changed for
+it. What I checked:
+
+- The answer. By S, the owner was asked the question that ADR-007 quotes
+  and chose the option "approve the reading, merge today". I have this
+  from the transcript of the session that asked, not from the two
+  sessions that passed it on.
+- The record. ADR-007 gives the question, the chosen option with its
+  description and the option that was not chosen, in English. Held
+  against the Chinese words as they were relayed to me, sentence by
+  sentence, the translation is faithful. The description of the option I
+  have as relayed only (S). Its sentences make the approval smaller, not
+  larger: this slice only; decision values compared where a kit marks a
+  decision unseparated; the rework before the gate of the full gen-2.
+- What was drawn from it. The three points under "What follows" in
+  ADR-007 say what the option says. The content of the rework is way 2 of
+  pass 1 (the decisions first, the probes after them; `REACHES` keeps the
+  conditions of kind (a); the gate fails on kind (b)). It is booked in
+  `docs/state/gen.md` under "Next", with what it changes (the generator
+  of gen-1a, its gate with CORE, `GENERATOR`), and in the report under
+  "For the owner". The status of ADR-007 says that the approval is for
+  the slice of ADR-005 only and that the other four points are open.
+- The limit stays said. The verdict of the report names the three cases
+  of the gate set that other data could separate; "Limits" has the
+  reading and, with experiment D, what it means for P2; the handover
+  tells a scorer that a table equal to the gold table is no evidence for
+  a decision marked `unseparated`. Lesson 47 names what was done in the
+  wrong order.
+
+What pass 1 found about what the gate proves is unchanged, and the
+records say so. What blocked was that the reading was not the executor's
+to choose. The owner has chosen it.
+
+G2, settled. "Limits" has both: P2 holds the table and nothing else, with
+ASTDY as the example and the machine that ignores the rounding rule on
+the twin of kit 9; P3 is checked without "no spec element is unused", and
+the full gen-2 owes it.
+
+G3, settled. The text of the module says what is shared: the arms and
+their names from `gold.arms_of`, the column order as a rule written a
+second time, the labels copied from the layout template. The three
+readings are marked `READING`. Nothing but text changed (L). "Limits"
+lists the five readings and the shared input. Three small things are
+left, none worth a pass: the second bullet of the verdict of the report
+still says "shares nothing with the machine" where the module now says
+"shares no code"; "about 460 lines" is 483 now; and "Limits" does not say
+that two of the readings meet no record in the data (0 of 2,012 events in
+the ten twins), so that nothing shows what the machine does there.
+
+G4, settled. `gate2.planted_splits` plants the seed in a document of a
+copy of kit 1, another split and the hash of another seed, and asks that
+each is reported alone. `gate2.planted_matrix` marks an unseparated
+decision as separated in the matrix, the decision record and the
+manifest of a copy, writes the hashes again, and asks that the check
+without a mutation reports nothing and a new mutation exactly three
+problems. Both are in the gate log (lines 291 and 347 to 349) and in the
+unit tests (M). The gate plants 21 defects now.
+
+G5, settled. "Limits" names the four lists of rows, the missing
+DISCONTINUATION, the window and what follows for `REACHES` and for a
+reader.
+
+G6, settled. `gate2.write_all` runs every first build before any second
+build. In my run the second build of kit 9 started 1.4 seconds after the
+first had ended, and the two are the same bytes (N).
+
+G7, settled. The report says 943, and 945 for the second run, which is
+what the two logs say. A kit that cannot be written leaves no folder: a
+planted difference and a planted error of another kind both left nothing,
+and a folder that was not empty was refused and left as it was (N); the
+repository has a test of its own. The line "Passed" of the handover
+becomes true with this verdict. The sections "The pilot kit" and "GitHub
+and CI" are committed.
+
+G8, settled. `REACHES` of `disp.status.record` does not claim the pair
+when the end-of-study record is the one of the study participation. With
+the table of the code no claim fails on the 366 vectors of experiment G
+(O: 0, where pass 1 had 4). The log of probes carries the table, so the
+name of the generator changed, and both gates ran again on that code. A
+kit of `gen-2a.1` is refused by `gen verify` (Q), as it should be. The
+gold of kit 9 is byte for byte what it was under `gen-2a.1` (N).
+
+### New in pass 2
+
+G9. Does not block: "2 of the 10 kits" is the gate set, not a bound. The
+question to the owner named the two kits of the gate set, which is right
+for that set. The reading that was approved holds for every kit this
+generator writes. In two sets of ten of my own seeds (R) the kits with a
+decision of kind (b) read and unseparated are 2 and 4; the cases are the
+rounding rule five times and `trt.end.source` twice, one of them stated
+in the document of a dev kit. Pass 1 has kits in which it was
+`trt.date.imputation` and `disp.status.record`, from scenarios I picked
+to find them. Point 3 of ADR-007 covers all of this ("wherever
+`gold/identifiability.json` of a kit says `unseparated`"), and so does
+the handover. The verdict and the limits of the report speak of the ten
+kits of the gate only; one sentence there should say that another set
+has other kits and other counts, so that nobody plans a set of dev and
+test kits on "2 of 10". Until the rework a set is best looked at with
+its matrices before it is used.
+
+Nothing else is new. The changed code does what the report says, and I
+found no defect in it.
+
+### What I could not check in pass 2
+
+- The two gate runs on `f2dac3b`: their logs only. The logs in the
+  repository are the files the runs left (K).
+- The runs of CI on GitHub that the report quotes: I have no way to
+  GitHub here. The remote-tracking branch `origin/track/gen` of the local
+  repository is at `d20cab2`.
+- The description of the chosen option, in the transcript (S).
+- The gate of real-3a was not run again and the report says why. I agree:
+  no file of the machine changed since `ce70734`.
+
+### Verdict of pass 2
+
+SIGNED. Both gates passed on clean clones of `f2dac3b`, and nothing but
+records changed after it. The one blocking finding of pass 1 was a
+question for the owner, and the owner answered it: the reading of
+"applicable" in ADR-007, decision 6, is the reading of the gate text for
+this slice, and the rework that makes the gate ask what its words ask is
+owed before the gate of the full gen-2. G2 to G8 are settled in the code,
+the gate and the records. G9 and the three small things under G3 are for
+the next change of the report; they do not hold up the merge.
+
+The signature is for the slice of ADR-005. It is not a signature under
+the reading for the full gen-2, and it rests on the owner's answer as the
+transcript of the base session has it.
+
+Verdict: SIGNED

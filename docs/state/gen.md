@@ -16,7 +16,10 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   the gate `gen-2a`; `specfirst gen kit|kits|verify`. Its first commits
   settle the eight findings of pass 2 of the gen-1a review. Report:
   docs/reports/gen-2a.md (the gate, its numbers, the limits). Review:
-  docs/reports/gen-2a.review.md. Choices: docs/decisions/ADR-007.md.
+  docs/reports/gen-2a.review.md (signed in its second pass, for the slice).
+  Choices: docs/decisions/ADR-007.md; the owner approved the gate's
+  reading of "applicable" for the slice only, and a rework is owed before
+  the gate of the full gen-2 (see "Next").
 
 ## A kit: what the folder holds
 
@@ -152,7 +155,11 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
   analysis set (the calibrated counts) cannot follow the decisions. The
   gate `gen-2a` therefore reads "applicable" as "claimed by the log of
   probes" (ADR-007, decision 6). The owner approved that reading for the
-  slice only; the rework is the first point under "Next".
+  slice only; the rework is the last point under "Next". Until it is
+  done, look at the matrices of a set before the set is used: how many
+  kits leave a decision unseparated that the table reads differs by seed
+  (2 of 10 in the set of the gate; 2 and 4 of 10 in two sets of the
+  reviewer, one case stated in the document of a dev kit).
 - The scenarios of a set (`decisions.SCENARIOS`) are what makes every
   decision read and claimed in some kit of ten. A set of other size keeps
   the rotation.
