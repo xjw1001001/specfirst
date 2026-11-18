@@ -16,6 +16,9 @@
     verify.py     the properties P2, P3 and P4 of a kit (stage S7)
     kits.py       one kit: data, decisions, gold, twin, manifest; P1; splits
     gate2.py      the checks of the gate gen-2a
+    documents.py  protocol and SAP, standard and natural form; tiers; oracle (stage S6)
+    natural.py    the natural form: the store of model text, slot and read-back checks
+    gate3.py      the checks of the gate gen-3a
 
 Everything here is a pure function of the generator version, the design and
 the seed (rule R4): no clock, no unseeded randomness, sorted outputs.
@@ -23,4 +26,4 @@ the seed (rule R4): no clock, no unseeded randomness, sorted outputs.
 
 # The version of the generator. Change it whenever the same design and seed
 # would give other bytes; every generated file names it.
-GENERATOR = "gen-2a.2"
+GENERATOR = "gen-3a.1"

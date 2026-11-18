@@ -1,0 +1,1143 @@
+{
+ "rules": [
+  "For each item, read the paragraph alone and pick the one alternative whose rule the paragraph states for the question, by its id. Values in angle brackets may be any value. If the paragraph states none of them, or more than one, answer 'none'.",
+  "For each filler item, list the questions (by their text) whose answer the paragraph states, or an empty list.",
+  "Judge from the text only; do not read any other file."
+ ],
+ "items": [
+  {
+   "item": "r00ec5a3ef6d5",
+   "paragraph": "The treatment-emergent period has no end date.",
+   "question": "When does treatment emergence end?",
+   "alternatives": [
+    {
+     "id": "no_end",
+     "rule": "Treatment emergence has no end date."
+    },
+    {
+     "id": "last_dose_plus_days",
+     "rule": "Treatment emergence ends <days> days after the treatment end date.",
+     "meaning": "An event that starts on the last day of the window is still treatment-emergent. A subject without a treatment end date has no end."
+    },
+    {
+     "id": "end_of_study",
+     "rule": "Treatment emergence ends at the end-of-study date.",
+     "meaning": "An event that starts on the end-of-study date is still treatment-emergent. A subject without an end-of-study date has no end."
+    }
+   ]
+  },
+  {
+   "item": "r05e3fe4171a6",
+   "paragraph": "The safety set will hold every subject who received at least one dose of study treatment.",
+   "question": "Who is in the safety set?",
+   "alternatives": [
+    {
+     "id": "at_least_one_dose",
+     "rule": "The safety set holds every subject who received at least one dose of study treatment."
+    },
+    {
+     "id": "randomized_and_dosed",
+     "rule": "The safety set holds every randomized subject who received at least one dose of study treatment."
+    }
+   ]
+  },
+  {
+   "item": "r07f58a9202eb",
+   "paragraph": "A partial adverse event start date will not be completed and gives no analysis start date.",
+   "question": "How are partial adverse event start dates completed?",
+   "alternatives": [
+    {
+     "id": "first_of_month_not_before_first_dose",
+     "rule": "A partial adverse event start date with a known month is completed with the first day of that month, or with the treatment start date when it falls in that month.",
+     "meaning": "A date with an unknown month is not completed."
+    },
+    {
+     "id": "first_of_month",
+     "rule": "A partial adverse event start date with a known month is completed with the first day of that month.",
+     "meaning": "A date with an unknown month is not completed."
+    },
+    {
+     "id": "not_completed",
+     "rule": "A partial adverse event start date is not completed and gives no analysis start date."
+    }
+   ]
+  },
+  {
+   "item": "r0aa6032c61ee",
+   "paragraph": "The randomized set will hold every randomized subject with at least one post-baseline value of the vital sign WEIGHT.",
+   "question": "Who is in the randomized set?",
+   "alternatives": [
+    {
+     "id": "all_randomized",
+     "rule": "The randomized set holds every randomized subject."
+    },
+    {
+     "id": "randomized_with_postbaseline",
+     "rule": "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign <test>.",
+     "meaning": "A post-baseline value is a non-missing result dated after the treatment start date."
+    }
+   ]
+  },
+  {
+   "item": "r0af7167ba96b",
+   "paragraph": "The treatment start date will be the date of first exposure in the demographics domain (DM.RFXSTDTC).",
+   "question": "What is the treatment start date?",
+   "alternatives": [
+    {
+     "id": "first_ex_with_dose",
+     "rule": "The treatment start date is the earliest start date of an exposure record with a dose.",
+     "meaning": "An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO."
+    },
+    {
+     "id": "first_ex_record",
+     "rule": "The treatment start date is the earliest start date of any exposure record."
+    },
+    {
+     "id": "dm_rfxstdtc",
+     "rule": "The treatment start date is the date of first exposure in the demographics domain (DM.RFXSTDTC)."
+    }
+   ]
+  },
+  {
+   "item": "r0fbf54ca5f65",
+   "paragraph": "Actual treatment is the actual arm of the subject (DM.ACTARM).",
+   "question": "Where does actual treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_actarm",
+     "rule": "Actual treatment is the actual arm of the subject (DM.ACTARM)."
+    },
+    {
+     "id": "first_ex_treatment",
+     "rule": "Actual treatment is the treatment named on the first exposure record of the subject (EX.EXTRT).",
+     "meaning": "The first exposure record is the one with the earliest start date; the lowest EXSEQ breaks a tie."
+    },
+    {
+     "id": "same_as_planned",
+     "rule": "Actual treatment is the same as planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r0ff192859830",
+   "paragraph": "The treatment columns of the adverse event summary table will follow the order in which the protocol lists the arms.",
+   "question": "In which order are the treatment columns? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "ascending_dose_placebo_first",
+     "rule": "The treatment columns of the adverse event summary table are in ascending order of dose, with placebo first."
+    },
+    {
+     "id": "protocol_order",
+     "rule": "The treatment columns of the adverse event summary table are in the order in which the protocol lists the arms."
+    }
+   ]
+  },
+  {
+   "item": "r1145ba9a5940",
+   "paragraph": "Study day 1 will be the reference start date of the subject (DM.RFSTDTC).",
+   "question": "Which date is study day 1?",
+   "alternatives": [
+    {
+     "id": "treatment_start",
+     "rule": "Study day 1 is the treatment start date."
+    },
+    {
+     "id": "dm_rfstdtc",
+     "rule": "Study day 1 is the reference start date of the subject (DM.RFSTDTC)."
+    }
+   ]
+  },
+  {
+   "item": "r194a3c32ae78",
+   "paragraph": "Safety analyses will group subjects by planned treatment.",
+   "question": "Which treatment groups the safety analyses?",
+   "alternatives": [
+    {
+     "id": "actual",
+     "rule": "Safety analyses group subjects by actual treatment."
+    },
+    {
+     "id": "planned",
+     "rule": "Safety analyses group subjects by planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r19abc4d2f28d",
+   "paragraph": "The treatment end date will be the latest end date among the exposure records with a dose.",
+   "question": "What is the treatment end date?",
+   "alternatives": [
+    {
+     "id": "last_ex_end_date",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose."
+    },
+    {
+     "id": "last_ex_start_date",
+     "rule": "The treatment end date is the latest start date of an exposure record with a dose."
+    },
+    {
+     "id": "ds_date_when_ex_missing",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date.",
+     "meaning": "The disposition date is the start date of the end-of-study record (decision disp.status.record). It is taken only for a subject with a treatment start."
+    }
+   ]
+  },
+  {
+   "item": "r1b5b1e27abc6",
+   "paragraph": "The efficacy-evaluable set is the analysis set for the adverse event summary table.",
+   "question": "Which analysis set does the output use? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "safety",
+     "rule": "The analysis set of the adverse event summary table is the safety set."
+    },
+    {
+     "id": "randomized",
+     "rule": "The analysis set of the adverse event summary table is the randomized set."
+    },
+    {
+     "id": "efficacy",
+     "rule": "The analysis set of the adverse event summary table is the efficacy-evaluable set."
+    }
+   ]
+  },
+  {
+   "item": "r2279dd4f7351",
+   "paragraph": "The safety set is the analysis set for the adverse event summary table.",
+   "question": "Which analysis set does the output use? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "safety",
+     "rule": "The analysis set of the adverse event summary table is the safety set."
+    },
+    {
+     "id": "randomized",
+     "rule": "The analysis set of the adverse event summary table is the randomized set."
+    },
+    {
+     "id": "efficacy",
+     "rule": "The analysis set of the adverse event summary table is the efficacy-evaluable set."
+    }
+   ]
+  },
+  {
+   "item": "r2376cb125abe",
+   "paragraph": "Planned treatment is the planned arm of the subject (DM.ARM).",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r29f1003bdd78",
+   "paragraph": "The treatment-emergent period will end 30 days after the treatment end date.",
+   "question": "When does treatment emergence end?",
+   "alternatives": [
+    {
+     "id": "no_end",
+     "rule": "Treatment emergence has no end date."
+    },
+    {
+     "id": "last_dose_plus_days",
+     "rule": "Treatment emergence ends <days> days after the treatment end date.",
+     "meaning": "An event that starts on the last day of the window is still treatment-emergent. A subject without a treatment end date has no end."
+    },
+    {
+     "id": "end_of_study",
+     "rule": "Treatment emergence ends at the end-of-study date.",
+     "meaning": "An event that starts on the end-of-study date is still treatment-emergent. A subject without an end-of-study date has no end."
+    }
+   ]
+  },
+  {
+   "item": "r2a18a69607e3",
+   "paragraph": "The safety set will hold every randomized subject who received at least one dose of study treatment.",
+   "question": "Who is in the safety set?",
+   "alternatives": [
+    {
+     "id": "at_least_one_dose",
+     "rule": "The safety set holds every subject who received at least one dose of study treatment."
+    },
+    {
+     "id": "randomized_and_dosed",
+     "rule": "The safety set holds every randomized subject who received at least one dose of study treatment."
+    }
+   ]
+  },
+  {
+   "item": "r2cf06f10ae41",
+   "paragraph": "When a partial exposure date has a known month, it is completed with the first day of that month.",
+   "question": "How are partial exposure dates completed?",
+   "alternatives": [
+    {
+     "id": "not_completed",
+     "rule": "A partial exposure date is not completed and is left out of the treatment dates.",
+     "meaning": "The treatment start and end dates are taken from the exposure dates that have a year, a month and a day. A date with a missing part in the middle (a year and a day without the month) is partial."
+    },
+    {
+     "id": "first_day_of_month",
+     "rule": "A partial exposure date with a known month is completed with the first day of that month.",
+     "meaning": "A date with an unknown month is left out of the treatment dates."
+    }
+   ]
+  },
+  {
+   "item": "r3010f6db8d1d",
+   "paragraph": "Baseline weight and height will be taken as the last non-missing values on or before the treatment start date.",
+   "question": "Which record gives baseline weight and height?",
+   "alternatives": [
+    {
+     "id": "last_on_or_before_first_dose",
+     "rule": "Baseline weight and height are the last non-missing values on or before the treatment start date.",
+     "meaning": "The last value is the latest by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the highest VSSEQ breaks a remaining tie. A subject without a treatment start date has no baseline weight and height."
+    },
+    {
+     "id": "at_visit",
+     "rule": "Baseline weight and height are the non-missing values at the visit <visit>.",
+     "meaning": "Of several values at the visit the highest VSSEQ is taken."
+    }
+   ]
+  },
+  {
+   "item": "r34be9259c4f0",
+   "paragraph": "An adverse event will be regarded as related to study treatment when its causality is one of RELATED.",
+   "question": "Which causality values count as related to study treatment?",
+   "alternatives": [
+    {
+     "id": "stated_list",
+     "rule": "An adverse event is related to study treatment when its causality is one of <values>.",
+     "meaning": "The causality is the collected value of AEREL, compared exactly."
+    }
+   ]
+  },
+  {
+   "item": "r394be75e9795",
+   "paragraph": "The treatment-emergent period will end at the end-of-study date.",
+   "question": "When does treatment emergence end?",
+   "alternatives": [
+    {
+     "id": "no_end",
+     "rule": "Treatment emergence has no end date."
+    },
+    {
+     "id": "last_dose_plus_days",
+     "rule": "Treatment emergence ends <days> days after the treatment end date.",
+     "meaning": "An event that starts on the last day of the window is still treatment-emergent. A subject without a treatment end date has no end."
+    },
+    {
+     "id": "end_of_study",
+     "rule": "Treatment emergence ends at the end-of-study date.",
+     "meaning": "An event that starts on the end-of-study date is still treatment-emergent. A subject without an end-of-study date has no end."
+    }
+   ]
+  },
+  {
+   "item": "r3e421c903138",
+   "paragraph": "An adverse event will be regarded as related to study treatment when its causality is one of REMOTE, POSSIBLE, PROBABLE.",
+   "question": "Which causality values count as related to study treatment?",
+   "alternatives": [
+    {
+     "id": "stated_list",
+     "rule": "An adverse event is related to study treatment when its causality is one of <values>.",
+     "meaning": "The causality is the collected value of AEREL, compared exactly."
+    }
+   ]
+  },
+  {
+   "item": "r49d3aa157828",
+   "paragraph": "Actual treatment will be taken to be the same as planned treatment.",
+   "question": "Where does actual treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_actarm",
+     "rule": "Actual treatment is the actual arm of the subject (DM.ACTARM)."
+    },
+    {
+     "id": "first_ex_treatment",
+     "rule": "Actual treatment is the treatment named on the first exposure record of the subject (EX.EXTRT).",
+     "meaning": "The first exposure record is the one with the earliest start date; the lowest EXSEQ breaks a tie."
+    },
+    {
+     "id": "same_as_planned",
+     "rule": "Actual treatment is the same as planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r4baf5fb08de8",
+   "paragraph": "An adverse event will be regarded as related to study treatment when its causality is one of POSSIBLE, PROBABLE.",
+   "question": "Which causality values count as related to study treatment?",
+   "alternatives": [
+    {
+     "id": "stated_list",
+     "rule": "An adverse event is related to study treatment when its causality is one of <values>.",
+     "meaning": "The causality is the collected value of AEREL, compared exactly."
+    }
+   ]
+  },
+  {
+   "item": "r5085e407c612",
+   "paragraph": "Numbers displayed in the adverse event summary table will be rounded half to even.",
+   "question": "How are displayed numbers rounded? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "half_away_from_zero",
+     "rule": "Displayed numbers in the adverse event summary table are rounded half away from zero."
+    },
+    {
+     "id": "half_even",
+     "rule": "Displayed numbers in the adverse event summary table are rounded half to even."
+    }
+   ]
+  },
+  {
+   "item": "r53fd57513775",
+   "paragraph": "Baseline body mass index will be derived from baseline weight and height and rounded to one decimal.",
+   "question": "How is baseline body mass index obtained?",
+   "alternatives": [
+    {
+     "id": "derived",
+     "rule": "Baseline body mass index is derived from baseline weight and height and rounded to one decimal.",
+     "meaning": "Weight in kg divided by the square of height in m; rounding is half away from zero."
+    },
+    {
+     "id": "as_collected",
+     "rule": "Baseline body mass index is the collected body mass index, selected by the rule for baseline weight and height.",
+     "meaning": "The collected value is the vital sign with VSTESTCD equal to BMI."
+    }
+   ]
+  },
+  {
+   "item": "r56c81f0fafb5",
+   "paragraph": "Race categories will be shown as collected and will not be pooled.",
+   "question": "Are small race categories pooled?",
+   "alternatives": [
+    {
+     "id": "not_pooled",
+     "rule": "Race categories are shown as collected and are not pooled."
+    },
+    {
+     "id": "pooled_below_count",
+     "rule": "A race category with fewer than <count> subjects is pooled into the category OTHER.",
+     "meaning": "The subjects are counted over all subjects of the subject-level dataset, whatever their arm."
+    }
+   ]
+  },
+  {
+   "item": "r592c09595335",
+   "paragraph": "The adverse event summary table will show the rows FATAL, SERIOUS, RELATED, ANY, in this order.",
+   "question": "Which rows does the adverse event summary table have?",
+   "alternatives": [
+    {
+     "id": "standard_rows",
+     "rule": "The rows of the adverse event summary table are any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
+    },
+    {
+     "id": "stated_rows",
+     "rule": "The rows of the adverse event summary table are, in this order, <rows>.",
+     "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL."
+    }
+   ]
+  },
+  {
+   "item": "r5b77b9522970",
+   "paragraph": "When a partial adverse event start date has a known month, it is completed with the first day of that month, or with the treatment start date when it falls in that month.",
+   "question": "How are partial adverse event start dates completed?",
+   "alternatives": [
+    {
+     "id": "first_of_month_not_before_first_dose",
+     "rule": "A partial adverse event start date with a known month is completed with the first day of that month, or with the treatment start date when it falls in that month.",
+     "meaning": "A date with an unknown month is not completed."
+    },
+    {
+     "id": "first_of_month",
+     "rule": "A partial adverse event start date with a known month is completed with the first day of that month.",
+     "meaning": "A date with an unknown month is not completed."
+    },
+    {
+     "id": "not_completed",
+     "rule": "A partial adverse event start date is not completed and gives no analysis start date."
+    }
+   ]
+  },
+  {
+   "item": "r6034946b9c8e",
+   "paragraph": "The treatment start date will be the earliest start date among any exposure records.",
+   "question": "What is the treatment start date?",
+   "alternatives": [
+    {
+     "id": "first_ex_with_dose",
+     "rule": "The treatment start date is the earliest start date of an exposure record with a dose.",
+     "meaning": "An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO."
+    },
+    {
+     "id": "first_ex_record",
+     "rule": "The treatment start date is the earliest start date of any exposure record."
+    },
+    {
+     "id": "dm_rfxstdtc",
+     "rule": "The treatment start date is the date of first exposure in the demographics domain (DM.RFXSTDTC)."
+    }
+   ]
+  },
+  {
+   "item": "r60a26a90bd42",
+   "paragraph": "The end-of-study record will be the disposition event record of the subject.",
+   "question": "Which record gives the end-of-study status?",
+   "alternatives": [
+    {
+     "id": "disposition_event",
+     "rule": "The end-of-study record is the disposition event record of the subject.",
+     "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT. Of several such records the last by DSSEQ is taken."
+    },
+    {
+     "id": "disposition_event_by_subcategory",
+     "rule": "The end-of-study record is the disposition event record of the subject with the subcategory <subcategory>.",
+     "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT and DSSCAT equal to the named subcategory. Of several such records the last by DSSEQ is taken."
+    }
+   ]
+  },
+  {
+   "item": "r6371f155ed29",
+   "paragraph": "The treatment start date will be the earliest start date among the exposure records with a dose.",
+   "question": "What is the treatment start date?",
+   "alternatives": [
+    {
+     "id": "first_ex_with_dose",
+     "rule": "The treatment start date is the earliest start date of an exposure record with a dose.",
+     "meaning": "An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO."
+    },
+    {
+     "id": "first_ex_record",
+     "rule": "The treatment start date is the earliest start date of any exposure record."
+    },
+    {
+     "id": "dm_rfxstdtc",
+     "rule": "The treatment start date is the date of first exposure in the demographics domain (DM.RFXSTDTC)."
+    }
+   ]
+  },
+  {
+   "item": "r68d8c9563bf8",
+   "paragraph": "Age groups will be below 65, 65 to 80, and above 80 years.",
+   "question": "Which age groups are used?",
+   "alternatives": [
+    {
+     "id": "lt65_65to80_gt80",
+     "rule": "Age groups are below 65, 65 to 80, and above 80 years.",
+     "meaning": "The groups are labelled <65, 65-80 and >80. An age of exactly 80 is in 65-80."
+    },
+    {
+     "id": "lt65_ge65",
+     "rule": "Age groups are below 65 years, and 65 years and above.",
+     "meaning": "The groups are labelled <65 and >=65."
+    },
+    {
+     "id": "stated_cuts",
+     "rule": "Age groups start at the ages <cuts> years, with one more group below the first of them.",
+     "meaning": "For the cuts 18 and 65 the groups are labelled <18, 18-<65 and >=65. An age equal to a cut is in the group that starts there."
+    }
+   ]
+  },
+  {
+   "item": "r72368b277a33",
+   "paragraph": "The adverse event table by system organ class and preferred term is not among the planned outputs.",
+   "question": "Is the output part of the planned outputs of the study? (for the adverse event table by system organ class and preferred term)",
+   "alternatives": [
+    {
+     "id": "included",
+     "rule": "The planned outputs include the adverse event table by system organ class and preferred term."
+    },
+    {
+     "id": "not_included",
+     "rule": "The planned outputs do not include the adverse event table by system organ class and preferred term.",
+     "meaning": "No other decision of the table family applies then."
+    }
+   ]
+  },
+  {
+   "item": "r7b3a4c85c0b6",
+   "paragraph": "Planned treatment will be decoded from the planned arm code (DM.ARMCD) as follows: KRD25 means Low Dose; KRD50 means High Dose; PBO means Placebo.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r7efe7587a68b",
+   "paragraph": "A partial exposure date will not be completed and will be left out of the treatment dates.",
+   "question": "How are partial exposure dates completed?",
+   "alternatives": [
+    {
+     "id": "not_completed",
+     "rule": "A partial exposure date is not completed and is left out of the treatment dates.",
+     "meaning": "The treatment start and end dates are taken from the exposure dates that have a year, a month and a day. A date with a missing part in the middle (a year and a day without the month) is partial."
+    },
+    {
+     "id": "first_day_of_month",
+     "rule": "A partial exposure date with a known month is completed with the first day of that month.",
+     "meaning": "A date with an unknown month is left out of the treatment dates."
+    }
+   ]
+  },
+  {
+   "item": "r86770977c498",
+   "paragraph": "The adverse event summary table will include a total column that pools the treatment arms other than Placebo.",
+   "question": "Is there a total column? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "all_arms",
+     "rule": "A total column of the adverse event summary table pools all treatment arms."
+    },
+    {
+     "id": "none",
+     "rule": "There is no total column in the adverse event summary table."
+    },
+    {
+     "id": "active_arms",
+     "rule": "A total column of the adverse event summary table pools the treatment arms other than <control>.",
+     "meaning": "The control is named by its treatment label as the treatment columns show it."
+    }
+   ]
+  },
+  {
+   "item": "r8f954d1390b5",
+   "paragraph": "The efficacy-evaluable set will hold every subject of the safety set who attended the visit WEEK 4.",
+   "question": "Who is efficacy-evaluable?",
+   "alternatives": [
+    {
+     "id": "baseline_and_postbaseline",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign <test>.",
+     "meaning": "A baseline value is a non-missing result dated on or before the treatment start date; a post-baseline value is one dated after it."
+    },
+    {
+     "id": "attended_visit",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set who attended the visit <visit>.",
+     "meaning": "A subject attended a visit when the subject visits domain (SV) has a record of it."
+    }
+   ]
+  },
+  {
+   "item": "r982780d9e37c",
+   "paragraph": "The vital signs table by visit is not among the planned outputs.",
+   "question": "Is the output part of the planned outputs of the study? (for the vital signs table by visit)",
+   "alternatives": [
+    {
+     "id": "included",
+     "rule": "The planned outputs include the vital signs table by visit."
+    },
+    {
+     "id": "not_included",
+     "rule": "The planned outputs do not include the vital signs table by visit.",
+     "meaning": "No other decision of the table family applies then."
+    }
+   ]
+  },
+  {
+   "item": "ra08b667b3e38",
+   "paragraph": "An adverse event will be regarded as related to study treatment when its causality is one of PROBABLY RELATED, RELATED.",
+   "question": "Which causality values count as related to study treatment?",
+   "alternatives": [
+    {
+     "id": "stated_list",
+     "rule": "An adverse event is related to study treatment when its causality is one of <values>.",
+     "meaning": "The causality is the collected value of AEREL, compared exactly."
+    }
+   ]
+  },
+  {
+   "item": "ra48a80d12f4c",
+   "paragraph": "The treatment columns of the adverse event summary table will be in ascending order of dose, with placebo first.",
+   "question": "In which order are the treatment columns? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "ascending_dose_placebo_first",
+     "rule": "The treatment columns of the adverse event summary table are in ascending order of dose, with placebo first."
+    },
+    {
+     "id": "protocol_order",
+     "rule": "The treatment columns of the adverse event summary table are in the order in which the protocol lists the arms."
+    }
+   ]
+  },
+  {
+   "item": "ra901cf2d9712",
+   "paragraph": "The end-of-study record will be the disposition event record of the subject with the subcategory STUDY PARTICIPATION.",
+   "question": "Which record gives the end-of-study status?",
+   "alternatives": [
+    {
+     "id": "disposition_event",
+     "rule": "The end-of-study record is the disposition event record of the subject.",
+     "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT. Of several such records the last by DSSEQ is taken."
+    },
+    {
+     "id": "disposition_event_by_subcategory",
+     "rule": "The end-of-study record is the disposition event record of the subject with the subcategory <subcategory>.",
+     "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT and DSSCAT equal to the named subcategory. Of several such records the last by DSSEQ is taken."
+    }
+   ]
+  },
+  {
+   "item": "racdc5f08caa1",
+   "paragraph": "The adverse event summary table will include a total column that pools all treatment arms.",
+   "question": "Is there a total column? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "all_arms",
+     "rule": "A total column of the adverse event summary table pools all treatment arms."
+    },
+    {
+     "id": "none",
+     "rule": "There is no total column in the adverse event summary table."
+    },
+    {
+     "id": "active_arms",
+     "rule": "A total column of the adverse event summary table pools the treatment arms other than <control>.",
+     "meaning": "The control is named by its treatment label as the treatment columns show it."
+    }
+   ]
+  },
+  {
+   "item": "raf3295d3a88f",
+   "paragraph": "An adverse event will be considered treatment-emergent when it starts on or after the treatment start date.",
+   "question": "When does treatment emergence begin?",
+   "alternatives": [
+    {
+     "id": "on_or_after_first_dose_date",
+     "rule": "An adverse event is treatment-emergent when it starts on or after the treatment start date.",
+     "meaning": "Dates are compared; times are ignored."
+    },
+    {
+     "id": "at_or_after_first_dose_time",
+     "rule": "An adverse event is treatment-emergent when it starts at or after the date and time of the first dose.",
+     "meaning": "A start or a first dose collected without a time counts from 00:00 of its day."
+    }
+   ]
+  },
+  {
+   "item": "rb0c1b560c86a",
+   "paragraph": "Planned treatment will be decoded from the planned arm code (DM.ARMCD) as follows: ZQR5 means Active; PBO means Placebo.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "rb64eb51e892f",
+   "paragraph": "The adverse event summary table is among the planned outputs.",
+   "question": "Is the output part of the planned outputs of the study? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "included",
+     "rule": "The planned outputs include the adverse event summary table."
+    },
+    {
+     "id": "not_included",
+     "rule": "The planned outputs do not include the adverse event summary table.",
+     "meaning": "No other decision of the table family applies then."
+    }
+   ]
+  },
+  {
+   "item": "rbce1fdd1474a",
+   "paragraph": "The treatment end date will be the latest end date among the exposure records with a dose, or the end-of-study disposition date when no such record has an end date.",
+   "question": "What is the treatment end date?",
+   "alternatives": [
+    {
+     "id": "last_ex_end_date",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose."
+    },
+    {
+     "id": "last_ex_start_date",
+     "rule": "The treatment end date is the latest start date of an exposure record with a dose."
+    },
+    {
+     "id": "ds_date_when_ex_missing",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date.",
+     "meaning": "The disposition date is the start date of the end-of-study record (decision disp.status.record). It is taken only for a subject with a treatment start."
+    }
+   ]
+  },
+  {
+   "item": "rc04e6216ef90",
+   "paragraph": "The adverse event summary table will not include a total column.",
+   "question": "Is there a total column? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "all_arms",
+     "rule": "A total column of the adverse event summary table pools all treatment arms."
+    },
+    {
+     "id": "none",
+     "rule": "There is no total column in the adverse event summary table."
+    },
+    {
+     "id": "active_arms",
+     "rule": "A total column of the adverse event summary table pools the treatment arms other than <control>.",
+     "meaning": "The control is named by its treatment label as the treatment columns show it."
+    }
+   ]
+  },
+  {
+   "item": "rc3cfca204294",
+   "paragraph": "Study day 1 will be the treatment start date.",
+   "question": "Which date is study day 1?",
+   "alternatives": [
+    {
+     "id": "treatment_start",
+     "rule": "Study day 1 is the treatment start date."
+    },
+    {
+     "id": "dm_rfstdtc",
+     "rule": "Study day 1 is the reference start date of the subject (DM.RFSTDTC)."
+    }
+   ]
+  },
+  {
+   "item": "rc6064e74d52e",
+   "paragraph": "When a partial adverse event start date has a known month, it is completed with the first day of that month.",
+   "question": "How are partial adverse event start dates completed?",
+   "alternatives": [
+    {
+     "id": "first_of_month_not_before_first_dose",
+     "rule": "A partial adverse event start date with a known month is completed with the first day of that month, or with the treatment start date when it falls in that month.",
+     "meaning": "A date with an unknown month is not completed."
+    },
+    {
+     "id": "first_of_month",
+     "rule": "A partial adverse event start date with a known month is completed with the first day of that month.",
+     "meaning": "A date with an unknown month is not completed."
+    },
+    {
+     "id": "not_completed",
+     "rule": "A partial adverse event start date is not completed and gives no analysis start date."
+    }
+   ]
+  },
+  {
+   "item": "rc72468aef7a2",
+   "paragraph": "In the adverse event summary table, percentages are given with one decimal, and a count of zero is shown with its percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "Percentages in the adverse event summary table have one decimal, and a count of zero is shown without a percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "Percentages in the adverse event summary table have one decimal, and a count of zero is shown with its percentage."
+    }
+   ]
+  },
+  {
+   "item": "rca6646eda04c",
+   "paragraph": "Numbers displayed in the adverse event summary table will be rounded half away from zero.",
+   "question": "How are displayed numbers rounded? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "half_away_from_zero",
+     "rule": "Displayed numbers in the adverse event summary table are rounded half away from zero."
+    },
+    {
+     "id": "half_even",
+     "rule": "Displayed numbers in the adverse event summary table are rounded half to even."
+    }
+   ]
+  },
+  {
+   "item": "rcc338a8a6ec3",
+   "paragraph": "The adverse event summary table will show the rows ANY, SERIOUS, FATAL, in this order.",
+   "question": "Which rows does the adverse event summary table have?",
+   "alternatives": [
+    {
+     "id": "standard_rows",
+     "rule": "The rows of the adverse event summary table are any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
+    },
+    {
+     "id": "stated_rows",
+     "rule": "The rows of the adverse event summary table are, in this order, <rows>.",
+     "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL."
+    }
+   ]
+  },
+  {
+   "item": "rcc33fe9ae7ab",
+   "paragraph": "Planned treatment will be decoded from the planned arm code (DM.ARMCD) as follows: MVK25 means Low Dose; MVK50 means High Dose; PBO means Placebo.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "rd738af5f8705",
+   "paragraph": "The randomized set is the analysis set for the adverse event summary table.",
+   "question": "Which analysis set does the output use? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "safety",
+     "rule": "The analysis set of the adverse event summary table is the safety set."
+    },
+    {
+     "id": "randomized",
+     "rule": "The analysis set of the adverse event summary table is the randomized set."
+    },
+    {
+     "id": "efficacy",
+     "rule": "The analysis set of the adverse event summary table is the efficacy-evaluable set."
+    }
+   ]
+  },
+  {
+   "item": "rdb6cd9f6e6f1",
+   "paragraph": "Planned treatment will be decoded from the planned arm code (DM.ARMCD) as follows: KRD50 means Low Dose; KRD100 means High Dose; PBO means Placebo.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "rdeaad38f8c38",
+   "paragraph": "The treatment-emergent period will end 14 days after the treatment end date.",
+   "question": "When does treatment emergence end?",
+   "alternatives": [
+    {
+     "id": "no_end",
+     "rule": "Treatment emergence has no end date."
+    },
+    {
+     "id": "last_dose_plus_days",
+     "rule": "Treatment emergence ends <days> days after the treatment end date.",
+     "meaning": "An event that starts on the last day of the window is still treatment-emergent. A subject without a treatment end date has no end."
+    },
+    {
+     "id": "end_of_study",
+     "rule": "Treatment emergence ends at the end-of-study date.",
+     "meaning": "An event that starts on the end-of-study date is still treatment-emergent. A subject without an end-of-study date has no end."
+    }
+   ]
+  },
+  {
+   "item": "re4eac6aba509",
+   "paragraph": "In the adverse event summary table, percentages are given with one decimal, and a count of zero is shown without a percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "Percentages in the adverse event summary table have one decimal, and a count of zero is shown without a percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "Percentages in the adverse event summary table have one decimal, and a count of zero is shown with its percentage."
+    }
+   ]
+  },
+  {
+   "item": "rf2965d17254f",
+   "paragraph": "The demographics table is not among the planned outputs.",
+   "question": "Is the output part of the planned outputs of the study? (for the demographics table)",
+   "alternatives": [
+    {
+     "id": "included",
+     "rule": "The planned outputs include the demographics table."
+    },
+    {
+     "id": "not_included",
+     "rule": "The planned outputs do not include the demographics table.",
+     "meaning": "No other decision of the table family applies then."
+    }
+   ]
+  },
+  {
+   "item": "rf5aa4d8befe1",
+   "paragraph": "The adverse event summary table will have rows for any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events.",
+   "question": "Which rows does the adverse event summary table have?",
+   "alternatives": [
+    {
+     "id": "standard_rows",
+     "rule": "The rows of the adverse event summary table are any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
+    },
+    {
+     "id": "stated_rows",
+     "rule": "The rows of the adverse event summary table are, in this order, <rows>.",
+     "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL."
+    }
+   ]
+  },
+  {
+   "item": "rf5dd746579df",
+   "paragraph": "The randomized set will hold every randomized subject with at least one post-baseline value of the vital sign SYSBP.",
+   "question": "Who is in the randomized set?",
+   "alternatives": [
+    {
+     "id": "all_randomized",
+     "rule": "The randomized set holds every randomized subject."
+    },
+    {
+     "id": "randomized_with_postbaseline",
+     "rule": "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign <test>.",
+     "meaning": "A post-baseline value is a non-missing result dated after the treatment start date."
+    }
+   ]
+  },
+  {
+   "item": "rf8019deef7bf",
+   "paragraph": "The efficacy-evaluable set will hold every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign SYSBP.",
+   "question": "Who is efficacy-evaluable?",
+   "alternatives": [
+    {
+     "id": "baseline_and_postbaseline",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign <test>.",
+     "meaning": "A baseline value is a non-missing result dated on or before the treatment start date; a post-baseline value is one dated after it."
+    },
+    {
+     "id": "attended_visit",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set who attended the visit <visit>.",
+     "meaning": "A subject attended a visit when the subject visits domain (SV) has a record of it."
+    }
+   ]
+  },
+  {
+   "item": "rfb2c1b512860",
+   "paragraph": "Safety analyses will group subjects by actual treatment.",
+   "question": "Which treatment groups the safety analyses?",
+   "alternatives": [
+    {
+     "id": "actual",
+     "rule": "Safety analyses group subjects by actual treatment."
+    },
+    {
+     "id": "planned",
+     "rule": "Safety analyses group subjects by planned treatment."
+    }
+   ]
+  }
+ ],
+ "filler": [
+  {
+   "item": "r1ae872ed3515",
+   "paragraph": "The condition under study is a recognized health concern for which patients and clinicians continue to seek better options. This study has been designed to add careful evidence to the existing body of knowledge. The rationale draws on published literature and on earlier development work with the investigational product."
+  },
+  {
+   "item": "r2b6242f5b866",
+   "paragraph": "Programs and outputs will undergo independent review by a second programmer. Discrepancies found during review will be resolved and documented before the outputs are released. The review process will follow the standard operating procedures of the sponsor."
+  },
+  {
+   "item": "r2be85a526ef3",
+   "paragraph": "Statistical programming will be carried out with validated, commercially available or widely accepted statistical software. The software environment will be documented, and programs will be stored under version control. Output will be generated in a reproducible way from the locked data."
+  },
+  {
+   "item": "r4e63bfb7d6ec",
+   "paragraph": "The sponsor intends to make the results of the study publicly available regardless of the outcome. Investigators will be given the opportunity to review manuscripts before submission, and authorship will follow accepted scientific standards. Any publication will respect the confidentiality obligations set out in the study agreements."
+  },
+  {
+   "item": "r8ba8d1d7572c",
+   "paragraph": "Any departure from this plan will be documented together with its justification. Changes made after the database is locked will be described in the clinical study report. The version history of this document will record each approved amendment."
+  },
+  {
+   "item": "rad4d66d0c3f8",
+   "paragraph": "Study data will be held in a validated database with controlled access. Data listings will be reviewed for completeness and consistency before the database is locked. After lock, any change to the data will be documented and justified."
+  },
+  {
+   "item": "rbf492acec7c3",
+   "paragraph": "The sponsor will arrange for study monitors to visit the sites at regular intervals. The monitors will check that the rights and well-being of participants are protected and that the study is run according to the protocol. Source records will be made available to the monitors and to auditors when requested."
+  },
+  {
+   "item": "rda6403040281",
+   "paragraph": "Participant privacy will be protected throughout the study. Records will be identified by a unique code rather than by name, and access to identifiable information will be limited to authorized study personnel and regulatory representatives. Information will be handled in line with applicable data protection requirements."
+  },
+  {
+   "item": "ree78d6dfe197",
+   "paragraph": "The study will be conducted in accordance with the principles of the Declaration of Helsinki and with applicable good clinical practice guidelines and local regulations. The protocol and informed consent materials will be reviewed by an independent ethics committee before any participant is enrolled. Each participant will give written informed consent before taking part and may withdraw at any time without penalty."
+  },
+  {
+   "item": "rfbb3e068e2bc",
+   "paragraph": "Any interim review of the study data will be governed by a charter agreed before it begins. Access to unblinded information will be restricted to the people named in that charter. The conduct of such a review is intended to protect the integrity of the study and the safety of participants."
+  }
+ ],
+ "filler_questions": [
+  "Are small race categories pooled?",
+  "How are displayed numbers rounded? (for the adverse event summary table)",
+  "How are partial adverse event start dates completed?",
+  "How are partial exposure dates completed?",
+  "How are percentages displayed? (for the adverse event summary table)",
+  "How is baseline body mass index obtained?",
+  "In which order are the treatment columns? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event table by system organ class and preferred term)",
+  "Is the output part of the planned outputs of the study? (for the demographics table)",
+  "Is the output part of the planned outputs of the study? (for the vital signs table by visit)",
+  "Is there a total column? (for the adverse event summary table)",
+  "What is the treatment end date?",
+  "What is the treatment start date?",
+  "When does treatment emergence begin?",
+  "When does treatment emergence end?",
+  "Where does actual treatment come from?",
+  "Where does planned treatment come from?",
+  "Which age groups are used?",
+  "Which analysis set does the output use? (for the adverse event summary table)",
+  "Which causality values count as related to study treatment?",
+  "Which date is study day 1?",
+  "Which record gives baseline weight and height?",
+  "Which record gives the end-of-study status?",
+  "Which rows does the adverse event summary table have?",
+  "Which treatment groups the safety analyses?",
+  "Who is efficacy-evaluable?",
+  "Who is in the randomized set?",
+  "Who is in the safety set?"
+ ],
+ "answer": {
+  "items": [
+   {
+    "item": "<id>",
+    "pick": "<alternative id or none>"
+   }
+  ],
+  "filler": [
+   {
+    "item": "<id>",
+    "states": []
+   }
+  ]
+ }
+}

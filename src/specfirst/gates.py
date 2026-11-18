@@ -270,6 +270,15 @@ def _gen2(name: str) -> Callable[[Context], bool]:
     return run
 
 
+def _gen3(name: str) -> Callable[[Context], bool]:
+    """A check of the documents of generated kits (specfirst.gen.gate3), by its function name."""
+    def run(ctx: Context) -> bool:
+        from specfirst.gen import gate3
+
+        return getattr(gate3, name)(ctx.root, ctx.out)
+    return run
+
+
 # real-3a (ADR-005, decision 1): the outputs of the ARS example that are built as
 # grids, each with its cells and the results they show; and the planted defects of
 # the display and of its trace. The rest of real-3 adds the other four outputs here.
@@ -469,6 +478,39 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/score -s -q", _score_pilot_tests),
         Check("kits of gen-2a", "specfirst.score.gate.kits: the 10 kits of the seed of the "
               "gate gen-2a, written again; then specfirst score kits", _score("kits")),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # ADR-005, part gen-3a (PLAN.md section 13.5, gen-3 for the slice; ADR-009): the
+    # parser recovers 100% of the decisions from every standard-form document; every
+    # natural document passes the slot check and the read-back check; a planted bad
+    # rewrite (a changed number) is rejected; each kit records which probes are visible.
+    # The tiers, the anchors and the summary pages are checked with them. No model is
+    # called: the natural form comes from the store in src/specfirst/gen/rewrites.
+    "gen-3a": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("kits", "specfirst.gen.gate3.kits_written: the 10 kits of the seed of the gate "
+              "gen-2a, each by a process of its own; the tiers of their documents",
+              _gen3("kits_written")),
+        Check("parser", "specfirst.gen.gate3.parser: 100% of the decisions from the "
+              "standard-form documents (with the house standard and the oracle)",
+              _gen3("parser")),
+        Check("slots", "specfirst.gen.gate3.slots: every decision paragraph of the natural "
+              "form", _gen3("slots")),
+        Check("read-back", "specfirst.gen.gate3.readback: the verifier's pick for the text of "
+              "every paragraph", _gen3("readback")),
+        Check("bad rewrite", "specfirst.gen.gate3.bad_rewrite: a changed number is rejected",
+              _gen3("bad_rewrite")),
+        Check("tiers", "specfirst.gen.gate3.tiers: full, standard, the ask demo and the oracle",
+              _gen3("tiers")),
+        Check("anchors", "specfirst.gen.gate3.anchors: every citation stands at its anchor",
+              _gen3("anchors")),
+        Check("visible probes", "specfirst.gen.gate3.visible_probes: listed in kit.yaml and "
+              "found in the visible data", _gen3("visible_probes")),
+        Check("summary", "specfirst.gen.gate3.summaries: one page per kit", _gen3("summaries")),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),

@@ -5,8 +5,12 @@ A kit of gen-2a is a folder outside every checkout (docs/state/gen.md, "A
 kit: what the folder holds"). The scorer reads from it:
 
     gold/decisions.jsonl        the gold decision records, with `identifiable`
-    gold/docs/sap.md            the stated decisions in standard form; with
-    inputs/house/STANDARD.md    the documents a citation may name
+    gold/docs/, inputs/docs/    the protocol and the SAP in standard form (read by the
+                                parser control) and in natural form (what a reader
+                                cites); with inputs/house/STANDARD.md the documents a
+                                citation may name (docs/decisions/ADR-009.md)
+    gold/oracle.yaml            the answers of the oracle: the decisions the documents
+                                leave out and the house standard has no default for
     gold/design.yaml            the arms of the protocol (ADR-007, decision 2)
     inputs/data/sdtm, twin/data/sdtm        the two datasets
     gold/grid, gold/ard, gold/data/adam     and the same below twin/gold:
@@ -76,6 +80,7 @@ from specfirst.compile import house as houses
 from specfirst.compile.catalog import Catalog
 from specfirst.gen import decisions, probes, verify
 from specfirst.gen import design as designs
+from specfirst.gen import documents as gendocs
 from specfirst.gen import gold as kitgold
 from specfirst.gen import kits as genkits
 from specfirst.machine.canonical import read_jsonl
@@ -106,6 +111,7 @@ class Kit:
     grids: dict[str, dict]  # dataset -> output ID -> the gold grid as written
     ard: dict[str, dict[str, dict]]  # dataset -> the gold ARD rows by ID, as written
     adam: dict[str, dict]  # dataset -> ADaM dataset -> the gold table as written
+    oracle: dict = field(default_factory=dict)  # (entry, unit) -> the value the oracle answers
 
     @property
     def id(self) -> str:
@@ -135,9 +141,11 @@ def load(folder: Path) -> Kit:
         with open(folder / genkits.IDENTIFIABILITY, encoding="ascii") as handle:
             matrix = json.load(handle)
         documents = Documents({
-            decisions.DOCUMENT: (folder / genkits.DOCUMENT).read_text(encoding="ascii"),
+            **gendocs.read_texts(folder),
             houses.DOCUMENT_ID: (folder / kitgold.HOUSE / "STANDARD.md").read_text(
                 encoding="ascii")})
+        oracle = {(answer["decision"], answer["unit"]): answer["value"]
+                  for answer in gendocs.read_oracle(folder).get("answers") or []}
         data, grids, ard, adam = {}, {}, {}, {}
         for which, (sdtm, place) in kitgold.PLACES.items():
             data[which] = Data(f"{manifest['id']}/{which}", sdtm={
@@ -157,7 +165,8 @@ def load(folder: Path) -> Kit:
     if not all(data[which].sdtm and grids[which] for which in DATASETS):
         raise KitError(f"{folder}: a dataset of the kit has no SDTM or no gold grid")
     return Kit(folder, manifest, design, records, matrix,
-               probes.Parameters.of(design).as_record(), documents, data, grids, ard, adam)
+               probes.Parameters.of(design).as_record(), documents, data, grids, ard, adam,
+               oracle)
 
 
 def machine_of(root: Path, kit: Kit | None = None) -> Machine:
@@ -184,7 +193,8 @@ def case(kit: Kit, catalog: Catalog, stage: str = "C") -> scorer.Case:
         id=kit.id, units=units, gold=kit.records,
         arms=lambda records: kitgold.arms_of(kit.design, decisions.as_values(records)),
         data=dict(kit.data), documents=kit.documents, stage=stage,
-        standard_form=decisions.DOCUMENT,
+        standard_form=tuple(gendocs.standard_id(doc) for doc in gendocs.STANDARD),
+        oracle=dict(kit.oracle),
         variants=lambda key: options(kit, catalog, key)[1:])
 
 
@@ -643,10 +653,10 @@ def planted(machine: Machine, kit: Kit, scored: KitScore, out: Out) -> bool:
     seen &= ok
     # 2. The control: the document lacks the statement of one stated decision of the slice.
     stated = next(r for r in kit.records if r["unit"] in kit.units and r["status"] == "stated")
-    anchor = stated["citations"][0]["anchor"]
-    text = _without_statement(kit.documents.texts[decisions.DOCUMENT], anchor)
+    doc, anchor = stated["citations"][0]["doc"], stated["citations"][0]["anchor"]
+    text = _without_statement(kit.documents.texts[doc], anchor)
     other = dataclasses.replace(kit, documents=Documents(
-        {**kit.documents.texts, decisions.DOCUMENT: text}))
+        {**kit.documents.texts, doc: text}))
     try:
         result = scorer.control(machine, case(other, catalog))
         wrong = [item.key[0] for item in result.reading.wrong()]

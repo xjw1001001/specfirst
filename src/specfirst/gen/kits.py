@@ -6,10 +6,15 @@
       study.json                the manifest of the generated data (stages S2 to S4)
       inputs/data/sdtm/         the visible SDTM, with its Define-XML
       inputs/house/             the house standard: document, parent specs, templates
+      inputs/docs/              protocol.md and sap.md in natural form (document IDs
+                                protocol and sap)
       gold/design.yaml  probes.jsonl  truth/     from the generator of the data
       gold/decisions.jsonl      the decision vector: value, status, class, statement,
-                                citation, binds, identifiable
-      gold/docs/sap.md          the stated decisions in standard form
+                                citations, binds, identifiable
+      gold/docs/                protocol.md and sap.md in standard form (protocol-standard,
+                                sap-standard); natural.json, where every paragraph of the
+                                natural form came from
+      gold/oracle.yaml          the answers of the oracle; gold/summary.md, one page
       gold/spec/                compiled: adam/ (yamaa specs and their project),
                                 ars/reporting-event.json, layout/, compile.json
       gold/resolved/  data/adam/  ars/  ard/  grid/  out/  graph/
@@ -30,6 +35,12 @@ alternatives that the log of probes claims unseparated on the twin is drawn
 again, up to `MAX_ATTEMPTS` times; the manifest says how often. A kit that
 cannot be written leaves no folder. `generate_checked` builds the kit a
 second time in a process of its own and compares every hash (P1).
+
+Documents (stage S6, specfirst.gen.documents). The tier of the documents of
+kit n of a set is `documents.TIER_PLAN`; a kit of its own draws full or
+standard from its seed. The natural form comes from the store of model text
+(specfirst.gen.natural); the manifest counts its paragraphs by where they
+came from, and lists the probes of the visible data and of the twin.
 
 Splits. A set of kits is generated from one seed; kit n has the seed
 "<seed>/kit-<n>" and the split `SPLIT_PLAN` gives its place. The seed of a
@@ -56,7 +67,17 @@ import specfirst
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import compiler
 from specfirst.compile import house as houses
-from specfirst.gen import GENERATOR, decisions, gold, pgfix, probes, reference, study, verify
+from specfirst.gen import (
+    GENERATOR,
+    decisions,
+    documents,
+    gold,
+    pgfix,
+    probes,
+    reference,
+    study,
+    verify,
+)
 from specfirst.gen import design as designs
 from specfirst.gen.rng import Stream, seed_sha256
 from specfirst.machine import registry as registries
@@ -73,7 +94,6 @@ MAX_DESIGNS = 50
 # The split of the kits of a set, by their number: four train, three dev, three test.
 SPLIT_PLAN = ("train", "train", "train", "train", "dev", "dev", "dev", "test", "test", "test")
 IDENTIFIABILITY = "gold/identifiability.json"
-DOCUMENT = f"gold/docs/{decisions.DOCUMENT}.md"
 REFERENCE = "reference"
 
 
@@ -124,7 +144,8 @@ def _reference_file(kit_dir: Path, which: str, tables: reference.Tables,
 
 def _clear_gold(kit_dir: Path) -> None:
     """Remove what an attempt wrote, and keep what the generator of the data wrote."""
-    for relative in ("gold/spec", "gold/docs", gold.DECISIONS, IDENTIFIABILITY, "twin/gold",
+    for relative in ("gold/spec", "gold/docs", "inputs/docs", documents.ORACLE,
+                     documents.SUMMARY, gold.DECISIONS, IDENTIFIABILITY, "twin/gold",
                      "work", *(f"gold/{name}" for name in (
                          gold.RESOLVED, "data", gold.ARS_OUT, gold.ARD, gold.GRID, gold.PAGES,
                          gold.GRAPH, REFERENCE))):
@@ -154,11 +175,14 @@ def read_decisions(kit_dir: Path) -> list[dict]:
 
 
 def _attempt(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: Path,
-             design: dict, values: dict[str, dict], log: list[dict],
-             with_r: bool) -> tuple[dict, list[str], list[str]]:
+             design: dict, values: dict[str, dict], log: list[dict], with_r: bool,
+             tier: str, stream: Stream) -> tuple[dict, list[str], list[str]]:
     """Build one decision vector into the kit folder. Returns what the manifest says of
-    the properties, the defects found, and why the vector does not fit the data."""
-    records, document = decisions.records(catalog, house, design, values)
+    the properties (and of the documents), the defects found, and why the vector does not
+    fit the data."""
+    listed = decisions.vector(catalog, house, design, values)
+    records, written = documents.write(catalog, house, design, listed, tier,
+                                       decisions.SLICE_UNITS, stream, kit_dir)
     try:
         compiled = gold.compile_records(catalog, house, records, bind=True)
     except compiler.CompileError as error:
@@ -166,9 +190,6 @@ def _attempt(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir
     manifest = compiled.manifest()
     binds = {(item["id"], item["unit"]): item["binds"] for item in manifest["decisions"]}
     gold.write_spec(kit_dir / gold.SPEC, compiled)
-    path = kit_dir / DOCUMENT
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(document, encoding="ascii", newline="\n")
     arms = gold.arms_of(design, values)
     defects: list[str] = []
     properties: dict = {}
@@ -220,30 +241,36 @@ def _attempt(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir
              for record in records]
     gold.write_decisions(kit_dir, final)
     properties["identifiability"] = matrix["summary"]
+    properties["documents"] = written
     return properties, defects, unfit
 
 
 def generate(root: Path, seed: str, out: Path, split: str = "train", with_r: bool = True,
-             say: Out = lambda line: None, number: int | None = None) -> dict:
+             say: Out = lambda line: None, number: int | None = None,
+             tier: str | None = None) -> dict:
     """Write one kit into `out` and return its manifest. Raises `KitError`.
 
     `number` is the number of the kit in a set; it gives the scenario of the
-    kit. A kit of its own draws its scenario from its seed. A kit that
-    cannot be written leaves nothing behind: the folder is removed.
+    kit and the tier of its documents. A kit of its own draws both from its
+    seed; `tier` names the tier instead. A kit that cannot be written leaves
+    nothing behind: the folder is removed.
     """
     if split not in decisions.SPLITS:
         raise KitError(f"a split is one of {', '.join(decisions.SPLITS)}, not '{split}'")
+    if tier is not None and tier not in documents.TIERS:
+        raise KitError(f"a tier is one of {', '.join(documents.TIERS)}, not '{tier}'")
     if out.exists() and any(out.iterdir()):
         raise KitError(f"{out} is not empty")
     try:
-        return _generate(root, seed, out, split, with_r, say, number)
+        return _generate(root, seed, out, split, with_r, say, number,
+                         tier or documents.tier_of(seed, number))
     except Exception:
         shutil.rmtree(out, ignore_errors=True)
         raise
 
 
 def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: Out,
-              number: int | None) -> dict:
+              number: int | None, tier: str) -> dict:
     catalog = catalogs.load(catalogs.default_dir(root))
     house = houses.load(houses.default_dir(root))
     label = study.catalog_label(catalog)
@@ -260,8 +287,9 @@ def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: O
         values = decisions.sample(catalog, house, design, parameters,
                                   Stream(seed, "decisions", designs.study_id(design), attempt),
                                   split, given=scenario["values"])
-        properties, defects, unfit = _attempt(root, catalog, house, out, design, values, log,
-                                              with_r)
+        properties, defects, unfit = _attempt(
+            root, catalog, house, out, design, values, log, with_r, tier,
+            Stream(seed, "documents", designs.study_id(design), attempt))
         if defects:
             shown = "; ".join(defects[:6])
             raise KitError(f"study {designs.study_id(design)}, decision vector {attempt}: "
@@ -277,6 +305,8 @@ def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: O
                        "of probes claims: " + "; ".join(rejected[-1]["reasons"]))
     shutil.rmtree(out / "work", ignore_errors=True)
     import pyarrow
+
+    written = properties.pop("documents")
 
     manifest = {
         "kit": FORMAT,
@@ -302,14 +332,27 @@ def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: O
         "datasets": list(gold.SLICE_DATASETS),
         "outputs": [{"unit": decisions.OUTPUT_UNIT,
                      "id": "Out_AESUM"}],
-        "decisions": {"file": gold.DECISIONS, "document": DOCUMENT,
+        "decisions": {"file": gold.DECISIONS,
                       "scenario": scenario_number + 1, "given": scenario["values"],
                       "vectors_drawn_before": rejected},
+        "documents": written,
+        "probes": probe_lists(log),
         "properties": properties,
-        "files": all_files(out),
     }
+    records = read_decisions(out)
+    (out / documents.SUMMARY).write_text(
+        documents.summary(manifest, design, records, manifest["probes"]["visible"],
+                          manifest["probes"]["twin"]), encoding="ascii", newline="\n")
+    manifest["files"] = all_files(out)
     write_manifest(out, manifest)
     return manifest
+
+
+def probe_lists(log: list[dict]) -> dict[str, list[str]]:
+    """The probes of the log of a kit, by dataset (section 6.5: the visible data carry a
+    part of them, recorded in the kit)."""
+    return {which: sorted({line["probe"] for line in log if line["data"] == which})
+            for which in gold.PLACES}
 
 
 def write_manifest(kit_dir: Path, manifest: dict) -> None:
@@ -326,14 +369,14 @@ def check(root: Path, kit_dir: Path, say: Out = lambda line: None,
     """Why a kit folder is not a kit with the properties its manifest states.
 
     Everything is decided again from the files of the kit: the hashes; the
-    decision records and the document that states them; P2, by a new hand
+    decision records and the documents that state them (every check of
+    `documents.problems`); P2, by a new hand
     calculation from the SDTM rows; P3, from the graph files; the agreement
     of the two ARD files; and P4, by a new mutation on the twin, which must
     give the matrix the kit holds. A kit that was written without the R
     engine is a problem unless `engines` is False.
     """
     from specfirst import schemas
-    from specfirst.compile.standard_form import StandardForm, StandardFormError
     from specfirst.machine import results
     from specfirst.machine.canonical import read_jsonl
 
@@ -363,31 +406,18 @@ def check(root: Path, kit_dir: Path, say: Out = lambda line: None,
     for record in records:
         problems += [f"decision {record.get('id')}: {problem}"
                      for problem in schemas.problems("decision-record", record, root=root)]
-    form = StandardForm(catalog)
-    try:
-        doc, parsed = form.parse_document((kit_dir / DOCUMENT).read_text(encoding="ascii"))
-    except (OSError, StandardFormError) as error:
-        doc, parsed = "", []
-        problems.append(f"{DOCUMENT}: {error}")
-    stated = {(r["id"], r["unit"]): r["value"] for r in records if r["status"] == "stated"}
-    if {(item["id"], item["unit"]): item["value"] for item in parsed} != stated:
-        problems.append(f"{DOCUMENT}: the parser does not read back the stated decisions")
-    defaults = {(r["id"], r["unit"]): r["value"] for r in houses.default_decisions(catalog, house)}
-    for record in records:
-        key = (record["id"], record["unit"])
-        cited = {citation["doc"] for citation in record.get("citations") or []}
-        if record["status"] == "default" and (defaults.get(key) != record["value"]
-                                              or cited != {houses.DOCUMENT_ID}):
-            problems.append(f"decision {key[0]}: not the default of the house standard")
-        if record["status"] == "stated" and (cited != {doc} or defaults.get(key)
-                                             == record["value"]):
-            problems.append(f"decision {key[0]}: stated, but it is the house default or cites "
-                            "another document")
+    found, counted = documents.problems(catalog, house, kit_dir, manifest, records, design, log)
+    problems += [f"documents, {check}: {problem}" for check, items in found.items()
+                 for problem in items]
     if held_out(design, values) and manifest["split"] != "sealed":
         problems.append(f"a {manifest['split']} kit has a factor that an exam holds out")
     say(f"kit {manifest['id']} ({manifest['split']}): {len(manifest['files'])} files have the "
-        f"hashes of {MANIFEST}; {len(records)} decision records fit the schema, {len(stated)} "
-        f"stated in {DOCUMENT} and read back by the parser")
+        f"hashes of {MANIFEST}; {len(records)} decision records fit the schema; documents "
+        f"of the tier {manifest['documents']['tier']}: {counted['recovered']} of "
+        f"{counted['decisions']} decisions recovered by the parser with the house standard "
+        f"and the oracle, {counted['paragraphs']} natural paragraphs pass the slot and "
+        f"read-back checks, {counted['citations']} citations stand at their anchors, "
+        f"{counted['visible probes']} visible probes found")
 
     reached = {}
     for which, (_, place) in gold.PLACES.items():
@@ -488,7 +518,8 @@ def kit_hashes(kit_dir: Path) -> dict[str, str]:
 
 def generate_apart(root: Path, seed: str, out: Path, split: str, with_r: bool = True,
                    planted: str = "", number: int | None = None,
-                   hash_seed: str | None = None, zone: str | None = APART_ZONE) -> dict[str, str]:
+                   hash_seed: str | None = None, zone: str | None = APART_ZONE,
+                   tier: str | None = None) -> dict[str, str]:
     """`generate` in a process of its own; returns the hashes of the kit it wrote.
 
     The process has another seed for Python's string hashes, another time
@@ -506,7 +537,7 @@ def generate_apart(root: Path, seed: str, out: Path, split: str, with_r: bool = 
     if zone:   # another time zone and the C locale; None keeps those of this process
         env.update({"TZ": zone, "LC_ALL": "C"})
     job = {"root": str(root.resolve()), "seed": seed, "out": str(out.resolve()), "split": split,
-           "with_r": with_r, "planted": planted, "number": number}
+           "with_r": with_r, "planted": planted, "number": number, "tier": tier}
     done = subprocess.run([sys.executable, "-B", "-m", "specfirst.gen.kits"], cwd=out.parent,
                           env=env, input=json.dumps(job), capture_output=True, text=True)
     if done.returncode != 0:
@@ -516,13 +547,15 @@ def generate_apart(root: Path, seed: str, out: Path, split: str, with_r: bool = 
 
 
 def generate_checked(root: Path, seed: str, out: Path, split: str = "train",
-                     say: Out = lambda line: None, number: int | None = None) -> dict:
+                     say: Out = lambda line: None, number: int | None = None,
+                     tier: str | None = None) -> dict:
     """Write a kit and build it again in a process of its own: the two must be the same
     bytes (P1). The kit is removed when they are not."""
-    manifest = generate(root, seed, out, split, say=say, number=number)
+    manifest = generate(root, seed, out, split, say=say, number=number, tier=tier)
     scratch = Path(tempfile.mkdtemp(prefix="specfirst-kit-p1-"))
     try:
-        second = generate_apart(root, seed, scratch / "second", split, number=number)
+        second = generate_apart(root, seed, scratch / "second", split, number=number,
+                                tier=tier)
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     problems = hash_differences(kit_hashes(out), second)
@@ -557,7 +590,7 @@ def main() -> int:
     try:
         generate(Path(job["root"]), job["seed"], Path(job["out"]), job["split"],
                  with_r=job.get("with_r", True), number=job.get("number"),
-                 say=lambda line: print(line, file=sys.stderr))
+                 say=lambda line: print(line, file=sys.stderr), tier=job.get("tier"))
     except KitError as error:
         print(f"cannot write the kit: {error}", file=sys.stderr)
         return 1

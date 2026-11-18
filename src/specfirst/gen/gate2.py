@@ -31,7 +31,7 @@ from pathlib import Path
 
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import house as houses
-from specfirst.gen import decisions, gold, kits, probes, study, verify
+from specfirst.gen import decisions, documents, gold, kits, probes, study, verify
 from specfirst.gen import design as designs
 from specfirst.machine import results
 from specfirst.machine.canonical import read_jsonl, write_json, write_jsonl
@@ -590,7 +590,8 @@ def planted_splits(out: Out, kit_dir: Path, seed: str, number: int = 1) -> bool:
         return apply
 
     def seed_in_document(copy_of: Path) -> None:
-        with open(copy_of / kits.DOCUMENT, "a", encoding="ascii", newline="\n") as handle:
+        with open(copy_of / documents.NATURAL["sap"], "a", encoding="ascii",
+                  newline="\n") as handle:
             handle.write(f"Generated from the seed {kits.kit_seed(seed, number)}.\n")
 
     other = next(split for split in decisions.SPLITS if split not in (

@@ -1,0 +1,420 @@
+{
+ "rules": [
+  "Write one paragraph per statement, one to three sentences, in the plain voice of a clinical study protocol or statistical analysis plan, in the future or present tense.",
+  "Keep every number, unit, visit name, variable name (such as DM.ARMCD), quoted value and the name of the table exactly as the statement writes it, and in the same order as in the statement. Quotation marks may be dropped; the words inside them may not change.",
+  "Say the same rule and nothing else: add no rule, no example, no number, no value and no reason. Do not mention the standard form, a catalog or a template.",
+  "Reword freely: change the sentence structure and the ordinary words; the meaning must stay exactly the same.",
+  "One line of plain ASCII text: no line breaks, no Markdown, no brackets around numbers, no curly quotes, no dashes other than the ASCII hyphen."
+ ],
+ "paragraphs": [
+  {
+   "key": "05a0409aec2f78dc",
+   "document": "sap",
+   "statement": "The planned outputs include the adverse event summary table."
+  },
+  {
+   "key": "07b37f962e4e5e07",
+   "document": "protocol",
+   "statement": "An adverse event is related to study treatment when its causality is one of \"REMOTE\", \"POSSIBLE\", \"PROBABLE\".",
+   "meaning": "The causality is the collected value of AEREL, compared exactly."
+  },
+  {
+   "key": "0833c76ddf888ce9",
+   "document": "sap",
+   "statement": "Percentages in the adverse event summary table have one decimal, and a count of zero is shown without a percentage."
+  },
+  {
+   "key": "0952773d106cf232",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"ZQR5\" means \"Active\"; \"PBO\" means \"Placebo\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "0c2b50bbec78410e",
+   "document": "protocol",
+   "statement": "The efficacy-evaluable set holds every subject of the safety set who attended the visit \"WEEK 4\".",
+   "meaning": "A subject attended a visit when the subject visits domain (SV) has a record of it."
+  },
+  {
+   "key": "0c457d6d9aff1a77",
+   "document": "protocol",
+   "statement": "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign SYSBP.",
+   "meaning": "A post-baseline value is a non-missing result dated after the treatment start date."
+  },
+  {
+   "key": "11eb8e1cf4aa4887",
+   "document": "sap",
+   "statement": "Treatment emergence ends 30 days after the treatment end date.",
+   "meaning": "An event that starts on the last day of the window is still treatment-emergent. A subject without a treatment end date has no end."
+  },
+  {
+   "key": "13327571d1180a5f",
+   "document": "sap",
+   "statement": "A partial exposure date with a known month is completed with the first day of that month.",
+   "meaning": "A date with an unknown month is left out of the treatment dates."
+  },
+  {
+   "key": "2206c28302ff3960",
+   "document": "protocol",
+   "statement": "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign WEIGHT.",
+   "meaning": "A post-baseline value is a non-missing result dated after the treatment start date."
+  },
+  {
+   "key": "23cfd6e1802d2855",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"KRD50\" means \"Low Dose\"; \"KRD100\" means \"High Dose\"; \"PBO\" means \"Placebo\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "28e37381aefc8c6b",
+   "document": "sap",
+   "statement": "Treatment emergence ends 14 days after the treatment end date.",
+   "meaning": "An event that starts on the last day of the window is still treatment-emergent. A subject without a treatment end date has no end."
+  },
+  {
+   "key": "28f750a83823b7ac",
+   "document": "sap",
+   "statement": "A partial adverse event start date with a known month is completed with the first day of that month.",
+   "meaning": "A date with an unknown month is not completed."
+  },
+  {
+   "key": "34bc5c690c174999",
+   "document": "sap",
+   "statement": "The planned outputs do not include the vital signs table by visit.",
+   "meaning": "No other decision of the table family applies then."
+  },
+  {
+   "key": "35c60d2803da4d6f",
+   "document": "sap",
+   "statement": "A partial adverse event start date with a known month is completed with the first day of that month, or with the treatment start date when it falls in that month.",
+   "meaning": "A date with an unknown month is not completed."
+  },
+  {
+   "key": "3d7e849033e5efbf",
+   "document": "sap",
+   "statement": "The rows of the adverse event summary table are, in this order, ANY, SERIOUS, FATAL.",
+   "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL."
+  },
+  {
+   "key": "3eff22b685b78591",
+   "document": "sap",
+   "statement": "Treatment emergence has no end date."
+  },
+  {
+   "key": "42839d89e26c477a",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"MVK25\" means \"Low Dose\"; \"MVK50\" means \"High Dose\"; \"PBO\" means \"Placebo\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "4a23c037ffc31222",
+   "document": "sap",
+   "statement": "Displayed numbers in the adverse event summary table are rounded half to even."
+  },
+  {
+   "key": "4df16e6905c27855",
+   "document": "sap",
+   "statement": "The treatment start date is the earliest start date of an exposure record with a dose.",
+   "meaning": "An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is zero and EXTRT contains PLACEBO."
+  },
+  {
+   "key": "5404bd1fd038111a",
+   "document": "sap",
+   "statement": "A total column of the adverse event summary table pools the treatment arms other than \"Placebo\".",
+   "meaning": "The control is named by its treatment label as the treatment columns show it."
+  },
+  {
+   "key": "5875cc9d5d85dbf2",
+   "document": "sap",
+   "statement": "There is no total column in the adverse event summary table."
+  },
+  {
+   "key": "5d5a1331ad16e579",
+   "document": "protocol",
+   "statement": "The safety set holds every randomized subject who received at least one dose of study treatment."
+  },
+  {
+   "key": "6477ba4709114992",
+   "document": "sap",
+   "statement": "An adverse event is treatment-emergent when it starts on or after the treatment start date.",
+   "meaning": "Dates are compared; times are ignored."
+  },
+  {
+   "key": "6a14be9630141a54",
+   "document": "protocol",
+   "statement": "An adverse event is related to study treatment when its causality is one of \"POSSIBLE\", \"PROBABLE\".",
+   "meaning": "The causality is the collected value of AEREL, compared exactly."
+  },
+  {
+   "key": "728b16458ffc6894",
+   "document": "sap",
+   "statement": "Baseline weight and height are the last non-missing values on or before the treatment start date.",
+   "meaning": "The last value is the latest by the collected date and time; of the values of one day, a value without a collected time comes before those with a time, and the highest VSSEQ breaks a remaining tie. A subject without a treatment start date has no baseline weight and height."
+  },
+  {
+   "key": "73d1a916566a3199",
+   "document": "sap",
+   "statement": "Planned treatment is the planned arm of the subject (DM.ARM)."
+  },
+  {
+   "key": "7655314088a96ffe",
+   "document": "sap",
+   "statement": "Displayed numbers in the adverse event summary table are rounded half away from zero."
+  },
+  {
+   "key": "7ce8022c6087341a",
+   "document": "sap",
+   "statement": "The treatment end date is the latest end date of an exposure record with a dose."
+  },
+  {
+   "key": "7d3c6482dfd20740",
+   "document": "sap",
+   "statement": "A partial exposure date is not completed and is left out of the treatment dates.",
+   "meaning": "The treatment start and end dates are taken from the exposure dates that have a year, a month and a day. A date with a missing part in the middle (a year and a day without the month) is partial."
+  },
+  {
+   "key": "7e9289898ed88eb9",
+   "document": "sap",
+   "statement": "The treatment start date is the date of first exposure in the demographics domain (DM.RFXSTDTC)."
+  },
+  {
+   "key": "7eb7885dec290cf4",
+   "document": "protocol",
+   "statement": "An adverse event is related to study treatment when its causality is one of \"PROBABLY RELATED\", \"RELATED\".",
+   "meaning": "The causality is the collected value of AEREL, compared exactly."
+  },
+  {
+   "key": "808b56b6d9466f00",
+   "document": "sap",
+   "statement": "Safety analyses group subjects by actual treatment."
+  },
+  {
+   "key": "852060b06796639c",
+   "document": "sap",
+   "statement": "The treatment start date is the earliest start date of any exposure record."
+  },
+  {
+   "key": "88df680aa4491507",
+   "document": "sap",
+   "statement": "The analysis set of the adverse event summary table is the safety set."
+  },
+  {
+   "key": "893855dd05d4aaab",
+   "document": "sap",
+   "statement": "Treatment emergence ends at the end-of-study date.",
+   "meaning": "An event that starts on the end-of-study date is still treatment-emergent. A subject without an end-of-study date has no end."
+  },
+  {
+   "key": "8c7bdfa7660af6db",
+   "document": "protocol",
+   "statement": "The safety set holds every subject who received at least one dose of study treatment."
+  },
+  {
+   "key": "94efe92a8e462291",
+   "document": "sap",
+   "statement": "Safety analyses group subjects by planned treatment."
+  },
+  {
+   "key": "a68915a47eb96064",
+   "document": "sap",
+   "statement": "The analysis set of the adverse event summary table is the randomized set."
+  },
+  {
+   "key": "b662557e9f29aae8",
+   "document": "sap",
+   "statement": "Actual treatment is the same as planned treatment."
+  },
+  {
+   "key": "ba89b16d3120aaa1",
+   "document": "sap",
+   "statement": "A partial adverse event start date is not completed and gives no analysis start date."
+  },
+  {
+   "key": "bbdf212f632ea1f0",
+   "document": "sap",
+   "statement": "The treatment columns of the adverse event summary table are in the order in which the protocol lists the arms."
+  },
+  {
+   "key": "bd99bf3c9e14ef7d",
+   "document": "sap",
+   "statement": "The planned outputs do not include the adverse event table by system organ class and preferred term.",
+   "meaning": "No other decision of the table family applies then."
+  },
+  {
+   "key": "bde1d11cc0a1bb73",
+   "document": "sap",
+   "statement": "The treatment columns of the adverse event summary table are in ascending order of dose, with placebo first."
+  },
+  {
+   "key": "c65ed94539b228ab",
+   "document": "sap",
+   "statement": "Baseline body mass index is derived from baseline weight and height and rounded to one decimal.",
+   "meaning": "Weight in kg divided by the square of height in m; rounding is half away from zero."
+  },
+  {
+   "key": "c88000e6008734fd",
+   "document": "protocol",
+   "statement": "The efficacy-evaluable set holds every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign SYSBP.",
+   "meaning": "A baseline value is a non-missing result dated on or before the treatment start date; a post-baseline value is one dated after it."
+  },
+  {
+   "key": "ced87bad26b98a9e",
+   "document": "sap",
+   "statement": "The rows of the adverse event summary table are any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
+  },
+  {
+   "key": "d7ff6b229eb792c2",
+   "document": "sap",
+   "statement": "Percentages in the adverse event summary table have one decimal, and a count of zero is shown with its percentage."
+  },
+  {
+   "key": "d80aae4e14698ac7",
+   "document": "sap",
+   "statement": "The rows of the adverse event summary table are, in this order, FATAL, SERIOUS, RELATED, ANY.",
+   "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL."
+  },
+  {
+   "key": "d8e9c625d6f2f038",
+   "document": "sap",
+   "statement": "Race categories are shown as collected and are not pooled."
+  },
+  {
+   "key": "dd9662ad994558fd",
+   "document": "sap",
+   "statement": "The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date.",
+   "meaning": "The disposition date is the start date of the end-of-study record (decision disp.status.record). It is taken only for a subject with a treatment start."
+  },
+  {
+   "key": "df8653d2f4260e7e",
+   "document": "sap",
+   "statement": "Age groups are below 65, 65 to 80, and above 80 years.",
+   "meaning": "The groups are labelled <65, 65-80 and >80. An age of exactly 80 is in 65-80."
+  },
+  {
+   "key": "e0bc1444e532eb3f",
+   "document": "protocol",
+   "statement": "An adverse event is related to study treatment when its causality is one of \"RELATED\".",
+   "meaning": "The causality is the collected value of AEREL, compared exactly."
+  },
+  {
+   "key": "e0e15ecef0e77913",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"KRD25\" means \"Low Dose\"; \"KRD50\" means \"High Dose\"; \"PBO\" means \"Placebo\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "e734bb580c0c3242",
+   "document": "sap",
+   "statement": "The analysis set of the adverse event summary table is the efficacy-evaluable set."
+  },
+  {
+   "key": "ec38d1470d3df865",
+   "document": "sap",
+   "statement": "Actual treatment is the actual arm of the subject (DM.ACTARM)."
+  },
+  {
+   "key": "ef2e8655846a79ea",
+   "document": "sap",
+   "statement": "Study day 1 is the treatment start date."
+  },
+  {
+   "key": "f39503712f777fcc",
+   "document": "sap",
+   "statement": "The end-of-study record is the disposition event record of the subject.",
+   "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT. Of several such records the last by DSSEQ is taken."
+  },
+  {
+   "key": "f80c0e30c5c22d7e",
+   "document": "sap",
+   "statement": "The end-of-study record is the disposition event record of the subject with the subcategory \"STUDY PARTICIPATION\".",
+   "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT and DSSCAT equal to the named subcategory. Of several such records the last by DSSEQ is taken."
+  },
+  {
+   "key": "f80f3992a2f01590",
+   "document": "sap",
+   "statement": "A total column of the adverse event summary table pools all treatment arms."
+  },
+  {
+   "key": "f92ba2a1c9c6da38",
+   "document": "sap",
+   "statement": "Study day 1 is the reference start date of the subject (DM.RFSTDTC)."
+  },
+  {
+   "key": "f92fc2a7af44db76",
+   "document": "sap",
+   "statement": "The planned outputs do not include the demographics table.",
+   "meaning": "No other decision of the table family applies then."
+  }
+ ],
+ "filler_rules": [
+  "Write one neutral paragraph of two to four sentences for the heading given, in the voice of a clinical study protocol or statistical analysis plan.",
+  "It must state no analysis rule at all: nothing about analysis sets or populations, treatment dates or groups, study days, disposition, adverse events, causality, imputation of dates, baseline values, age or race groups, body mass index, which tables are produced, table columns, rows, percentages, rounding or decimals.",
+  "No numbers, no dates, no names of variables or datasets. One line of plain ASCII text."
+ ],
+ "filler": [
+  {
+   "key": "filler-protocol-1",
+   "document": "protocol",
+   "heading": "Background"
+  },
+  {
+   "key": "filler-protocol-2",
+   "document": "protocol",
+   "heading": "Ethics"
+  },
+  {
+   "key": "filler-protocol-3",
+   "document": "protocol",
+   "heading": "Confidentiality"
+  },
+  {
+   "key": "filler-protocol-4",
+   "document": "protocol",
+   "heading": "Monitoring"
+  },
+  {
+   "key": "filler-protocol-5",
+   "document": "protocol",
+   "heading": "Publication"
+  },
+  {
+   "key": "filler-sap-1",
+   "document": "sap",
+   "heading": "Data handling"
+  },
+  {
+   "key": "filler-sap-2",
+   "document": "sap",
+   "heading": "Software"
+  },
+  {
+   "key": "filler-sap-3",
+   "document": "sap",
+   "heading": "Quality control"
+  },
+  {
+   "key": "filler-sap-4",
+   "document": "sap",
+   "heading": "Changes to the planned analyses"
+  },
+  {
+   "key": "filler-sap-5",
+   "document": "sap",
+   "heading": "Interim analyses"
+  }
+ ],
+ "answer": {
+  "paragraphs": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ],
+  "filler": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ]
+ }
+}
