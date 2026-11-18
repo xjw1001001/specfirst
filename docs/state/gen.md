@@ -20,8 +20,9 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   Choices: docs/decisions/ADR-007.md; the owner approved the gate's
   reading of "applicable" for the slice only, and a rework is owed before
   the gate of the full gen-2 (see "Next").
-- gen-3a (2026-11-18), gate passed and review signed, NOT MERGED: two
-  questions for the owner first (ADR-009, "For the owner", items 4 and 5).
+- gen-3a (2026-11-18), gate passed, review signed, merged into `main`
+  after the owner approved the two choices the review left to the owner,
+  for the slice only (ADR-009, "The owner's answers on items 4 and 5").
   The protocol and the SAP of each kit in standard form and in natural
   form; the tiers full, standard and the ask demo with the oracle; a
   one-page summary; the visible probes in `kit.yaml`; the store of model

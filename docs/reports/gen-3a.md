@@ -36,8 +36,10 @@ template. The independent review used 1,075,749 tokens of the session's own mode
 own session is not counted here.
 
 The review did not sign pass 1 (four blocking findings, all settled since,
-see "Review"); it signed pass 2 on `901be3d`. Two of its questions are the owner's; the
-part is not merged until they are answered (section "For the owner").
+see "Review"); it signed pass 2 on `901be3d`. Two of its questions were
+the owner's. The owner approved both on 2026-11-18, for the slice only
+(ADR-009, "The owner's answers on items 4 and 5"), and the part was then
+merged into `main`.
 
 ## What was built
 
@@ -378,11 +380,11 @@ uses, 956 s); pass 2 in two runs, 364,109 (12 tool uses, 145 s) and
    60 statements (rewrite and read-back).
 4. From the review (ADR-009, "For the owner", item 4): the parser control
    now asks the oracle for what neither the standard-form documents nor the
-   house standard decide. Recommendation: approve; no control can score
-   100% on a kit of the ask demo otherwise.
+   house standard decide. Answered on 2026-11-18: "Approve, for this slice
+   only" (ADR-009, the last section).
 5. From the review (item 5): does a read-back by a subagent of the
    executor's own session, with its request, answer and final message kept
    but no transcript, count as the "verifier agent with a fresh context" of
-   section 6.6? Recommendation: accept it for the slice; a script adapter
-   (`claude -p`, item 1) takes the executor out of the path once the CLI is
-   logged in.
+   section 6.6? Answered on 2026-11-18: "Accept, for this slice only"; from
+   the next call on every subagent's final message is kept and hashed, and
+   the loop moves to `claude -p` once the CLI is logged in.
