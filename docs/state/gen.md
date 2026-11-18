@@ -99,8 +99,15 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
   `separated` and the number of changed `cells`. The decision records
   repeat `identifiable`.
 - A decision that is `unseparated` on the twin cannot be scored by the
-  table: compare decision values and report it apart (section 9.3). Three
-  kinds occur. Not read: the output does not read it under the decisions
+  table: compare decision values and report it apart (section 9.3). This
+  holds also for a decision that the table reads: a kit of this generator
+  can state a decision, have a table that reads it, and still give the
+  same table as under the house default (kit 9 of the gate set states
+  rounding half to even; every cell of its twin has the same text under
+  the default). The owner approved that for the slice on 2026-11-17
+  (ADR-007, "The owner's answer on decision 6"). A table that equals the
+  gold table is therefore no evidence for an `unseparated` decision, and a
+  table that differs is not caused by one. Three kinds occur. Not read: the output does not read it under the decisions
   of the kit (`pop.randomized.rule` in a kit on the safety set;
   `date.studyday.origin` in every kit of this slice). Read without a probe:
   `tfl.rounding.rule` outside the safety set grouped by actual treatment
@@ -142,7 +149,10 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
 
 - The data of a kit are a function of the design and the seed (gen-1a);
   the decisions are sampled to fit them. A probe that holds for one
-  analysis set (the calibrated counts) cannot follow the decisions.
+  analysis set (the calibrated counts) cannot follow the decisions. The
+  gate `gen-2a` therefore reads "applicable" as "claimed by the log of
+  probes" (ADR-007, decision 6). The owner approved that reading for the
+  slice only; the rework is the first point under "Next".
 - The scenarios of a set (`decisions.SCENARIOS`) are what makes every
   decision read and claimed in some kit of ten. A set of other size keeps
   the rotation.
@@ -194,6 +204,22 @@ For the real track:
   form for the decisions of the slice.
 - read-1a (needs real-3a and gen-2a): the scorer.
 - Then the rest of gen-1, gen-2 and gen-3.
+- Owed before the gate of the full gen-2 is run (the owner's answer of
+  2026-11-17 on finding G1 of the gen-2a review; ADR-007): the probes
+  follow the decisions of the kit. The decisions are sampled first and
+  the probes are planted after them (section 6.4, S1 before S3): the
+  calibrated counts for the analysis set and the grouping of the kit's
+  own table, the planted subjects inside its analysis set.
+  `probes.REACHES` keeps only the conditions under which another decision
+  of the kit makes the alternatives equal on any data; the conditions
+  `_ANALYZED` and that of `tfl.rounding.rule` go. The gate fails on a kit
+  in which a decision that the output reads, and that data could
+  separate, is not separated on the twin. This changes `study.generate`
+  (the data of a kit then depend on its decisions) and the order in
+  `kits._attempt`, so the gate of gen-1a runs again, with CORE, and
+  `GENERATOR` changes. The kit folder and the loading API above need not
+  change. Not started; when it is done, and as which part, is the owner's
+  to plan.
 
 How to run things:
 

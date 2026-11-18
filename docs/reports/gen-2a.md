@@ -36,14 +36,21 @@ the same in both runs, but for the planted defects: 17 in the first.
 What the gate does not prove, said here and under "Limits": "applicable"
 is read as "the log of probes claims a probe for it under the decisions of
 the kit"; a decision that the output reads without such a claim may stay
-unseparated in a kit, and the log lists each case. Three points are for
-the owner, at the end.
+unseparated in a kit, and the log lists each case. In the ten kits of the
+gate three such cases are ones that other data could separate:
+`tfl.rounding.rule` in kits 4 and 9, `trt.end.source` in kit 9. What is
+left for the owner is at the end.
 
 The independent review (rule R7) is in `docs/reports/gen-2a.review.md`.
-Pass 1 did not sign: one finding blocks (G1, the reading of "applicable"
-above), and the reviewer says the choice it leaves is the owner's. The
-section "Review" says what the review found and what was done about it.
-By PLAN.md section 2.3 the part has not passed until the review is signed.
+Pass 1 did not sign: one finding blocked (G1, the reading of "applicable"
+above), and the reviewer said the choice it leaves is the owner's. The
+owner answered on 2026-11-17: the reading is approved as the reading of
+the gate for this slice only, and the rework, in which the probes follow
+the decisions of a kit, is owed before the gate of the full gen-2
+(ADR-007, "The owner's answer on decision 6"). The section "Review" says
+what the review found and what was done about it. By PLAN.md section 2.3
+a part has passed when its gate script exits 0 and the reviewer signs;
+the verdict of pass 2 is the last line of the review file.
 
 ## What gen-2a asks for, and where it stands
 
@@ -697,7 +704,7 @@ reviewer established that the author could not:
 
 | Finding | What was done |
 | --- | --- |
-| G1 "applicable" is what the generator claims: the gate passes kits in which a decision that the output reads, and that data could separate, is not separated on the twin (blocks) | Open. The finding is right about what the gate proves: see "Limits". The reviewer names two ways to settle it and says the choice is the owner's: the owner approves the reading of ADR-007, decision 6, for this slice; or the probes follow the decisions of the kit (stage S3 after S1) and the gate fails on a read decision that data could separate. Put to the owner on 2026-11-17. Nothing is merged before the answer. |
+| G1 "applicable" is what the generator claims: the gate passes kits in which a decision that the output reads, and that data could separate, is not separated on the twin (blocks) | Settled by the owner, not by code. The finding is right about what the gate proves: see "Limits". The reviewer named two ways to settle it and said the choice is the owner's: the owner approves the reading of ADR-007, decision 6, for this slice; or the probes follow the decisions of the kit (stage S3 after S1) and the gate fails on a read decision that data could separate. The question was put to the owner on 2026-11-17. The owner approved the reading for this slice only and booked the second way as a later part, owed before the gate of the full gen-2. ADR-007 has the question and the answer; `docs/state/gen.md` has the rework under "Next"; lesson 47 says what was done in the wrong order. |
 | G2 P3 without "no spec element is unused"; P2 holds the table only | Both are under "Limits" now, with the reviewer's experiment: a machine that ignores the rounding rule passes P2 on the twin of kit 9. |
 | G3 the hand calculation shares a little with the machine; three readings not marked | The module text says what is shared (the arms and their names from `gold.arms_of`, the column order written a second time, the labels copied). The three readings are marked `READING` in `reference.py`, and all five are under "Limits". No behaviour changed. |
 | G4 four checks had no planted defect in the repository | `gate2.planted_splits`: a document that holds the seed, a manifest with another split, a manifest with the hash of another seed, each in a copy of kit 1; each must be reported alone. `gate2.planted_matrix`: a copy of the kit whose matrix, decision record and manifest call `date.studyday.origin` separated, with the hashes written again; the check without a mutation must report nothing and a new mutation exactly the three differences. Both run in the gate and in the unit tests. |
@@ -708,6 +715,19 @@ reviewer established that the author could not:
 
 The code changed after the first gate run (G4, G6, G7, G8, the comments of
 G3), so the gates were run again: section "The gate".
+
+After the owner's answer only records changed: ADR-007, this report, the
+handover and the lessons. No file under `src/`, `tests/`, `standard/`,
+`scripts/` or `env/` changed after `f2dac3b`, the commit of the gate runs:
+
+```text
+$ git diff --stat f2dac3b HEAD -- src tests standard scripts env r kits
+(no output)
+```
+
+Pass 2 of the review read the changes since `ce70734`, the two new gate
+logs, this report, ADR-007 and the handover. Its verdict is the last line
+of `docs/reports/gen-2a.review.md`.
 
 ## GitHub and CI
 
@@ -729,25 +749,51 @@ selection gives 943 passed and none skipped. The unit tests that build a
 kit do it without R (`with_r=False`), so they run on GitHub's runner too;
 the agreement of the engines is decided in the gate only.
 
+The two later pushes, the commit of the second gate runs and the commit
+that put their logs into this report:
+
+```text
+$ gh run view 44184917997 --log | grep -E "files checked|All checks passed|passed, .* deselected"
+run 44184917997 on track/gen at f2dac3b: completed, success
+ASCII check: 443 files checked, 0 with non-ASCII bytes
+All checks passed!
+926 passed, 19 skipped, 22 deselected in 260.02s (0:04:20)
+
+$ gh run view 44190080249 --log | grep -E "files checked|All checks passed|passed, .* deselected"
+run 44190080249 on track/gen at f5381da: completed, success
+ASCII check: 443 files checked, 0 with non-ASCII bytes
+All checks passed!
+926 passed, 19 skipped, 22 deselected in 165.11s (0:02:45)
+```
+
+The first line of each block is from `gh run list --branch track/gen`;
+the time stamps of the log lines are cut.
+
 The runs on the commit that holds this report and on `main` after the
 merge cannot be in it; they are in GitHub, and the session reports them
 when it hands the work back.
 
 ## For the owner
 
-1. ADR-007 holds the choices of this part; it stands unless the owner
-   objects. Its five points for the owner are about what other tracks own:
-   the listed groups (or a change of rule I9 of the engines), the layout
-   format of the house templates, the order of the arms, the new registry
-   entry, and the reading of "applicable".
-2. A seed file for the first set with dev and test kits: who makes it and
+1. Answered on 2026-11-17: the reading of "applicable" (ADR-007, decision
+   6) is approved for this slice only. What it leaves is owed before the
+   gate of the full gen-2: the probes follow the decisions of a kit (stage
+   S3 after S1), so that the calibrated counts and the planted subjects
+   fit the analysis set and the grouping of the kit's own table, and the
+   gate fails on a decision that the output reads, that data could
+   separate and that the twin does not. Until then `tfl.rounding.rule`
+   cannot be separated in a kit that is not on the safety set grouped by
+   actual treatment, and a scorer compares decision values there. The
+   rework changes the generator of gen-1a and needs its gate, with CORE,
+   again. When it is done, and as which part, is the owner's to plan.
+2. The other four points of ADR-007 are open. They are about what other
+   tracks own: the listed groups (or a change of rule I9 of the engines),
+   the layout format of the house templates, the order of the arms
+   (`protocol_order` has no slot), the new registry entry. ADR-007 stands
+   on them unless the owner objects.
+3. A seed file for the first set with dev and test kits: who makes it and
    where it is kept (outside every checkout). Until then every kit is a
    development kit.
-3. `tfl.rounding.rule` cannot be separated in a kit that is not on the
-   safety set grouped by actual treatment, because the data of a kit do
-   not follow its decisions. Making the calibrated counts follow the
-   analysis set of the kit is possible (stage S3 after S1) and was not
-   done.
 
 ## Files
 
@@ -763,7 +809,7 @@ when it hands the work back.
   `test_gen_gate.py`, `test_gen_probes.py`, `test_gen_subjects.py`,
   `test_doctor.py`, `test_registry.py`; `tests/methods/`.
 - Records: `docs/decisions/ADR-007.md`, `docs/lessons.md` (lessons 40 to
-  46), `docs/state/gen.md`, `CLAUDE.md`, `kits/README.md`,
+  47), `docs/state/gen.md`, `CLAUDE.md`, `kits/README.md`,
   `scripts/clean_clone_gate.sh`, this report,
   `docs/reports/gen-2a.gate.log`, `docs/reports/gen-2a.gen-1a.gate.log`,
   `docs/reports/gen-2a.real-3a.gate.log`, `docs/reports/gen-2a.review.md`.
