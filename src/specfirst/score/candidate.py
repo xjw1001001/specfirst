@@ -131,6 +131,9 @@ class Build:
     layouts: dict[str, dict] = field(default_factory=dict)  # unit -> compiled layout
     adam: dict = field(default_factory=dict)  # dataset -> Arrow table
     ard: dict[str, dict] = field(default_factory=dict)  # ARD rows by ID
+    # (grouping, group) -> the name and the condition of the group in the reporting
+    # event that was run, where the groups of a data-driven grouping are listed.
+    groups: dict[tuple[str, str], dict] = field(default_factory=dict)
     grids: dict[str, dict] = field(default_factory=dict)  # output ID -> grid
     not_produced: dict[str, str] = field(default_factory=dict)  # output ID -> why
     paths: dict[str, CellPath] = field(default_factory=dict)  # cell ID -> what is behind it
@@ -386,6 +389,11 @@ class Machine:
         # From here on, as the gold of a generated kit is built (specfirst.gen.gold.show).
         listed = kitgold.resolve_groupings(built.ars, tables, built.layouts, arms)
         event, _, rows = kitgold.python_results(self.root, listed, tables)
+        built.groups = {
+            (grouping["id"], group["id"]): {"name": group.get("name"),
+                                            "condition": group.get("condition")}
+            for grouping in listed.get("analysisGroupings") or []
+            for group in grouping.get("groups") or []}
         if hooks and hooks.ard:
             rows = hooks.ard([dict(row) for row in rows])
         built.ard = results.by_id(rows)

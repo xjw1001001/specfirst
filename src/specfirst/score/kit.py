@@ -29,13 +29,31 @@ against it.
 
 The sweep. The matrix of a kit is a list of planted defects that the kit
 itself vouches for: every decision of the slice, read as each other value
-the matrix holds, with the claim whether the twin shows it. `sweep` scores
-each of them as a candidate of its own (the gold decisions through the
-parser, one value changed) and asks of the scorer: the reading score has
-exactly that decision wrong; the build score of the twin falls exactly
-when the matrix says `separated`; every wrong cell and every axis, on
-either dataset, is owned by the changed decision, and its gold value gives
-the gold text again; a value that shows nowhere is reported as silent.
+the matrix holds, with the claim whether the twin shows it and in how many
+cells. `sweep` scores each of them as a candidate of its own (the gold
+decisions through the parser, one value changed) and asks of the scorer:
+
+- the reading score has exactly that decision wrong;
+- the build score of the twin falls exactly when the matrix says
+  `separated`, and where the two axes of the twin are the gold axes, in as
+  many cells as the matrix counts;
+- every wrong cell and every axis that is not the gold axis, on either
+  dataset, has an owner, the changed decision, at the layer where that
+  decision acts (`OWNING_LAYER`);
+- a value that shows nowhere is reported as silent.
+
+With one wrong decision an owner has no other decision to name, and the
+candidate with that decision at its gold value is gold: "confirmed" cannot
+fail there. So the sweep goes on to pairs: a module decision and a table
+decision of the kit's own matrix, both wrong at once. What each does alone
+is known from the first pass, cell by cell, and the owner of every wrong
+cell of the pair is held against it: the one decision that changes the
+cell alone; both, where each changes it; never a claim that failed.
+
+The files of a kit are held against the hashes of its manifest before
+anything is read (rule R3): a decision record whose class or
+`identifiable` was changed would be scored in another way, and the gold
+check does not see that.
 
 A set. `score_set` scores the kits of a folder: the gold check, the parser
 control in both stages, the standard alone in both stages (reported: it
@@ -61,7 +79,7 @@ from specfirst.gen import design as designs
 from specfirst.gen import gold as kitgold
 from specfirst.gen import kits as genkits
 from specfirst.machine.canonical import read_jsonl
-from specfirst.score import build, defects, report, scorer
+from specfirst.score import attribute, build, defects, report, scorer
 from specfirst.score.candidate import Data, Key, Machine
 from specfirst.score.reading import Documents, same_value
 
@@ -108,6 +126,10 @@ def load(folder: Path) -> Kit:
             raise ValueError(f"kit format {manifest.get('kit')!r}, slice "
                              f"{manifest.get('slice')!r}; the scorer reads format "
                              f"{genkits.FORMAT} of the slice {genkits.SLICE}")
+        drift = genkits.hash_differences(manifest.get("files") or {}, genkits.all_files(folder))
+        if drift:
+            raise ValueError(f"{len(drift)} files are not the files of {genkits.MANIFEST}, "
+                             f"for example {drift[0]}")
         records = genkits.read_decisions(folder)
         design = designs.load(folder / "gold" / "design.yaml")
         with open(folder / genkits.IDENTIFIABILITY, encoding="ascii") as handle:
@@ -240,26 +262,86 @@ def matrix_problems(kit: Kit, catalog: Catalog,
     return problems, said
 
 
+# The layer at which a wrong value of a decision owns its cells: what the decision
+# sets. A module decision writes ADaM columns (L4). Five decisions set elements of
+# the ARS file: which output, which analysis set, which rows, the total column, and
+# the treatment variable the table groups by (L5). Three set parts of the layout
+# only (L7). gold/spec/compile.json of a kit lists the same per decision (`binds`,
+# `layout`); tests/unit/test_score_kit.py holds this table against it.
+OWNING_LAYER = {
+    **dict.fromkeys(("trt.planned.source", "trt.actual.source", "trt.start.source",
+                     "trt.end.source", "trt.date.imputation", "date.studyday.origin",
+                     "pop.randomized.rule", "pop.safety.rule", "pop.efficacy.rule",
+                     "disp.status.record", "ae.start.imputation", "ae.teae.start",
+                     "ae.teae.end", "ae.related.values"), "L4"),
+    **dict.fromkeys(("pop.safety.grouping", "tfl.output.include", "tfl.population",
+                     "tfl.columns.total", "tfl.ae.summary.rows"), "L5"),
+    **dict.fromkeys(("tfl.columns.arms", "tfl.percent.format", "tfl.rounding.rule"), "L7"),
+}
+# How many pairs of two wrong decisions a kit is swept with: so many module
+# decisions that its twin separates, each with so many table decisions.
+PAIR_MODULES, PAIR_TABLES = 4, 3
+
+
 @dataclass
 class Sweep:
-    """Every other value of every decision in the matrix of a kit, scored alone."""
+    """Every other value of every decision in the matrix of a kit, scored alone; and
+    pairs of a module decision with a table decision, both wrong."""
 
     values: int = 0
     decisions: int = 0
     shown: int = 0  # the twin shows it, as the matrix says
     visible_only: int = 0  # the visible data show it and the twin does not
     silent: int = 0  # no dataset shows it, as the matrix says of the twin
-    cells: int = 0  # wrong cells and axes, all owned by the changed decision
+    cells: int = 0  # wrong cells and axes, each with the changed decision as its owner
+    counted: int = 0  # values whose wrong cells on the twin are held against the matrix
     layers: dict[str, set[str]] = field(default_factory=dict)  # decision -> owning layers
+    pairs: int = 0
+    pair_cells: int = 0  # wrong cells and axes of the pairs
+    one_cause: int = 0  # owned by the one decision that changes it alone
+    both_causes: int = 0  # each decision changes it alone: owned by both
+    together: int = 0  # wrong only with both wrong: owned by one of them
     problems: list[str] = field(default_factory=list)
 
 
+def _where(owner) -> str:
+    return getattr(owner, "cell", None) or f"axis {getattr(owner, 'axis', '')}"
+
+
+def _other_axes(score: build.BuildScore) -> list[tuple[str, str]]:
+    """The axes of the produced outputs that are not the gold axes: (output, axis)."""
+    return [(output.output, axis) for output in score.outputs if output.produced
+            for axis, equal in (("rows", output.rows_equal), ("columns", output.columns_equal))
+            if not equal]
+
+
+def _marks(result: scorer.Result) -> dict[str, set]:
+    """Per dataset, what is wrong: the wrong cells as (row, column), the axes as
+    (output, axis)."""
+    return {which: {(cell.row, cell.column) for cell in score.wrong()} | set(_other_axes(score))
+            for which, score in result.builds.items()}
+
+
+def _owner_marks(result: scorer.Result, which: str) -> dict:
+    found = {(owner.row, owner.column): owner for owner in result.owners[which]}
+    found.update({(axis.output, axis.axis): axis for axis in result.axes[which]})
+    return found
+
+
 def sweep(machine: Machine, kit: Kit) -> Sweep:
-    """Score every pair of the matrix of the kit as a candidate with one wrong decision."""
+    """Score every pair of the matrix of the kit as a candidate with one wrong decision,
+    then pairs of two wrong decisions."""
     catalog = machine.catalog
     on = case(kit, catalog)
     records, documents = scorer.control_records(machine, on)
     found = Sweep()
+    alone: dict[Key, tuple[dict, dict[str, set]]] = {}  # separated on the twin: value, marks
+
+    def scored(changes: dict[Key, dict]) -> scorer.Result:
+        candidate = [{**r, "value": changes[(r["id"], r["unit"])]}
+                     if (r["id"], r["unit"]) in changes else r for r in records]
+        return scorer.run(machine, on, candidate, arm="sweep", documents=documents)
+
     for item in kit.matrix["decisions"]:
         key = (item["id"], item["unit"])
         choices = options(kit, catalog, key)
@@ -272,41 +354,99 @@ def sweep(machine: Machine, kit: Kit) -> Sweep:
                 found.problems.append(f"{name}: the matrix holds no pair of gold with it")
                 continue
             found.values += 1
-            candidate = [{**r, "value": value} if (r["id"], r["unit"]) == key else r
-                         for r in records]
-            result = scorer.run(machine, on, candidate, arm="sweep", documents=documents)
+            result = scored({key: value})
             wrong = [score.key for score in result.reading.wrong()]
             if wrong != [key]:
                 found.problems.append(f"{name}: the reading score has wrong by value: "
                                       f"{', '.join(k[0] for k in wrong) or 'nothing'}")
-            twin = not result.builds["twin"].perfect
+            score = result.builds["twin"]
+            twin = not score.perfect
             if twin != bool(pair["separated"]):
                 found.problems.append(
                     f"{name}: the matrix says the twin "
                     f"{'separates' if pair['separated'] else 'does not separate'} it; the "
                     f"scorer's builds on the twin {'differ' if twin else 'are the same'}")
-            owners = [(which, owner) for which in result.builds
-                      for owner in [*result.owners[which], *result.axes[which]]]
-            for which, owner in owners:
-                where = getattr(owner, "cell", None) or f"axis {getattr(owner, 'axis', '')}"
-                if owner.decisions != (key,):
-                    names = ", ".join(k[0] for k in owner.decisions) or "no decision"
-                    found.problems.append(f"{name}: {which}, {where}: owned by {names} at "
-                                          f"layer {owner.layer}")
-                elif owner.confirmed is not True:
-                    found.problems.append(f"{name}: {which}, {where}: the gold value does not "
-                                          "give the gold text")
-                found.layers.setdefault(key[0], set()).add(owner.layer)
-            found.cells += len(owners)
+            elif not _other_axes(score) and score.produced == score.in_gold:
+                # The matrix counts the cells of two grids by their place on the page;
+                # with the gold axes that is the count by row and column.
+                found.counted += 1
+                if len(score.wrong()) != pair["cells"]:
+                    found.problems.append(f"{name}: the matrix counts {pair['cells']} changed "
+                                          f"cells on the twin, the scorer {len(score.wrong())}")
+            owned = 0
+            for which, marks in _marks(result).items():
+                owners = _owner_marks(result, which)
+                if set(owners) != marks or len(result.owners[which]) + len(
+                        result.axes[which]) != len(marks):
+                    found.problems.append(
+                        f"{name}: {which}: {len(marks)} wrong cells and axes have "
+                        f"{len(result.owners[which]) + len(result.axes[which])} owners")
+                for owner in owners.values():
+                    if owner.decisions != (key,):
+                        names = ", ".join(k[0] for k in owner.decisions) or "no decision"
+                        found.problems.append(f"{name}: {which}, {_where(owner)}: owned by "
+                                              f"{names} at layer {owner.layer}")
+                    elif owner.note == attribute.UNNAMED:
+                        found.problems.append(
+                            f"{name}: {which}, {_where(owner)}: the decision owns it by "
+                            "running alone: no element that differs on the path is decided "
+                            "by it")
+                    elif owner.layer != OWNING_LAYER.get(key[0]):
+                        found.problems.append(
+                            f"{name}: {which}, {_where(owner)}: owned at layer {owner.layer}; "
+                            f"the decision acts at {OWNING_LAYER.get(key[0])}")
+                    found.layers.setdefault(key[0], set()).add(owner.layer)
+                owned += len(owners)
+            found.cells += owned
             if twin:
                 found.shown += 1
-            elif owners:
+                if key not in alone:
+                    alone[key] = (value, _marks(result))
+            elif owned:
                 found.visible_only += 1
             else:
                 found.silent += 1
                 if key not in result.silent:
                     found.problems.append(f"{name}: shown by no cell, and not reported as "
                                           "silent")
+
+    modules = [key for key in alone if catalog.units[key[1]].kind != "table_family"]
+    tables = [key for key in alone if catalog.units[key[1]].kind == "table_family"]
+    for first in modules[:PAIR_MODULES]:
+        for second in tables[:PAIR_TABLES]:
+            found.pairs += 1
+            name = f"{first[0]} with {second[0]}"
+            result = scored({first: alone[first][0], second: alone[second][0]})
+            if sorted(score.key for score in result.reading.wrong()) != sorted([first, second]):
+                found.problems.append(f"{name}: the reading score does not have these two, "
+                                      "and only these, wrong by value")
+            for which, marks in _marks(result).items():
+                owners = _owner_marks(result, which)
+                if set(owners) != marks:
+                    found.problems.append(f"{name}: {which}: {len(marks)} wrong cells and "
+                                          f"axes have {len(owners)} owners")
+                for mark, owner in owners.items():
+                    found.pair_cells += 1
+                    by_first = mark in alone[first][1][which]
+                    by_second = mark in alone[second][1][which]
+                    if by_first and by_second:
+                        wanted, kind = [{first, second}], "both_causes"
+                    elif by_first or by_second:
+                        wanted, kind = [{first if by_first else second}], "one_cause"
+                    else:
+                        wanted, kind = [{first}, {second}], "together"
+                    if owner.confirmed is not True or set(owner.decisions) not in wanted \
+                            or owner.note == attribute.UNNAMED:
+                        names = ", ".join(k[0] for k in owner.decisions) or "no decision"
+                        found.problems.append(
+                            f"{name}: {which}, {_where(owner)}: owned by {names} at layer "
+                            f"{owner.layer}, confirmed {owner.confirmed}; alone, it is wrong "
+                            f"under {first[0] if by_first else ''}"
+                            f"{' and ' if by_first and by_second else ''}"
+                            f"{second[0] if by_second else ''}"
+                            f"{'neither' if not (by_first or by_second) else ''}")
+                    else:
+                        setattr(found, kind, getattr(found, kind) + 1)
     return found
 
 
@@ -365,13 +505,20 @@ def _cells(grids: dict[str, dict]) -> int:
 
 
 def _owned(result: scorer.Result) -> str:
+    """Per dataset: how many wrong cells and axes each layer and decision owns; a
+    claim that failed when it was run is counted apart."""
     found = []
     for name in result.builds:
-        owners = sorted({(o.layer, ", ".join(k[0] for k in o.decisions) or "no decision")
-                         for o in [*result.owners[name], *result.axes[name]]})
-        if owners:
+        counts: dict[tuple[str, str], int] = {}
+        for owner in [*result.owners[name], *result.axes[name]]:
+            names = ", ".join(k[0] for k in owner.decisions) or "no decision"
+            layer = owner.layer if owner.confirmed is not False else "no owner found: " \
+                + owner.layer
+            counts[(layer, names)] = counts.get((layer, names), 0) + 1
+        if counts:
             found.append(f"{name} owned by " + " and ".join(
-                f"{layer} ({names})" for layer, names in owners))
+                f"{layer} ({names}): {count}" for (layer, names), count in sorted(
+                    counts.items())))
     return "; ".join(found)
 
 
@@ -418,8 +565,10 @@ def score_kit(machine: Machine, kit: Kit, out: Out, name: str = "") -> KitScore:
     for stage in scorer.STAGES:
         result = found.standard[stage] = scorer.standard_alone(machine, case(kit, catalog, stage))
         wrong = [item.key[0] for item in result.reading.wrong()]
+        owned = _owned(result) if stage == "T" else ""
         out(f"  arm S, stage {stage}: {len(wrong)} of {len(result.reading.decisions)} decisions "
-            f"to change ({', '.join(wrong) or 'none'}); {build_line(result)}")
+            f"to change ({', '.join(wrong) or 'none'}); {build_line(result)}"
+            + (f"; {owned}" if owned else ""))
     on = case(kit, catalog)
     records, documents = scorer.control_records(machine, on)
     for defect in defects.DEFECTS:
@@ -446,7 +595,13 @@ def score_kit(machine: Machine, kit: Kit, out: Out, name: str = "") -> KitScore:
         f"each as the one wrong decision of a candidate: {swept.shown} shown on the twin and "
         f"{swept.silent} silent, as the matrix says; {swept.visible_only} shown on the visible "
         f"data only; {swept.cells} wrong cells and axes, each owned by the changed decision "
-        f"and confirmed; {len(swept.problems)} problems")
+        f"at its layer; the cells of the twin counted against the matrix for {swept.counted} "
+        "values")
+    out(f"  sweep of pairs: {swept.pairs} candidates with a module decision and a table "
+        f"decision wrong at once: {swept.pair_cells} wrong cells and axes; {swept.one_cause} "
+        f"owned by the one decision that changes them alone, {swept.both_causes} by both "
+        f"where each does, {swept.together} by one of the two where neither does alone; "
+        f"{len(swept.problems)} problems in both sweeps")
     for problem in swept.problems:
         out(f"    problem: {problem}")
     return found
@@ -584,8 +739,14 @@ def score_set(root: Path, folder: Path, out: Out = print) -> bool:
         f"one wrong decision of a candidate: {sum(one.shown for one in swept)} shown on the "
         f"twin, {sum(one.visible_only for one in swept)} on the visible data only, "
         f"{sum(one.silent for one in swept)} silent; {sum(one.cells for one in swept)} wrong "
-        "cells and axes owned by the changed decision and confirmed; "
-        f"{sum(len(one.problems) for one in swept)} problems")
+        "cells and axes owned by the changed decision at its layer; the cells of the twin "
+        f"counted against the matrix for {sum(one.counted for one in swept)} values")
+    out(f"sweep of pairs: {sum(one.pairs for one in swept)} candidates with two wrong "
+        f"decisions: {sum(one.pair_cells for one in swept)} wrong cells and axes; "
+        f"{sum(one.one_cause for one in swept)} owned by the one decision that changes them "
+        f"alone, {sum(one.both_causes for one in swept)} by both, "
+        f"{sum(one.together for one in swept)} by one of the two where neither does alone")
+    out(f"problems of the sweeps: {sum(len(one.problems) for one in swept)}")
     out("  the layer at which each decision owns its cells: " + "; ".join(
         f"{name} {', '.join(sorted(where))}" for name, where in sorted(layers.items())))
     out(f"gold built again is the gold of the kit: {gold} of {len(scores)} kits")

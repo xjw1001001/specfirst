@@ -35,13 +35,16 @@ The tests need the fetch cache, the engine and R; they carry the marker
 `evidence`.
 
 The defects of the scorer (read-1a, the slice "adverse event summary first")
-are planted by `specfirst.score.defects`, S1 to S12: the twelve of section
-9.5, of which three do not apply to a table of counts and percents, and one
-is planted at two layers. Each is planted in a candidate (a decision, a step
-of its build, a citation) and judged by `specfirst.score.scorer.run`, the
-function that scores any candidate. `specfirst score defects` runs them on
-the hand-made study HAND01; `tests/unit/test_score_hand.py` holds each one
-against the cells worked out by hand. They need no fetch cache and no R.
+are planted by `specfirst.score.defects`, S1 to S12: of the twelve of
+section 9.5, two do not apply to a table of counts and percents (a quantile,
+a baseline), three are planted as the nearest thing the table has (a percent
+rounded twice, the order of the treatment columns, the list of related
+causality values), and two are planted in two ways. Each is planted in a
+candidate (a decision, a step of its build, a citation) and judged by
+`specfirst.score.scorer.run`, the function that scores any candidate.
+`specfirst score defects` runs them on the hand-made study HAND01;
+`tests/unit/test_score_hand.py` holds each one against the cells worked out
+by hand. They need no fetch cache and no R.
 `specfirst score defects --kit DIR` runs them on a generated kit, and the
 gate read-1a on the ten kits of the gate of gen-2a, with every pair of the
 identifiability matrix of each kit as one more planted decision

@@ -107,8 +107,8 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
     """Score the records of a candidate on a case.
 
     `hooks` plants a defect in the candidate's builds. With `prove`, every
-    attribution to a decision is run: the candidate is built again with the
-    owning decisions at their gold values.
+    claim of the attribution is run: the candidate is built again with
+    decisions at their gold values, and an owner is a claim that held.
     """
     if case.stage not in STAGES:
         raise ScoreError(f"unknown stage '{case.stage}'")
@@ -131,15 +131,14 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
         other_axes = [(output.output, axis) for output in scored.outputs if output.produced
                       for axis, equal in (("rows", output.rows_equal),
                                           ("columns", output.columns_equal)) if not equal]
+        rebuild = (lambda records, data=data: machine.build(
+            records, data, case.arms(records), hooks)) if prove else None
         owners[name], axes[name] = attribute.attribute(machine, gold, made, scored.wrong(),
-                                                       other_axes)
-        if prove:
-            attribute.confirm(owners[name], axes[name], gold, made,
-                              lambda records, data=data: machine.build(
-                                  records, data, case.arms(records), hooks))
+                                                       other_axes, rebuild)
         builds[name] = scored
+    # A claim that failed when it was run owns nothing: its decision is listed below.
     owning = {key for name in case.data for owner in [*owners[name], *axes[name]]
-              for key in owner.decisions}
+              if owner.confirmed is not False for key in owner.decisions}
     silent, behind = [], {}
     values = {(r["id"], r["unit"]): r["value"] for r in ours}
     for item in read.wrong():

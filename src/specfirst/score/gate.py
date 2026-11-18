@@ -28,19 +28,21 @@ P1, which the gate gen-2a holds), so these are the kits of that gate.
 
 from __future__ import annotations
 
+import dataclasses
 import shutil
 import tempfile
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from specfirst.compile.standard_form import StandardForm, StandardFormError, decision_record
+from specfirst.compile.standard_form import StandardFormError
 from specfirst.gen import gate2
 from specfirst.gen import kits as genkits
 from specfirst.machine.canonical import sha256_file
 from specfirst.score import build, defects, hand, pilot, report, scorer
 from specfirst.score import kit as kits_scored
 from specfirst.score.candidate import Machine
+from specfirst.score.reading import Documents
 
 Out = Callable[[str], None]
 _MACHINES: dict[str, Machine] = {}
@@ -109,21 +111,17 @@ def separated(root: Path, out: Out) -> bool:
 
 
 def _changed_document(machine: Machine, case: scorer.Case) -> tuple[str, scorer.Result | str]:
-    """The control on a document in which one statement says something else."""
-    records, documents = scorer.control_records(machine, case)
-    text = documents.texts[scorer.CONTROL_DOCUMENT]
-    form = StandardForm(machine.catalog)
-    line = next(line for line in text.split("\n") if "30 days" in line)
-    changed = text.replace(line, line.replace("30 days", "31 days"))
+    """The control on a document in which one statement says something else: the
+    document of the case is changed, and `scorer.control` reads it as it reads any."""
+    text = case.documents.texts[case.standard_form]
+    line = next(line for line in text.splitlines() if "30 days" in line)
+    changed = dataclasses.replace(case, documents=Documents(
+        {**case.documents.texts, case.standard_form: text.replace(
+            line, line.replace("30 days", "31 days"))}))
     try:
-        doc, parsed = form.parse_document(changed)
+        return line, scorer.control(machine, changed)
     except StandardFormError as error:
         return line, f"the parser refuses the document: {error}"
-    stated = [decision_record(item, doc, "stated", "document_rule") for item in parsed]
-    have = {(r["id"], r["unit"]) for r in stated}
-    rest = [r for r in records if (r["id"], r["unit"]) not in have]
-    return line, scorer.run(machine, case, stated + rest, arm="C",
-                            documents=type(documents)({**documents.texts, doc: changed}))
 
 
 def control(root: Path, out: Out) -> bool:
@@ -166,8 +164,14 @@ def control(root: Path, out: Out) -> bool:
 
 
 def planted_defects(root: Path, out: Out) -> bool:
+    """Every defect that applies to the slice is planted on HAND01, detected and
+    attributed: the study was made so that each of them shows."""
     machine = machine_of(root)
-    passed, _ = defects.suite(machine, hand.case(machine.catalog, machine.house), out)
+    _, outcomes = defects.suite(machine, hand.case(machine.catalog, machine.house), out)
+    applies = [outcome for outcome in outcomes if outcome.defect.layer is not None]
+    passed = bool(applies) and all(outcome.state == "passed" for outcome in applies)
+    out(f"every defect that applies is planted on HAND01, detected and attributed: "
+        f"{'yes' if passed else 'NO'}")
     return passed
 
 
@@ -183,12 +187,17 @@ def arms(root: Path, out: Out) -> bool:
     # The study states two decisions. One has no default, so the chain cannot be
     # built from the standard alone; the table decisions are all defaults.
     not_built = all(score.produced == 0 for score in chain.builds.values())
-    owners = {key[0] for owners in chain.owners.values() for owner in owners
-              for key in owner.decisions}
-    out(f"arm S, chain: no output produced: {'yes' if not_built else 'NO'}; owned by "
-        f"{', '.join(sorted(owners)) or 'no decision'}")
+    owners = [owner for owners in chain.owners.values() for owner in owners]
+    stopped = bool(owners) and all(
+        owner.layer == "build" and owner.confirmed
+        and "ae.related.values" in [key[0] for key in owner.decisions] for owner in owners)
+    more = sorted({key[0] for owner in owners for key in owner.decisions}
+                  - {"ae.related.values"})
+    out(f"arm S, chain: no output produced: {'yes' if not_built else 'NO'}; every cell owned "
+        f"by the build that stopped, with ae.related.values: {'yes' if stopped else 'NO'}"
+        + (f"; some need {', '.join(more)} as well" if more else ""))
     out(f"arm S, stage T: every score 100%: {'yes' if table.perfect else 'NO'}")
-    return not_built and owners == {"ae.related.values"} and table.perfect
+    return not_built and stopped and table.perfect
 
 
 def pilot_report(root: Path, out: Out) -> bool:

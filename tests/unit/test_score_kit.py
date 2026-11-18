@@ -12,12 +12,14 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import json
+import shutil
 
 import pytest
 
 from specfirst.gen import decisions
 from specfirst.gen import kits as genkits
-from specfirst.score import command, defects, report, scorer
+from specfirst.score import attribute, command, defects, report, scorer
 from specfirst.score import kit as kits
 
 SEED = "unit-score"
@@ -70,6 +72,24 @@ def test_a_kit_is_read_as_a_case(machine, kit):
 def test_a_folder_that_is_no_kit_is_refused(tmp_path):
     with pytest.raises(kits.KitError, match="not a kit"):
         kits.load(tmp_path)
+
+
+def test_a_kit_whose_files_are_not_those_of_its_manifest_is_refused(folder, tmp_path):
+    """Rule R3 (review of read-1a, finding R6). A decision marked unseparated, or
+    given another class, would be scored in another way, and the gold check does
+    not see it: the hashes of the manifest do."""
+    drifted = tmp_path / "kit"
+    shutil.copytree(folder, drifted)
+    path = drifted / "gold" / "decisions.jsonl"
+    lines = path.read_text(encoding="ascii").splitlines()
+    record = json.loads(lines[0])
+    record["identifiable"] = "unseparated" if record.get("identifiable") != "unseparated" \
+        else "separated"
+    lines[0] = json.dumps(record, sort_keys=True, separators=(",", ":"))
+    path.write_text("\n".join(lines) + "\n", encoding="ascii", newline="\n")
+    with pytest.raises(kits.KitError, match="not the files of kit.yaml.*gold/decisions.jsonl"):
+        kits.load(drifted)
+    assert command.main(drifted.parent.parent, ["kit", str(drifted), "--arm", "C"]) == 1
 
 
 def test_the_gold_of_the_kit_is_built_again(machine, kit):
@@ -134,11 +154,13 @@ def test_the_standard_alone_cannot_build_the_chain_of_a_kit(scored):
 def test_no_planted_defect_fails_on_the_kit_and_the_matrix_agrees(scored):
     found, _ = scored
     states = {outcome.defect.id: outcome.state for outcome in found.outcomes}
-    assert len(states) == 10 and found.failed == [] and found.matrix == []
+    assert len(states) == 12 and found.failed == [] and found.matrix == []
     assert set(states.values()) <= {"passed", "silent", "not planted"}
-    # What is planted in a build step or in a citation shows on every kit.
-    for name in ("S1-arms", "S4-denominator", "S11-quote", "S12-span"):
+    # What is planted in the results, in the ARS file or in a citation shows on every kit.
+    for name in ("S1-arms", "S4-denominator", "S7-rounded", "S11-quote", "S12-span"):
         assert states[name] == "passed", name
+    # The order of the columns: the decision and the step of the build show together.
+    assert (states["S9-sort"] == "passed") == (states["S9-sort-build"] == "passed")
     # The scenario of the kit states a window of days.
     assert states["S3-window"] != "not planted"
     for outcome in found.outcomes:
@@ -168,7 +190,8 @@ def test_a_statement_is_taken_out_of_a_document(kit):
 
 
 def test_the_sweep_of_the_matrix_has_no_problem(scored, kit):
-    """Every pair of the matrix, as the one wrong decision of a candidate."""
+    """Every pair of the matrix, as the one wrong decision of a candidate; then pairs
+    of two wrong decisions."""
     swept = scored[0].sweep
     pairs = [pair for item in kit.matrix["decisions"] for pair in item["pairs"] if pair["gold"]]
     assert swept.problems == []
@@ -176,11 +199,38 @@ def test_the_sweep_of_the_matrix_has_no_problem(scored, kit):
     assert swept.decisions == len(kit.matrix["decisions"])
     assert swept.shown == sum(1 for pair in pairs if pair["separated"])
     assert swept.silent + swept.visible_only == sum(1 for pair in pairs if not pair["separated"])
-    assert swept.cells > 0 and set().union(*swept.layers.values()) <= {"L4", "L5", "L7"}
+    assert swept.cells > 0 and 0 < swept.counted <= swept.values
+    assert all(where == {kits.OWNING_LAYER[name]} for name, where in swept.layers.items())
+    assert 0 < swept.pairs <= kits.PAIR_MODULES * kits.PAIR_TABLES
+    assert swept.pair_cells == swept.one_cause + swept.both_causes + swept.together > 0
+
+
+def test_the_layer_of_a_decision_is_what_the_compile_says_it_sets(kit):
+    """`OWNING_LAYER` against gold/spec/compile.json of the kit: a decision that
+    binds an ADaM column acts at L4, one that binds an element of the ARS file and
+    no column at L5, and a decision of the display binds neither."""
+    with open(kit.folder / "gold" / "spec" / "compile.json", encoding="ascii") as handle:
+        compiled = json.load(handle)
+    seen = set()
+    for item in compiled["decisions"]:
+        if item["id"] not in kits.OWNING_LAYER:
+            continue  # a decision of mod-demographics: not of the slice
+        kinds = {bind.split(":")[0] for bind in item["binds"]}
+        layer = kits.OWNING_LAYER[item["id"]]
+        if "adam" in kinds:
+            assert layer == "L4", item["id"]
+        elif "ars" in kinds:
+            assert layer == "L5", item["id"]
+        if layer == "L7":
+            assert not kinds and item["layout"], item["id"]
+        seen.add(item["id"])
+    assert {record["id"] for record in kit.records if record["unit"] in kit.units} <= seen
+    assert set(kits.OWNING_LAYER.values()) == {"L4", "L5", "L7"}
 
 
 def test_the_sweep_fails_on_a_matrix_that_says_the_opposite(machine, kit):
-    """Rule R5 for the sweep: one pair of the matrix is turned around."""
+    """Rule R5 for the sweep: one pair of the matrix is turned around; another has
+    another number of changed cells."""
     matrix = copy.deepcopy(kit.matrix)
     item = next(item for item in matrix["decisions"] if item["id"] == "tfl.population")
     pair = next(pair for pair in item["pairs"] if pair["gold"])
@@ -189,13 +239,58 @@ def test_the_sweep_fails_on_a_matrix_that_says_the_opposite(machine, kit):
     assert len(swept.problems) == 1
     assert swept.problems[0].startswith(f"tfl.population = {pair['second']}: the matrix says")
 
+    # A decision that changes cells and no axis: the end of treatment emergence, which
+    # the scenario of this kit states and its twin separates.
+    matrix = copy.deepcopy(kit.matrix)
+    item = next(item for item in matrix["decisions"] if item["id"] == "ae.teae.end")
+    pair = next(pair for pair in item["pairs"] if pair["gold"] and pair["separated"])
+    pair["cells"] += 1
+    swept = kits.sweep(machine, dataclasses.replace(kit, matrix=matrix))
+    assert swept.problems == [
+        f"ae.teae.end = {pair['second']}: the matrix counts {pair['cells']} changed "
+        f"cells on the twin, the scorer {pair['cells'] - 1}"]
+
 
 def test_the_sweep_fails_when_a_cell_is_owned_by_no_decision(machine, kit, monkeypatch):
     """Rule R5 for the ownership: a machine that proves no `decides` edge."""
     monkeypatch.setattr(machine, "changes", lambda records, key, value: set())
     swept = kits.sweep(machine, kit)
-    assert swept.problems and all("owned by no decision" in problem
+    # The decision is still found, by running; that no element names it is the problem.
+    assert swept.problems and any("the decision owns it by running alone" in problem
                                   for problem in swept.problems)
+
+
+def test_the_sweep_fails_on_a_scorer_that_is_wrong(machine, kit, monkeypatch):
+    """Rule R5, the mutants of the review of read-1a (finding R3): every second
+    wrong cell without an owner; two layers that exchange their names; an owner that
+    is the first differing decision whatever it decides, called confirmed."""
+    real = attribute.attribute
+
+    def half(*args, **kwargs):
+        owners, axes = real(*args, **kwargs)
+        return owners[::2], axes
+
+    monkeypatch.setattr(attribute, "attribute", half)
+    swept = kits.sweep(machine, kit)
+    assert any("wrong cells and axes have" in problem for problem in swept.problems)
+
+    def exchanged(*args, **kwargs):
+        owners, axes = real(*args, **kwargs)
+        for owner in [*owners, *axes]:
+            owner.layer = {"L5": "L7", "L7": "L5"}.get(owner.layer, owner.layer)
+        return owners, axes
+
+    monkeypatch.setattr(attribute, "attribute", exchanged)
+    swept = kits.sweep(machine, kit)
+    assert any("owned at layer L7; the decision acts at L5" in problem
+               for problem in swept.problems)
+
+    monkeypatch.setattr(attribute, "attribute", real)
+    monkeypatch.setattr(attribute, "_settle", lambda claims, differing, holds: (
+        claims[0], (differing[0],), True, ""))
+    swept = kits.sweep(machine, kit)
+    assert any(" with " in problem and "alone, it is wrong under" in problem
+               for problem in swept.problems)
 
 
 def test_a_wrong_value_of_an_unseparated_decision_is_compared_by_value(machine, kit):
@@ -256,5 +351,5 @@ def test_a_silent_plant_is_neither_passed_nor_failed():
     outcome = defects.Outcome(by_id["S9-sort"], planted, silent=True)
     assert outcome.state == "silent" and not outcome.passed
     assert defects.Outcome(by_id["S9-sort"]).state == "not planted"
-    assert defects.Outcome(by_id["S7-pvalue"]).state == "does not apply"
+    assert defects.Outcome(by_id["S6-quantile"]).state == "does not apply"
     assert defects.Outcome(by_id["S9-sort"], planted).state == "failed"

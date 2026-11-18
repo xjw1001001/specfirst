@@ -346,11 +346,14 @@ def lines(pilot: Pilot) -> list[str]:
                     + ("explained by " + _fits(by) if by else
                        "no other value of one table decision makes them equal"))
     count = {state: sum(1 for item in pilot.cells if item.state == state) for state in STATES}
-    said.append(f"  cells of the key that differ or are missing: {len(pilot.cells)}. "
-                f"{count['decision']} differ and are explained by another value of one table "
-                f"decision; {count['open']} are in a row that needs a variable the reference "
-                f"ADaM lacks; {count['no_row']} are in rows the catalog does not have; "
-                f"{count['unexplained']} unexplained")
+    shared = pilot.score.denominators()["shared_rows"]
+    said.append(f"  cells of the key that differ or are missing: {len(pilot.cells)}. Of the "
+                f"{shared} cells of the rows both tables have, {count['decision']} differ and "
+                f"are explained by another value of one table decision, and "
+                f"{count['unexplained']} are unexplained. {count['open'] + count['no_row']} "
+                f"are in rows that arm S does not build: {count['open']} for a variable the "
+                f"reference ADaM lacks, {count['no_row']} in rows the catalog does not have; "
+                "these are classed by the crosswalk of rows, not by a build")
     said.append(f"  variables the house template reads: {len(pilot.reads)}; in the reference "
                 "ADaM under the same name: "
                 + ", ".join(f"{d}.{n}" for d, n, there in pilot.reads if there))

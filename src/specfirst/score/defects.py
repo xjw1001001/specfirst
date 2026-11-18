@@ -28,9 +28,14 @@ Before anything is planted the control must hold: the gold decisions,
 through the parser, score 100% (`scorer.control`). A scorer that finds
 fault with gold proves nothing by finding fault with a defect.
 
-Twelve defects are listed in section 9.5. Nine apply to the slice; one of
-them is planted at two layers. Three do not apply, because the adverse
-event summary shows counts and percents only: `DEFECTS` says so for each.
+Twelve defects are listed in section 9.5. Ten are planted here, two of them
+in two ways (a wrong analysis set at two layers; an unstable sort as a
+decision and as a step of the build): fourteen entries in `DEFECTS`, twelve
+plants. Three of the ten are planted as the nearest thing the slice has,
+and `DEFECTS` says so for each: the table has no p-value, no sort but the
+order of its treatment columns, and no list of sites. Two do not apply at
+all: the adverse event summary has no quantile and no baseline value
+(docs/decisions/ADR-008.md, decision 7).
 """
 
 from __future__ import annotations
@@ -39,9 +44,11 @@ import dataclasses
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from decimal import ROUND_HALF_UP, Decimal
 from urllib.parse import quote
 
 from specfirst.score import report, scorer
+from specfirst.score.build import table_of
 from specfirst.score.candidate import Data, Hooks, Key, Machine
 from specfirst.score.scorer import Case, Result
 
@@ -253,6 +260,47 @@ def _sort(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
     return _misread(machine, case, records, ("tfl.columns.arms", TABLE_UNIT))
 
 
+ORDERS = ("ascending_dose_placebo_first", "protocol_order")
+
+
+def _sort_in_the_build(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
+    """The columns in the other order while every decision is the gold decision."""
+    if _layout(machine, case)["columns"].get("order") not in ORDERS:
+        return "the gold layout orders its columns by a rule this plant does not know"
+
+    def plant(compiled) -> None:
+        columns = compiled.layouts[TABLE_UNIT]["columns"]
+        columns["order"] = ORDERS[1 - ORDERS.index(columns["order"])]
+
+    hooks = Hooks(f"{case.id}/other-order", compiled=plant)
+    vector = case.gold_vector()
+    same = True
+    for data in case.data.values():
+        gold = machine.build(vector, data, case.arms(vector))
+        other = machine.build(vector, data, case.arms(vector), hooks)
+        same &= all(output in other.grids and table_of(other.grids[output]).columns
+                    == table_of(grid).columns for output, grid in gold.grids.items())
+    if same:
+        return "the two orders give this study the same columns"
+    return Planted("in the layout, the treatment columns are ordered by the other rule; "
+                   "every decision is the gold decision", records, hooks=hooks)
+
+
+def _rounded_twice(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
+    """Every percent rounded to a whole number after the engine; the grid then rounds
+    that number again, to its one decimal: 66.7 becomes 67.0."""
+    def twice(rows: list[dict]) -> list[dict]:
+        for row in rows:
+            if row["operation_id"].endswith("_pct") and row.get("raw_value") is not None:
+                row["raw_value"] = float(Decimal(repr(float(row["raw_value"]))).quantize(
+                    Decimal(1), rounding=ROUND_HALF_UP))
+        return rows
+
+    return Planted("in the results, every percent is rounded to a whole number before the "
+                   "grid rounds it to one decimal", records,
+                   hooks=Hooks(f"{case.id}/rounded-twice", ard=twice))
+
+
 def _frozen(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
     """The list of related causality values, cut down to those the visible data hold.
 
@@ -326,7 +374,7 @@ def _span(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
 
 
 _NO_NUMBER = ("does not apply: the adverse event summary shows counts of subjects and "
-              "percents, ")
+              "percents, and nothing near it: ")
 
 DEFECTS = (
     Defect("S1-arms", "arms exchanged in one analysis (E3)", "L6",
@@ -344,13 +392,18 @@ DEFECTS = (
     Defect("S5-column", "a missing column", "L7", "planted in the layout", _column),
     Defect("S6-quantile", "a changed quantile definition (E4)", None,
            _NO_NUMBER + "no quantile"),
-    Defect("S7-pvalue", "a p-value rounded twice (E25)", None, _NO_NUMBER + "no p-value"),
+    Defect("S7-rounded", "a p-value rounded twice (E25)", "L6",
+           "the table has no p-value; planted as the nearest thing it has, a percent rounded "
+           "twice, in the results after the engine", _rounded_twice),
     Defect("S8-baseline", "a baseline taken from the wrong record (E26)", None,
            _NO_NUMBER + "no baseline value"),
     Defect("S9-sort", "an unstable sort", "L7",
-           "the slice orders one thing, the treatment columns: planted as the other order "
-           "(decision tfl.columns.arms). An order that changes from run to run is for P1 "
-           "to find", _sort),
+           "the slice orders one thing, the treatment columns: planted as the other order, "
+           "read as a decision (tfl.columns.arms). An order that changes from run to run is "
+           "for P1 to find", _sort),
+    Defect("S9-sort-build", "an unstable sort", "L7",
+           "the same order, wrong in the build: planted in the layout, no decision changed",
+           _sort_in_the_build),
     Defect("S10-frozen", "a frozen site list (caught on the twin only)", "L4",
            "the slice has no site list; its frozen list is the causality values that count "
            "as related, cut down to those the visible data hold (decision ae.related.values)",
@@ -390,8 +443,12 @@ def judge(defect: Defect, planted: Planted, result: Result) -> Outcome:
         outcome.shows[name] = (f"{len(score.wrong())} of {cells} gold cells wrong, strict "
                                f"{score.strict} of {score.in_gold}")
         shown = True
-        if not owners and not axes:
-            outcome.problems.append(f"{name}: a score fell and nothing is owned")
+        other_axes = sum((not output.rows_equal) + (not output.columns_equal)
+                         for output in score.outputs if output.produced)
+        if len(owners) != len(score.wrong()) or len(axes) != other_axes:
+            outcome.problems.append(
+                f"{name}: {len(score.wrong())} wrong cells have {len(owners)} owners, and "
+                f"{other_axes} axes that are not the gold axes have {len(axes)}")
         for owner in [*owners, *axes]:
             where = getattr(owner, "cell", None) or f"axis {getattr(owner, 'axis', '')}"
             if owner.layer != defect.layer:
@@ -480,10 +537,10 @@ def suite(machine: Machine, case: Case, out: Out = print) -> tuple[bool, list[Ou
     planted = [o for o in applies if o.planted is not None]
     passed = [o for o in planted if o.passed]
     silent = [o for o in planted if o.silent]
-    out(f"planted defects on {case.id}: {len(DEFECTS)} of section 9.5 with the one planted at "
-        f"two layers; {len(DEFECTS) - len(applies)} do not apply to the slice; "
-        f"{len(planted)} of {len(applies)} planted here; {len(passed)} of {len(planted)} "
-        f"detected and attributed; {len(silent)} silent on these data")
+    out(f"planted defects on {case.id}: {len(DEFECTS)} entries for the twelve defects of "
+        f"section 9.5 (two are planted in two ways); {len(DEFECTS) - len(applies)} do not "
+        f"apply to the slice; {len(planted)} of {len(applies)} planted here; {len(passed)} "
+        f"of {len(planted)} detected and attributed; {len(silent)} silent on these data")
     return len(passed) == len(planted), outcomes
 
 

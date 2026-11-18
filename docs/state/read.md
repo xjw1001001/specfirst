@@ -5,14 +5,7 @@ first for the slice "adverse event summary first" (ADR-005).
 
 ## Passed
 
-- read-1a (2026-11-17): the scorer for the slice. Reading score, build
-  score with the four scores of ADR-005, decision 4, attribution, the arms
-  S and C, the planted defects of section 9.5 that apply to the slice; on
-  a hand-made study, on the pilot (report only) and on the ten kits of the
-  gate of gen-2a; the gate `read-1a`; `specfirst score ...`. Report:
-  docs/reports/read-1a.md (the gate, its numbers, the pilot table, the
-  limits). Review: docs/reports/read-1a.review.md. Choices:
-  docs/decisions/ADR-008.md, with four points for the owner.
+- Nothing yet. read-1a is under "Open" until its review signs.
 
 ## What exists (`src/specfirst/score/`; each module says what it does)
 
@@ -22,9 +15,9 @@ first for the slice "adverse event summary first" (ADR-005).
 - `candidate`: a decision vector built on a dataset, as gen-2a builds the
   gold of a kit (listed groups, `specfirst.gen.display`). A `Build` is
   what the rest of the scorer reads.
-- `attribute`: section 9.4. The layer and the decision that own a wrong
-  cell or an axis, and every attribution to a decision run by building
-  again.
+- `attribute`: section 9.4. Every layer with a difference on the path of
+  a wrong cell makes a claim; a claim is run by building again, and the
+  owner is a claim that held (ADR-008, decision 5).
 - `scorer`: a candidate on a case; arm S and arm C; stage C (the chain)
   and stage T (table decisions on the ADaM of gold).
 - `defects`: the planted defects of section 9.5 for the slice.
@@ -52,23 +45,39 @@ print("\n".join(report.lines(result)))
   `reading.unmapped_keys` on the other two files of section 11.1. The
   command line does the same: `specfirst score kit DIR --decisions FILE
   [--questions FILE] [--unmapped FILE] [--stage T]`.
-- A record of a unit that is not scored is counted and ignored. A decision
-  the candidate leaves out takes the house default; one without a default
-  stays open (`ae.related.values`), and the chain is then not built.
+- A record of a decision that gold makes in a unit that is not scored is
+  counted and ignored. A record of a decision that gold does not make
+  (another unit, a unit the catalog does not have) is listed, and the
+  reading score is then not perfect. A decision the candidate leaves out
+  takes the house default; one without a default stays open
+  (`ae.related.values`), and the chain is then not built.
 - `result.reading` has every dimension per decision (`counts("class")`,
   `counts("unit")`, `wrong()`); `result.builds[dataset]` the four scores
   (`lines()` names every denominator); `result.owners[dataset]` and
   `result.axes[dataset]` the owner of every wrong cell and axis;
   `result.silent` the wrong decisions that no cell of the case can show;
   `result.behind` those that stand behind another owner.
+- An owner has `layer`, `element`, `decisions`, `confirmed` and `note`.
+  `confirmed` True: with these decisions at their gold values the cell has
+  the gold text; the decisions are the fewest found, so two decisions mean
+  that neither is enough (`note`: JOINT, or HIDDEN when another wrong
+  decision hides one of them). None: no decision is named (a step of the
+  build). False: a claim that failed when it was run; read it as "no
+  owner was found" and count it apart, as `report.lines` does. A table of
+  errors by unit and layer takes the first decision of an owner as its
+  unit.
+- `scorer.run(..., prove=False)` runs no claim: fast, and every owner is
+  the far-end claim, unconfirmed. Do not report owners from it.
 - The arms that need no reader: `scorer.standard_alone(machine, case)` and
   `scorer.control(machine, case)`. Arm C reads `gold/docs/sap.md` of the
   kit with the parser; gen-3a replaces that file, and a kit whose
   standard-form document has another ID needs `Case.standard_form`.
 - One `Machine` keeps every build it made: a vector is built once per
   dataset. A kit takes about a second per new vector.
-- A kit of another generator version than the checkout fails
-  `gold_problems`: generate the kits again, never patch them.
+- `kits.load` holds the files of a kit against the hashes of its manifest
+  and refuses a kit that differs. A kit of another generator version than
+  the checkout fails `gold_problems`: generate the kits again, never patch
+  them.
 
 ## What the scorer says about the kits of the gate of gen-2a
 
@@ -82,15 +91,27 @@ Numbers are in docs/reports/read-1a.md. In short:
   with.
 - Every decision of every kit, read as each other value of its matrix,
   is found by the reading score, shown on the twin exactly where the
-  matrix says, and attributed to that decision in every wrong cell.
+  matrix says and in as many cells, and attributed to that decision at
+  its layer in every wrong cell. With two wrong decisions (120 pairs of
+  a module decision with a table decision) every wrong cell is owned by
+  the decision that changes it alone, or by both where each does.
 
 ## Open
 
-For the owner (docs/decisions/ADR-008.md, "For the owner"):
+read-1a (2026-11-18): the scorer for the slice is written. Its gate passed
+on a clean clone of `55dba60`. Pass 1 of the review
+(docs/reports/read-1a.review.md) did not sign: one finding blocks (R1: how
+the part reads the text of its gate is the owner's to accept), six do not.
+R2 to R7 are settled in the code and the records. The question of R1 is
+put to the owner (the last section of docs/decisions/ADR-008.md); the gate
+runs again on this code after the answer, then pass 2 of the review.
 
-- How this part reads the text of its gate: which planted defects apply
-  to the slice, and what "detected" means on a kit that cannot show a
-  decision.
+For the owner (docs/decisions/ADR-008.md):
+
+- How this part reads the text of its gate (decisions 7 and 8): which
+  planted defects apply to the slice, and what "detected" means on a kit
+  that cannot show a decision. Asked and answered: the last section of
+  ADR-008.
 - Arm S builds nothing on the chain. `ae.related.values` has no house
   default in `catalog@1`, ADAE needs it, and ADR-005 says that what cannot
   be built without a decision counts as not produced. So "R against S" on
@@ -114,9 +135,20 @@ Not done, and not part of read-1a:
   are computed and are "none to judge" until gen-3a writes such kits.
 - The inclusion dimension of section 9.2 beyond outputs (datasets,
   variables, analyses) is not reported as precision and recall.
-- Two wrong decisions can cancel in a table (docs/state/gen.md); the
-  scorer attributes one owner per cell and lists the other as `behind`
-  only when it shows alone.
+- Two wrong decisions can cancel in a table (docs/state/gen.md): a cell
+  that is right by cancellation is no wrong cell and has no owner. A
+  wrong decision that owns no cell at all is listed as `behind`, with
+  what it changes alone.
+- Three or more wrong decisions behind one cell are attributed (the
+  decisions are added one by one until the cell has the gold text, then
+  pruned), and nothing but unit tests on HAND01 and arm S on the kits
+  holds it: the sweep has pairs.
+- The reading score compares a list in its order (`ae.related.values`:
+  the same values in another order count as a decision to change), and a
+  quote passes when it stands in the document and inside the gold anchor,
+  however short it is (review, finding R4). The first is for the catalog
+  to settle (ADR-008, "For the owner"); the second belongs to citations
+  into natural-form documents, with gen-3a.
 
 For other tracks:
 
