@@ -717,7 +717,12 @@ def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
     """P3 for the cells of the grid: complete paths, held against the builder and the engine."""
     shown, _, made, _ = _display(pilot)
     nodes, edges = _graph_of(pilot)
-    lines, problems = graph.check_cells(pilot.folder / build.GRAPH, {shown.output: made})
+    # coverage.json holds every grid of the build (the efficacy tables of real-5a too).
+    grids = {display.output: json.loads((pilot.folder / build.GRID / f"{display.output}.json")
+                                        .read_text(encoding="utf-8"))
+             for spec in kits.load_kit(pilot.root, KIT).results for display in spec.displays}
+    assert grids[shown.output] == made
+    lines, problems = graph.check_cells(pilot.folder / build.GRAPH, grids)
     for line in lines:
         print(line)
     problems = [f"the unchanged graph does not pass: {p}" for p in problems[:3]]
@@ -752,8 +757,9 @@ def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
         for file in ("nodes.jsonl", "edges.jsonl"):
             records = [r for r in (nodes if file == "nodes.jsonl" else edges) if keep(r)]
             (copied / file).write_text("".join(json.dumps(r) + "\n" for r in records), "ascii")
-        _, found = graph.check_cells(copied, {shown.output: made})
-        print(f"planted in the files, {name}: {len(found)} problems")
+        _, found = graph.check_cells(copied, grids)
+        found = [problem for problem in found if shown.output in problem]
+        print(f"planted in the files, {name}: {len(found)} problems of {shown.output}")
         if not found:
             problems.append(f"{name}: the check of the files passes")
     return problems
