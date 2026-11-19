@@ -30,8 +30,10 @@ The SAP as text. poppler's pdftotext (pinned with the system, env/system.lock;
 `specfirst doctor` checks it) with 7-bit ASCII output writes a form feed after
 every page. A paragraph is a run of lines that are not empty; it gets the
 anchor `[<page>/p<n>]`, the page of the PDF counted from 1 and its number on
-that page, in front of its first line. Nothing else is changed, so a quote
-stands in the text as poppler gives it.
+that page, in front of its first line. Besides, lines lose their trailing
+blanks and every character that is not printable ASCII or a tab, the first
+line of a paragraph its leading blanks, and runs of empty lines and the
+form feeds become one empty line. A quote is checked against this text.
 
 `score` scores a run on the pilot: the reader's table decisions, with the
 house default for the rest, built on the reference ADaM and held against the
@@ -100,12 +102,36 @@ def sap_text(pdf: Path) -> str:
     return anchored(done.stdout.decode("ascii", "replace"))
 
 
+def not_replaceable(out: Path) -> str | None:
+    """Why `out` may not be replaced by a pilot folder, or None: it is missing, empty, or a
+    pilot folder written before (its manifest names the generator `pilot-<n>`). Anything
+    else is never deleted (review of slice-ae-summary, finding 4)."""
+    if not out.exists():
+        return None
+    if not out.is_dir():
+        return f"{out} is a file"
+    if not any(out.iterdir()):
+        return None
+    manifest = out / "kit.yaml"
+    try:
+        made = yaml.safe_load(manifest.read_text(encoding="ascii")) if manifest.is_file() else None
+    except (yaml.YAMLError, UnicodeDecodeError):
+        made = None
+    generator = made.get("generator") if isinstance(made, dict) else None
+    if isinstance(generator, str) and generator.startswith("pilot-"):
+        return None
+    return f"{out} holds files and is not a pilot folder"
+
+
 def write(root: Path, out: Path) -> Path:
     """Write the pilot folder into `out` (outside every checkout) and return it."""
     home = tasks.inside_checkout(out)
     if home is not None:
         raise PilotTaskError(f"{out} lies inside the checkout {home}: the pilot folder holds "
                              "third-party material and lies outside every checkout (rule 4)")
+    refused = not_replaceable(out)
+    if refused is not None:
+        raise PilotTaskError(f"{refused}: it is not replaced; name a new folder")
     from specfirst.score.candidate import Machine
 
     kit = realkits.load_kit(root, scorepilot.KIT)
@@ -190,15 +216,24 @@ def record_lines(records: list[dict]) -> list[str]:
 
 
 def score(root: Path, run_dir: Path) -> list[str]:
-    """The pilot report of a run of arm S or R (specfirst.score.pilot)."""
+    """The pilot report of a run of arm S or R on the pilot (specfirst.score.pilot). Any
+    other run is refused before its records are read: a run on a dev kit holds that kit's
+    values (review of slice-ae-summary, finding 5)."""
     from specfirst.score.candidate import Machine
 
-    told = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
-    arm = told["arm"]
+    try:
+        told = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise PilotTaskError(f"{run_dir} has no readable run.json: {error}") from error
+    arm = told.get("arm")
+    kit = told.get("kit") if isinstance(told.get("kit"), dict) else {}
+    if (kit.get("id"), kit.get("split")) != (scorepilot.KIT, SPLIT) or arm not in ("S", "R"):
+        raise PilotTaskError(f"{run_dir.name} is not a run of arm S or R on the pilot (kit "
+                             f"{kit.get('id')}, split {kit.get('split')}, arm {arm})")
     records = records_of(run_dir) if arm == "R" else []
     try:
         found = scorepilot.run(Machine(root), records, arm)
     except scorepilot.PilotError as error:
-        return [f"pilot: {error}"]
+        raise PilotTaskError(str(error)) from error
     said = record_lines(records) if arm == "R" else []
     return said + scorepilot.lines(found)

@@ -202,6 +202,47 @@ def test_the_pilot_folder_is_refused_inside_a_checkout(root):
     assert not (root / "build" / "pilot-folder").exists()
 
 
+def test_only_a_pilot_folder_is_ever_replaced(root, real_dir, tmp_path):
+    """`--folder` names what is deleted and written again: a missing or empty folder, or a
+    pilot folder, never anything else (review of slice-ae-summary, finding 4)."""
+    assert pilot.not_replaceable(tmp_path / "new") is None
+    (tmp_path / "empty").mkdir()
+    assert pilot.not_replaceable(tmp_path / "empty") is None
+    written = tmp_path / "written"
+    shutil.copytree(real_dir, written)
+    assert pilot.not_replaceable(written) is None  # its generator is pilot-1
+    # Planted: a folder of something else (the kits and the logs, say), and a file.
+    other = tmp_path / "other"
+    other.mkdir()
+    (other / "keep.txt").write_text("keep", encoding="ascii")
+    assert "not a pilot folder" in pilot.not_replaceable(other)
+    with pytest.raises(pilot.PilotTaskError, match="not a pilot folder"):
+        pilot.write(root, other)
+    assert (other / "keep.txt").read_text(encoding="ascii") == "keep"
+    assert "is a file" in pilot.not_replaceable(other / "keep.txt")
+    manifest = yaml.safe_load((written / "kit.yaml").read_text(encoding="ascii"))
+    manifest["generator"] = "gen-3a.2"
+    (written / "kit.yaml").write_text(yaml.safe_dump(manifest), encoding="ascii")
+    assert "not a pilot folder" in pilot.not_replaceable(written)
+
+
+def test_the_pilot_report_takes_a_run_on_the_pilot_only(root, tmp_path):
+    """A run of another kit holds that kit's values: it is refused before its records are
+    read, and so is a run of arm C (review of slice-ae-summary, finding 5)."""
+    for name, kit, arm in (("dev", {"id": "sfdevkit", "split": "dev"}, "R"),
+                           ("control", {"id": "cdiscpilot01", "split": pilot.SPLIT}, "C")):
+        run = tmp_path / name
+        (run / "workspace" / "out").mkdir(parents=True)
+        (run / "run.json").write_text(json.dumps({"arm": arm, "kit": kit}), encoding="utf-8")
+        (run / "workspace" / "out" / "decisions.jsonl").write_text(
+            json.dumps({"id": ENTRY, "unit": UNIT, "value": {"rule": "secret"}}) + "\n",
+            encoding="utf-8")
+        with pytest.raises(pilot.PilotTaskError, match="not a run of arm S or R on the pilot"):
+            pilot.score(root, run)
+    with pytest.raises(pilot.PilotTaskError, match="no readable run.json"):
+        pilot.score(root, tmp_path / "missing")
+
+
 def test_the_records_of_a_run_are_listed_with_their_quotes_cut_short():
     long = "word " * 40
     said = pilot.record_lines([{"id": ENTRY, "unit": UNIT, "value": {"rule": "x"},

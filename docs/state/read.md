@@ -3,6 +3,29 @@
 Result: scorer, harness, reader agent, first scores (PLAN.md section 13.6),
 first for the slice "adverse event summary first" (ADR-005).
 
+## In progress
+
+- slice-ae-summary (2026-11-19, not merged): the report of ADR-005,
+  decision 1, last paragraph: the first scores of the slice on four dev
+  kits (kits 5, 6, 7 and 15 of a dev seed whose file lies outside every
+  checkout), arms S, R and C at stages T and C, and the pilot of decision
+  5 (stage T on the reference ADaM of CDISCPILOT01, arms S and R, arm R
+  reading the real SAP). Not a delivery: N3 applies first. Report:
+  docs/reports/slice-ae-summary.md. Choices: docs/decisions/ADR-016.md.
+  Review pass 1 (docs/reports/slice-ae-summary.review.md) did not sign:
+  its finding 1 (a decision of a dev kit named with its gold class) is
+  fixed by withholding the pairing; questions Q2 and Q3 of the review went
+  to the owner through the base session. Nine runs of arm R, USD 4.05
+  computed from the tokens, within the owner's USD 10. No run folder,
+  task, transcript or log of these runs is in the repository (ADR-016,
+  decision 4); the report holds their numbers and command output, values
+  of dev kits withheld. Kits, logs and the pilot folder lie in WSL
+  `/root/scratch-slice/`, the seed files in
+  `/root/specfirst-secrets/slice-ae-summary/`, tasks and runs in a folder
+  of drive C outside every checkout. New: `specfirst run pilot`,
+  `specfirst score pilot --run` (`harness/pilot.py`, `task.render_real`,
+  arm R in `score/pilot.py`).
+
 ## Passed
 
 - read-2a (2026-11-18): the reader harness for the slice. The task builder,
@@ -48,7 +71,7 @@ first for the slice "adverse event summary first" (ADR-005).
 - `hand`: the study HAND01 (7 and 9 subjects) with its table by hand.
 - `kit`: a generated kit as a case; `gold_problems`, `matrix_problems`,
   `sweep`, `score_kit`, `score_set`.
-- `pilot`: arm S at stage T on the reference ADaM of CDISCPILOT01.
+- `pilot`: arms S and R at stage T on the reference ADaM of CDISCPILOT01.
 - `gate`, `command`: `specfirst gate read-1a`, `specfirst score ...`.
 
 `src/specfirst/harness/` (read-2a, ADR-010; each module says what it does):
@@ -56,8 +79,9 @@ first for the slice "adverse event summary first" (ADR-005).
 skills/), `oracle` (`specfirst ask`), `outputs` (the validity of out/),
 `canary` (the scan), `record` (cost and budget), `adapter` and `stub` (the
 CLI and its stand-in), `runs` (a run of an arm, the probe, a kept run and
-its check), `gate`, `command` (`specfirst run ...`); `kept/` holds the dry
-run of arm R and the probe.
+its check), `gate`, `command` (`specfirst run ...`), `pilot` (the pilot as a
+task of stage T, ADR-016); `kept/` holds the dry run of arm R and the
+probe.
 
 ## How to score a candidate on a kit (for read-2a)
 
@@ -252,11 +276,22 @@ For other tracks:
 
 ## Next
 
-- The report docs/reports/slice-ae-summary.md (ADR-005): the first scores
-  of the slice on dev kits and the report on the pilot. It is not a
-  delivery, and the base session asks the owner before it starts.
-- Then the rest of read-1 Scorer (needs real-3 for fixtures, then gen-2),
+- The rest of read-1 Scorer (needs real-3 for fixtures, then gen-2),
   read-2 (needs gen-2) and read-3 (D3, node N3).
+- From the report slice-ae-summary, for whoever takes them up:
+  - The reader read a design paragraph of the natural protocol as stating
+    a decision of `mod-populations` in three of the four dev kits (which
+    one is withheld: ADR-016, decision 4). No cell shows it. A change of
+    the reading notes is the training loop's (M2) to propose and the dev
+    kits' to accept; a design paragraph that reads like a decision may also
+    be the generator's to rephrase.
+  - The pilot: the real SAP plans no adverse event summary; the reader
+    said so (`tfl.output.include` = `not_included`). A pilot task that
+    gives the output as planned is offered to the owner (ADR-016, "For
+    the owner"), one run of about USD 0.6.
+  - Dev kits of another seed state statements the store lacks (8 of 66
+    decision paragraphs here are the phrasing template): the loop of the
+    natural form for dev seeds is the gen track's (ADR-009).
 
 How to run things:
 

@@ -147,12 +147,20 @@ def main(root: Path, argv: list[str]) -> int:
     if args.what == "pilot":
         from specfirst.harness import pilot
 
-        folder = pilot.write(root, Path(args.folder))
+        try:
+            folder = pilot.write(root, Path(args.folder))
+        except pilot.PilotTaskError as error:
+            print(f"pilot: {error}")
+            return 2
         print(f"pilot folder: {folder}")
         made = runs.run(root, folder, args.arm, tasks_dir, runs_dir, "T", args.condition)
         print("\n".join(runs.lines(made)))
         if args.score:
-            print("\n".join(pilot.score(root, made.folder)))
+            try:
+                print("\n".join(pilot.score(root, made.folder)))
+            except pilot.PilotTaskError as error:
+                print(f"pilot: {error}")
+                return 1
         return 0 if made.passed else 1
     if args.what == "probe":
         made, found = runs.probe(root, Path(args.kit), tasks_dir, runs_dir)

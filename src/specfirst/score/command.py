@@ -80,7 +80,11 @@ def main(root: Path, argv: list[str]) -> int:
     if args.what == "pilot" and args.run:
         from specfirst.harness import pilot as pilot_task
 
-        print("\n".join(pilot_task.score(root, Path(args.run))))
+        try:
+            print("\n".join(pilot_task.score(root, Path(args.run))))
+        except pilot_task.PilotTaskError as error:
+            print(f"pilot: {error}")
+            return 1
         return 0
     if args.what == "pilot":
         try:
