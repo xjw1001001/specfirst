@@ -203,10 +203,14 @@ For other tracks:
   In progress on `track/read` (2026-11-18): everything that needs no model
   is built and tested (`specfirst.harness`, skills/, the gate `read-2a`);
   arms S and C and the stub reader pass their dry runs on kit 4 of the gate
-  seed. Waiting for the owner (docs/decisions/ADR-010.md, "For the owner"):
-  the Claude Code CLI is not logged in, and the gate's reading of its text
-  for arm R (decision 9) is the owner's to approve. Then the isolation probe
-  and the dry run of arm R, kept in src/specfirst/harness/runs.
+  seed. The owner approved the gate's reading of its text for arm R
+  (ADR-010, decision 9), for the slice only, and will log in the Claude
+  Code CLI later (2026-11-18; ADR-010, the last section). read-2a waits for
+  that: do not try the CLI before the owner says the login is done (through
+  the base session). Then the isolation probe and the dry run of arm R
+  within the budget of decision 8, kept in src/specfirst/harness/runs; the
+  gates read-2a, gen-3a, gen-2a and read-1a on clean clones; the report,
+  the review, the merge.
 - Then the rest of read-1 Scorer (needs real-3 for fixtures, then gen-2),
   read-2 (needs gen-2) and read-3 (D3, node N3).
 
