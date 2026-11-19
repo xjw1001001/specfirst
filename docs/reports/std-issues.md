@@ -52,6 +52,9 @@ the last section for #24 and #25, the executor's).
   axes; `OutputScore.pending`, `waiting`; `BuildScore.waiting`,
   `pending_by_decision`; a line "pending" after the four scores when there
   is one; a build with a pending cell is not perfect.
+- `src/specfirst/score/attribute.py`: a rebuilt axis is held against the
+  gold axis without the rows and columns that still wait in that rebuild
+  (found in the gates, below).
 - `src/specfirst/score/scorer.py`, `report.py`, `kit.py`:
   `Result.pending`, its line in the report and in the line of a kit; a
   pending decision is neither `silent` nor `behind`.
@@ -380,7 +383,7 @@ ASCII check: 548 files checked, 0 with non-ASCII bytes
 
 ## Gates on clean clones
 
-The gates then ran again on the commit with that fix, GATES-COMMIT, each on
+The gates then ran again on the commit with that fix, `42212b8`, each on
 a fresh clone with a fresh install and fetch, one at a time under the heavy
 lock, on at most four processors:
 
@@ -388,24 +391,73 @@ lock, on at most four processors:
 $ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh <wp> /mnt/d/trial_work/specfirst/.git 37e5b61
 ```
 
-| Gate | Checks | Unit tests | Result | Log |
+| Gate | Checks | Unit tests (in the check "unit tests") | Result | Log |
 | --- | --- | --- | --- | --- |
-| std-1 | 12 PASS, 0 FAIL | 1117 passed, 23 deselected | GATE std-1: PASS | docs/reports/std-issues.std-1.gate.log |
-| real-2 | 15 PASS, 0 FAIL | (in the check "unit tests") | GATE real-2: PASS | docs/reports/std-issues.real-2.gate.log |
-| real-3a | 16 PASS, 0 FAIL | (idem) | GATE real-3a: PASS | docs/reports/std-issues.real-3a.gate.log |
-| gen-2a | 13 PASS, 0 FAIL | (idem) | GATE gen-2a: PASS | docs/reports/std-issues.gen-2a.gate.log |
-| gen-3a | 15 PASS, 0 FAIL | 1117 passed, 23 deselected | GATE gen-3a: PASS | docs/reports/std-issues.gen-3a.gate.log |
-| read-1a | 14 PASS, 0 FAIL | (idem) | GATE read-1a: PASS | docs/reports/std-issues.read-1a.gate.log |
-| read-2a | READ-2A-CHECKS | (idem) | READ-2A-RESULT | docs/reports/std-issues.read-2a.gate.log |
+| std-1 | 12 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE std-1: PASS | docs/reports/std-issues.std-1.gate.log |
+| real-2 | 15 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE real-2: PASS | docs/reports/std-issues.real-2.gate.log |
+| real-3a | 16 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE real-3a: PASS | docs/reports/std-issues.real-3a.gate.log |
+| gen-2a | 13 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE gen-2a: PASS | docs/reports/std-issues.gen-2a.gate.log |
+| gen-3a | 15 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE gen-3a: PASS | docs/reports/std-issues.gen-3a.gate.log |
+| read-1a | 14 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE read-1a: PASS | docs/reports/std-issues.read-1a.gate.log |
+| read-2a | 19 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE read-2a: PASS | docs/reports/std-issues.read-2a.gate.log |
 
-The gate read-1a on a clean clone of `37e5b61` prints the same lines as
-its run on `d92dd57` above (the lines of the hand-made study, the arms,
-the planted defects, the ten kits and both sweeps: 488 lines, no
-difference): the fix of the review's findings and the merge of read-2a
-change none of them. Its numbers against those before ADR-014 are
-described above.
+Each log names the commit `42212b8` in its head, and none holds a local
+user path or a byte that is not ASCII.
 
-READ-2A-NUMBERS
+What the gates print that ADR-014 changed, and nothing else:
+
+- read-1a: its lines (the hand-made study, the arms, the planted defects,
+  the ten kits and both sweeps) are the lines of the run on `d92dd57`
+  described above, and the lines of the run on `37e5b61`: 461 content
+  lines, the same but for the line of the commit. The fixes after pass 1
+  and the merge of read-2a change none of them.
+- read-2a: held against read-2a's own gate log on `main`
+  (docs/reports/read-2a.gate.log, commit `dbc4d69`), the only lines that
+  differ are those of arm S on kit 4 (`sfrrl2uh`) and the count of the
+  unit tests (1089 there, 1118 here: read-2a's tests, and those of this
+  part). Before, arm S said `valid: no (compile: ADAE: no value for
+  ae.related.values)`, `produced: 0 of 1` and `cells correct: 0 of 15`,
+  and 15 wrong cells on each dataset owned by the build that stopped. Now:
+
+  ```text
+      visible: valid: yes
+      visible: produced: 1 of 1 outputs in gold
+      visible: cells correct: 4 of 12 gold cells (an output that was not produced counts as wrong)
+      visible: pending: 3 gold cells, neither right nor wrong and in no denominator above, wait for a decision without a value: ae.related.values (3 cells)
+      twin: valid: yes
+      twin: produced: 1 of 1 outputs in gold
+      twin: cells correct: 3 of 12 gold cells (an output that was not produced counts as wrong)
+      twin: pending: 3 gold cells, neither right nor wrong and in no denominator above, wait for a decision without a value: ae.related.values (3 cells)
+      axis rows of Out_AESUM: layer L5, decision tfl.ae.summary.rows, confirmed yes, first element that differs ars:An_AESUM_N
+    pending: ae.related.values (mod-ae-emergence) has no value, and the build left out what it binds (ADR-014); gold cells that wait for it: 3 of visible, 3 of twin
+  ```
+
+  The kit's table is on the efficacy set, and arm S has neither
+  `tfl.population` = efficacy nor `pop.efficacy.rule`. The wrong cells
+  (8 on the visible data, 9 on the twin, all confirmed) are now owned by
+  those two together, at L4 (`adam:ADSL.EFFFL`) or at L5 (`ars:An_AESUM_N`),
+  with `ae.start.imputation` and on the twin `trt.start.source` for two of
+  them, and with `tfl.columns.total` for the cells of the total column.
+  `tfl.ae.summary.rows`, before "behind another owner", owns the axis of
+  rows. `trt.actual.source`, before named with the build that stopped in
+  4 cells of the twin, is now listed among the decisions these data cannot
+  show alone, with `pop.randomized.rule` as before. Arm C and the kept run
+  of arm R score 15 of 15 on each dataset, as before. Against the run on
+  `37e5b61`, the only lines that differ are the two lines of the axis of
+  rows (`decision ae.related.values, tfl.ae.summary.rows` there, `decision
+  tfl.ae.summary.rows` here).
+- The other five gates, held against the logs of the fix of issue #27
+  (docs/reports/issue-27.*.gate.log, commit `c7f09a0`) for real-2,
+  real-3a, gen-2a, gen-3a and read-1a, differ only in the counts of files
+  and tests that read-2a and this part added (for example `541 maintained
+  files checked`, 491 there; `compared 150 Python files`, 136 there), in
+  the lines of arm S on the chain (read-1a, above), and in one line of the
+  provenance check of real-2, real-3a and gen-2a: "the most lines a file
+  that is not recorded shares" is 2 (allowed: 2), 1 there. The two files
+  at 2 are read-2a's (`src/specfirst/harness/knowledge.py` and
+  `src/specfirst/harness/outputs.py`, two lines of common idiom each, such
+  as `data=json.loads(path.read_text(encoding="utf-8"))`); no file this
+  part changed shares more than one.
 
 ## Review
 
