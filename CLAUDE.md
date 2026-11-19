@@ -26,7 +26,7 @@ Handover per track: docs/state/<track>.md. Failures seen once: docs/lessons.md.
 3. Names, module boundaries and table families come from public standards; each catalog entry cites its source.
 4. Never commit third-party study data or documents. They stay in the fetch cache.
 5. Original code and documents are MIT.
-6. Publishing is the owner's act. Pushing to the private origin is expected; anything other people can see needs the owner's approval of the exact text first.
+6. Publishing is the owner's act. The repository is public (ADR-013): pushing the work is expected; anything else other people can see (an issue, a PR, a comment, a post, a release, a setting) needs the owner's approval of the exact text first.
 7. One-way flow: nothing from an employer's machines or studies comes back into this repository.
 
 - R1 Agents propose, scripts decide. R2 Reuse before build; record the choice in an ADR.
