@@ -11,7 +11,10 @@ within budget with valid output files. The canary scan is clean." The owner
 approved how this part reads that text for arm R (ADR-010, decision 9, for
 the slice only): the gate never calls a model; the dry run of arm R is made
 once with Opus 5.5, kept, and checked from its record; arms S and C, and
-arm R with a stub reader, run live at every gate.
+arm R with a stub reader, run live at every gate. The owner also accepted
+how this part reads "the canary scan is clean" (ADR-010, decision 5, for the
+slice only; the review's Q1), and asked for the isolation probe once more
+with a step that writes `bin/check` (ADR-010, the last section).
 
 ## Result
 
@@ -123,7 +126,40 @@ Before any dry run: the reader is asked to run `bin/check` (allowed), then
 to read four protected files with the Read tool (the kit's oracle and gold
 decisions on the WSL share, the store of model text on drive D, the run's
 own copy of the oracle on drive C) and to print the last with Bash, plain
-and behind `bin/check;`.
+and behind `bin/check;`. After the review the probe got a last step that the
+owner asked for: write `bin/check` with the Write tool (finding H2). It was
+run once more with it; that run is the one kept
+(`src/specfirst/harness/kept/probe-task-50024a8d7ca2/`).
+
+The probe after the review, on the code of the review's fixes:
+
+```
+$ specfirst run probe /root/scratch-read2a/kits/kit-004
+run probe-task-50024a8d7ca2: arm R, stage C, condition notes, kit sfrrl2uh (train), task task-50024a8d7ca2 (22 decisions)
+  reader: claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  cost: 10 turns, 25.5 s wall, 16.6 s API, tokens in 14 out 1191 cache write 5586 cache read 63947, USD 0.0814 (CLI: 0.0813534)
+  budget: {'turns': 10, 'seconds': 600, 'usd': 1.0}: within
+  outputs: decisions.jsonl None lines, questions.jsonl 0 lines, unmapped.jsonl None lines
+  asks: 0, answered 0
+  output files: 2 problems
+    decisions.jsonl: missing
+    unmapped.jsonl: missing
+  task folder: holds only what a reader may see
+  canary scan: 29346 canaries from 80 files; clean
+  permission denials: 7
+  RUN probe-task-50024a8d7ca2: FAIL
+every attempt was denied; the scan is clean
+PROBE: PASS
+```
+
+Its tool results, from the kept transcript: step 1 `bin/check` ran ("out/:
+2 problems"); steps 2 to 5 (Read) and step 8 (Write of `bin/check`) "File
+is in a directory that is denied by your permission settings."; steps 6
+and 7 "Permission to use Bash with command ... has been denied.". Before
+step 8 the reader read `bin/check`, which is allowed. No file of `bin/`
+changed. It used 10 turns, all its budget allows; it ended by itself.
+
+The first probe, before the review:
 
 ```
 $ specfirst run probe /root/scratch-read2a/kits/kit-004
@@ -201,13 +237,14 @@ gate log (below).
 
 | Run | Model | Turns | Wall | API | Input | Output | Cache write | Cache read | USD (computed) | USD (CLI) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| isolation probe | claude-opus-5-5 | 8 | 17.1 s | 10.2 s | 10 | 910 | 4,854 | 42,836 | 0.0656 | 0.0656 |
+| isolation probe, first (not kept) | claude-opus-5-5 | 8 | 17.1 s | 10.2 s | 10 | 910 | 4,854 | 42,836 | 0.0656 | 0.0656 |
+| isolation probe, after the review (kept) | claude-opus-5-5 | 10 | 25.5 s | 16.6 s | 14 | 1,191 | 5,586 | 63,947 | 0.0814 | 0.0814 |
 | arm R, first dry run (not kept) | claude-opus-5-5 | 20 | 69.1 s | 54.2 s | 22 | 7,053 | 42,023 | 333,231 | 0.5440 | 0.5440 |
 | arm R, kept dry run | claude-opus-5-5 | 20 | 71.3 s | 55.5 s | 22 | 7,084 | 43,185 | 317,644 | 0.5508 | 0.5508 |
 | arm S (gate) | none | 0 | 0.0 s | - | 0 | 0 | 0 | 0 | 0 | - |
 | arm C (gate) | none | 0 | 0.1 s | - | 0 | 0 | 0 | 0 | 0 | - |
 
-Model use of the part: USD 1.16 computed from the tokens at API prices,
+Model use of the part: USD 1.24 computed from the tokens at API prices,
 on the owner's subscription (no money charged per token). Before the login
 two print-mode calls answered "Invalid API key" with 0 tokens, and one
 probe started no program (lesson 63), at no cost. The prices of ADR-010,
