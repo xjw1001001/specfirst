@@ -18,58 +18,60 @@ with a step that writes `bin/check` (ADR-010, the last section).
 
 ## Result
 
-Pass 1 of the independent review (docs/reports/read-2a.review.md) did not
-sign: two findings blocked (H1, H2; "Found during the part" says what they
-were and how they are settled), and it put one question to the owner (Q1:
-how the canary scan reads "canary strings planted in gold files"). The
-fixes are in the commit after `da848ae`; the gates below ran on `e36e443`,
-before them, and run again on the commit that settles the review. This
-section is written again then.
+The part is done: the gates passed on clean clones of `dbc4d69`, the commit
+that settles pass 1 of the review and records the owner's answers, and the
+review signed in its second pass (docs/reports/read-2a.review.md).
 
-The gate `read-2a` passed on a clean clone of `e36e443` (fresh install and
+The gate `read-2a` passed on a clean clone of `dbc4d69` (fresh install and
 fetch), and so did the gates gen-3a, gen-2a and read-1a, each on its own
 clean clone of the same commit, one after the other:
 
 ```
-$ scripts/clean_clone_gate.sh read-2a      (docs/reports/read-2a.gate.log, 601 s)
-gate read-2a at commit e36e4430830691f7a295a35b62cb7d0ef40af50a (clean)
+$ scripts/clean_clone_gate.sh read-2a      (docs/reports/read-2a.gate.log, 604 s)
+gate read-2a at commit dbc4d69f092096dca48b1837351d502c77134b7a (clean)
 ...
-1080 passed, 23 deselected in 397.12s (0:06:37)
+1089 passed, 23 deselected in 398.14s (0:06:38)
 ...
-PASS  environment          0.4 s
-PASS  pins                 0.8 s
+PASS  environment          0.5 s
+PASS  pins                 1.4 s
 PASS  lint                 0.0 s
-PASS  unit tests         397.8 s
-PASS  kit                 15.2 s
-PASS  skills               0.2 s
+PASS  unit tests         398.8 s
+PASS  kit                 13.6 s
+PASS  skills               1.3 s
 PASS  task                 0.2 s
 PASS  oracle               0.1 s
 PASS  adapter              0.0 s
 PASS  budget               0.0 s
-PASS  output files         0.2 s
-PASS  canary scan          4.6 s
-PASS  arm S               27.2 s
-PASS  arm C                2.0 s
-PASS  arm R, stub reader      8.4 s
-PASS  arm R, kept dry run      3.1 s
+PASS  output files         0.1 s
+PASS  canary scan          5.1 s
+PASS  arm S               26.6 s
+PASS  arm C                2.4 s
+PASS  arm R, stub reader     14.0 s
+PASS  arm R, kept dry run      3.2 s
 PASS  scratch removed      0.0 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE read-2a: PASS
 
-clean clone gate read-2a: PASS (clone: /tmp/specfirst-clean-Sw9cWo/specfirst)
+clean clone gate read-2a: PASS (clone: /tmp/specfirst-clean-kPc8Sw/specfirst)
 
-$ scripts/clean_clone_gate.sh gen-3a       (docs/reports/read-2a.gen-3a.gate.log, 548 s)
+$ scripts/clean_clone_gate.sh gen-3a       (docs/reports/read-2a.gen-3a.gate.log, 797 s)
+gate gen-3a at commit dbc4d69f092096dca48b1837351d502c77134b7a (clean)
 GATE gen-3a: PASS
-$ scripts/clean_clone_gate.sh gen-2a       (docs/reports/read-2a.gen-2a.gate.log, 795 s)
+$ scripts/clean_clone_gate.sh gen-2a       (docs/reports/read-2a.gen-2a.gate.log, 872 s)
+gate gen-2a at commit dbc4d69f092096dca48b1837351d502c77134b7a (clean)
 GATE gen-2a: PASS
-$ scripts/clean_clone_gate.sh read-1a      (docs/reports/read-2a.read-1a.gate.log, 1,610 s)
+$ scripts/clean_clone_gate.sh read-1a      (docs/reports/read-2a.read-1a.gate.log, 1,212 s)
+gate read-1a at commit dbc4d69f092096dca48b1837351d502c77134b7a (clean)
 GATE read-1a: PASS
 ```
 
 Each gate ran under `flock /run/lock/specfirst-heavy.lock taskset -c 0-3`
-(lesson 32); the times include the fresh install and fetch. The commits
-after `e36e443` change records only (this report, the review, the state).
+(lesson 32); the times include the fresh install and fetch. `dbc4d69`
+holds `main` at `2be5a08`. The commits after it change records only (this
+report, the review, the logs, the state, lessons 64 and 65). The four
+gates had passed on `e36e443` before the review too (601, 548, 795 and
+1,610 s); those logs were replaced by these.
 
 How the gate text is met, check by check:
 
@@ -93,14 +95,14 @@ The planted defects of the gate (rule R5), each "found" in the log:
 
 | Check | Planted |
 | --- | --- |
-| skills | a skill that names the kit; that names a subject; that quotes the store; notes that are not their rendering; a SKILL.md without a name |
-| task | the oracle file of the kit in a task; a file outside the allow list; a TASK.md that names the kit |
+| skills | each through `knowledge.problems` on a copy of the skills: a skill that names the kit; that names a subject; that quotes the store; notes that are not their rendering; a SKILL.md without a name; core-reader without a description |
+| task | the oracle file of the kit in a task; a file outside the allow list; a TASK.md that names the kit; that names the seed |
 | oracle | an oracle that answers every decision |
-| adapter | settings without the deny rule of the store; no `--strict-mcp-config`; an `--add-dir`; another model; Bash allowed for every command |
+| adapter | settings without the deny rule of the store; settings that let the reader write `bin/`; no `--strict-mcp-config`; an `--add-dir`; another model; Bash allowed for every command; `--max-turns` over the budget |
 | budget | 101 turns; 46 minutes; USD 10.01; an error at the end; stopped at the time limit; no result event; a model without a price |
 | output files | a line that is not JSON; a record without a status; a decision the task does not ask for; a second record of a decision; `binds` filled; `identifiable` filled; an alternative the entry lacks; a slot left out; a citation of another document; a citation of an anchor that is not there; a question about no entry; questions that are not the ask log; an unmapped anchor that is not there; no unmapped.jsonl |
-| canary scan | a transcript that read gold/decisions.jsonl, gold/docs/sap.md, gold/oracle.yaml, gold/summary.md, twin/data/sdtm/ae.json, twin/gold/ard/reporting-event.jsonl, kit.yaml, the store's paragraphs.jsonl, the run's private/oracle.json; that names the seed; a workspace file with a line of gold; a statement typed from the store (and, as the case the rule is for, a reader's own record judged without it) |
-| arm R, stub reader | a kept run whose task differs by one file; a kept transcript that read gold/summary.md; a kept record over budget |
+| canary scan | a transcript that read gold/decisions.jsonl, gold/docs/sap.md, gold/oracle.yaml, gold/summary.md, twin/data/sdtm/ae.json, twin/gold/ard/reporting-event.jsonl, kit.yaml, the store's paragraphs.jsonl, the run's private/oracle.json; that names the seed; a workspace file with a line of gold; a statement typed from the store; three lines of gold/summary.md as the values of `ae.related.values` (and, as the case the rule is for, a reader's own record judged without it) |
+| arm R, stub reader | a stub that rewrites `bin/check`; a kept run whose task differs by one file; a kept transcript that read gold/summary.md; a kept transcript that writes `bin/check`; a kept record over budget; a kept record with its budget raised with its cost |
 
 What the scan protects, in the gate log: "29347 canaries from 81 sources"
 (kit gold and twin, kit.yaml, the store, the seed, the planted canaries of
@@ -118,7 +120,7 @@ the run's private files).
 | record | `harness.record` | `run.json`: tokens by model and kind, turns, wall and API time, dollars from the tokens (and the CLI's own figure), the budget |
 | adapter | `harness.adapter`, `harness.stub` | `claude -p` with the flags of ADR-010, decision 1, and the deny rules of decision 4; a stub that speaks the CLI's stream-json |
 | runs | `harness.runs`, `specfirst run ...` | a run of arm S, R or C on one task and one record; the isolation probe; a run kept and checked again |
-| gate | `harness.gate`, `specfirst gate read-2a` | 18 checks, each with planted defects |
+| gate | `harness.gate`, `specfirst gate read-2a` | 19 checks, each with planted defects (59 plants, every one "found" in the log) |
 
 ## The isolation probe (ADR-010, decisions 4 and 8)
 

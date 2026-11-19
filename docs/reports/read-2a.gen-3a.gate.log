@@ -1,24 +1,24 @@
 clean clone gate gen-3a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     e36e4430830691f7a295a35b62cb7d0ef40af50a
-clone:      /tmp/specfirst-clean-90KIN8/specfirst
-environment and cache: /tmp/specfirst-clean-90KIN8/env
+commit:     dbc4d69f092096dca48b1837351d502c77134b7a
+clone:      /tmp/specfirst-clean-hgbfnG/specfirst
+environment and cache: /tmp/specfirst-clean-hgbfnG/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-90KIN8/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-hgbfnG/specfirst
 
-$ git -C /tmp/specfirst-clean-90KIN8/specfirst checkout --quiet --detach e36e4430830691f7a295a35b62cb7d0ef40af50a
+$ git -C /tmp/specfirst-clean-hgbfnG/specfirst checkout --quiet --detach dbc4d69f092096dca48b1837351d502c77134b7a
 
-$ git -C /tmp/specfirst-clean-90KIN8/specfirst log -1 --format=%H %s
-e36e4430830691f7a295a35b62cb7d0ef40af50a read-2a: the isolation probe and the dry run of arm R, kept; the adapter on CLI 2.1.327
+$ git -C /tmp/specfirst-clean-hgbfnG/specfirst log -1 --format=%H %s
+dbc4d69f092096dca48b1837351d502c77134b7a read-2a: the owner's answers to the review; the isolation probe once more
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-90KIN8/env/venv-specfirst-2046770663
-R library: /tmp/specfirst-clean-90KIN8/env/r-lib
+python environment: /tmp/specfirst-clean-hgbfnG/env/venv-specfirst-3825073350
+R library: /tmp/specfirst-clean-hgbfnG/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-90KIN8/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-90KIN8/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-hgbfnG/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-hgbfnG/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-90KIN8/env/venv-specfirst-2046770663/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-hgbfnG/env/venv-specfirst-3825073350/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-90KIN8/env/cache
+cache: /tmp/specfirst-clean-hgbfnG/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate gen-3a --clean
-gate gen-3a at commit e36e4430830691f7a295a35b62cb7d0ef40af50a (clean)
+gate gen-3a at commit dbc4d69f092096dca48b1837351d502c77134b7a (clean)
 
 == [1/15] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-90KIN8/env/venv-specfirst-2046770663/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-hgbfnG/env/venv-specfirst-3825073350/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.4 s)
+-- PASS environment (0.5 s)
 
 == [2/15] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-90KIN8/env/cache
+cache: /tmp/specfirst-clean-hgbfnG/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,30 +84,31 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (1.1 s)
+-- PASS pins (1.2 s)
 
 == [3/15] lint: ruff check .
 All checks passed!
--- PASS lint (0.0 s)
+-- PASS lint (0.1 s)
 
 == [4/15] unit tests: pytest -m "not evidence" -q
 ........................................................................ [  6%]
 ........................................................................ [ 13%]
-........................................................................ [ 20%]
+........................................................................ [ 19%]
 ........................................................................ [ 26%]
 ........................................................................ [ 33%]
-........................................................................ [ 40%]
+........................................................................ [ 39%]
 ........................................................................ [ 46%]
-........................................................................ [ 53%]
-........................................................................ [ 60%]
+........................................................................ [ 52%]
+........................................................................ [ 59%]
 ........................................................................ [ 66%]
-........................................................................ [ 73%]
-........................................................................ [ 80%]
-........................................................................ [ 86%]
-........................................................................ [ 93%]
-........................................................................ [100%]
-1080 passed, 23 deselected in 371.61s (0:06:11)
--- PASS unit tests (372.2 s)
+........................................................................ [ 72%]
+........................................................................ [ 79%]
+........................................................................ [ 85%]
+........................................................................ [ 92%]
+........................................................................ [ 99%]
+.........                                                                [100%]
+1089 passed, 23 deselected in 428.29s (0:07:08)
+-- PASS unit tests (429.0 s)
 
 == [5/15] kits: specfirst.gen.gate3.kits_written: the 10 kits of the seed of the gate gen-2a, each by a process of its own; the tiers of their documents
 kit 1 of the set of the seed 'gen-2a': sfpbt5zj, train, generator gen-3a.2, 127 files, kit.yaml 947f40b73a1078be
@@ -121,7 +122,7 @@ kit 8 of the set of the seed 'gen-2a': sf6xjw92, test, generator gen-3a.2, 126 f
 kit 9 of the set of the seed 'gen-2a': sfyf9ekd, test, generator gen-3a.2, 127 files, kit.yaml aaf019b86f9ad86d
 kit 10 of the set of the seed 'gen-2a': sf4tvbdp, test, generator gen-3a.2, 127 files, kit.yaml 00c6e4f163babc51
 tiers of the documents: full, standard, full, ask, standard, full, ask, standard, full, standard; kits of the ask demo: 2
--- PASS kits (43.6 s)
+-- PASS kits (46.6 s)
 
 == [6/15] parser: specfirst.gen.gate3.parser: 100% of the decisions from the standard-form documents (with the house standard and the oracle)
 planted defect in kit 1: the standard-form SAP without the statement of trt.planned.source: the check reports it: trt.planned.source (mod-treatment, stated): not recovered from the documents, the house standard and the oracle
@@ -136,7 +137,7 @@ kit 7 (ask): 29 of 29 decisions recovered from the standard-form documents, the 
 kit 8 (standard): 28 of 28 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
 kit 9 (full): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
 kit 10 (standard): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
--- PASS parser (0.9 s)
+-- PASS parser (1.0 s)
 
 == [7/15] slots: specfirst.gen.gate3.slots: every decision paragraph of the natural form
 planted defect in kit 1: the variable name DM.ARM taken out of the paragraph of trt.planned.source: the check reports it: sap#3/p6 (trt.planned.source): slot check: 'DM.ARM' is not in the paragraph
@@ -168,7 +169,7 @@ kit 8 (standard): 13 decision paragraphs read back as their alternative, 4 fille
 kit 9 (full): 29 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
 kit 10 (standard): 11 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
 the store: 61 statements, 61 accepted, 0 of them by the phrasing template; 10 filler paragraphs; 3 model calls
--- PASS read-back (0.3 s)
+-- PASS read-back (0.4 s)
 
 == [9/15] bad rewrite: specfirst.gen.gate3.bad_rewrite: a changed number is rejected
 planted defect in kit 1: the paragraph sap#6/p1 of demo.age.groups with 80 changed to 85: the check reports it: sap#6/p1 (demo.age.groups): slot check: '80' stands 1 times in the paragraph, the statement has it 2 times
@@ -216,7 +217,7 @@ kit 7 (ask): natural.json names every paragraph; 0 problems
 kit 8 (standard): natural.json names every paragraph; 0 problems
 kit 9 (full): natural.json names every paragraph; 0 problems
 kit 10 (standard): natural.json names every paragraph; 0 problems
--- PASS anchors (0.3 s)
+-- PASS anchors (0.4 s)
 
 == [12/15] visible probes: specfirst.gen.gate3.visible_probes: listed in kit.yaml and found in the visible data
 planted defect in kit 1: kit.yaml lists ae_on_first_dose_date_without_time as visible: the check reports it: kit.yaml does not list the probes of the log by dataset
@@ -231,7 +232,7 @@ kit 7 (ask): 14 visible probes listed and found in the visible data; 0 problems
 kit 8 (standard): 13 visible probes listed and found in the visible data; 0 problems
 kit 9 (full): 17 visible probes listed and found in the visible data; 0 problems
 kit 10 (standard): 16 visible probes listed and found in the visible data; 0 problems
--- PASS visible probes (0.3 s)
+-- PASS visible probes (0.4 s)
 
 == [13/15] summary: specfirst.gen.gate3.summaries: one page per kit
 planted defect in kit 1: the summary without the line of trt.planned.source: the check reports it: the summary does not name trt.planned.source
@@ -246,10 +247,10 @@ kit 7 (ask): one page, every decision named; 0 problems
 kit 8 (standard): one page, every decision named; 0 problems
 kit 9 (full): one page, every decision named; 0 problems
 kit 10 (standard): one page, every decision named; 0 problems
--- PASS summary (0.3 s)
+-- PASS summary (0.4 s)
 
 == [14/15] cache untouched: specfirst fetch --verify
-cache: /tmp/specfirst-clean-90KIN8/env/cache
+cache: /tmp/specfirst-clean-hgbfnG/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -270,27 +271,27 @@ fetch: every pin verified
 -- PASS cache untouched (0.1 s)
 
 == [15/15] ASCII: python -m specfirst.asciicheck
-ASCII check: 518 files checked, 0 with non-ASCII bytes
+ASCII check: 535 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.4 s
-PASS  pins                 1.1 s
-PASS  lint                 0.0 s
-PASS  unit tests         372.2 s
-PASS  kits                43.6 s
-PASS  parser               0.9 s
+PASS  environment          0.5 s
+PASS  pins                 1.2 s
+PASS  lint                 0.1 s
+PASS  unit tests         429.0 s
+PASS  kits                46.6 s
+PASS  parser               1.0 s
 PASS  slots                0.3 s
-PASS  read-back            0.3 s
+PASS  read-back            0.4 s
 PASS  bad rewrite          0.2 s
 PASS  tiers                0.3 s
-PASS  anchors              0.3 s
-PASS  visible probes       0.3 s
-PASS  summary              0.3 s
+PASS  anchors              0.4 s
+PASS  visible probes       0.4 s
+PASS  summary              0.4 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE gen-3a: PASS
 
-clean clone gate gen-3a: PASS (clone: /tmp/specfirst-clean-90KIN8/specfirst)
+clean clone gate gen-3a: PASS (clone: /tmp/specfirst-clean-hgbfnG/specfirst)
 The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
 minute after the last command ends. Copy what must be kept in the same command that
 runs this script (docs/lessons.md, lesson 39). The log is in build/gates/gen-3a/ here.

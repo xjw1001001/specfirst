@@ -1,24 +1,24 @@
 clean clone gate read-1a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     e36e4430830691f7a295a35b62cb7d0ef40af50a
-clone:      /tmp/specfirst-clean-0a5X9I/specfirst
-environment and cache: /tmp/specfirst-clean-0a5X9I/env
+commit:     dbc4d69f092096dca48b1837351d502c77134b7a
+clone:      /tmp/specfirst-clean-ad5YF7/specfirst
+environment and cache: /tmp/specfirst-clean-ad5YF7/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-0a5X9I/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-ad5YF7/specfirst
 
-$ git -C /tmp/specfirst-clean-0a5X9I/specfirst checkout --quiet --detach e36e4430830691f7a295a35b62cb7d0ef40af50a
+$ git -C /tmp/specfirst-clean-ad5YF7/specfirst checkout --quiet --detach dbc4d69f092096dca48b1837351d502c77134b7a
 
-$ git -C /tmp/specfirst-clean-0a5X9I/specfirst log -1 --format=%H %s
-e36e4430830691f7a295a35b62cb7d0ef40af50a read-2a: the isolation probe and the dry run of arm R, kept; the adapter on CLI 2.1.327
+$ git -C /tmp/specfirst-clean-ad5YF7/specfirst log -1 --format=%H %s
+dbc4d69f092096dca48b1837351d502c77134b7a read-2a: the owner's answers to the review; the isolation probe once more
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-0a5X9I/env/venv-specfirst-2606875942
-R library: /tmp/specfirst-clean-0a5X9I/env/r-lib
+python environment: /tmp/specfirst-clean-ad5YF7/env/venv-specfirst-1396149648
+R library: /tmp/specfirst-clean-ad5YF7/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-0a5X9I/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-0a5X9I/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-ad5YF7/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-ad5YF7/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-0a5X9I/env/venv-specfirst-2606875942/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-ad5YF7/env/venv-specfirst-1396149648/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-0a5X9I/env/cache
+cache: /tmp/specfirst-clean-ad5YF7/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate read-1a --clean
-gate read-1a at commit e36e4430830691f7a295a35b62cb7d0ef40af50a (clean)
+gate read-1a at commit dbc4d69f092096dca48b1837351d502c77134b7a (clean)
 
 == [1/14] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-0a5X9I/env/venv-specfirst-2606875942/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-ad5YF7/env/venv-specfirst-1396149648/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.4 s)
+-- PASS environment (0.5 s)
 
 == [2/14] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-0a5X9I/env/cache
+cache: /tmp/specfirst-clean-ad5YF7/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,7 +84,7 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (1.3 s)
+-- PASS pins (1.2 s)
 
 == [3/14] lint: ruff check .
 All checks passed!
@@ -93,21 +93,22 @@ All checks passed!
 == [4/14] unit tests: pytest -m "not evidence" -q
 ........................................................................ [  6%]
 ........................................................................ [ 13%]
-........................................................................ [ 20%]
+........................................................................ [ 19%]
 ........................................................................ [ 26%]
 ........................................................................ [ 33%]
-........................................................................ [ 40%]
+........................................................................ [ 39%]
 ........................................................................ [ 46%]
-........................................................................ [ 53%]
-........................................................................ [ 60%]
+........................................................................ [ 52%]
+........................................................................ [ 59%]
 ........................................................................ [ 66%]
-........................................................................ [ 73%]
-........................................................................ [ 80%]
-........................................................................ [ 86%]
-........................................................................ [ 93%]
-........................................................................ [100%]
-1080 passed, 23 deselected in 354.72s (0:05:54)
--- PASS unit tests (355.3 s)
+........................................................................ [ 72%]
+........................................................................ [ 79%]
+........................................................................ [ 85%]
+........................................................................ [ 92%]
+........................................................................ [ 99%]
+.........                                                                [100%]
+1089 passed, 23 deselected in 412.48s (0:06:52)
+-- PASS unit tests (413.2 s)
 
 == [5/14] hand-made study: specfirst.score.gate.hand_table: HAND01 against the table worked out by hand
 HAND01, visible: 7 subjects, 8 adverse events; columns Placebo | Low Dose | High Dose | Total
@@ -126,7 +127,7 @@ HAND01, twin: 9 subjects, 7 adverse events; columns Placebo | Low Dose | High Do
   Adverse event leading to discontinuation of study treatment  0 | 0 | 1 ( 33.3) | 1 ( 12.5)
   Fatal adverse event                                          0 | 0 | 0 | 0
 HAND01, twin: 24 of 24 cells are the cells worked out by hand
--- PASS hand-made study (1.5 s)
+-- PASS hand-made study (1.8 s)
 
 == [6/14] separation: specfirst.score.gate.separated: every other value of every decision, alone on gold
 decision: other value -> cells or axes changed on the visible data / on the twin
@@ -153,7 +154,7 @@ decision: other value -> cells or axes changed on the visible data / on the twin
   tfl.ae.summary.rows (separated on visible and twin): {"rows": ["ANY", "SERIOUS", "FATAL"], "rule": "stated_rows"} -> 9/9; {"rows": ["ANY"], "rule": "stated_rows"} -> 17/17; {"rows": ["SERIOUS", "RELATED", "ANY"], "rule": "stated_rows"} -> 9/9
 HAND01 separates 12 of 21 decisions of the slice on one of its two datasets; unseparated on both: trt.planned.source, trt.start.source, trt.date.imputation, date.studyday.origin, pop.randomized.rule, disp.status.record, ae.start.imputation, ae.teae.start, tfl.rounding.rule
 the gold records mark the same 9 as unseparated: yes
--- PASS separation (39.2 s)
+-- PASS separation (46.9 s)
 
 == [7/14] parser control: specfirst score hand --arm C (both stages)
 parser control on HAND01, stage C: 21 decisions; value 21 of 21; status 21 of 21; quote 21 of 21; span 21 of 21
@@ -167,7 +168,7 @@ parser control on HAND01, stage T: 100%
 planted in the document: '[1/s1] Treatment emergence ends 30 days after the treatment end date.' with 31 days in place of 30
   the control is not 100%: wrong by value: ae.teae.end; twin: 2 cells wrong
 the control fails on the changed document: yes
--- PASS parser control (1.2 s)
+-- PASS parser control (1.4 s)
 
 == [8/14] standard alone: specfirst score hand --arm S (both stages)
 case hand01, arm S, stage C
@@ -329,7 +330,7 @@ planted defects on the case hand01, stage C
     detected: yes; attributed to its layer: yes
 planted defects on hand01: 14 entries for the twelve defects of section 9.5 (two are planted in two ways); 2 do not apply to the slice; 12 of 12 planted here; 12 of 12 detected and attributed; 0 silent on these data
 every defect that applies is planted on HAND01, detected and attributed: yes
--- PASS planted defects (5.7 s)
+-- PASS planted defects (6.4 s)
 
 == [10/14] pilot: specfirst score pilot (report only)
 pilot CDISCPILOT01, arm S (the house standard alone), stage T (table decisions on the reference ADaM); report only
@@ -382,7 +383,7 @@ pilot: report only; its scores decide nothing in this gate
 
 == [11/14] pilot tests: SPECFIRST_STRICT=1 pytest tests/score -s -q
 .
-1 passed in 1.06s
+1 passed in 1.07s
 -- PASS pilot tests (1.3 s)
 
 == [12/14] kits of gen-2a: specfirst.score.gate.kits: the 10 kits of the seed of the gate gen-2a, written again; then specfirst score kits
@@ -636,10 +637,10 @@ disagreements with the matrices of the kits: 0
 every defect that applies is detected and attributed on at least one kit: yes
 the checks fail on their planted defects: yes
 kits: PASS
--- PASS kits of gen-2a (689.8 s)
+-- PASS kits of gen-2a (616.5 s)
 
 == [13/14] cache untouched: specfirst fetch --verify
-cache: /tmp/specfirst-clean-0a5X9I/env/cache
+cache: /tmp/specfirst-clean-ad5YF7/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -660,26 +661,26 @@ fetch: every pin verified
 -- PASS cache untouched (0.1 s)
 
 == [14/14] ASCII: python -m specfirst.asciicheck
-ASCII check: 518 files checked, 0 with non-ASCII bytes
+ASCII check: 535 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.4 s
-PASS  pins                 1.3 s
+PASS  environment          0.5 s
+PASS  pins                 1.2 s
 PASS  lint                 0.0 s
-PASS  unit tests         355.3 s
-PASS  hand-made study      1.5 s
-PASS  separation          39.2 s
-PASS  parser control       1.2 s
+PASS  unit tests         413.2 s
+PASS  hand-made study      1.8 s
+PASS  separation          46.9 s
+PASS  parser control       1.4 s
 PASS  standard alone       0.2 s
-PASS  planted defects      5.7 s
+PASS  planted defects      6.4 s
 PASS  pilot                0.5 s
 PASS  pilot tests          1.3 s
-PASS  kits of gen-2a     689.8 s
+PASS  kits of gen-2a     616.5 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE read-1a: PASS
 
-clean clone gate read-1a: PASS (clone: /tmp/specfirst-clean-0a5X9I/specfirst)
+clean clone gate read-1a: PASS (clone: /tmp/specfirst-clean-ad5YF7/specfirst)
 The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
 minute after the last command ends. Copy what must be kept in the same command that
 runs this script (docs/lessons.md, lesson 39). The log is in build/gates/read-1a/ here.

@@ -1,24 +1,24 @@
 clean clone gate gen-2a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     e36e4430830691f7a295a35b62cb7d0ef40af50a
-clone:      /tmp/specfirst-clean-1KwKyG/specfirst
-environment and cache: /tmp/specfirst-clean-1KwKyG/env
+commit:     dbc4d69f092096dca48b1837351d502c77134b7a
+clone:      /tmp/specfirst-clean-uJfJk3/specfirst
+environment and cache: /tmp/specfirst-clean-uJfJk3/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-1KwKyG/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-uJfJk3/specfirst
 
-$ git -C /tmp/specfirst-clean-1KwKyG/specfirst checkout --quiet --detach e36e4430830691f7a295a35b62cb7d0ef40af50a
+$ git -C /tmp/specfirst-clean-uJfJk3/specfirst checkout --quiet --detach dbc4d69f092096dca48b1837351d502c77134b7a
 
-$ git -C /tmp/specfirst-clean-1KwKyG/specfirst log -1 --format=%H %s
-e36e4430830691f7a295a35b62cb7d0ef40af50a read-2a: the isolation probe and the dry run of arm R, kept; the adapter on CLI 2.1.327
+$ git -C /tmp/specfirst-clean-uJfJk3/specfirst log -1 --format=%H %s
+dbc4d69f092096dca48b1837351d502c77134b7a read-2a: the owner's answers to the review; the isolation probe once more
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-1KwKyG/env/venv-specfirst-629996968
-R library: /tmp/specfirst-clean-1KwKyG/env/r-lib
+python environment: /tmp/specfirst-clean-uJfJk3/env/venv-specfirst-3387389157
+R library: /tmp/specfirst-clean-uJfJk3/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-1KwKyG/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-1KwKyG/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-uJfJk3/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-uJfJk3/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-1KwKyG/env/venv-specfirst-629996968/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-uJfJk3/env/venv-specfirst-3387389157/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-1KwKyG/env/cache
+cache: /tmp/specfirst-clean-uJfJk3/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate gen-2a --clean
-gate gen-2a at commit e36e4430830691f7a295a35b62cb7d0ef40af50a (clean)
+gate gen-2a at commit dbc4d69f092096dca48b1837351d502c77134b7a (clean)
 
 == [1/13] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-1KwKyG/env/venv-specfirst-629996968/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-uJfJk3/env/venv-specfirst-3387389157/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.4 s)
+-- PASS environment (0.5 s)
 
 == [2/13] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-1KwKyG/env/cache
+cache: /tmp/specfirst-clean-uJfJk3/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,11 +84,11 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (0.8 s)
+-- PASS pins (1.2 s)
 
 == [3/13] lint: ruff check .
 All checks passed!
--- PASS lint (0.0 s)
+-- PASS lint (0.1 s)
 
 == [4/13] registry: specfirst methods
 count.subjects                     descriptive  4 statements  python+r operations: n; options: -
@@ -106,21 +106,22 @@ methods: 9 entries
 == [5/13] unit tests: pytest -m "not evidence" -q
 ........................................................................ [  6%]
 ........................................................................ [ 13%]
-........................................................................ [ 20%]
+........................................................................ [ 19%]
 ........................................................................ [ 26%]
 ........................................................................ [ 33%]
-........................................................................ [ 40%]
+........................................................................ [ 39%]
 ........................................................................ [ 46%]
-........................................................................ [ 53%]
-........................................................................ [ 60%]
+........................................................................ [ 52%]
+........................................................................ [ 59%]
 ........................................................................ [ 66%]
-........................................................................ [ 73%]
-........................................................................ [ 80%]
-........................................................................ [ 86%]
-........................................................................ [ 93%]
-........................................................................ [100%]
-1080 passed, 23 deselected in 374.05s (0:06:14)
--- PASS unit tests (374.6 s)
+........................................................................ [ 72%]
+........................................................................ [ 79%]
+........................................................................ [ 85%]
+........................................................................ [ 92%]
+........................................................................ [ 99%]
+.........                                                                [100%]
+1089 passed, 23 deselected in 408.83s (0:06:48)
+-- PASS unit tests (409.5 s)
 
 == [6/13] method vectors: SPECFIRST_STRICT=1 pytest tests/methods -s -q
 
@@ -149,8 +150,8 @@ tables larger than 2 x 2: 10; with a table just above the observed probability, 
 --- fisher-limit
 R, with a limit of 50 tables: the R vectors run exited 1: Error: test.fisher.exact: more than 50 tables to sum; the method does not approximate
 ..
-6 passed in 1.81s
--- PASS method vectors (2.0 s)
+6 passed in 1.87s
+-- PASS method vectors (2.1 s)
 
 == [7/13] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -s -q
 
@@ -200,16 +201,16 @@ ADaM datasets that changed: none
 --- A5-adapted
 recorded as adapted: src/specfirst/machine/lineage.py shares 73 lines with cached sources
 recorded as adapted: src/specfirst/machine/runner.py shares 3 lines with cached sources
-compared 147 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 2 (allowed: 2)
+compared 148 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 2 (allowed: 2)
 compared 5 R files of ours with 827 of 13 cached sources; the most lines a file that is not recorded shares: 2 (allowed: 2)
 .
 --- A6-engine
-Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.44 s (the spike: about 3 minutes; the target: under 10 seconds)
+Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.41 s (the spike: about 3 minutes; the target: under 10 seconds)
 embedded results: 3735; reproduced as printed: 3711
 rows per analysis: 31 analyses, 4238 rows; expected 31 analyses, 4238 rows
 .
-6 passed in 66.38s (0:01:06)
--- PASS pilot tests (66.7 s)
+6 passed in 68.13s (0:01:08)
+-- PASS pilot tests (68.4 s)
 
 == [8/13] kits: specfirst.gen.gate2.kits_pass: 10 kits, each written twice; P1 to P4
 planted defect: a build that stamps its data with a time that depends on its process: 26 files differ, for example twin/data/sdtm/vs.json: the hashes differ
@@ -284,7 +285,7 @@ kit sf4tvbdp (test): 127 files have the hashes of kit.yaml; 29 decision records 
   twin: P2 18 of 18 cells equal the hand calculation; P3 grid Out_AESUM: 18 cells, 18 print a number; 18 of the 18 cells with results have a complete path to SDTM columns; engines: 33 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
   twin: P4 52 builds of 22 decisions: 16 separated, 15 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.randomized.rule, trt.end.source, trt.planned.source; read without a probe: none
 10 kits of the set 'gen-2a': P1 to P4 hold for every kit
--- PASS kits (206.3 s)
+-- PASS kits (221.9 s)
 
 == [9/13] separation: specfirst.gen.gate2.separation: every applicable decision, and the matrix of the 10 kits
 planted defect: a log of probes that claims a difference for date.studyday.origin: date.studyday.origin: the log of probes claims that dm_rfstdtc and treatment_start differ in the output under these decisions; the two builds are the 
@@ -336,7 +337,7 @@ tfl.rounding.rule         10   10    1    8  half_away_from_zero|half_even: 1,2,
 tfl.ae.summary.rows       10   10   10   10  standard_rows|stated_rows: 1,2,3,4,5,6,7,8,9,10
 not applicable to this output, and unseparated for the slice (PLAN.md section 4.7): date.studyday.origin
 separation: 0 holes in the matrix of 10 kits; every applicable decision is separated on the twin of its kit
--- PASS separation (30.4 s)
+-- PASS separation (28.7 s)
 
 == [10/13] engines: specfirst.gen.gate2.engines: the Python and the R engine on every result
 planted defect: a result of the R engine that differs: ard:An_AESUM_ANY/Mth_CatSumm_n/Grp_TRT01P_1: Python 39, R 40, relative difference 2.5e-02
@@ -351,10 +352,10 @@ planted defect: a manifest with the hash of another seed: kit 1: seed_sha256 is 
 planted defect: the vector of kit 1 with {'tfl.columns.total': 'none', 'tfl.columns.arms': 'protocol_order'}: held out, a train kit must not have it
 200 vectors drawn for a train kit: none has the held-out combination; of 200 for a sealed kit: 83 have it
 splits of the 10 kits by their place in the set: train 4, dev 3, test 3, sealed 0; held out for an exam: an allocation ratio other than 1 to 1, and the combination {'tfl.columns.total': 'none', 'tfl.columns.arms': 'protocol_order'}; 0 problems
--- PASS splits (1.7 s)
+-- PASS splits (1.9 s)
 
 == [12/13] cache untouched: specfirst fetch --verify
-cache: /tmp/specfirst-clean-1KwKyG/env/cache
+cache: /tmp/specfirst-clean-uJfJk3/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -375,25 +376,25 @@ fetch: every pin verified
 -- PASS cache untouched (0.1 s)
 
 == [13/13] ASCII: python -m specfirst.asciicheck
-ASCII check: 518 files checked, 0 with non-ASCII bytes
+ASCII check: 535 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.4 s
-PASS  pins                 0.8 s
-PASS  lint                 0.0 s
+PASS  environment          0.5 s
+PASS  pins                 1.2 s
+PASS  lint                 0.1 s
 PASS  registry             0.0 s
-PASS  unit tests         374.6 s
-PASS  method vectors       2.0 s
-PASS  pilot tests         66.7 s
-PASS  kits               206.3 s
-PASS  separation          30.4 s
+PASS  unit tests         409.5 s
+PASS  method vectors       2.1 s
+PASS  pilot tests         68.4 s
+PASS  kits               221.9 s
+PASS  separation          28.7 s
 PASS  engines              0.1 s
-PASS  splits               1.7 s
+PASS  splits               1.9 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE gen-2a: PASS
 
-clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-1KwKyG/specfirst)
+clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-uJfJk3/specfirst)
 The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
 minute after the last command ends. Copy what must be kept in the same command that
 runs this script (docs/lessons.md, lesson 39). The log is in build/gates/gen-2a/ here.
