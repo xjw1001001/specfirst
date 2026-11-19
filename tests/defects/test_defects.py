@@ -652,7 +652,9 @@ def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
     for edge in edges:
         if edge["type"] == "reads":
             reads.setdefault(edge["from"], set()).add(edge["to"])
-        elif edge["type"] == "computes":
+        elif edge["type"] == "computes" and edge["from"] in pilot.gold:
+            # The ARD rows of the example; those of the kit's other result sets (the
+            # efficacy tables of real-5a) are held against the R engine by D10.
             own = graph.ars_id(pilot.gold[edge["from"]]["analysis_id"])
             from_results.setdefault(own, set()).add(edge["to"])
 
