@@ -82,7 +82,10 @@ print("\n".join(report.lines(result)))
   (another unit, a unit the catalog does not have) is listed, and the
   reading score is then not perfect. A decision the candidate leaves out
   takes the house default; one without a default stays open
-  (`ae.related.values`), and the chain is then not built.
+  (`ae.related.values`), and the chain is then not built. Since ADR-014
+  (std track, approved 2026-11-18) the build leaves out only what such a
+  decision binds: its gold cells are pending (`result.pending`, a line
+  "pending" in the build score), counted apart, and the rest is scored.
 - `result.reading` has every dimension per decision (`counts("class")`,
   `counts("unit")`, `wrong()`); `result.builds[dataset]` the four scores
   (`lines()` names every denominator); `result.owners[dataset]` and
@@ -120,7 +123,9 @@ Numbers are in docs/reports/read-1a.md. In short:
 
 - On each of the ten kits the gold decisions, built again, give the files
   of the kit, and arm C scores 100% in both stages.
-- Arm S builds nothing on the chain in any kit (below). At stage T it
+- Arm S builds nothing on the chain in any kit (below; superseded by
+  ADR-014: arm S now builds the chain, and the cells of the row of related
+  events are pending, docs/reports/std-issues.md). At stage T it
   gives between 0 and 25 of the 15 to 30 gold cells of a kit's twin: the
   report has the line of every kit. That is the floor arm R is compared
   with.
@@ -187,6 +192,8 @@ For the owner (docs/decisions/ADR-008.md):
   be built without a decision counts as not produced. So "R against S" on
   the chain compares with zero in every study. A default for that
   decision, or an ADAE that builds without it, is the std track's.
+  Settled by ADR-014 (approved 2026-11-18): the chain is built without
+  what the decision binds, and those cells are pending.
 - The sweep of the matrices is a check of the gate that its text does not
   ask for.
 - The crosswalk of the pilot rows.
@@ -226,7 +233,8 @@ Not done, and not part of read-1a:
 
 For other tracks:
 
-- std: `ae.related.values` without a default (above). The pilot shows
+- std: `ae.related.values` without a default (above; its effect on the
+  build is settled by ADR-014, a default is still `catalog@2`'s). The pilot shows
   three rows that `tfl.ae.summary.rows` cannot name: related serious
   events, related events leading to death, events leading to dose
   modification (ADR-005, "For the owner", item 3).

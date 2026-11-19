@@ -93,9 +93,10 @@ from specfirst.score.build import (
     WrongCell,
     adam_differences,
     ard_differences,
+    axes_without,
     table_of,
 )
-from specfirst.score.candidate import SUBJECT_KEY, Build, Key, Machine
+from specfirst.score.candidate import SUBJECT_KEY, Build, Key, Machine, pending_cells
 from specfirst.score.reading import same_value
 
 LAYERS = {"L4": "analysis data", "L5": "analysis", "L6": "results", "L7": "display",
@@ -392,6 +393,8 @@ class _Runs:
         self._wanted = {output: table_of(grid) for output, grid in gold.grids.items()}
 
     def _table(self, decisions: tuple[Key, ...], output: str):
+        """The grid of the candidate built again with these decisions at gold, and the
+        gold cells that still wait in that build (ADR-014)."""
         name = (tuple(sorted(decisions)), output)
         if name not in self._tables:
             chosen = set(decisions)
@@ -402,21 +405,32 @@ class _Runs:
                     records.append({"id": key[0], "unit": key[1], "value": value})
             order = {(r["id"], r["unit"]): n for n, r in enumerate(self.gold.records)}
             records.sort(key=lambda r: order.get((r["id"], r["unit"]), len(order)))
-            grid = self.rebuild(records).grids.get(output)
-            self._tables[name] = None if grid is None else table_of(grid)
+            made = self.rebuild(records)
+            grid = made.grids.get(output)
+            self._tables[name] = (None if grid is None else table_of(grid),
+                                  set(pending_cells(self.gold, made)))
         return self._tables[name]
 
     def cell(self, decisions: tuple[Key, ...], wrong: WrongCell) -> bool:
         """With these decisions at gold, the cell has the gold text."""
-        table = self._table(decisions, wrong.output)
+        table, _ = self._table(decisions, wrong.output)
         found = None if table is None else table.cells.get((wrong.row, wrong.column))
         wanted = self._wanted[wrong.output].cells[(wrong.row, wrong.column)]["text"]
         return found is not None and found["text"] == wanted
 
     def axis(self, decisions: tuple[Key, ...], output: str, axis: str) -> bool:
-        """With these decisions at gold, the axis is the gold axis."""
-        table = self._table(decisions, output)
-        return table is not None and getattr(table, axis) == getattr(self._wanted[output], axis)
+        """With these decisions at gold, the axis is the gold axis, without the rows or
+        columns of gold whose every cell still waits for a decision without a value
+        (ADR-014, decision 3: they leave the axis that is held)."""
+        table, waiting = self._table(decisions, output)
+        if table is None:
+            return False
+        wanted = self._wanted[output]
+        if waiting:
+            rows, columns = axes_without(wanted, {key for key, cell in wanted.cells.items()
+                                                  if cell["id"] in waiting})
+            return getattr(table, axis) == (rows if axis == "rows" else columns)
+        return getattr(table, axis) == getattr(wanted, axis)
 
 
 JOINT = "only with all of these decisions at their gold values: more than one difference reaches it"

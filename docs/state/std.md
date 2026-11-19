@@ -15,6 +15,41 @@ section 13.4).
   1, tagged `catalog@1`. The words and their limits are in
   docs/decisions/ADR-004.md, "Node N1: the owner's answer". The gate on
   the frozen commit is in docs/reports/std-1.md, "After node N1".
+- std-issues (2026-11-18 and 19): the parts of issues #26, #24 and #25
+  that change neither `catalog@1`, nor `open-default@1`, nor the
+  generator. Gates on clean clones of `42212b8`: std-1, real-2, real-3a,
+  gen-2a, gen-3a, read-1a, read-2a, all PASS. Generated kits 1 to 4 of
+  the seed gen-2a are the same bytes. Evidence: docs/reports/std-issues.md
+  and its seven logs. Review: docs/reports/std-issues.review.md (pass 2
+  signed). Choices: docs/decisions/ADR-014.md, approved by the owner on
+  2026-11-18 (it changes ADR-005, decision 3).
+  - #26: the scorer compiles in the pending mode
+    (`compile_decisions(pending=True)`): a decision without a value that
+    the build needs leaves out what it binds (columns and lookups and
+    what derives from them; a dataset whose records rest on it; analyses,
+    rows, whole outputs), and the build score counts those gold cells
+    apart, neither right nor wrong. Arm S now builds the chain.
+    `specfirst compile` and the generator are unchanged.
+  - #25: `compile_decisions(sdtm=...)` leaves out a column, or a dataset
+    whose records rest on one, that derives from a variable the SDTM lacks
+    and SDTMIG v3.4 does not require (warning); a table reading what is
+    left out is not produced; a Required one stops the compile.
+  - #24: the scorer's build stops after ADaM when no subject has TRTSDT,
+    naming the decision, its alternative, its filter and the empty
+    variable.
+
+## For other tracks (from std-issues)
+
+- read: `scorer.Result.pending` and `BuildScore.pending_by_decision()`
+  name the gold cells that wait for a decision without a value; a waiting
+  output leaves `in_gold`. A candidate that asks and gets no answer is
+  built and scored on the rest (ADR-014).
+- gen, read: `compile_decisions` takes `pending` and `sdtm`; both are off
+  by default, and a compile that needs neither gives the files it always
+  gave (the kits are the same bytes).
+- Left for later: a `trt.end.source` alternative that reads no dose
+  (`catalog@2`, #23), a probe with EXDOSE missing everywhere (generator),
+  `specfirst compile --sdtm`.
 
 ## Open
 

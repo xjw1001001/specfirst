@@ -496,6 +496,10 @@ def build_line(result: scorer.Result) -> str:
                 f"{score.correct} of {cells['shared_rows']}, {cells['produced']} and "
                 f"{cells['all']}; strict {score.strict} of {score.in_gold}; lenient "
                 f"{score.lenient} of {score.in_gold}")
+        waiting = score.pending_by_decision()
+        if waiting:
+            text += "; pending (ADR-014) " + ", ".join(
+                f"{key[0]} {count} cells" for key, count in waiting.items())
         if not score.valid:
             text += f" (not valid: {str(score.failure)[:90]})"
         said.append(text)

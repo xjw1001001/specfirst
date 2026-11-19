@@ -8,7 +8,9 @@ the questions it asked and what it listed as unmapped.
 The arms that need no reader (ADR-005, decision 3):
 
     S   the standard alone: no record. Every decision of the scope takes
-        its house default; one without a default stays open.
+        its house default; one without a default stays open, and what the
+        build needs it for is pending (ADR-014): left out of the build, and
+        its gold cells counted apart, neither right nor wrong.
     C   the control of section 9.3: the parser on the standard-form
         document that `specfirst render` writes for the stated decisions,
         and on the house standards document for the defaults. It must
@@ -33,7 +35,7 @@ from specfirst.compile import house as houses
 from specfirst.compile.standard_form import StandardForm, decision_record
 from specfirst.machine.canonical import content_hash
 from specfirst.score import attribute, build, reading
-from specfirst.score.candidate import Arms, Build, Data, Hooks, Key, Machine, vector
+from specfirst.score.candidate import Arms, Build, Data, Hooks, Key, Machine, pending_cells, vector
 
 STAGES = ("C", "T")
 CONTROL_DOCUMENT, CONTROL_TITLE = "sap", "Standard form"
@@ -82,6 +84,9 @@ class Result:
     # changes cells (their number per dataset); here another owner stands before it.
     silent: list[Key] = field(default_factory=list)
     behind: dict[Key, dict[str, int]] = field(default_factory=dict)
+    # Decisions without a value that the build needs (ADR-014): per dataset, the gold
+    # cells that wait for each. Such a decision is neither silent nor behind.
+    pending: dict[Key, dict[str, int]] = field(default_factory=dict)
 
     @property
     def perfect(self) -> bool:
@@ -133,11 +138,19 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
                          documents or case.documents, asked, unmapped, set())
     ours = vector(machine.catalog, machine.house, case.gold, candidate, case.units)
     builds, owners, axes = {}, {}, {}
+    waiting: dict[Key, dict[str, int]] = {}
     for name in case.data:
         data, gold = staged(machine, case, name)
         made = machine.build(ours, data, case.arms(ours), hooks)
+        cells = pending_cells(gold, made)
+        for keys in made.pending.values():
+            for key in keys:
+                waiting.setdefault(key, {other: 0 for other in case.data})
+        for keys in cells.values():
+            for key in keys:
+                waiting[key][name] += 1
         scored = build.score(name, gold.grids, made.grids, made.ok, made.failure,
-                             made.not_produced)
+                             made.not_produced, cells)
         other_axes = [(output.output, axis) for output in scored.outputs if output.produced
                       for axis, equal in (("rows", output.rows_equal),
                                           ("columns", output.columns_equal)) if not equal]
@@ -152,14 +165,15 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
     silent, behind = [], {}
     values = {(r["id"], r["unit"]): r["value"] for r in ours}
     for item in read.wrong():
-        if item.key in owning:
+        if item.key in owning or item.key in waiting:
             continue
         changed = _alone(machine, case, item.key, values.get(item.key))
         if any(changed.values()):
             behind[item.key] = changed
         else:
             silent.append(item.key)
-    return Result(case.id, arm, case.stage, read, builds, owners, axes, silent, behind)
+    return Result(case.id, arm, case.stage, read, builds, owners, axes, silent, behind,
+                  dict(sorted(waiting.items())))
 
 
 def _alone(machine: Machine, case: Case, key: Key, value: object) -> dict[str, int]:
