@@ -35,8 +35,9 @@ the decisions) is neither right nor wrong: it leaves every denominator,
 and a row or a column of gold whose every cell waits leaves the axis that
 `strict` holds. The cells are counted apart, by decision. An output of gold
 whose every cell waits and that the candidate did not build waits as a
-whole: it is neither produced nor counted as not produced. A build with a
-pending cell is not perfect.
+whole: it is neither produced nor counted as not produced, so it leaves the
+denominator of `produced`, `strict` and `lenient` too (`in_gold`). A build
+with a pending cell is not perfect.
 
 For the layers below the grid (section 9.2, "values"), `adam_differences`
 and `ard_differences` say which ADaM columns and which results differ;
@@ -192,7 +193,9 @@ class BuildScore:
 
     @property
     def in_gold(self) -> int:
-        return len(self.outputs)
+        """The outputs of gold, but those that wait as a whole (ADR-014, decision 3:
+        neither produced nor counted as not produced)."""
+        return sum(1 for output in self.outputs if not output.waiting)
 
     @property
     def produced(self) -> int:
@@ -246,8 +249,8 @@ class BuildScore:
         cells = self.denominators()
         produced = f"{self.dataset}: produced: {self.produced} of {self.in_gold} outputs in gold"
         if self.waiting:
-            produced += (f" ({self.waiting} {'waits' if self.waiting == 1 else 'wait'} for a "
-                         "decision without a value)")
+            produced += (f", and {self.waiting} {'waits' if self.waiting == 1 else 'wait'} for "
+                         "a decision without a value")
         said = [
             f"{self.dataset}: valid: {'yes' if self.valid else 'no (' + str(self.failure) + ')'}",
             produced,

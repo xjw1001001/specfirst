@@ -29,15 +29,19 @@ generator compile as they always did:
     pending   (the scorer's mode, docs/decisions/ADR-014.md) a decision that
               a dataset or a table needs and that has no value does not stop
               the compile. What it binds is left out and listed in
-              `Compiled.pending`: the ADaM columns its fragments would write
-              and the output columns that derive from them, the analyses
-              that read them and their layout rows, an output that cannot be
-              built without it.
+              `Compiled.pending`: the ADaM columns and lookups its fragments
+              would write and the output columns that derive from them, a
+              dataset whose records rest on it (its keys derive from it, or it
+              adds a row template), the analyses that read what is left out
+              and their layout rows, an output that cannot be built without
+              it. An optional decision of the house that the study leaves out
+              is pending only where something reads its columns.
     sdtm      the columns of each SDTM file of the study. An output column
               that derives from a variable the SDTM lacks is left out, with a
-              warning, when SDTMIG does not require the variable; a table
-              that reads such a column is not produced (`Compiled.left_out`).
-              A Required variable that the data lack stops the compile.
+              warning, when SDTMIG does not require the variable, and so is a
+              dataset whose records rest on one; a table that reads what is
+              left out is not produced (`Compiled.left_out`). A Required
+              variable that the data lack stops the compile.
 
 yamaa evaluates the columns an output needs and nothing else, so a column
 is left out by leaving it out of the output: the house parent specs are
@@ -275,14 +279,16 @@ class _Gone:
         return before != (len(self.keys), len(self.absent))
 
 
-def _columns_written(catalog: Catalog, entry_id: str, dataset: str) -> set[str]:
-    """The columns that some alternative of an entry writes into a dataset."""
-    names: set[str] = set()
+def _parts_written(catalog: Catalog, entry_id: str, dataset: str) -> dict[str, set[str]]:
+    """What some alternative of an entry writes into a dataset: column names, the IDs
+    of lookups (intermediates) and of row templates."""
+    found: dict[str, set[str]] = {"columns": set(), "intermediates": set(), "rows": set()}
     for alternative in compile_template(catalog, entry_id).values():
         body = ((alternative or {}).get("adam") or {}).get(dataset) or {}
-        names |= {str(column.get("name")) for column in body.get("columns") or []
-                  if isinstance(column, dict)}
-    return names
+        for part, key in (("columns", "name"), ("intermediates", "id"), ("rows", "id")):
+            found[part] |= {str(member.get(key)) for member in body.get(part) or []
+                            if isinstance(member, dict)}
+    return found
 
 
 def _sdtmig_core(domain: str, variable: str) -> str | None:
@@ -354,11 +360,11 @@ def _left_out(meta: dict, house: House, spec: dict, columns: list[str],
               gone: dict[str, _Gone], built: dict[str, list[str]]) -> dict[str, _Gone]:
     """The output columns of a dataset that cannot be built, each with why.
 
-    A column cannot be built when it reads a column that a pending decision
-    would write (`waiting`: column -> decision), a variable that the SDTM
-    lacks, an output column of another dataset that was left out (`gone`;
-    `built`: the output columns of the datasets compiled before), or a
-    column that cannot be built.
+    A column cannot be built when it reads a column or a lookup that a
+    pending decision would write (`waiting`: name -> decision), a variable
+    that the SDTM lacks, an output column of another dataset that was left
+    out (`gone`; `built`: the output columns of the datasets compiled
+    before), or a column that cannot be built.
     """
     from specfirst.machine import lineage
 
@@ -386,6 +392,8 @@ def _left_out(meta: dict, house: House, spec: dict, columns: list[str],
             if alias in sdtm_inputs:
                 if sdtm is not None and name not in set(sdtm.get(sdtm_inputs[alias], ())):
                     found.absent.add(f"{sdtm_inputs[alias].upper()}.{name}")
+            elif alias in waiting and name:  # a column of a lookup that is not written
+                found.keys.add(waiting[alias])
             elif f"adam:{alias}.{name}" in gone:
                 found.add(gone[f"adam:{alias}.{name}"])
         if found.keys or found.absent:
@@ -456,9 +464,20 @@ def _compile_adam(catalog: Catalog, house: House, fragments: dict, result: Compi
             inputs[input_name] = _join(folder, f"{stem}.{data_format}")
         columns = [column for column in meta.get("columns") or [] if column in written]
         # Pending decisions and variables the SDTM lacks: what cannot be built is left
-        # out of the output. Without either, nothing is looked at.
-        waiting = {column: (entry_id, catalog.entry(entry_id).units[0]) for entry_id in missing
-                   for column in sorted(_columns_written(catalog, entry_id, dataset))}
+        # out of the output. Without either, nothing is looked at. An optional decision
+        # that the study leaves out writes nothing, as in the default mode; in the
+        # pending mode what reads its columns waits for it.
+        left_optional = ([e for e in writing if e not in present and e in optional]
+                         if pending else [])
+        waiting: dict[str, Key] = {}  # a column or a lookup a pending decision would write
+        adds_records: set[Key] = set()  # pending decisions with a row template here
+        for entry_id in [*missing, *left_optional]:
+            key = (entry_id, catalog.entry(entry_id).units[0])
+            parts = _parts_written(catalog, entry_id, dataset)
+            for member in sorted(parts["columns"] | parts["intermediates"]):
+                waiting[member] = key
+            if parts["rows"] and entry_id in missing:
+                adds_records.add(key)
         upstream = any(element.startswith(f"adam:{alias}.") for alias in meta.get("inputs") or {}
                        for element in gone)
         if waiting or sdtm is not None or upstream:
@@ -466,7 +485,10 @@ def _compile_adam(catalog: Catalog, house: House, fragments: dict, result: Compi
                              waiting, sdtm, gone, result.adam_columns)
             for column, key in waiting.items():
                 if column in (meta.get("columns") or []) and column not in written:
-                    lost[column] = _Gone({key})
+                    if key[0] in missing:
+                        lost[column] = _Gone({key})
+                    else:  # optional: not written, and named only where something reads it
+                        gone[f"adam:{dataset}.{column}"] = _Gone({key})
             needed = [c for c in [*(parent.get("keys") or []),
                                   *((parent.get("output") or {}).get("order_by") or [])]
                       if c in lost]
@@ -478,14 +500,24 @@ def _compile_adam(catalog: Catalog, house: House, fragments: dict, result: Compi
                 problems.append(f"{dataset}: the SDTM {domain} has no {name_of}, which "
                                 f"{SDTMIG} requires (Required); {dataset} needs it for "
                                 f"{', '.join(readers)}")
-            if needed and not required and not any(lost[c].absent for c in needed):
-                # The records themselves wait for a decision: the dataset waits as a whole,
-                # and what reads it waits too.
-                why = _Gone(set().union(*(lost[c].keys for c in needed)))
+            if required:
+                continue
+            if needed or adds_records:
+                # The records themselves cannot be built: the dataset is left out as a
+                # whole, and what reads it with it. It waits for a decision, or it is
+                # left out with a warning when the SDTM lacks what its records rest on.
+                why = _Gone(set(adds_records))
+                for column in needed:
+                    why.add(lost[column])
                 for column in meta.get("columns") or []:
                     gone[f"adam:{dataset}.{column}"] = why
                 for key in why.keys:
                     result.pending.setdefault(key, []).append(f"adam:{dataset}")
+                if why.absent:
+                    said = _why(why)
+                    result.left_out[f"adam:{dataset}"] = said
+                    result.warnings.append(f"{dataset} is left out: its records cannot be "
+                                           f"built: {said}")
                 for path in [p for p in result.files if p.startswith(f"adam/fragments/{name}/")]:
                     del result.files[path]
                 for key in list(result.binds):
@@ -493,11 +525,6 @@ def _compile_adam(catalog: Catalog, house: House, fragments: dict, result: Compi
                                          if not b.startswith(f"adam:{dataset}.")]
                     if not result.binds[key]:
                         del result.binds[key]
-                continue
-            if needed and not required:
-                problems.append(f"{dataset}: its key {', '.join(dict.fromkeys(needed))} cannot "
-                                "be built: " + _why(lost[needed[0]]))
-            if required or needed:
                 continue
             for column in sorted(lost, key=lambda c: (meta.get("columns") or []).index(c)):
                 why = lost[column]
@@ -843,6 +870,8 @@ def _without_what_is_gone(unit: str, output: str, elements: dict[str, list[dict]
                 result.warnings.append(said)
                 return True
             dropped.setdefault(analysis["id"], set()).update(why.keys)
+            for key in why.keys:  # the column it waits for, named where it is read
+                result.pending.setdefault(key, []).append(f"adam:{dataset}.{variable}")
     grown = bool(dropped)
     while grown:
         grown = False

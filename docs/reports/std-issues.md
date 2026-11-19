@@ -257,7 +257,66 @@ those of arm S on the chain:
 
 Every other line, arm S at stage T, the control, the twelve planted
 defects on HAND01 and on each kit, the matrices and both sweeps, is the
-same.
+same, but one: the ASCII check counts 518 files in read-2a's log and 494
+here, because read-2a's commit holds more files (review, finding 5).
+
+## After pass 1 of the review
+
+Pass 1 (docs/reports/std-issues.review.md) did not sign: one blocking
+finding and five that do not block. What was done for each:
+
+1. (blocking) `pop.efficacy.rule`, which the house lists as `optional`
+   for ADSL, still stopped the build when the table is on the efficacy set
+   (`compile: the tables read ADSL.EFFFL, which no decision of the study
+   writes`). Now, in the pending mode, the columns of an optional decision
+   that the study leaves out are recorded as waiting for it; an analysis
+   that reads one is left out, and the adverse event summary waits for
+   `pop.efficacy.rule` as a whole (its analysis set reads EFFFL). A study
+   that reads no such column waits for nothing.
+2. A variable that the records of a dataset rest on (ADVS: EXDOSE,
+   VSSTRESN and others) stopped the whole compile when the SDTM lacked it.
+   Now that dataset is left out with a warning (`ADVS is left out: its
+   records cannot be built: ...`), and a table that does not read it is
+   built.
+3. A pending decision that adds records (`bds.eot.record`, a row template
+   of ADVS) left nothing out. Now its dataset waits as a whole, and so does
+   a decision whose lookups (intermediates) another column reads.
+4. An output that waits as a whole stayed in the denominator of outputs.
+   Now it leaves it (`in_gold`), as ADR-014 decision 3 says: on a waiting
+   output the line reads `produced: 0 of 0 outputs in gold, and 1 waits for
+   a decision without a value`.
+5. The ASCII line of the compared logs: said above.
+6. docs/state/read.md still says that arm S builds nothing on the chain:
+   a pointer to ADR-014 is added when `track/std` takes `main` with read-2a
+   merged (that file is the read track's, and read-2a changes it).
+
+Tests first: findings 1 to 4 are four new tests and two changed ones,
+committed alone (`7095199`) and run on that commit, where the code is still
+that of pass 1, before the fix:
+
+```text
+7095199 std-issues: tests for findings 1 to 4 of review pass 1 (they fail before the fix)
+$ python -m pytest -q --no-header -rf tests/unit/test_pending.py::test_a_table_decision_without_a_value_leaves_the_output_pending tests/unit/test_pending.py::test_an_optional_decision_without_a_value_that_a_table_reads tests/unit/test_pending.py::test_a_decision_that_adds_records_makes_its_dataset_wait tests/unit/test_pending.py::test_pending_cells_are_neither_right_nor_wrong tests/unit/test_sdtm_gaps.py::test_a_variable_the_records_of_a_dataset_rest_on_leaves_that_dataset_out
+...
+E       assert (0, 1, 1, [], 0) == (0, 0, 1, [], 0)
+...
+E       AssertionError: compile: ADVS: its key STUDYID, USUBJID, VSSEQ, DTYPE, PARAMCD cannot be built: the SDTM VS has no VSSTRESN (Expected in SDTMIG v3.4)
+...
+FAILED tests/unit/test_pending.py::test_a_table_decision_without_a_value_leaves_the_output_pending
+FAILED tests/unit/test_pending.py::test_an_optional_decision_without_a_value_that_a_table_reads
+FAILED tests/unit/test_pending.py::test_a_decision_that_adds_records_makes_its_dataset_wait
+FAILED tests/unit/test_pending.py::test_pending_cells_are_neither_right_nor_wrong
+FAILED tests/unit/test_sdtm_gaps.py::test_a_variable_the_records_of_a_dataset_rest_on_leaves_that_dataset_out
+5 failed in 3.18s
+```
+
+The same files and the tests that changed with the code, on a copy of the
+worktree with the fix (committed as the next commit):
+
+```text
+$ python -m pytest -q --no-header -rf tests/unit/test_pending.py tests/unit/test_sdtm_gaps.py tests/unit/test_score_hand.py tests/unit/test_score_build.py tests/unit/test_compile.py tests/unit/test_score_kit.py
+122 passed in 142.93s (0:02:22)
+```
 
 ## Gates on clean clones
 
