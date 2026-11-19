@@ -154,7 +154,7 @@ permission settings."; steps 6 and 7 "Permission to use Bash with command
 ## The dry runs, on kit 4 of the gate seed (train, the ask demo), stage C
 
 Arm R, made once with the model and kept (the second of two runs; the first
-was made before the fix of lesson 61 and is not kept, see "Found"):
+was made before the fix of lesson 62 and is not kept, see "Found"):
 
 ```
 $ specfirst run arm /root/scratch-read2a/kits/kit-004 --arm R --seed gen-2a/kit-4 --keep
@@ -210,7 +210,7 @@ gate log (below).
 Model use of the part: USD 1.16 computed from the tokens at API prices,
 on the owner's subscription (no money charged per token). Before the login
 two print-mode calls answered "Invalid API key" with 0 tokens, and one
-probe started no program (lesson 62), at no cost. The prices of ADR-010,
+probe started no program (lesson 63), at no cost. The prices of ADR-010,
 decision 7 give the CLI's own figure to the fourth decimal.
 
 ## Scores (report only: they decide nothing in the gate)
@@ -236,7 +236,7 @@ how hard reading is (ADR-005, "Consequences").
 
 ## Found during the part
 
-- Lesson 61. The canary scan took the text a reader may read from the task
+- Lesson 62. The canary scan took the text a reader may read from the task
   folder after the run, out/ included: a line of gold copied into out/
   would have been allowed. Seen when the kept dry run was checked against a
   task built anew (four hits the live record lacked). The task text is now
@@ -248,7 +248,7 @@ how hard reading is (ADR-005, "Consequences").
   records as the catalog renders them, and the prose of the store, are no
   canaries; what the reader typed is (ADR-010, decision 5). The dry run was
   made again on the fixed code, and only that one is kept.
-- Lesson 62. The CLI went from 2.0.29 to 2.1.327 between the check of its
+- Lesson 63. The CLI went from 2.0.29 to 2.1.327 between the check of its
   flags and the login: `--permission-mode default` is gone, and `cli.js`
   became a native `claude.exe`. The flags were checked again (ADR-010,
   decision 1): `manual` with `--permission-prompts none`, `--tools`,
@@ -339,7 +339,7 @@ how hard reading is (ADR-005, "Consequences").
 
 ## Files
 
-- docs/decisions/ADR-010.md, docs/lessons.md (61, 62), docs/state/read.md
+- docs/decisions/ADR-010.md, docs/lessons.md (62, 63), docs/state/read.md
 - docs/reports/read-2a.gate.log (the gate read-2a on a clean clone), and
   read-2a.gen-3a.gate.log, read-2a.gen-2a.gate.log,
   read-2a.read-1a.gate.log

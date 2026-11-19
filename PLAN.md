@@ -103,11 +103,14 @@ These have no exceptions. Enforce the first two with deny rules in
    ignored cache (E20). Reference grids parsed from the CSR stay in the
    cache too; only the parser is committed.
 5. Original code and documents are MIT.
-6. Publishing is the owner's act. Pushing to the owner's private repository
-   is allowed and expected. Anything other people can see needs the owner's
-   approval of the exact text first: an issue, a pull request or a comment
-   on someone else's repository, a post, or a change of this repository's
-   visibility. Draft it and stop.
+6. Publishing is the owner's act. The repository is public (ADR-013), and
+   the owner has approved that the work of the sessions is pushed to it as
+   it is made: commits, reports, gate logs and run records. A pushed file
+   holds no credential, no token and no local user path. Anything else
+   other people can see needs the owner's approval of the exact text first:
+   an issue, a pull request or a comment, here or on someone else's
+   repository, a post, a release, or a change of this repository's
+   visibility or settings. Draft it and stop.
 7. One-way flow. The framework may be used anywhere, including on an
    employer's machines and on an employer's studies. Nothing produced there
    comes back into this repository: no results, logs, lessons, kits, catalog

@@ -81,8 +81,9 @@ def _groups(event: ars.Event, grouping_id: str) -> list[dict]:
     if grouping is None:
         raise DisplayError(f"the grouping '{grouping_id}' is not in the reporting event")
     if grouping.get("dataDriven"):
-        raise DisplayError(f"the grouping '{grouping_id}' is data-driven: its groups must be "
-                           "listed before a grid is built (specfirst.gen.gold)")
+        raise DisplayError(f"the grouping '{grouping_id}' is data-driven: a column needs "
+                           "listed groups, and specfirst.gen.gold lists those of a grouping "
+                           "on ADSL only (ADR-011)")
     return [group for _, group in sorted(enumerate(grouping["groups"]),
                                          key=lambda item: (item[1].get("order", 0), item[0]))]
 
