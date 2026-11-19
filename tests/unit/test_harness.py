@@ -353,13 +353,17 @@ def test_what_the_reader_writes_into_out_is_scanned_not_allowed(root, kit_dir, s
 
 def _store_value(made_task, kit_dir):
     """A value that a statement of the store holds, for a decision of the task, other
-    than the kit's gold value."""
+    than the kit's gold value, whose slot texts the task holds (a reader could have them
+    from its task)."""
     gold = {(r["id"], r["unit"]): r["value"] for r in genkits.read_decisions(kit_dir)}
+    known = canary.squeeze("\n".join(runs.task_texts(made_task)))
     for line in (natural.store_dir() / "paragraphs.jsonl").read_text(
             encoding="ascii").splitlines():
         item = json.loads(line)
         key = (item["entry"], item["unit"])
-        if key in made_task.keys and item["value"] != gold.get(key) and len(item["value"]) > 1:
+        if key in made_task.keys and item["value"] != gold.get(key) and len(
+                item["value"]) > 1 and all(canary.squeeze(text) in known
+                                           for text in runs._texts_of(item["value"])):
             return key, item["value"], item["statement"]
     raise AssertionError("no such statement in the store")
 
@@ -380,3 +384,96 @@ def test_a_wrong_value_that_the_store_states_is_no_canary(root, kit_dir, made, c
         natural.store_dir() / "paragraphs.jsonl").read_text(encoding="ascii")[:400]}]}]
     assert runs.kit_canaries(root, kit_dir, runs.task_texts(made), "R", kit_sha, None,
                              copied).find(copied[0]["citations"][0]["quote"])
+
+
+# ---- the findings of the review of read-2a ------------------------------------------------
+
+
+def test_lines_of_gold_in_a_text_slot_stay_canaries(root, kit_dir, made):
+    """H1: a slot of text holds what the reader typed; a line of gold written there
+    allows nothing, while a slot value that the task holds does."""
+    kit_sha = runs.sha256_file(kit_dir / "kit.yaml")
+    texts = runs.task_texts(made)
+    plain = runs.kit_canaries(root, kit_dir, texts, "R", kit_sha, None)
+    lines = [item.text for item in plain.items.values()
+             if item.source.startswith("kit:gold/summary.md") and '"' not in item.text][:3]
+    assert len(lines) == 3
+    slotted = [{"id": "ae.related.values", "unit": "mod-ae-emergence",
+                "value": {"rule": "stated_list", "values": lines}, "status": "stated",
+                "class": "document_rule"}]
+    found = runs.kit_canaries(root, kit_dir, texts, "R", kit_sha, None, slotted)
+    assert all(found.find(line) for line in lines)
+    catalog = catalogs.load(catalogs.default_dir(root))
+    assert runs.own_records(catalog, slotted, "\n".join(texts)) == []
+    held = [{**slotted[0], "value": {"rule": "stated_list", "values": ["RELATED"]}}]
+    assert len(runs.own_records(catalog, held, "\n".join(texts))) == 1
+
+
+def test_a_reader_that_rewrites_its_tools_fails_its_run(root, kit_dir, scratch):
+    """H2: bin/ is denied to the tools that write, and held after the run."""
+    plan = scratch / "rewrite-plan.json"
+    plan.write_text(json.dumps({"records": [], "unmapped": [],
+                                "write": {"bin/check": "#!/usr/bin/env bash\necho hi\n"}}),
+                    encoding="ascii")
+    made = runs.run(root, kit_dir, "R", scratch / "tasks", scratch / "runs",
+                    reader=adapter.stub_reader(), env={"SPECFIRST_STUB_PLAN": str(plan)},
+                    name="R-rewrite")
+    assert made.record["tools_changed"] == ["bin/check"] and not made.passed
+    settings = json.loads((made.folder / adapter.SETTINGS).read_text(encoding="ascii"))
+    tools_dir = scratch / "tasks" / made.record["task"]["id"] / "bin"
+    assert adapter.rule_paths(tools_dir, False)[0] in adapter.denied_roots(
+        settings, adapter.WRITE_TOOLS)
+    open_settings = adapter.settings([scratch / "kits"], False)
+    argv = adapter.command(adapter.Reader(("claude",)), scratch / "s.json", record.BUDGETS["R"])
+    assert any("write the tools" in problem for problem in adapter.command_problems(
+        argv, open_settings, [scratch / "kits"], False, tools_dir))
+
+
+def test_the_deny_list_is_never_narrowed(root, kit_dir, scratch, monkeypatch):
+    """H4: a task or run folder in the folder that holds the checkouts is refused, and so
+    is a Windows reader whose home cannot be found."""
+    with pytest.raises(runs.RunError):
+        runs.protected_roots(root, kit_dir, root.parent / "tasks-x", scratch / "runs", None,
+                             False)
+    monkeypatch.setattr(runs, "windows_home", lambda: None)
+    with pytest.raises(runs.RunError):
+        runs.protected_roots(root, kit_dir, scratch / "tasks", scratch / "runs", None, True)
+    found = runs.protected_roots(root, kit_dir, scratch / "tasks", scratch / "runs", None,
+                                 False, scratch / "tasks" / "task-none")
+    assert root.resolve().parent in found
+    assert all(path.parent != (scratch / "tasks").resolve() or path.name != "task-none"
+               for path in found)
+
+
+def test_a_kept_run_is_held_against_its_transcript(root, kit_dir, scratch):
+    """H5: budget and cost raised together, a cost that is not the transcript's, a
+    transcript that writes bin/: each fails the check of a kept run."""
+    seed = genkits.kit_seed(SEED, NUMBER)
+    keys = tasks.build(root, kit_dir, scratch / "tasks").keys
+    plan = gate.stub_plan(kit_dir, keys, scratch / "stub-h5")
+    made = runs.run(root, kit_dir, "R", scratch / "tasks", scratch / "runs",
+                    reader=adapter.stub_reader(), seed=seed,
+                    env={"SPECFIRST_STUB_PLAN": str(plan)}, name="R-h5")
+    kept = runs.keep(made, scratch / "tasks" / made.record["task"]["id"], kit_dir, root,
+                     scratch / "kept-h5")
+    assert runs.kept_problems(json.loads((kept / runs.RUN_JSON).read_text()), kept) == []
+    raised = json.loads((kept / runs.RUN_JSON).read_text())
+    raised["budget"]["usd"], raised["cost"]["usd"] = 100.0, 99.0
+    found = runs.kept_problems(raised, kept)
+    assert any("not the budget" in p for p in found) and any("usd" in p for p in found)
+    with open(kept / adapter.TRANSCRIPT, "a", encoding="ascii") as handle:
+        handle.write(json.dumps({"type": "assistant", "message": {"content": [{
+            "type": "tool_use", "name": "Edit", "id": "t",
+            "input": {"file_path": "<task>/bin/ask"}}]}}) + "\n")
+    assert any(p.startswith("tools:") for p in runs.kept_problems(
+        json.loads((kept / runs.RUN_JSON).read_text()), kept))
+
+
+def test_cache_writes_are_priced_as_the_model_usage_splits_them():
+    """H9: one-hour and five-minute writes of one model, each at its price."""
+    result = {"usage": {"cache_creation": {"ephemeral_1h_input_tokens": 1}},
+              "modelUsage": {"claude-opus-5-5": {
+                  "cacheCreationInputTokens": 2_000_000,
+                  "cacheCreationEphemeral1hInputTokens": 1_000_000,
+                  "cacheCreationEphemeral5mInputTokens": 1_000_000}}}
+    assert record.dollars(result) == (8.0 + 5.0, [])

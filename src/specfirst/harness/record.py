@@ -85,10 +85,14 @@ def tokens_by_model(result: dict, asked: str = MODEL) -> dict[str, dict[str, int
 
 
 def dollars(result: dict, asked: str = MODEL) -> tuple[float, list[str]]:
-    """What the tokens of a run cost on the API, and the models without a price. Cache
-    writes take the one-hour price when the run wrote any one-hour cache."""
+    """What the tokens of a run cost on the API, and the models without a price. A
+    model's cache writes are split into one-hour and five-minute writes as `modelUsage`
+    gives them; where it does not, they take the one-hour price when the run wrote any
+    one-hour cache. Haiku 5.5 costs more above 100K tokens of prompt; that is not
+    modelled (no run of read-2a uses it)."""
     usage = result.get("usage") or {}
     hour = _number(usage.get("cache_creation") or {}, "ephemeral_1h_input_tokens") > 0
+    split = result.get("modelUsage") or {}
     total, unknown = 0.0, []
     for model, counts in tokens_by_model(result, asked).items():
         prices = price(model)
@@ -97,8 +101,13 @@ def dollars(result: dict, asked: str = MODEL) -> tuple[float, list[str]]:
                 unknown.append(model)
             continue
         inp, out, write5, write1, read = prices
-        total += (counts["input"] * inp + counts["output"] * out
-                  + counts["cache_write"] * (write1 if hour else write5)
+        given = split.get(model) if isinstance(split.get(model), dict) else {}
+        if "cacheCreationEphemeral1hInputTokens" in given:
+            one_hour = _number(given, "cacheCreationEphemeral1hInputTokens")
+            writes = one_hour * write1 + (counts["cache_write"] - one_hour) * write5
+        else:
+            writes = counts["cache_write"] * (write1 if hour else write5)
+        total += (counts["input"] * inp + counts["output"] * out + writes
                   + counts["cache_read"] * read) / 1_000_000
     return round(total, 6), unknown
 

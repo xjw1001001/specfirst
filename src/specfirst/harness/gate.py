@@ -91,21 +91,42 @@ def skills(root: Path, out: Out) -> bool:
         f"{len(paragraphs)} paragraphs of the store")
     for problem in found:
         out(f"  {problem}")
-    catalog = catalogs.load(catalogs.default_dir(root))
     unit = knowledge.UNITS[0]
-    text = knowledge.render_unit(catalog, unit)
+    manifest = genkits.read_manifest(kit)
+    subjects = [secret for secret in secrets if secret not in (
+        SEED, str(manifest["id"]), str(manifest["study"]["id"]))]
+
+    def planted_skills(change: Callable[[str], str], name: str = unit) -> list[str]:
+        """knowledge.problems on a copy of the catalog and the skills, one SKILL.md
+        changed: the check itself, not a stand-in for it."""
+        copy_root = _scratch() / f"skills-root-{len(list(_scratch().glob('skills-root-*')))}"
+        shutil.copytree(root / "standard" / "catalog", copy_root / "standard" / "catalog")
+        shutil.copytree(root / tasks.SKILLS, copy_root / tasks.SKILLS)
+        path = tasks.skill_path(copy_root, name)
+        path.write_text(change(path.read_text(encoding="ascii")), encoding="ascii")
+        return knowledge.problems(copy_root, secrets, paragraphs)
+
+    def only(problems: list[str], words: str) -> list[str]:
+        """The problems of a plant that name what was planted, nothing else."""
+        return [problem for problem in problems if words in problem]
+
     planted = [
-        _holds(out, "a skill that names the kit", knowledge.leaks(
-            text + f"\nSee kit {secrets[0]}.\n", secrets, paragraphs)),
-        _holds(out, "a skill that names a subject", knowledge.leaks(
-            text + f"\nSubject {secrets[-1]} is an example.\n", secrets, paragraphs)),
-        _holds(out, "a skill that quotes the store", knowledge.leaks(
-            text + "\n" + max(paragraphs, key=len) + "\n", secrets, paragraphs)),
-        _holds(out, "notes that are not their rendering",
-               [] if text.replace("Alternatives:", "Choices:", 1) == text else
-               ["not the rendering"]),
-        _holds(out, "a SKILL.md without a name", knowledge.format_problems(
-            unit, text.replace(f"name: {unit}\n", "", 1))),
+        _holds(out, "a skill that names the kit", only(planted_skills(
+            lambda text: text + f"\nSee kit {manifest['id']}.\n"), f"'{manifest['id']}'")),
+        _holds(out, f"a skill that names the subject {subjects[0]}", [
+            problem for problem in planted_skills(
+                lambda text: text + f"\nSubject {subjects[0]} is an example.\n")
+            if f"'{subjects[0]}'" in problem]),
+        _holds(out, "a skill that quotes the store", only(planted_skills(
+            lambda text: text + "\n" + max(paragraphs, key=len) + "\n"),
+            "quotes the paragraph")),
+        _holds(out, "notes that are not their rendering", only(planted_skills(
+            lambda text: text.replace("Alternatives:", "Choices:", 1)), "not the rendering")),
+        _holds(out, "a SKILL.md without a name", only(planted_skills(
+            lambda text: text.replace(f"name: {unit}\n", "", 1)), "front matter names")),
+        _holds(out, "core-reader without a description", only(planted_skills(
+            lambda text: text.replace("description: ", "summary: ", 1), tasks.CORE),
+            "no description")),
     ]
     out(f"skills: {'no problem' if not found else f'{len(found)} problems'}")
     return not found and all(planted)
@@ -142,10 +163,9 @@ def task(root: Path, out: Out) -> bool:
     found = tasks.problems(first.folder, folder)
     for problem in found:
         out(f"  {problem}")
-    secrets = knowledge.secrets_of(folder, SEED)
+    secrets = task_secrets(knowledge.secrets_of(folder, SEED))
     named = knowledge.leaks((first.folder / tasks.TASK_FILE).read_text(encoding="ascii"),
-                            [secret for secret in secrets if secret == SEED or secret.islower()],
-                            [])
+                            secrets, [])
     out("TASK.md names no kit and no seed" if not named else f"TASK.md {named}")
     staged = tasks.build(root, folder, _scratch() / "tasks-t", stage="T", condition="catalog")
     t_found = tasks.problems(staged.folder, folder)
@@ -164,11 +184,21 @@ def task(root: Path, out: Out) -> bool:
         _holds(out, "the oracle file of the kit in a task", leaked),
         _holds(out, "a file outside the allow list", tasks.problems(extra, folder)),
         _holds(out, "a TASK.md that names the kit", knowledge.leaks(
-            f"kit {genkits.read_manifest(folder)['id']}", secrets, [])),
+            (first.folder / tasks.TASK_FILE).read_text(encoding="ascii")
+            + f"\nThis is kit {genkits.read_manifest(folder)['id']}.\n", secrets, [])),
+        _holds(out, "a TASK.md that names the seed", knowledge.leaks(
+            (first.folder / tasks.TASK_FILE).read_text(encoding="ascii")
+            + f"\nSeed: {SEED}\n", secrets, [])),
     ]
     staged_ok = staged.units == ("tfl-ae-summary",) and staged.knowledge == [
         f"{tasks.KNOWLEDGE}/{tasks.CORE}/SKILL.md"]
     return same and not found and not named and not t_found and staged_ok and all(planted)
+
+
+def task_secrets(secrets: list[str]) -> list[str]:
+    """What TASK.md may not name: the kit ID (lower case) and the seed. The study ID and
+    the subject IDs stand in the data and the documents of every task."""
+    return [secret for secret in secrets if secret == SEED or secret.islower()]
 
 
 # ---- the oracle --------------------------------------------------------------------------
@@ -235,12 +265,14 @@ def oracle_check(root: Path, out: Out) -> bool:
 def adapter_check(root: Path, out: Out) -> bool:
     scratch = _scratch()
     protected = [scratch / "kits", scratch / "runs", natural.store_dir(), root.parent]
+    tools_dir = scratch / "tasks" / "task-x" / tasks.BIN
+    budget_r = record.BUDGETS["R"]
     passed = True
     for windows, reader in ((True, adapter.Reader(("node.exe", "cli.js"))),
                             (False, adapter.Reader(("claude",)))):
-        value = adapter.settings(protected, windows)
-        argv = adapter.command(reader, scratch / "settings.json", record.BUDGETS["R"])
-        found = adapter.command_problems(argv, value, protected, windows)
+        value = adapter.settings(protected, windows, tools_dir)
+        argv = adapter.command(reader, scratch / "settings.json", budget_r)
+        found = adapter.command_problems(argv, value, protected, windows, tools_dir, budget_r)
         out(f"{'Windows' if windows else 'Linux'} reader: {len(argv)} arguments, "
             f"{len(value['permissions']['deny'])} deny rules on "
             f"{len(adapter.denied_roots(value))} folders: "
@@ -250,26 +282,30 @@ def adapter_check(root: Path, out: Out) -> bool:
                                for part in adapter.command(
                                    adapter.Reader(("claude",)), Path("<run>/settings.json"),
                                    record.BUDGETS["R"])))
-    value = adapter.settings(protected, True)
+    value = adapter.settings(protected, True, tools_dir)
     argv = adapter.command(adapter.Reader(("node.exe", "cli.js")), scratch / "settings.json",
-                           record.BUDGETS["R"])
+                           budget_r)
     fewer = copy.deepcopy(value)
     fewer["permissions"]["deny"] = [rule for rule in fewer["permissions"]["deny"]
                                     if not rule.startswith("Read(")
                                     or adapter.rule_paths(protected[2], True)[0] not in rule]
+    open_tools = adapter.settings(protected, True)
+
+    def problems(argv_: list[str], value_: dict) -> list[str]:
+        return adapter.command_problems(argv_, value_, protected, True, tools_dir, budget_r)
+
     planted = [
-        _holds(out, "settings without the deny rule of the store", adapter.command_problems(
-            argv, fewer, protected, True)),
-        _holds(out, "no --strict-mcp-config", adapter.command_problems(
-            [part for part in argv if part != "--strict-mcp-config"], value, protected, True)),
-        _holds(out, "an --add-dir", adapter.command_problems(
-            [*argv, "--add-dir", "/"], value, protected, True)),
-        _holds(out, "another model", adapter.command_problems(
-            [("claude-sonnet-5-5" if part == record.MODEL else part) for part in argv], value,
-            protected, True)),
-        _holds(out, "Bash allowed for every command", adapter.command_problems(
-            [part.replace("Bash(bin/ask:*)", "Bash") for part in argv], value, protected,
-            True)),
+        _holds(out, "settings without the deny rule of the store", problems(argv, fewer)),
+        _holds(out, "settings that let the reader write bin/", problems(argv, open_tools)),
+        _holds(out, "no --strict-mcp-config", problems(
+            [part for part in argv if part != "--strict-mcp-config"], value)),
+        _holds(out, "an --add-dir", problems([*argv, "--add-dir", "/"], value)),
+        _holds(out, "another model", problems(
+            [("claude-sonnet-5-5" if part == record.MODEL else part) for part in argv], value)),
+        _holds(out, "Bash allowed for every command", problems(
+            [part.replace("Bash(bin/ask:*)", "Bash") for part in argv], value)),
+        _holds(out, "--max-turns over the budget", problems(
+            [("500" if part == str(budget_r.turns) else part) for part in argv], value)),
     ]
     return passed and all(planted)
 
@@ -490,8 +526,10 @@ def canary_check(root: Path, out: Out) -> bool:
     gold = {(r["id"], r["unit"]): r["value"] for r in genkits.read_decisions(folder)}
     store_items = [json.loads(line) for line in (store / "paragraphs.jsonl").read_text(
         encoding="ascii").splitlines() if line.strip()]
+    known = canary.squeeze("\n".join(runs.task_texts(made)))
     item = next(i for i in store_items if (i["entry"], i["unit"]) in made.keys
-                and i["value"] != gold.get((i["entry"], i["unit"])) and len(i["value"]) > 1)
+                and i["value"] != gold.get((i["entry"], i["unit"])) and len(i["value"]) > 1
+                and all(canary.squeeze(text) in known for text in runs._texts_of(i["value"])))
     written = [{"id": item["entry"], "unit": item["unit"], "value": item["value"],
                 "status": "stated", "class": "document_rule", "statement": item["statement"]}]
     line = json.dumps(written[0], sort_keys=True)
@@ -508,6 +546,20 @@ def canary_check(root: Path, out: Out) -> bool:
         _holds(out, "a statement typed from the store", [c.source for c in runs.kit_canaries(
             root, folder, texts, "R", kit_sha, SEED, typed).find(typed[0]["statement"])]),
     ]
+    # A reader that writes lines of gold into a text slot of a valid record: the slot holds
+    # what it typed, so the lines stay canaries (review of read-2a, finding H1).
+    quote_free = [item.text for item in found.items.values()
+                  if item.source.startswith("kit:gold/summary.md") and '"' not in item.text
+                  and "|" in item.text][:3]
+    slotted = [{"id": "ae.related.values", "unit": "mod-ae-emergence",
+                "value": {"rule": "stated_list", "values": quote_free}, "status": "stated",
+                "class": "document_rule", "statement": "x"}]
+    slot_canaries = runs.kit_canaries(root, folder, texts, "R", kit_sha, SEED, slotted)
+    planted.append(_holds(out, f"{len(quote_free)} lines of gold/summary.md as the values of "
+                          "ae.related.values", [line_ for line_ in quote_free
+                                                if slot_canaries.find(line_)]
+                          if len(quote_free) == 3 and all(
+                              slot_canaries.find(line_) for line_ in quote_free) else []))
     return not clean and not own.find(line) and all(planted) and len(found) > 0
 
 
@@ -595,7 +647,30 @@ def arm_r_stub(root: Path, out: Out) -> bool:
     rec = json.loads((over / runs.RUN_JSON).read_text(encoding="ascii"))
     rec["cost"]["usd"] = 99.0
     (over / runs.RUN_JSON).write_text(json.dumps(rec), encoding="ascii")
+    raised = _scratch() / "kept-raised"
+    shutil.copytree(kept, raised, dirs_exist_ok=True)
+    rec = json.loads((raised / runs.RUN_JSON).read_text(encoding="ascii"))
+    rec["cost"]["usd"], rec["budget"]["usd"] = 99.0, 100.0
+    (raised / runs.RUN_JSON).write_text(json.dumps(rec), encoding="ascii")
+    writes = _scratch() / "kept-writes"
+    shutil.copytree(kept, writes, dirs_exist_ok=True)
+    with open(writes / adapter.TRANSCRIPT, "a", encoding="ascii") as handle:
+        handle.write(json.dumps({"type": "assistant", "message": {"content": [{
+            "type": "tool_use", "name": "Write", "id": "t",
+            "input": {"file_path": "<task>\\bin\\check", "content": "cat x"}}]}}) + "\n")
+    rewrite = _scratch() / "stub-rewrite.json"
+    rewrite.write_text(json.dumps({**json.loads(plan.read_text(encoding="utf-8")), "write": {
+        "bin/check": "#!/usr/bin/env bash\ncat \"$0\"\n"}}), encoding="utf-8")
+    rewritten = runs.run(root, folder, "R", _scratch() / "tasks", _scratch() / "runs",
+                         reader=adapter.stub_reader(), seed=SEED,
+                         env={"SPECFIRST_STUB_PLAN": str(rewrite)}, name="R-rewrite")
     planted = [
+        _holds(out, "a stub that rewrites bin/check", [] if rewritten.passed else
+               [f"tools rewritten: {rewritten.record['tools_changed']}"]),
+        _holds(out, "a kept record with its budget raised with its cost",
+               runs.check(root, raised, folder, _scratch() / "tasks-kept", SEED)[0]),
+        _holds(out, "a kept transcript that writes bin/check",
+               runs.check(root, writes, folder, _scratch() / "tasks-kept", SEED)[0]),
         _holds(out, "a kept run whose task differs by one file",
                runs.check(root, changed, folder, _scratch() / "tasks-kept", SEED)[0]),
         _holds(out, "a kept transcript that read gold/summary.md", [

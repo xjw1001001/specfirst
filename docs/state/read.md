@@ -36,6 +36,14 @@ first for the slice "adverse event summary first" (ADR-005).
 - `pilot`: arm S at stage T on the reference ADaM of CDISCPILOT01.
 - `gate`, `command`: `specfirst gate read-1a`, `specfirst score ...`.
 
+`src/specfirst/harness/` (read-2a, ADR-010; each module says what it does):
+`task` (the task folder), `knowledge` (core-reader and the reading notes,
+skills/), `oracle` (`specfirst ask`), `outputs` (the validity of out/),
+`canary` (the scan), `record` (cost and budget), `adapter` and `stub` (the
+CLI and its stand-in), `runs` (a run of an arm, the probe, a kept run and
+its check), `gate`, `command` (`specfirst run ...`); `kept/` holds the dry
+run of arm R and the probe.
+
 ## How to score a candidate on a kit (for read-2a)
 
 ```python
@@ -109,6 +117,18 @@ Numbers are in docs/reports/read-1a.md. In short:
   the decision that changes it alone, or by both where each does.
 
 ## Open
+
+From the review of read-2a (docs/reports/read-2a.review.md), not blocking:
+
+- H8: the reader is never told the status `conflict`, which PLAN.md 4.3
+  and 9.1 score; TASK.md and core-reader name three statuses. No kit of the
+  slice has a conflict. For the part that first writes a kit with one; a
+  change of TASK.md or core-reader gives another task, so the dry run of
+  arm R is made again with it.
+- H6: whether the CLI keeps a file tool inside the working directory is not
+  shown (the probe names only denied paths); a probe step on a harmless
+  file beside the task, with a planted canary, would show it (model use,
+  the owner's to want).
 
 From the review, booked for the rest of read-1 (they did not block;
 docs/reports/read-1a.review.md, findings R8 and R9):
@@ -200,17 +220,18 @@ For other tracks:
   canary scan, run records; the `core-reader` skill and reading notes v0;
   the three arms. Then the report docs/reports/slice-ae-summary.md. It is
   not a delivery.
-  In progress on `track/read` (2026-11-18): everything that needs no model
-  is built and tested (`specfirst.harness`, skills/, the gate `read-2a`);
-  arms S and C and the stub reader pass their dry runs on kit 4 of the gate
-  seed. The owner approved the gate's reading of its text for arm R
-  (ADR-010, decision 9), for the slice only, and will log in the Claude
-  Code CLI later (2026-11-18; ADR-010, the last section). read-2a waits for
-  that: do not try the CLI before the owner says the login is done (through
-  the base session). Then the isolation probe and the dry run of arm R
-  within the budget of decision 8, kept in src/specfirst/harness/kept; the
-  gates read-2a, gen-3a, gen-2a and read-1a on clean clones; the report,
-  the review, the merge.
+  In progress on `track/read`, not merged (2026-11-18): the harness, the
+  skills and the gate `read-2a` are built (docs/decisions/ADR-010.md). The
+  owner approved the gate's reading of its text for arm R (decision 9), for
+  the slice only, and logged in the Claude Code CLI (now 2.1.327). The
+  isolation probe passed and the dry run of arm R is kept in
+  src/specfirst/harness/kept (docs/reports/read-2a.md). The four gates
+  passed on clean clones of `e36e443`. Pass 1 of the review did not sign
+  (docs/reports/read-2a.review.md): H1 and H2 blocked and are fixed on
+  `track/read`, H3 to H7 and H9 are settled, H8 is booked under "Open".
+  Waiting for the owner on the review's Q1 (how the canary scan reads
+  "canary strings planted in gold files"; ADR-010, the last section). Then
+  the gates again on the fixing commit, pass 2 of the review, the merge.
 - Then the rest of read-1 Scorer (needs real-3 for fixtures, then gen-2),
   read-2 (needs gen-2) and read-3 (D3, node N3).
 

@@ -89,30 +89,47 @@ def _under(path: Path, folder: Path) -> bool:
     return path.resolve() == folder.resolve() or folder.resolve() in path.resolve().parents
 
 
+def required_roots(root: Path, windows: bool, home: Path | None) -> list[Path]:
+    """What every run denies, whatever else it denies: the folder that holds every
+    checkout (with the employer's reference/ beside them), the store of model text, and
+    for a Windows reader the user's own folders: the transcripts of other sessions hold
+    gold, the others may hold a person's own files (PLAN.md section 2.1, rule 2)."""
+    found = [root.resolve().parent, natural.store_dir().resolve()]
+    if windows:
+        if home is None:
+            raise RunError("cannot find the Windows user's home: its own folders cannot be "
+                           "denied, so no Windows reader runs")
+        found += [home / name for name in HOME_DENIED]
+    return found
+
+
 def protected_roots(root: Path, kit_dir: Path, tasks_dir: Path, runs_dir: Path,
-                    seed_file: Path | None, windows: bool) -> list[Path]:
-    """The folders the reader's file tools are denied on (ADR-010, decision 4)."""
-    found = [kit_dir.resolve().parent, runs_dir.resolve(), natural.store_dir().resolve()]
-    # Every checkout: the folder that holds them, unless the task lies in it.
+                    seed_file: Path | None, windows: bool,
+                    task_dir: Path | None = None) -> list[Path]:
+    """The folders the reader's file tools are denied on (ADR-010, decision 4). A task
+    or run folder inside the folder that holds the checkouts is refused: that folder is
+    denied whole, never narrowed. The other task folders of the tasks folder are denied
+    too (a task of stage T holds the ADaM of gold)."""
     holder = root.resolve().parent
-    if _under(tasks_dir, holder) or _under(runs_dir, holder):
-        found.append(root.resolve())
-    else:
-        found.append(holder)
+    for folder in (tasks_dir, runs_dir):
+        if _under(folder, holder):
+            raise RunError(f"{folder} lies in {holder}, the folder that holds the checkouts; "
+                           "tasks and runs lie outside it, so that it is denied whole")
+    home = windows_home() if windows else None
+    found = [kit_dir.resolve().parent, runs_dir.resolve(),
+             *required_roots(root, windows, home)]
     if seed_file is not None:
         found.append(seed_file.resolve().parent)
-    if windows:
-        home = windows_home()
-        if home is not None:
-            # The transcripts of other sessions hold gold; the others may hold a person's
-            # own files (section 2.1, rule 2).
-            found += [home / name for name in HOME_DENIED]
     found += [Path(path) for path in os.environ.get("SPECFIRST_DENY", "").split(os.pathsep)
               if path]
+    if tasks_dir.is_dir():
+        found += [path.resolve() for path in sorted(tasks_dir.iterdir()) if path.is_dir()
+                  and (task_dir is None or path.resolve() != task_dir.resolve())]
     found = sorted(set(found), key=str)
     for path in found:
-        if _under(tasks_dir, path):
-            raise RunError(f"the task folder {tasks_dir} lies in the protected folder {path}")
+        if _under(task_dir or tasks_dir, path):
+            raise RunError(f"the task folder {task_dir or tasks_dir} lies in the protected "
+                           f"folder {path}")
     return found
 
 
@@ -173,15 +190,33 @@ def store_prose(store: Path) -> list[str]:
     return found
 
 
-def own_records(catalog, written: list[dict]) -> list[dict]:
+def _texts_of(value: object) -> list[str]:
+    """The text of a value's slots: every string in it but the ID of its rule."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [text for key, item in value.items() if key != "rule"
+                for text in _texts_of(item)]
+    if isinstance(value, list):
+        return [text for item in value for text in _texts_of(item)]
+    return []
+
+
+def own_records(catalog, written: list[dict], known: str = "") -> list[dict]:
     """The reader's records as the catalog renders them: entry, unit, a valid value, its
     status and class, and the statement the harness renders from the value. Nothing the
-    reader typed itself (its statement, its quotes) is in them."""
+    reader typed itself (its statement, its quotes) is in them. A slot of text holds what
+    the reader typed: a record counts only when the text of every slot stands in `known`
+    (the task as built and the answers of the oracle), so a line of gold written into a
+    slot allows nothing (review of read-2a, finding H1)."""
     from specfirst.compile.standard_form import StandardForm, StandardFormError
 
     form = StandardForm(catalog)
+    known = canary.squeeze(known)
     found = []
     for item in written:
+        if any(canary.squeeze(text) not in known for text in _texts_of(item.get("value"))):
+            continue
         try:
             statement = form.render(str(item.get("id")), str(item.get("unit")), item["value"])
         except (StandardFormError, KeyError, TypeError, ValueError):
@@ -221,13 +256,60 @@ def kit_canaries(root: Path, kit_dir: Path, texts: list[str], arm: str, kit_sha:
     # writes in its own words; what only the store holds is the record around it.
     atoms += store_prose(store)
     if written:
-        own = own_records(catalogs.load(catalogs.default_dir(root)), written)
+        own = own_records(catalogs.load(catalogs.default_dir(root)), written,
+                          "\n".join([*texts, *answers]))
         allowed += canary.reader_views(own, tuple(tasks.DOCUMENTS))
         atoms += [r["statement"] for r in own]
     always = [(f"planted:{name}", canary.planted(kit_sha, name)) for name in PRIVATE]
     if seed:
         always.append(("seed", seed))
     return canary.build(sources, allowed, atoms, always)
+
+
+def tool_hashes(task_dir: Path) -> dict[str, str]:
+    """The SHA-256 of every file of the task's bin/."""
+    folder = task_dir / tasks.BIN
+    if not folder.is_dir():
+        return {}
+    return {path.relative_to(task_dir).as_posix(): sha256_file(path)
+            for path in sorted(folder.rglob("*")) if path.is_file()}
+
+
+def tools_changed(before: dict[str, str], task_dir: Path) -> list[str]:
+    """The files of bin/ that are not those `write_tools` wrote."""
+    after = tool_hashes(task_dir)
+    return sorted(path for path in set(before) | set(after)
+                  if before.get(path) != after.get(path))
+
+
+WRITE_TOOL_NAMES = ("Write", "Edit", "MultiEdit", "NotebookEdit")
+
+
+def tool_writes(transcript: Path) -> list[str]:
+    """Every tool use of a transcript that writes a file of the task's bin/."""
+    import re
+
+    found: list[str] = []
+    if not transcript.is_file():
+        return found
+    pattern = re.compile(r"(^|/)bin/[^/]+$")
+    for number, line in enumerate(transcript.read_text(
+            encoding="utf-8", errors="replace").splitlines(), start=1):
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        message = event.get("message") if isinstance(event, dict) else None
+        content = (message or {}).get("content") if isinstance(message, dict) else None
+        for block in content if isinstance(content, list) else []:
+            if not (isinstance(block, dict) and block.get("type") == "tool_use"
+                    and block.get("name") in WRITE_TOOL_NAMES):
+                continue
+            given = block.get("input") or {}
+            target = str(given.get("file_path") or given.get("notebook_path") or "")
+            if pattern.search(target.replace("\\", "/")):
+                found.append(f"transcript:{number}: {block.get('name')} {target}")
+    return found
 
 
 def changed_files(task: tasks.Task) -> list[str]:
@@ -299,8 +381,10 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
     reader = (reader or adapter.default_reader()) if arm == "R" else None
     budget = budget or record.BUDGETS[arm]
     windows = bool(reader and reader.windows)
-    protected = protected_roots(root, kit_dir, tasks_dir, runs_dir, seed_file, windows)
     task = tasks.build(root, kit_dir, tasks_dir, stage, condition)
+    protected = protected_roots(root, kit_dir, tasks_dir, runs_dir, seed_file, windows,
+                                task.folder)
+    required = required_roots(root, windows, windows_home() if windows else None)
     run_dir = runs_dir / (name or f"{arm}-{task.id}")
     shutil.rmtree(run_dir, ignore_errors=True)
     run_dir.mkdir(parents=True)
@@ -313,8 +397,9 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
         "keys": [list(key) for key in task.keys], "manifest": task.manifest}, indent=1,
         sort_keys=True) + "\n", encoding="ascii", newline="\n")
     write_tools(task.folder, run_dir, windows)
+    tools_before = tool_hashes(task.folder)
     (task.folder / tasks.OUT / "questions.jsonl").write_text("", encoding="ascii")
-    settings_value = adapter.settings(protected, windows)
+    settings_value = adapter.settings(protected, windows, task.folder / tasks.BIN)
     texts = task_texts(task)  # before the reader writes anything
     started = time.monotonic()
     documents = outputs.task_documents(task.folder)
@@ -331,6 +416,9 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
         outcome = _no_reader(run_dir, f"arm C: {len(records)} records from the standard-form "
                              "documents and the house standard", started)
     changed = changed_files(task)
+    rewritten = tools_changed(tools_before, task.folder)
+    changed = sorted(set(changed) | {path for path in rewritten
+                                     if (task.folder / path).is_file()})
     for relative in changed:
         target = run_dir / WORKSPACE / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -363,7 +451,8 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
             "models_used": sorted(record.tokens_by_model(result)),
             "deny": sorted(adapter.denied_roots(settings_value)) if reader else [],
             "command_problems": adapter.command_problems(
-                outcome.argv, settings_value, protected, windows) if reader else []},
+                outcome.argv, settings_value, [*protected, *required], windows,
+                task.folder / tasks.BIN, budget) if reader else []},
         "budget": record.budget_dict(budget),
         "cost": record.cost(outcome.result, outcome.wall_seconds,
                             reader.model if reader else record.MODEL),
@@ -378,6 +467,7 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
         "asks": [{key: item.get(key) for key in ("decision", "unit", "answered")}
                  for item in asks],
         "workspace": changed,
+        "tools_changed": rewritten,
         "task_problems": folder_problems,
         "valid": not invalid,
         "problems": invalid,
@@ -386,7 +476,7 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
     }
     made["over_budget"] = record.over_budget(made)
     made["passed"] = not (made["over_budget"] or invalid or hits or folder_problems
-                          or made["reader"]["command_problems"])
+                          or rewritten or made["reader"]["command_problems"])
     (run_dir / RUN_JSON).write_text(json.dumps(made, indent=1, sort_keys=True) + "\n",
                                     encoding="utf-8", newline="\n")
     return Run(run_dir, made, hits)
@@ -431,6 +521,8 @@ def lines(made: Run) -> list[str]:
            + ("clean" if not rec["canary"]["hits"] else
               f"{len(rec['canary']['hits'])} hits"),
            *[f"    {hit}" for hit in rec["canary"]["hits"][:20]]]
+    if rec.get("tools_changed"):
+        out.append(f"  tools rewritten by the reader: {', '.join(rec['tools_changed'])}")
     if rec["reader"].get("command_problems"):
         out += [f"  command: {problem}" for problem in rec["reader"]["command_problems"]]
     if rec["end"].get("permission_denials"):
@@ -585,12 +677,7 @@ def check(root: Path, kept: Path, kit_dir: Path, tasks_dir: Path,
     kit_sha = sha256_file(kit_dir / genkits.MANIFEST)
     if made["kit"]["kit_yaml_sha256"] != kit_sha:
         found.append("kit: kit.yaml is not the one the run read")
-    found += [f"budget: {problem}" for problem in record.over_budget(made)]
-    if made["arm"] == "R" and made["reader"]["adapter"] == "claude-code" and (
-            record.MODEL not in made["reader"]["models_used"]):
-        found.append(f"reader: {record.MODEL} is not among the models used "
-                     f"{made['reader']['models_used']}")
-    found += [f"command: {problem}" for problem in made["reader"].get("command_problems", [])]
+    found += kept_problems(made, kept)
     asks = oracle.read_asks(kept)
     found += [f"outputs: {problem}" for problem in outputs.problems(
         kept / WORKSPACE / tasks.OUT, catalog, task.keys, outputs.task_documents(task.folder),
@@ -602,6 +689,66 @@ def check(root: Path, kept: Path, kit_dir: Path, tasks_dir: Path,
     hits = (canary.scan_transcript(canaries, kept / adapter.TRANSCRIPT)
             + canary.scan_files(canaries, kept / WORKSPACE, names))
     return found, hits, task
+
+
+def transcript_events(transcript: Path) -> tuple[dict, dict | None]:
+    """The init event and the last result event of a transcript."""
+    init, result = {}, None
+    for line in transcript.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(event, dict) and event.get("subtype") == "init" and not init:
+            init = event
+        if isinstance(event, dict) and event.get("type") == "result":
+            result = event
+    return init, result
+
+
+def kept_problems(made: dict, kept: Path) -> list[str]:
+    """A kept run held against its transcript and against ADR-010, not against itself
+    (review of read-2a, finding H5): the budget and stage of decision 8; the cost and the
+    end computed again from the result event; the flags of the recorded command line;
+    the model, the tools and the MCP servers of the init event; no tool use that writes
+    the task's bin/."""
+    found = []
+    arm = made.get("arm")
+    budget = record.BUDGETS.get(str(arm))
+    if budget is None or made.get("budget") != record.budget_dict(budget):
+        found.append(f"budget: {made.get('budget')} is not the budget of arm {arm} "
+                     "(ADR-010, decision 8)")
+    if (made.get("stage"), made.get("condition")) != ("C", "notes"):
+        found.append(f"stage {made.get('stage')}, condition {made.get('condition')}: the dry "
+                     "run is stage C, condition notes (ADR-010, decision 8)")
+    init, result = transcript_events(kept / adapter.TRANSCRIPT)
+    spent = record.cost(result, float((made.get("cost") or {}).get("wall_seconds") or 0))
+    for key in ("tokens", "tokens_by_model", "turns", "api_seconds", "usd", "usd_cli"):
+        if spent.get(key) != (made.get("cost") or {}).get(key):
+            found.append(f"cost: {key} is {(made.get('cost') or {}).get(key)} in the record, "
+                         f"{spent.get(key)} from the transcript")
+    end = {"result": result is not None, "is_error": bool((result or {}).get("is_error")),
+           "stopped": bool((made.get("end") or {}).get("stopped"))}
+    if budget is not None:
+        found += [f"budget: {problem}" for problem in record.over_budget(
+            {"budget": record.budget_dict(budget), "cost": spent, "end": end})]
+        if result is not None and float(result.get("duration_ms") or 0) / 1000 > budget.seconds:
+            found.append("budget: the CLI's own duration is over the budget")
+    reader = made.get("reader") or {}
+    if arm == "R" and reader.get("adapter") == "claude-code":
+        found += [f"command: {problem}" for problem in adapter.flag_problems(
+            list(reader.get("argv") or []), budget)]
+        if init.get("model") != record.MODEL or record.MODEL not in spent["tokens_by_model"]:
+            found.append(f"reader: the init event names {init.get('model')}, the tokens "
+                         f"{sorted(spent['tokens_by_model'])}; the reader is {record.MODEL}")
+        if sorted(init.get("tools") or []) != sorted(adapter.TOOLS):
+            found.append(f"reader: the init event lists the tools {init.get('tools')}")
+        if init.get("mcp_servers"):
+            found.append(f"reader: the init event lists MCP servers {init.get('mcp_servers')}")
+    found += [f"command: {problem}" for problem in reader.get("command_problems", [])]
+    found += [f"tools: {write}" for write in tool_writes(kept / adapter.TRANSCRIPT)]
+    found += [f"tools: rewritten {path}" for path in made.get("tools_changed") or []]
+    return found
 
 
 def score(root: Path, kit_dir: Path, folder: Path) -> list[str]:

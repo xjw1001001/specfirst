@@ -15,6 +15,14 @@ arm R with a stub reader, run live at every gate.
 
 ## Result
 
+Pass 1 of the independent review (docs/reports/read-2a.review.md) did not
+sign: two findings blocked (H1, H2; "Found during the part" says what they
+were and how they are settled), and it put one question to the owner (Q1:
+how the canary scan reads "canary strings planted in gold files"). The
+fixes are in the commit after `da848ae`; the gates below ran on `e36e443`,
+before them, and run again on the commit that settles the review. This
+section is written again then.
+
 The gate `read-2a` passed on a clean clone of `e36e443` (fresh install and
 fetch), and so did the gates gen-3a, gen-2a and read-1a, each on its own
 clean clone of the same commit, one after the other:
@@ -254,17 +262,56 @@ how hard reading is (ADR-005, "Consequences").
 - The tool wrappers first put the reader's arguments last; a reader could
   have pointed `bin/check` at another folder. The run and the task now come
   last, and win.
+- Pass 1 of the review (docs/reports/read-2a.review.md), and what changed:
+  - H1 (blocked): a reader's own record allowed the text of its slots, and
+    a slot of text holds what the reader typed; lines of gold written as the
+    values of `ae.related.values` were no canaries. Now a record adds
+    nothing unless every slot text stands in the task as built or in an
+    answer of the oracle (`runs.own_records`); a unit test and a plant of
+    the gate write three lines of gold/summary.md into that slot.
+  - H2 (blocked): Write and Edit reached the task's own `bin/`, so a reader
+    could rewrite `bin/check` and run it through the allowed Bash rule. Now
+    the settings deny Edit and Write on `bin/`, `command_problems` holds
+    that rule, every file of `bin/` is held after the run (`tools_changed`
+    in the record fails the run), and the check of a kept run looks for any
+    tool use that writes `bin/`. Plants: settings without the rule; a stub
+    that rewrites `bin/check`; a kept transcript that writes it.
+  - H3: three plants of the gate did not go through their check; the
+    skills' plants now run `knowledge.problems` on a copy with one changed
+    SKILL.md, the subject plant names a subject ID, and the TASK.md plants
+    go through the check's own filter.
+  - H4: the deny list could narrow without a word (a task under the folder
+    that holds the checkouts; a Windows home not found). Both are refused
+    now, and the other task folders of the tasks folder are denied.
+  - H5: the check of a kept run trusted its record. It now computes the
+    cost and the end from the transcript's result event, holds the budget
+    and stage to decision 8, the recorded flags to decision 1, and the init
+    event's model, tools and MCP servers; a plant raises budget and cost
+    together.
+  - H6: the limits above say what the probe shows and what it does not.
+  - H7: ADR-010 records when and through whom the login was confirmed;
+    docs/state/read.md says where the part stands.
+  - H8 (the status `conflict` is never told to the reader): booked in
+    docs/state/read.md for the part that first writes a kit with one;
+    TASK.md and core-reader are not changed (the kept run read them).
+  - H9: cache writes are priced as `modelUsage` splits them per model;
+    the higher price of Haiku 5.5 above 100K tokens is not modelled.
 
 ## Limits
 
 - M1 isolation (PLAN.md section 11.2, to be stated in every M1 report):
-  the reader runs as the owner's Windows user under deny rules and the
-  CLI's working-directory boundary, not in a container where gold is not
-  mounted (M2). A path that no rule names and that the CLI lets a tool
-  reach is readable, and the canary scan sees a read only when its text
-  reaches the transcript or the workspace. The probe showed the rules hold
-  for the three kinds of path the harness uses; it names no file of a
-  person's own folders and does not test them.
+  the reader runs as the owner's Windows user under deny rules, not in a
+  container where gold is not mounted (M2). The probe shows that the deny
+  rules hold for the three kinds of path the harness uses (the WSL share,
+  drive D, drive C). It does not show that the CLI keeps a file tool
+  inside the working directory: any path that no rule names may be
+  readable (the CLI's own scratch folder is one). It names no file of a
+  person's own folders and does not test them. The canary scan sees a read
+  only when its text reaches the transcript or the workspace as it stands;
+  an encoded copy (base64, say) is not seen (review, H6). The task's `bin/`
+  is denied to the tools that write and held after every run (review, H2);
+  the kept dry run was made before that rule, and the check of a kept run
+  finds no tool use in its transcript that writes `bin/`.
 - Canaries are drawn from gold, not planted in it: kits are the
   generator's and are never patched. Parquet files are not scanned; the
   ADaM Parquet of gold has no text copy. Prose that a reader may write in

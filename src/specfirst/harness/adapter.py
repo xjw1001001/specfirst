@@ -107,23 +107,30 @@ def rule_paths(path: Path, windows: bool) -> list[str]:
     return [f"{root}/{distro}{text}" for root in WSL_ROOTS]
 
 
-def settings(protected: list[Path], windows: bool) -> dict:
-    """The settings of a run: the file tools denied on every protected folder."""
+WRITE_TOOLS = ("Edit", "Write")
+
+
+def settings(protected: list[Path], windows: bool, tools_dir: Path | None = None) -> dict:
+    """The settings of a run: the file tools denied on every protected folder, and the
+    tools that write denied on the task's own bin/ (the wrappers that Bash may run)."""
     roots = [form for path in protected for form in rule_paths(path, windows)]
     if windows:
         roots += list(WSL_ROOTS)
     deny = [f"{tool}({root}/**)" for root in roots for tool in FILE_TOOLS]
+    if tools_dir is not None:
+        deny += [f"{tool}({form}/**)" for form in rule_paths(tools_dir, windows)
+                 for tool in WRITE_TOOLS]
     return {"permissions": {"deny": deny}}
 
 
-def denied_roots(settings_value: dict) -> set[str]:
-    """The folders the settings deny every file tool on."""
+def denied_roots(settings_value: dict, tools: tuple[str, ...] = FILE_TOOLS) -> set[str]:
+    """The folders the settings deny every one of `tools` on."""
     by_root: dict[str, set[str]] = {}
     for rule in (settings_value.get("permissions") or {}).get("deny") or []:
         if "(" in rule and rule.endswith("/**)"):
             tool, root = rule[:-4].split("(", 1)
             by_root.setdefault(root, set()).add(tool)
-    return {root for root, tools in by_root.items() if tools >= set(FILE_TOOLS)}
+    return {root for root, held in by_root.items() if held >= set(tools)}
 
 
 def command(reader: Reader, settings_file: Path, budget: Budget) -> list[str]:
@@ -139,17 +146,21 @@ def command(reader: Reader, settings_file: Path, budget: Budget) -> list[str]:
             "--disable-slash-commands", "--no-session-persistence"]
 
 
-def command_problems(argv: list[str], settings_value: dict, protected: list[Path],
-                     windows: bool) -> list[str]:
-    """Why a command line and its settings do not run a reader as ADR-010 says."""
+def flag_problems(argv: list[str], budget: Budget | None = None) -> list[str]:
+    """Why a command line does not run a reader with the flags of ADR-010, decision 1
+    (and, given a budget, with its turns and dollars)."""
     found = []
 
     def value(flag: str) -> str | None:
         return argv[argv.index(flag) + 1] if flag in argv[:-1] else None
 
-    for flag, wanted in (("--output-format", "stream-json"), ("--model", MODEL),
-                         ("--permission-mode", "manual"), ("--permission-prompts", "none"),
-                         ("--tools", ",".join(TOOLS)), ("--setting-sources", "")):
+    wanted_values = [("--output-format", "stream-json"), ("--model", MODEL),
+                     ("--permission-mode", "manual"), ("--permission-prompts", "none"),
+                     ("--tools", ",".join(TOOLS)), ("--setting-sources", "")]
+    if budget is not None:
+        wanted_values += [("--max-turns", str(budget.turns)),
+                          ("--max-budget-usd", f"{budget.usd:g}")]
+    for flag, wanted in wanted_values:
         if value(flag) != wanted:
             found.append(f"{flag} is {value(flag)!r}, not {wanted!r}")
     for flag in ("-p", "--verbose", "--strict-mcp-config", "--max-turns", "--max-budget-usd",
@@ -165,6 +176,16 @@ def command_problems(argv: list[str], settings_value: dict, protected: list[Path
                          (value("--disallowedTools") or "").split(",")))))
     if "--add-dir" in argv or "--dangerously-skip-permissions" in argv:
         found.append("the command widens the reader's reach")
+    return found
+
+
+def command_problems(argv: list[str], settings_value: dict, protected: list[Path],
+                     windows: bool, tools_dir: Path | None = None,
+                     budget: Budget | None = None) -> list[str]:
+    """Why a command line and its settings do not run a reader as ADR-010 says: its
+    flags; every protected folder denied to every file tool; the task's bin/ denied to
+    the tools that write."""
+    found = flag_problems(argv, budget)
     roots = denied_roots(settings_value)
     for path in protected:
         missing = [form for form in rule_paths(path, windows) if form not in roots]
@@ -172,6 +193,10 @@ def command_problems(argv: list[str], settings_value: dict, protected: list[Path
             found.append(f"the settings do not deny the file tools on {path}")
     if windows and not set(WSL_ROOTS) <= roots:
         found.append("the settings do not deny the WSL file system")
+    if tools_dir is not None:
+        writable = denied_roots(settings_value, WRITE_TOOLS)
+        if any(form not in writable for form in rule_paths(tools_dir, windows)):
+            found.append(f"the settings let the reader write the tools in {tools_dir}")
     return found
 
 
