@@ -5,6 +5,21 @@ first for the slice "adverse event summary first" (ADR-005).
 
 ## Passed
 
+- read-2a (2026-11-18): the reader harness for the slice. The task builder,
+  the oracle (`specfirst ask`), the canary scan, run records with cost, the
+  adapter (`claude -p`, CLI 2.1.327 on the owner's subscription) and a stub
+  reader, the arms S, R and C on one run folder and record; `core-reader`
+  and the reading notes v0 of the four units (skills/); the gate
+  `read-2a`. Report: docs/reports/read-2a.md (the gates on clean clones,
+  the isolation probe, the dry runs and their cost, the limits, the M1
+  isolation limit first). Review: docs/reports/read-2a.review.md (signed in
+  its second pass). Choices: docs/decisions/ADR-010.md. The owner approved
+  decision 9 (the gate checks the kept dry run of arm R from its record)
+  and accepted decision 5 (the canary scan), each for the slice only, and
+  logged in the CLI. The dry run of arm R and the isolation probe are kept
+  in src/specfirst/harness/kept. Model use of the part: USD 1.24, computed
+  from the tokens.
+
 - read-1a (2026-11-18): the scorer for the slice. Reading score, build
   score with the four scores of ADR-005, decision 4, attribution, the arms
   S and C, the planted defects of section 9.5 that apply to the slice; on
@@ -35,6 +50,14 @@ first for the slice "adverse event summary first" (ADR-005).
   `sweep`, `score_kit`, `score_set`.
 - `pilot`: arm S at stage T on the reference ADaM of CDISCPILOT01.
 - `gate`, `command`: `specfirst gate read-1a`, `specfirst score ...`.
+
+`src/specfirst/harness/` (read-2a, ADR-010; each module says what it does):
+`task` (the task folder), `knowledge` (core-reader and the reading notes,
+skills/), `oracle` (`specfirst ask`), `outputs` (the validity of out/),
+`canary` (the scan), `record` (cost and budget), `adapter` and `stub` (the
+CLI and its stand-in), `runs` (a run of an arm, the probe, a kept run and
+its check), `gate`, `command` (`specfirst run ...`); `kept/` holds the dry
+run of arm R and the probe.
 
 ## How to score a candidate on a kit (for read-2a)
 
@@ -110,6 +133,29 @@ Numbers are in docs/reports/read-1a.md. In short:
 
 ## Open
 
+From the review of read-2a (docs/reports/read-2a.review.md), not blocking:
+
+- H10, before read-3 relies on the scan: a list slot filled with texts the
+  task holds still takes most canary pieces of a twin Dataset-JSON row out
+  of the scan (38 of 58 over 30 rows; no row lost all of them). What
+  settles it: the reader's own statements stop counting for the slack of
+  16 characters, or a row-shaped candidate is held whole.
+- H12: the record's `reader.deny` lists the folders denied to every file
+  tool and not the rule on `bin/` (Edit and Write only); and
+  `runs.tool_writes` counts a write of `bin/` even when the CLI denied it
+  (strict; `specfirst run check` on the kept probe fails for it, and for the
+  probe's budget and missing files, and the gate does not check the probe).
+
+- H8: the reader is never told the status `conflict`, which PLAN.md 4.3
+  and 9.1 score; TASK.md and core-reader name three statuses. No kit of the
+  slice has a conflict. For the part that first writes a kit with one; a
+  change of TASK.md or core-reader gives another task, so the dry run of
+  arm R is made again with it.
+- H6: whether the CLI keeps a file tool inside the working directory is not
+  shown (the probe names only denied paths); a probe step on a harmless
+  file beside the task, with a planted canary, would show it (model use,
+  the owner's to want).
+
 From the review, booked for the rest of read-1 (they did not block;
 docs/reports/read-1a.review.md, findings R8 and R9):
 
@@ -150,7 +196,9 @@ Not done, and not part of read-1a:
 - The three layers of ADaM scoring of section 9.3 (variables that reach a
   printed number, used but not printed, conformance only): they need all
   four table families. `build.adam_differences` compares every column.
-- The cost dimension of section 9.2 (read-2a: the run record).
+- The cost dimension of section 9.2 in the scores: read-2a records tokens,
+  turns, time and dollars per run (`specfirst.harness.record`); the reading
+  report does not print them yet.
 - Citations into natural-form documents: the span of an anchor is read
   from a standard-form line (`reading.Documents.span`); gen-3a decides how
   a natural-form document marks its anchors.
@@ -196,10 +244,9 @@ For other tracks:
 
 ## Next
 
-- read-2a (needs read-1a and gen-3a): task builder, adapter, isolation,
-  canary scan, run records; the `core-reader` skill and reading notes v0;
-  the three arms. Then the report docs/reports/slice-ae-summary.md. It is
-  not a delivery.
+- The report docs/reports/slice-ae-summary.md (ADR-005): the first scores
+  of the slice on dev kits and the report on the pilot. It is not a
+  delivery, and the base session asks the owner before it starts.
 - Then the rest of read-1 Scorer (needs real-3 for fixtures, then gen-2),
   read-2 (needs gen-2) and read-3 (D3, node N3).
 
