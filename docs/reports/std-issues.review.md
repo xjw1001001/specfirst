@@ -485,3 +485,296 @@ decision of HAND01 but fails on `pop.efficacy.rule`, one of the four
 decisions it exists for, on the kit of read-2a.
 
 Verdict: NOT SIGNED
+
+## Pass 2
+
+2026-11-19. Branch `track/std` at `42212b8`. Since pass 1
+(`2456303..42212b8`): `307efb9` and `5d1876f` merge `main` (`2be5a08`, the
+fix of issue #27; `b0a5530`, read-2a); `7095199` the tests of findings 1 to
+4, alone; `1d26c2a` the fix, with ADR-014 and the report; `37e5b61` my pass 1
+and the pointers in docs/state/read.md; `42212b8` the axis of attribution.
+Read: those diffs (compiler, build, attribute, the tests, ADR-014,
+docs/state/read.md, docs/reports/std-issues.md), the logs of the seven
+gates on `37e5b61` and on `42212b8`.
+
+### How the checks were run
+
+As in pass 1, on clones in the Linux file system (`c` at `42212b8`, `m` at
+`main` `b0a5530`, `r5` for the commits of the tests), with my scripts in a
+folder of my own. One batch, one hold of the heavy lock (about seven
+minutes, while the coordinator's chain ran on `42212b8`):
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash batch.sh
+```
+
+```text
+$ git diff --stat 2456303 42212b8 -- standard PLAN.md
+(nothing)
+$ git diff --stat 5fedd14 b0a5530 -- src/specfirst/compile standard
+(nothing: main changed neither the compiler nor the standard)
+$ git diff --stat 37e5b61 42212b8 -- src/specfirst/compile standard src/specfirst/gen
+(nothing)
+```
+
+### The findings of pass 1
+
+Rule R5 first. The five tests of `7095199`, on `7095199` (the code of pass
+1), and the new test of `42212b8` on `37e5b61` (the file copied in):
+
+```text
+== 2. R5: the tests of 7095199 on 7095199          (the E lines filtered by grep; two "assert False" left out)
+7095199 std-issues: tests for findings 1 to 4 of review pass 1 (they fail before the fix)
+E           assert (0, 1, 1) == (0, 0, 1)
+E       AssertionError: compile: the tables read ADSL.EFFFL, which no decision of the study writes
+E       KeyError: 'adam:ADVS'
+E       assert (0, 1, 1, [], 0) == (0, 0, 1, [], 0)
+E       AssertionError: compile: ADVS: its key STUDYID, USUBJID, VSSEQ, DTYPE, PARAMCD cannot be built: the SDTM VS has no VSSTRESN (Expected in SDTMIG v3.4)
+FAILED tests/unit/test_pending.py::test_a_table_decision_without_a_value_leaves_the_output_pending
+FAILED tests/unit/test_pending.py::test_an_optional_decision_without_a_value_that_a_table_reads
+FAILED tests/unit/test_pending.py::test_a_decision_that_adds_records_makes_its_dataset_wait
+FAILED tests/unit/test_pending.py::test_pending_cells_are_neither_right_nor_wrong
+FAILED tests/unit/test_sdtm_gaps.py::test_a_variable_the_records_of_a_dataset_rest_on_leaves_that_dataset_out
+5 failed in 2.91s
+== 2b. R5: test_an_axis_is_owned_without_the_rows_that_wait on 37e5b61 (the file of 42212b8 copied in)
+E             At index 0 diff: ('Out_AESUM', 'rows', (('ae.related.values', 'mod-ae-emergence'), ('tfl.ae.summary.rows', 'tfl-ae-summary')), True) != ('Out_AESUM', 'rows', (('tfl.ae.summary.rows', 'tfl-ae-summary'),), True)
+FAILED tests/unit/test_pending.py::test_an_axis_is_owned_without_the_rows_that_wait
+1 failed in 4.31s
+== 1. the new and changed tests on 42212b8
+.............................                                            [100%]
+29 passed in 14.21s
+```
+
+Each fails for the reason of its finding before the fix and passes after
+it. Then my pass 1 scripts again, unchanged, on `42212b8`:
+
+- Finding 1 (BLOCKING): fixed. `_compile_adam` now takes the optional
+  decisions that the study leaves out (`left_optional`, only in the pending
+  mode) and records the columns they would write as gone for them
+  (compiler.py:470-491); `_without_what_is_gone` then leaves out the
+  analyses that read one and names the column (compiler.py:873-874). Part B
+  of `exp_pending.py`, kit 4 of gen-2a, `pop.efficacy.rule` asked and not
+  answered, everything else at gold:
+
+  ```text
+  == B. kit sfrrl2uh: pop.efficacy.rule asked and not answered (tfl.population of gold: {'rule': 'efficacy'})
+    visible: valid: yes
+    visible: produced: 0 of 0 outputs in gold, and 1 waits for a decision without a value
+    visible: pending: 15 gold cells, neither right nor wrong and in no denominator above, wait for a decision without a value: pop.efficacy.rule (15 cells); 1 output waits as a whole
+    twin: valid: yes
+    twin: pending: 15 gold cells, ... pop.efficacy.rule (15 cells); 1 output waits as a whole
+    result.pending: {('pop.efficacy.rule', 'mod-populations'): {'visible': 15, 'twin': 15}}
+    OK visible pop.efficacy.rule@mod-populations: ok=True; pending cells 15; correct 0 of 0/0/0; wrong 0; produced 0/0 waiting 1; axes [(False, False)]; perfect False
+        pending elements: ['adam:ADSL.EFFFL', 'output:Out_AESUM']
+    with tfl.population = safety: ok=True failure=None pending={}
+  ```
+
+  A study that reads no EFFFL waits for nothing (the last line, and part A
+  below, where HAND01 never has `pop.efficacy.rule`). In the default mode
+  `left_optional` is empty and nothing changes (below).
+- Finding 2: fixed. A dataset whose keys rest on a variable the SDTM lacks
+  is left out as a whole with a warning (compiler.py:505-528), instead of
+  stopping the compile. `exp_sdtm.py` on HAND01 (visible), every SDTM
+  column dropped in turn:
+
+  ```text
+  == HAND01 visible, slice: ...       {'fails': 21, 'left out': 24, 'unchanged': 13}
+  == HAND01 visible, full house: ...  {'fails': 22, 'left out': 27, 'unchanged': 9}
+  (0 FALSE-NEGATIVE; 0 failures of a non-Required variable on either machine)
+    left out  EX.EXDOSE (Exp) lacks=True ok=True grids=[] left out=[..., 'ADSL.SAFFL', ..., 'ADVS', 'Out_AESUM is not produced: its analysis An_AESUM_N r...
+    left out  VS.VSSTRESN (Exp) lacks=True ok=True grids=['Out_AESUM'] left out=['ADSL.BMIBL', 'ADSL.HEIGHTBL', 'ADSL.WEIGHTBL', 'ADVS'] not produced={}
+    left out  VS.VISIT (Perm) lacks=True ok=True grids=['Out_AESUM'] left out=['ADVS'] not produced={}
+    fails     VS.VSTEST (Req) lacks=True ok=False ... failure='compile: ADVS: the SDTM VS has no VSTEST, which SDTMIG v3.4 requires (Required); ...'
+  ```
+
+  In pass 1 the full house had 30 failures, eight of them non-Required
+  (EXDOSE, EXSTDTC, EXENDTC, VSSTRESN, VSDTC, VISIT, VISITNUM, VISITDY);
+  now those eight leave ADVS out and the adverse event summary is built
+  where it reads none of them (EXDOSE still removes it, through SAFFL, with
+  the reason). The slice is as in pass 1. Without EXDOSE the summary is not
+  produced because the safety flag derives from it, which is right.
+- Finding 3: fixed. A pending decision with a row template in any
+  alternative (`adds_records`) makes its dataset wait as a whole
+  (compiler.py:473-480, 505). Part C, full house on the SDTM of kit 4:
+
+  ```text
+    OK visible bds.eot.record@mod-bds-visits: ok=True; pending cells 0; correct 15 of 15/15/15; wrong 0; produced 1/1 waiting 0; axes [(True, True)]; perfect True
+        pending elements: ['adam:ADVS']
+    ADVS with bds.eot.record gold value: 3701 records, LOV 358; pending []
+    ADVS with bds.eot.record pending: not built; pending ['adam:ADVS']
+    ADVS with bds.eot.record value none: 3343 records, LOV 0; pending []
+  ```
+
+- Finding 4: fixed. `in_gold` leaves out the outputs that wait as a whole
+  (build.py:195-198); `produced: 0 of 0 outputs in gold, and 1 waits for a
+  decision without a value` (part B above, and `tfl.ae.summary.rows` in part
+  A: `produced 0/0 waiting 1`). The other users of `in_gold` (gate.py:139,
+  193; kit.py:379, 495; defects.py:448) print it or compare it with
+  `produced`; none divides by it. In the sweep of kit.py:379 an output that
+  waits would now make `produced == in_gold` true, but a sweep gives every
+  decision a value, so no output waits there.
+- Finding 5: answered in the report (the ASCII line, 518 against 494).
+- Finding 6: docs/state/read.md now points to ADR-014 where it said that
+  arm S builds nothing on the chain (its lines 85, 127, 195 and 237).
+
+Part A, all 33 decisions of HAND01 one at a time on the full house, both
+datasets, as in pass 1: `66` builds, every one `OK` (no wrong cell, every
+denominator equal to the cells counted, the ADaM columns missing equal to
+the `adam:` elements of `Build.pending`, every other column the same).
+Parts B and C: every line `OK` (76 in all, no `CHECK`). The check
+"standard alone" on the planted defects of pass 1: `True` as committed,
+`False` on D1 to D5, `True` again (unchanged).
+
+### The default mode, again
+
+The compiler changed after pass 1 (`1d26c2a`): `left_optional` exists only
+in the pending mode, `waiting` and `adds_records` are then empty, `gone`
+stays empty without `sdtm`, so the block at compiler.py:483-539 is skipped
+as before. By a run: the 592 compiles of pass 1 (`dump_compile.py`) on
+`main` `b0a5530` and on `42212b8`:
+
+```text
+m: b0a5530 Merge track/read: part read-2a of ADR-005 (gates passed, review signed,
+COUNTS {'ok': 275, 'error': 317}
+c: 42212b8 std-issues: an axis is held without the rows that wait (attribution)
+COUNTS {'ok': 275, 'error': 317}
+   592 /root/scratch-review-std/out/p2-dump-m.txt
+   592 /root/scratch-review-std/out/p2-dump-c.txt
+$ cmp p2-dump-m.txt p2-dump-c.txt && echo IDENTICAL
+IDENTICAL
+```
+
+(The dump of `b0a5530` is also byte for byte that of `5fedd14` in pass 1.)
+The report's kit run on `37e5b61` (511 files, the same `kit.yaml` hashes)
+is on a commit whose compiler, generator and standard are those of
+`42212b8`.
+
+### The axis of attribution (`42212b8`)
+
+`attribute._Runs.axis` held the axis of a rebuild against the whole gold
+axis, so a row that waits in the rebuild made the pending decision a
+co-owner of the axis. It now holds it against the gold axis without the
+rows and columns whose every cell still waits in that rebuild
+(`build.axes_without`, `candidate.pending_cells` of the rebuild,
+attribute.py:395-433). When the rebuild sets the pending decision to its
+gold value nothing waits and the whole gold axis is held, as before; when
+there is no pending cell the code path is the old one. The new test fails
+on `37e5b61` and passes (above). `cell()` only unpacks the new tuple. In the
+log of read-2a on `37e5b61` the line was:
+
+```text
+    axis rows of Out_AESUM: layer L5, decision ae.related.values, tfl.ae.summary.rows, confirmed yes, first element that differs ars:An_AESUM_N
+```
+
+In the log of read-2a on `42212b8` (both datasets) it is:
+
+```text
+    axis rows of Out_AESUM: layer L5, decision tfl.ae.summary.rows, confirmed yes, first element that differs ars:An_AESUM_N
+```
+
+The rows of arm S on kit 4 differ from gold's because of the rows decision
+alone once the row that waits is out of the axis, which is what ADR-014
+decision 3 says. Against `main`'s own log of read-2a (`b0a5530`), the
+other lines of arm S there change as ADR-014 says they would: valid, 4 and
+3 of 12 cells right, 3 cells pending on each dataset, owners at L4 and L5
+in place of the build that stopped; `trt.actual.source` moves from a
+co-owner of the build that stopped to "these data cannot show it" (alone,
+on gold, it changes no cell), which only a build that runs can say. Arm C
+and both runs of arm R score 15 of 15 on both datasets, as on `main`.
+
+### ADR-014 after the owner's answer
+
+`1d26c2a` changes the text of decisions 2 and 3, which the owner approved,
+and says so in a note under "The owner's answer" ("What the owner approved
+is unchanged"). I held each added sentence against the approved text: the
+lookups and the row template are cases of "what the decision binds" and of
+"a dataset whose records themselves depend on the decision"; the optional
+decision is a case of decision 1 ("a decision of the study that ... a
+table needs and that has no value"); the denominator of outputs is what
+"neither produced nor counted as not produced" means. I read no change of
+meaning; finding 7 asks only that the owner be told.
+
+### The report
+
+docs/reports/std-issues.md at `42212b8`, held against the logs and runs
+above: the R5 runs of `7095199` and of the axis test are reproduced line
+for line; the log diffs it describes hold (finding 5 is answered); the kit
+claim holds for the code of `42212b8`. Finding 9 names three places that
+are not right yet, and its section "Gates on clean clones" is not final
+(finding 8).
+
+### The gates on clean clones of `42212b8`
+
+Read in `build/gates/<wp>/clean-clone.log` of the worktree (each names
+`commit: 42212b8` and checks out
+`42212b85abade0fa050031a61c7b381971b2f391`). Each log was held, by my
+`logdiff.py` (timing and paths left out), against the log of the same gate
+on `37e5b61` (kept aside before the copies in docs/reports/ are replaced):
+
+| Gate | Checks | Unit tests | Result | Against `37e5b61` |
+| --- | --- | --- | --- | --- |
+| std-1 | 12 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE std-1: PASS | the unit count only |
+| real-2 | 15 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE real-2: PASS | the unit count, a timing inside a line |
+| real-3a | 16 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE real-3a: PASS | the same |
+| gen-2a | 13 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE gen-2a: PASS | the same |
+| gen-3a | 15 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE gen-3a: PASS | the unit count only |
+| read-1a | 14 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE read-1a: PASS | the unit count only |
+| read-2a | 19 PASS, 0 FAIL | 1118 passed, 23 deselected | GATE read-2a: PASS | the unit count and the two axis lines above |
+
+1118 is 1117 of `37e5b61` and the new test of `42212b8`. The log of
+read-1a on `42212b8` is that of `d92dd57` (pass 1) but for the unit count,
+the ASCII count and the trailer of the clean clone: the fixes and the
+merge of read-2a change no line of the hand-made study, the arms, the
+planted defects, the ten kits or the sweeps, as the report says for
+`37e5b61`.
+
+### Findings of pass 2
+
+Findings 1 to 6 of pass 1 are settled (above). New ones, numbered on:
+
+7. NOT BLOCKING. ADR-014's decisions 2 and 3 were edited after the owner
+   approved them (`1d26c2a`), with a note under "The owner's answer" that
+   says so. I read no change of meaning (section "ADR-014 after the owner's
+   answer"), but the owner approved a text and the text changed: when the
+   base session reports the merge to the owner, it should name the note.
+   Failure scenario: the owner reads decision 2 later, finds the optional
+   decision and the row template, and cannot tell whether those were
+   approved; the note answers it only if the owner is pointed to it.
+
+8. NOT BLOCKING (the coordinator is finishing it). The section "Gates on
+   clean clones" of docs/reports/std-issues.md at `42212b8` held
+   placeholders. In the worktree, while I wrote this (not committed), the
+   table now holds the numbers of `42212b8` (the same as my table above),
+   and the seven untracked copies docs/reports/std-issues.<wp>.gate.log are
+   byte for byte build/gates/<wp>/clean-clone.log of `42212b8` (`cmp`).
+   Still to do there: line 383 holds `GATES-COMMIT`, and the command on
+   line 388 names `37e5b61`; both should name `42212b8`. Two sentences of
+   the new text are not exact (rule R8): "The wrong cells are now owned at
+   L4 by `pop.efficacy.rule` with `tfl.population` ... with
+   `ae.start.imputation` for two of them" holds for the visible data; on
+   the twin, 7 of the 9 are owned at L5 (`ars:An_AESUM_N`, `_Tot`) and 2 by
+   `trt.start.source` with those, at L4. And against `main`'s log of
+   read-2a, two more lines differ than the report names: the ASCII count
+   (535 there, 541 here) and the wall time inside the cost line of the stub
+   reader (1.1 s, 0.8 s). Failure scenario: the report merges with the
+   placeholder and with a command that names a commit whose axis line
+   differs from the merged code's.
+
+9. NOT BLOCKING (rule R8, wording). In docs/reports/std-issues.md:
+   "findings 1 to 4 are four new tests and two changed ones" (section
+   "After pass 1"): `7095199` adds three tests and changes two, five in
+   all, as the run below that sentence shows. Item 3 of the same list says
+   that a dataset waits as a whole "and so does a decision whose lookups
+   (intermediates) another column reads": the code leaves out the columns
+   that read such a lookup (compiler.py:395-396), and the dataset only when
+   a key or an ordering column is one of them. The first table still says
+   that ADR-014 is "the owner's to approve"; it was approved on 2026-11-18.
+
+### For the merge
+
+This signature covers the code of `42212b8` and the seven logs of
+`42212b8` named above. A later commit that changes only
+docs/reports/std-issues.md and the copies of the logs (findings 8 and 9)
+does not need another pass; one that changes code or a test does.
+
+Verdict: SIGNED

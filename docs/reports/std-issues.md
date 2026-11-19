@@ -7,7 +7,7 @@ standard `open-default@1`, nor the generator. `PLAN.md`,
 
 | Issue | What is done here | Left for later |
 | --- | --- | --- |
-| #26 An asked decision without a house default stops every output | The scorer's build leaves out what such a decision binds and builds the rest; those gold cells are pending, counted apart. ADR-014, the owner's to approve. | The value of an ask in the reading score beyond section 9.1 (not asked for here). |
+| #26 An asked decision without a house default stops every output | The scorer's build leaves out what such a decision binds and builds the rest; those gold cells are pending, counted apart. ADR-014, approved by the owner on 2026-11-18. | The value of an ask in the reading score beyond section 9.1 (not asked for here). |
 | #24 `trt.end.source` needs EXDOSE > 0 | When no subject has a treatment start date, the build stops at ADaM with a message that names the decision, its filter and the variable missing in every exposure record. | The counterpart of `first_ex_record` for `trt.end.source` (`catalog@2`, #23); a probe with EXDOSE missing everywhere (generator). |
 | #25 An AE domain without AESEV stops the whole build | Given the columns of the SDTM, the compiler leaves out of the output every column that derives from a variable the data lack and that SDTMIG v3.4 does not require, with a warning; a table that reads one is not produced; a Required one stops the compile with a message. The house parent specs are not changed. | An option of `specfirst compile` that reads the columns of an SDTM folder. |
 
@@ -302,8 +302,9 @@ finding and five that do not block. What was done for each:
    records cannot be built: ...`), and a table that does not read it is
    built.
 3. A pending decision that adds records (`bds.eot.record`, a row template
-   of ADVS) left nothing out. Now its dataset waits as a whole, and so does
-   a decision whose lookups (intermediates) another column reads.
+   of ADVS) left nothing out. Now its dataset waits as a whole. A column
+   that reads a lookup (an intermediate) of a pending decision is left out
+   too, and with it its dataset only when a key rests on it.
 4. An output that waits as a whole stayed in the denominator of outputs.
    Now it leaves it (`in_gold`), as ADR-014 decision 3 says: on a waiting
    output the line reads `produced: 0 of 0 outputs in gold, and 1 waits for
@@ -313,7 +314,7 @@ finding and five that do not block. What was done for each:
    a pointer to ADR-014 is added when `track/std` takes `main` with read-2a
    merged (that file is the read track's, and read-2a changes it).
 
-Tests first: findings 1 to 4 are four new tests and two changed ones,
+Tests first: findings 1 to 4 are three new tests and two changed ones,
 committed alone (`7095199`) and run on that commit, where the code is still
 that of pass 1, before the fix:
 
@@ -388,7 +389,7 @@ a fresh clone with a fresh install and fetch, one at a time under the heavy
 lock, on at most four processors:
 
 ```text
-$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh <wp> /mnt/d/trial_work/specfirst/.git 37e5b61
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh <wp> /mnt/d/trial_work/specfirst/.git 42212b8
 ```
 
 | Gate | Checks | Unit tests (in the check "unit tests") | Result | Log |
@@ -413,9 +414,11 @@ What the gates print that ADR-014 changed, and nothing else:
   and the merge of read-2a change none of them.
 - read-2a: held against read-2a's own gate log on `main`
   (docs/reports/read-2a.gate.log, commit `dbc4d69`), the only lines that
-  differ are those of arm S on kit 4 (`sfrrl2uh`) and the count of the
-  unit tests (1089 there, 1118 here: read-2a's tests, and those of this
-  part). Before, arm S said `valid: no (compile: ADAE: no value for
+  differ are those of arm S on kit 4 (`sfrrl2uh`), the count of the unit
+  tests (1089 there, 1118 here: the 29 tests of tests/unit/test_pending.py
+  and tests/unit/test_sdtm_gaps.py), the count of the ASCII check (535 there, 541 here) and the wall
+  time of the stub reader (0.8 s there, 1.1 s here; review, pass 2,
+  finding 8). Before, arm S said `valid: no (compile: ADAE: no value for
   ae.related.values)`, `produced: 0 of 1` and `cells correct: 0 of 15`,
   and 15 wrong cells on each dataset owned by the build that stopped. Now:
 
@@ -461,4 +464,34 @@ What the gates print that ADR-014 changed, and nothing else:
 
 ## Review
 
-Not yet done when this was written.
+docs/reports/std-issues.review.md, by a reviewer in a fresh context.
+
+- Pass 1 (on `2456303`, the code of `d92dd57`): NOT SIGNED. One blocking
+  finding (`pop.efficacy.rule`) and five that do not block; what was done
+  for each is above.
+- Pass 2 (on `42212b8` and its seven gate logs): SIGNED. The fixes hold;
+  the reviewer ran its pass 1 scripts again (76 cases), the default mode
+  on 592 compiles (identical to `main`), and read the seven logs. Three
+  more findings, none blocking: finding 7, ADR-014's decisions 2 and 3
+  were worded more fully after the owner approved them (the note under
+  "The owner's answer"; the base session is told, to point the owner to
+  it); findings 8 and 9, the wording of this report, corrected here (the
+  commit of the gates, the owners of the wrong cells on the twin, two more
+  lines that differ from read-2a's log, the count of new tests, what a
+  lookup leaves out, the status of ADR-014). The signature covers the code
+  and the logs of `42212b8`; the commits after it change only this report,
+  the review, the copies of the logs and the state files.
+
+## Left for later
+
+- #24: an alternative of `trt.end.source` that reads no dose, the
+  counterpart of `first_ex_record` (a step of the catalog: `catalog@2`,
+  issue #23). Until then, with EXDOSE empty and `first_ex_record`, the end
+  dates stay missing (the repro above).
+- #24: a probe with EXDOSE missing on every exposure record (the
+  generator).
+- #25: an option of `specfirst compile` that reads the columns of an SDTM
+  folder, so that the command, and not only the scorer, leaves out what
+  the data cannot give.
+- #26: the house default of `ae.related.values`, if the owner wants one
+  (`catalog@2`, #23): ADR-014 does not need it.
