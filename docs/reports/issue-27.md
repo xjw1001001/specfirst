@@ -456,6 +456,27 @@ the grid of the adverse event summary pass unchanged. gen-2a writes its ten
 kits again and checks P1 to P4 and the agreement of the engines; gen-3a
 and read-1a build and score generated kits through the changed function.
 
+Before the merge, `main` = `5fedd14` (ADR-013: CLAUDE.md one line, PLAN.md
+rule 6, ADR-013; no code, test, `standard/` or `env/` file) was merged into
+`track/real` as `f2c11fb`. On a clone of that commit, with the environment
+of this worktree and the unit tests under the heavy lock:
+
+```text
+$ git log --oneline -1
+f2c11fb Merge main into track/real: ADR-013 (the repository is public, rule 6), before the fix of issue #27 merges
+$ wc -l CLAUDE.md
+59 CLAUDE.md
+$ ruff check .
+All checks passed!
+exit 0
+$ python -m specfirst.asciicheck
+ASCII check: 500 files checked, 0 with non-ASCII bytes
+exit 0
+$ python -m pytest -m 'not evidence' -q -p no:cacheprovider
+1059 passed, 23 deselected in 378.59s (0:06:18)
+exit 0
+```
+
 The gate read-2a is not on `main` and was not run (the base session
 changed the brief on 2026-11-18: this fix need not wait for read-2a,
 because no file a task folder holds changes; see "Generated kits").
