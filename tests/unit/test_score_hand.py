@@ -72,30 +72,25 @@ def test_the_parser_control_scores_100_percent(machine, stage, decisions):
     assert result.silent == [] and result.behind == {}
 
 
-def test_the_standard_alone_cannot_build_the_chain(machine, case):
-    """ae.related.values has no house default (ADR-005, decision 3: what cannot be
-    built without it counts as not produced)."""
+def test_the_standard_alone_builds_the_chain_but_the_related_row(machine, case):
+    """ae.related.values has no house default: the build leaves out what it binds and
+    its cells wait for it (ADR-014, which changed ADR-005, decision 3; before, nothing
+    was built). The arm is held in detail in tests/unit/test_pending.py."""
     result = scorer.standard_alone(machine, case)
     assert [item.key[0] for item in result.reading.wrong()] == ["ae.teae.end",
                                                                 "ae.related.values"]
-    for name, score in result.builds.items():
-        assert not score.valid and "ae.related.values" in score.failure
-        assert (score.produced, score.in_gold, score.correct) == (0, 1, 0)
-        assert score.denominators() == {"shared_rows": 0, "produced": 0, "all": 24}
-        owners = result.owners[name]
-        assert {o.layer for o in owners} == {"build"} and len(owners) == 24
-        assert all(o.decisions[0] == ("ae.related.values", "mod-ae-emergence") for o in owners)
-    # With the list stated, the visible table is the gold table; the twin still has
-    # the event on the 31st day, which the default (no end) counts. Those two cells
-    # need both decisions: the second is hidden while the build stops.
-    assert all(o.confirmed for o in result.owners["visible"])
-    assert all(o.confirmed for o in result.owners["twin"])
-    both = [o for o in result.owners["twin"] if len(o.decisions) == 2]
-    assert {(o.row[1], o.column[0]) for o in both} == {("Any adverse event", "Placebo"),
-                                                       ("Any adverse event", "Total")}
-    assert all(o.decisions == (("ae.related.values", "mod-ae-emergence"),
-                               ("ae.teae.end", "mod-ae-emergence"))
-               and o.note == attribute.HIDDEN for o in both)
+    assert result.pending == {("ae.related.values", "mod-ae-emergence"):
+                              {"visible": 4, "twin": 4}}
+    for score in result.builds.values():
+        assert score.valid and (score.produced, score.in_gold) == (1, 1)
+    # The visible table is the gold table without the row; the twin still has the
+    # event on the 31st day, which the default of ae.teae.end (no end) counts.
+    assert result.owners["visible"] == []
+    owners = result.owners["twin"]
+    assert {(o.row[1], o.column[0]) for o in owners} == {("Any adverse event", "Placebo"),
+                                                         ("Any adverse event", "Total")}
+    assert all(o.decisions == (("ae.teae.end", "mod-ae-emergence"),) and o.confirmed
+               and o.note != attribute.HIDDEN for o in owners)
     assert result.behind == {} and result.silent == []
 
 
@@ -120,7 +115,8 @@ def test_outside_the_scope_the_gold_value_stands(machine, case):
         machine.catalog, machine.house, case.gold, candidate, case.units)}
     assert made[("tfl.output.include", "tfl-demographics")] == {"rule": "not_included"}
     assert made[("tfl.population", "tfl-ae-summary")] == {"rule": "randomized"}
-    assert ("ae.related.values", "mod-ae-emergence") not in made  # no default: left open
+    # No default: left open, and pending in the build (ADR-014).
+    assert ("ae.related.values", "mod-ae-emergence") not in made
     assert made[("ae.teae.end", "mod-ae-emergence")] == {"rule": "no_end"}
 
 

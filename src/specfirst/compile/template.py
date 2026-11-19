@@ -36,6 +36,14 @@ class TemplateError(ValueError):
     """A template cannot be evaluated."""
 
 
+class UndefinedName(TemplateError):
+    """A template reads a name that its scope does not have (`name`: the first segment)."""
+
+    def __init__(self, message: str, name: str):
+        super().__init__(message)
+        self.name = name
+
+
 # -- helpers -----------------------------------------------------------------
 
 
@@ -127,7 +135,7 @@ def lookup(scope: dict, name: str) -> object:
     value: object = scope
     for part in name.split("."):
         if not isinstance(value, dict) or part not in value:
-            raise TemplateError(f"'{name}' is not defined")
+            raise UndefinedName(f"'{name}' is not defined", name.split(".")[0])
         value = value[part]
     return value
 

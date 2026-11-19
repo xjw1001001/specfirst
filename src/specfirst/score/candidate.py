@@ -38,6 +38,21 @@ candidate's records of those units on the gold records of every other
 unit; a decision of the scope that the candidate leaves out takes the house
 default, and one without a default stays out (ADR-005, decision 3).
 
+Pending (docs/decisions/ADR-014.md). A decision that the build needs and
+that has no value (no house default, or asked and not answered) does not
+stop the build: the compiler leaves out what it binds and builds the rest
+(`compiler.compile_decisions(pending=True)`). `Build.pending` names, for
+each element left out, the decisions it waits for; `pending_cells` gives
+the gold cells that stand on such an element, which the build score counts
+apart, neither right nor wrong.
+
+SDTM that lacks a variable (issues #24 and #25). The compiler is given the
+columns of the SDTM: a column that derives from a variable the data lack
+and that SDTMIG does not require is left out with a warning
+(`Build.warnings`), and a table that reads it is not produced. When no
+subject has a treatment start date, the build stops at ADaM and says which
+filter removed every exposure record (`no_treatment_start`).
+
 A build that fails keeps the rule that failed (section 9.2, validity). A
 planted defect is a hook: a function that changes what one step hands to
 the next (`Hooks`).
@@ -47,6 +62,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import tempfile
 from collections.abc import Callable
@@ -140,6 +156,10 @@ class Build:
     edges: list[dict] = field(default_factory=list)  # derives_from, between ADaM and SDTM columns
     through: dict[str, list[str]] = field(default_factory=dict)  # ADaM column -> working columns
     outputs: dict[str, str] = field(default_factory=dict)  # output ID -> unit
+    # Left out for decisions without a value (ADR-014): `adam:<DATASET>.<COLUMN>`,
+    # `ars:<analysis ID>` or `output:<output ID>` -> the decisions it waits for.
+    pending: dict[str, tuple[Key, ...]] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)  # what the SDTM lacks, and what it costs
 
     @property
     def ok(self) -> bool:
@@ -149,13 +169,102 @@ class Build:
         return next((r["value"] for r in self.records if (r["id"], r["unit"]) == key), None)
 
 
+def pending_cells(gold: Build, made: Build) -> dict[str, tuple[Key, ...]]:
+    """The gold cells that wait for a decision without a value in a candidate's build:
+    cell ID -> the decisions. A cell waits when its output does, or when a result
+    it shows (the numerator's, the denominator's) is computed by an analysis that
+    the candidate's build left out for such a decision."""
+    if not made.pending:
+        return {}
+    found = {}
+    for output, made_grid in sorted(gold.grids.items()):
+        whole = set(made.pending.get(f"output:{output}", ()))
+        for row in made_grid["rows"]:
+            for cell in row["cells"]:
+                keys = set(whole)
+                path = gold.paths.get(cell["id"])
+                for analysis in path.analyses if path else ():
+                    keys |= set(made.pending.get(f"ars:{analysis}", ()))
+                if keys:
+                    found[cell["id"]] = tuple(sorted(keys))
+    return found
+
+
+_QUALIFIED = re.compile(r"\b([A-Z][A-Z0-9]*)\.([A-Z_][A-Z0-9_]*)\b")
+_WORD = re.compile(r"\b[A-Z][A-Z0-9]*(?:\.[A-Z_][A-Z0-9_]*)?\b")
+
+
+def _texts(node: object) -> list[str]:
+    if isinstance(node, str):
+        return [node]
+    if isinstance(node, dict):
+        return [text for child in node.values() for text in _texts(child)]
+    if isinstance(node, list):
+        return [text for child in node for text in _texts(child)]
+    return []
+
+
+def no_treatment_start(built: Build, data: Data, inputs: dict[str, str]) -> str | None:
+    """Why no subject has a treatment start date, when none has (issue #24); else None.
+
+    The house derives TRTSDT from working columns that a decision writes
+    from SDTM (for example the earliest start of the exposure records that
+    pass a filter). The message names that decision, its alternative, the
+    filter, and each variable the filter reads that is missing in every
+    record of the SDTM. `inputs` maps an input of ADSL to its SDTM file.
+    """
+    adsl = built.adam.get("ADSL")
+    if adsl is None or "TRTSDT" not in adsl.column_names or adsl.num_rows == 0:
+        return None
+    if adsl.column("TRTSDT").null_count < adsl.num_rows:
+        return None
+    said = (f"ADSL: no subject has a treatment start date (TRTSDT is missing in all "
+            f"{adsl.num_rows} records)")
+    passed = set(built.through.get("adam:ADSL.TRTSDT", ()))
+    units = {r["id"]: r["unit"] for r in built.records}
+    for path, text in sorted(built.files.items()):
+        if not path.startswith("adam/fragments/adsl/"):
+            continue
+        entry = path.rsplit("/", 1)[1].removesuffix(".yaml")
+        body = yaml.safe_load(text) or {}
+        columns = [c for c in body.get("columns") or [] if c.get("name") in passed]
+        if not columns:
+            continue
+        value = built.value((entry, units.get(entry, ""))) or {}
+        filters = list(dict.fromkeys(
+            str(c["derivation"]["aggregate"]["filter"]) for c in columns
+            if isinstance(c.get("derivation"), dict)
+            and isinstance(c["derivation"].get("aggregate"), dict)
+            and c["derivation"]["aggregate"].get("filter")))
+        named = ", ".join(c["name"] for c in columns)
+        said += (f". TRTSDT is taken from {named}, which {entry} ({value.get('rule')}) "
+                 "writes")
+        if filters:
+            said += f" from the records that pass the filter {filters[0]}"
+        empty = []
+        for alias, variable in dict.fromkeys(
+                _QUALIFIED.findall(" ".join(text for c in columns for text in _texts(c)))):
+            table = (data.sdtm or {}).get(inputs.get(alias, ""))
+            if table is None:
+                continue
+            if variable not in table.column_names:
+                empty.append(f"the SDTM {alias} has no {variable}")
+            elif table.num_rows and table.column(variable).null_count == table.num_rows:
+                empty.append(f"{variable} is missing in every record of {alias}")
+        if empty:
+            said += "; " + "; ".join(empty) + (", so the filter removes every record"
+                                                if filters else "")
+    return said
+
+
 def vector(catalog: catalogs.Catalog, house: houses.House, gold: list[dict],
            candidate: list[dict], units: tuple[str, ...]) -> list[dict]:
     """The decision vector that stands for a candidate, in catalog order.
 
     Inside the units of the scope: the candidate's value, else the house
     default, else nothing. Outside: the gold value. A record without a
-    value (asked, in conflict, not applicable) gives no value. A decision
+    value (asked, in conflict, not applicable) gives no value; a decision
+    without a value that the build needs is pending there (ADR-014). A decision
     that the study does not make (gold has no record of it: the catalog
     entry does not apply to its design) takes no default either; only a
     record of the candidate puts it into the vector.
@@ -276,22 +385,61 @@ class Machine:
         self.built = self.house if datasets is None else kitgold.house_view(self.house, datasets)
         self.registry = registries.load(root)
         self._compiled: dict[str, compiler.Compiled | str] = {}
+        self._words: set[str] | None = None  # the names in the house parent specs
         self._builds: dict[str, Build] = {}
         self.builds_made = 0
 
     # ---- compile ------------------------------------------------------------------
 
-    def compile(self, records: list[dict]) -> compiler.Compiled | str:
-        """The compiled files of a decision vector, or the reason it does not compile."""
-        key = _digest(records)
+    def compile(self, records: list[dict],
+                sdtm: dict[str, set[str]] | None = None) -> compiler.Compiled | str:
+        """The compiled files of a decision vector, or the reason it does not compile.
+
+        Always in the pending mode (ADR-014): a decision the build needs and that
+        has no value leaves out what it binds. `sdtm`, the columns of each SDTM
+        file, lets the compiler leave out what derives from a variable the data
+        lack (issue #25). When the data lack no variable that the specs could
+        read, the compile is the one without them, made once for both.
+        """
+        if sdtm is not None:
+            plain = self.compile(records)
+            if isinstance(plain, str) or not self._lacks(plain, sdtm):
+                return plain
+        columns = None if sdtm is None else {stem: sorted(names) for stem, names in
+                                             sorted(sdtm.items())}
+        key = _digest(records if columns is None else [records, columns])
         if key not in self._compiled:
             try:
                 self._compiled[key] = compiler.compile_decisions(
                     self.catalog, self.built, records, f"../../{HOUSE}",
-                    sdtm_dir=f"../../{SDTM}", adam_dir="../../adam")
+                    sdtm_dir=f"../../{SDTM}", adam_dir="../../adam", pending=True, sdtm=sdtm)
             except compiler.CompileError as error:
                 self._compiled[key] = "compile: " + "; ".join(error.problems)
         return self._compiled[key]
+
+    def _lacks(self, compiled: compiler.Compiled, sdtm: dict[str, set[str]]) -> bool:
+        """Whether the data may lack a variable that the compiled ADaM specs read: a
+        variable of SDTMIG or a qualified name (`AE.AESEV`) that the house parent
+        specs or the fragments name and the SDTM file does not have. It may say
+        yes when the answer is no (a word that is no reference); never the other
+        way round."""
+        if self._words is None:
+            texts = [(self.built.directory / meta["parent"]).read_text(encoding="utf-8")
+                     for meta in self.built.adam.values()]
+            self._words = set(_WORD.findall("\n".join(texts)))
+        words = self._words | set(_WORD.findall("\n".join(
+            text for path, text in compiled.files.items() if path.startswith("adam/"))))
+        stems = {alias: stem for meta in self.built.adam.values()
+                 for alias, stem in (meta.get("inputs") or {}).items()
+                 if alias not in self.built.adam}
+        for stem, columns in sdtm.items():
+            if (compiler.sdtmig_variables(stem.upper()) - columns) & words:
+                return True
+        for word in words:
+            alias, _, name = word.partition(".")
+            if name and alias in stems and stems[alias] in sdtm and name not in sdtm[stems[alias]]:
+                return True
+        return False
 
     def changes(self, records: list[dict], key: Key, value: object) -> set[str]:
         """The spec elements that change when one decision of a vector takes another value."""
@@ -317,7 +465,8 @@ class Machine:
     def _build(self, records: list[dict], data: Data, arms: Arms,
                hooks: Hooks | None) -> Build:
         built = Build(data.name, [dict(r) for r in records])
-        compiled = self.compile(records)
+        compiled = self.compile(records, None if data.sdtm is None else {
+            stem: set(table.column_names) for stem, table in data.sdtm.items()})
         if isinstance(compiled, str):
             built.failure = compiled
             return built
@@ -326,11 +475,25 @@ class Machine:
             hooks.compiled(compiled)
         built.files, built.ars, built.layouts = dict(compiled.files), compiled.ars, dict(
             compiled.layouts)
+        waits: dict[str, set] = {}
+        for key, elements in compiled.pending.items():
+            for element in elements:
+                waits.setdefault(element, set()).add(key)
+        built.pending = {element: tuple(sorted(keys)) for element, keys in sorted(waits.items())}
+        built.warnings = list(compiled.warnings)
+        built.not_produced.update({element.removeprefix("output:"): why
+                                   for element, why in compiled.left_out.items()
+                                   if element.startswith("output:")})
         try:
             if data.adam is not None:
                 built.adam = dict(data.adam)
             else:
                 self._adam(built, compiled, data)
+                problem = no_treatment_start(
+                    built, data, dict((self.built.adam.get("ADSL") or {}).get("inputs") or {}))
+                if problem:
+                    built.failure = f"ADaM: {problem}"
+                    return built
             if hooks and hooks.adam:
                 built.adam = hooks.adam(dict(built.adam))
             self._tables(built, arms, hooks)
@@ -419,4 +582,6 @@ def _copy(compiled: compiler.Compiled) -> compiler.Compiled:
         files=dict(compiled.files), binds=dict(compiled.binds),
         layout_binds=dict(compiled.layout_binds), datasets=list(compiled.datasets),
         adam_columns=dict(compiled.adam_columns), families=list(compiled.families),
-        ars=json.loads(json.dumps(compiled.ars)), layouts=json.loads(json.dumps(compiled.layouts)))
+        ars=json.loads(json.dumps(compiled.ars)), layouts=json.loads(json.dumps(compiled.layouts)),
+        pending={key: list(elements) for key, elements in compiled.pending.items()},
+        left_out=dict(compiled.left_out), warnings=list(compiled.warnings))

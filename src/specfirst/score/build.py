@@ -29,6 +29,16 @@ second row still has the third. Order counts for `strict` only.
 The header row of a grid (section `@header`: the counts under the column
 headers) is a row like any other: its cells are printed numbers.
 
+Pending cells (docs/decisions/ADR-014.md). A gold cell that waits for a
+decision without a value in the candidate's build (`pending`: cell ID ->
+the decisions) is neither right nor wrong: it leaves every denominator,
+and a row or a column of gold whose every cell waits leaves the axis that
+`strict` holds. The cells are counted apart, by decision. An output of gold
+whose every cell waits and that the candidate did not build waits as a
+whole: it is neither produced nor counted as not produced, so it leaves the
+denominator of `produced`, `strict` and `lenient` too (`in_gold`). A build
+with a pending cell is not perfect.
+
 For the layers below the grid (section 9.2, "values"), `adam_differences`
 and `ard_differences` say which ADaM columns and which results differ;
 attribution walks them (`specfirst.score.attribute`).
@@ -105,6 +115,10 @@ class OutputScore:
     wrong: list[WrongCell] = field(default_factory=list)
     extra_rows: list[RowKey] = field(default_factory=list)
     extra_columns: list[ColumnKey] = field(default_factory=list)
+    # Gold cells that wait for a decision without a value: cell ID -> the decisions. They
+    # are in none of the counts above.
+    pending: dict[str, tuple] = field(default_factory=dict)
+    waiting: bool = False  # not built, and every gold cell waits: the output waits
 
     @property
     def lenient(self) -> bool:
@@ -115,22 +129,43 @@ class OutputScore:
         return self.lenient and self.rows_equal and self.columns_equal
 
 
+def axes_without(table: Table, waiting: set[tuple]) -> tuple[tuple, tuple]:
+    """The rows and the columns of a grid without those whose every cell waits."""
+    def kept(axis: tuple, at: int) -> tuple:
+        return tuple(name for name in axis if not {
+            key for key in table.cells if key[at] == name} <= waiting)
+    return kept(table.rows, 0), kept(table.columns, 1)
+
+
 def compare_output(output: str, gold: dict, candidate: dict | None,
-                   why_not: str | None = None) -> OutputScore:
-    """Compare the grid of one output with the gold grid of the same output."""
+                   why_not: str | None = None,
+                   pending: dict[str, tuple] | None = None) -> OutputScore:
+    """Compare the grid of one output with the gold grid of the same output.
+
+    `pending` (gold cell ID -> decisions) names the gold cells that wait for
+    a decision without a value: they are taken out of every count.
+    """
     ours = table_of(gold)
+    waits = {key: pending[cell["id"]] for key, cell in ours.cells.items()
+             if pending and cell["id"] in pending}
+    counted = {key: cell for key, cell in ours.cells.items() if key not in waits}
+    waited = {ours.cells[key]["id"]: keys for key, keys in waits.items()}
     if candidate is None:
+        if ours.cells and not counted:
+            return OutputScore(output, False, why_not or "the candidate did not build it",
+                               pending=waited, waiting=True)
         found = OutputScore(output, False, why_not or "the candidate did not build it",
-                            gold_cells=len(ours.cells))
+                            gold_cells=len(counted), pending=waited)
         found.wrong = [WrongCell(output, row, column, cell["id"], cell["text"], None,
-                                 "not_produced") for (row, column), cell in ours.cells.items()]
+                                 "not_produced") for (row, column), cell in counted.items()]
         return found
     theirs = table_of(candidate)
-    found = OutputScore(output, True, gold_cells=len(ours.cells),
-                        rows_equal=ours.rows == theirs.rows,
-                        columns_equal=ours.columns == theirs.columns)
+    rows, columns = (axes_without(ours, set(waits)) if waits else (ours.rows, ours.columns))
+    found = OutputScore(output, True, gold_cells=len(counted),
+                        rows_equal=rows == theirs.rows,
+                        columns_equal=columns == theirs.columns, pending=waited)
     their_rows, their_columns = set(theirs.rows), set(theirs.columns)
-    for (row, column), cell in ours.cells.items():
+    for (row, column), cell in counted.items():
         if row in their_rows:
             found.shared_row_cells += 1
         other = theirs.cells.get((row, column))
@@ -158,7 +193,9 @@ class BuildScore:
 
     @property
     def in_gold(self) -> int:
-        return len(self.outputs)
+        """The outputs of gold, but those that wait as a whole (ADR-014, decision 3:
+        neither produced nor counted as not produced)."""
+        return sum(1 for output in self.outputs if not output.waiting)
 
     @property
     def produced(self) -> int:
@@ -189,15 +226,34 @@ class BuildScore:
         return [cell for output in self.outputs for cell in output.wrong]
 
     @property
+    def waiting(self) -> int:
+        """Outputs of gold that wait as a whole for a decision without a value."""
+        return sum(1 for output in self.outputs if output.waiting)
+
+    def pending_by_decision(self) -> dict[tuple, int]:
+        """The gold cells that wait, per decision (a cell that waits for two counts
+        for each)."""
+        found: Counter = Counter()
+        for output in self.outputs:
+            for keys in output.pending.values():
+                found.update(keys)
+        return dict(sorted(found.items()))
+
+    @property
     def perfect(self) -> bool:
-        return self.valid and not self.extra_outputs and self.strict == self.in_gold
+        return (self.valid and not self.extra_outputs and self.strict == self.in_gold
+                and not any(output.pending for output in self.outputs))
 
     def lines(self) -> list[str]:
-        """The four scores, each with its denominator named."""
+        """The four scores, each with its denominator named; the pending cells apart."""
         cells = self.denominators()
+        produced = f"{self.dataset}: produced: {self.produced} of {self.in_gold} outputs in gold"
+        if self.waiting:
+            produced += (f", and {self.waiting} {'waits' if self.waiting == 1 else 'wait'} for "
+                         "a decision without a value")
         said = [
             f"{self.dataset}: valid: {'yes' if self.valid else 'no (' + str(self.failure) + ')'}",
-            f"{self.dataset}: produced: {self.produced} of {self.in_gold} outputs in gold",
+            produced,
             f"{self.dataset}: cells correct: {self.correct} of {cells['shared_rows']} gold cells "
             "of the rows that gold and the candidate both have",
             f"{self.dataset}: cells correct: {self.correct} of {cells['produced']} gold cells of "
@@ -209,6 +265,15 @@ class BuildScore:
             f"{self.dataset}: whole output, lenient: {self.lenient} of {self.in_gold} outputs in "
             "gold (every gold cell present and equal)",
         ]
+        waiting = self.pending_by_decision()
+        if waiting:
+            total = sum(len(output.pending) for output in self.outputs)
+            whole = (f"; {self.waiting} output {'waits' if self.waiting == 1 else 'wait'} as a "
+                     "whole" if self.waiting else "")
+            said.append(f"{self.dataset}: pending: {total} gold cells, neither right nor wrong "
+                        "and in no denominator above, wait for a decision without a value: "
+                        + ", ".join(f"{key[0]} ({count} cells)" for key, count in
+                                    waiting.items()) + whole)
         if self.extra_outputs:
             said.append(f"{self.dataset}: outputs built that gold does not have: "
                         + ", ".join(self.extra_outputs))
@@ -216,14 +281,17 @@ class BuildScore:
 
 
 def score(dataset: str, gold: dict[str, dict], candidate: dict[str, dict], valid: bool = True,
-          failure: str | None = None, not_produced: dict[str, str] | None = None) -> BuildScore:
+          failure: str | None = None, not_produced: dict[str, str] | None = None,
+          pending: dict[str, tuple] | None = None) -> BuildScore:
     """Compare the grids of a candidate build with the gold grids, by output ID.
 
     `not_produced` gives, for an output the candidate did not build, the
-    rule that failed.
+    rule that failed. `pending` names the gold cells that wait for a
+    decision without a value (`specfirst.score.candidate.pending_cells`).
     """
     reasons = not_produced or {}
-    outputs = [compare_output(name, grid, candidate.get(name), reasons.get(name) or failure)
+    outputs = [compare_output(name, grid, candidate.get(name), reasons.get(name) or failure,
+                              pending)
                for name, grid in sorted(gold.items())]
     return BuildScore(dataset, valid, failure, outputs,
                       extra_outputs=sorted(set(candidate) - set(gold)))

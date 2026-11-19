@@ -156,12 +156,17 @@ def test_the_parser_control_scores_100_percent_on_the_kit(scored, kit):
     assert any(line.startswith("  arm C, stage T:") and line.endswith(": 100%") for line in lines)
 
 
-def test_the_standard_alone_cannot_build_the_chain_of_a_kit(scored):
-    """ae.related.values has no house default: every kit states it, and arm S cannot."""
+def test_the_standard_alone_builds_the_chain_of_a_kit_but_what_waits(scored):
+    """ae.related.values has no house default: every kit states it, and arm S has no
+    value for it. The build leaves out what it binds and builds the rest; what waits
+    for it is counted apart (ADR-014; before, the chain was not built)."""
     chain = scored[0].standard["C"]
+    related = ("ae.related.values", "mod-ae-emergence")
     assert "ae.related.values" in [item.key[0] for item in chain.reading.wrong()]
+    assert list(chain.pending) == [related]
     for score in chain.builds.values():
-        assert not score.valid and score.produced == 0 and "ae.related.values" in score.failure
+        assert score.valid and score.produced + score.waiting == 1
+        assert set(score.pending_by_decision()) <= {related}
     table = scored[0].standard["T"]
     assert all(score.valid and score.produced == 1 for score in table.builds.values())
 

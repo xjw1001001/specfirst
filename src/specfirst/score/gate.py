@@ -184,20 +184,27 @@ def arms(root: Path, out: Out) -> bool:
     for result in (chain, table):
         for line in report.lines(result):
             out(line)
-    # The study states two decisions. One has no default, so the chain cannot be
-    # built from the standard alone; the table decisions are all defaults.
-    not_built = all(score.produced == 0 for score in chain.builds.values())
-    owners = [owner for owners in chain.owners.values() for owner in owners]
-    stopped = bool(owners) and all(
-        owner.layer == "build" and owner.confirmed
-        and "ae.related.values" in [key[0] for key in owner.decisions] for owner in owners)
-    more = sorted({key[0] for owner in owners for key in owner.decisions}
-                  - {"ae.related.values"})
-    out(f"arm S, chain: no output produced: {'yes' if not_built else 'NO'}; every cell owned "
-        f"by the build that stopped, with ae.related.values: {'yes' if stopped else 'NO'}"
-        + (f"; some need {', '.join(more)} as well" if more else ""))
+    # The study states two decisions. One, ae.related.values, has no default: the chain
+    # is built without what it binds, and the four cells of the row of related events
+    # wait for it (ADR-014). The other, ae.teae.end, takes its default: the visible data
+    # cannot show it, the twin shows it in two cells, which it owns alone. The table
+    # decisions are all defaults.
+    related, end = ("ae.related.values", "mod-ae-emergence"), ("ae.teae.end", "mod-ae-emergence")
+    built = all(score.valid and score.produced == score.in_gold == 1
+                for score in chain.builds.values())
+    waits = chain.pending == {related: {name: 4 for name in chain.builds}}
+    visible = chain.builds["visible"]
+    right = visible.correct == visible.denominators()["all"] == 20 and not chain.owners["visible"]
+    owners = chain.owners["twin"]
+    owned = len(owners) == 2 and all(owner.decisions == (end,) and owner.layer == "L4"
+                                     and owner.confirmed for owner in owners)
+    out(f"arm S, chain: the output is built on both datasets: {'yes' if built else 'NO'}; the "
+        f"4 cells of the row of related events wait for ae.related.values on each, and no "
+        f"other cell waits: {'yes' if waits else 'NO'}; the other 20 cells of the visible data "
+        f"are right: {'yes' if right else 'NO'}; the 2 wrong cells of the twin are owned by "
+        f"ae.teae.end alone, at L4: {'yes' if owned else 'NO'}")
     out(f"arm S, stage T: every score 100%: {'yes' if table.perfect else 'NO'}")
-    return not_built and stopped and table.perfect
+    return built and waits and right and owned and table.perfect
 
 
 def pilot_report(root: Path, out: Out) -> bool:
