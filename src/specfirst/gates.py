@@ -527,7 +527,7 @@ GATES: dict[str, tuple[Check, ...]] = {
     # docs/decisions/ADR-010.md): a dry run of each arm on one train kit ends within
     # budget with valid output files; the canary scan is clean. The train kit is kit 4
     # of the seed of the gate gen-2a. No check calls a model: the dry run of arm R made
-    # with the model is kept in src/specfirst/harness/runs and checked from its record.
+    # with the model is kept in src/specfirst/harness/kept and checked from its record.
     "read-2a": (
         Check("environment", "specfirst doctor", _environment),
         Check("pins", "specfirst fetch --verify", _pins),
@@ -553,7 +553,7 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("arm C", "specfirst run arm KIT --arm C --score", _harness("arm_c")),
         Check("arm R, stub reader", "specfirst run arm KIT --arm R --stub PLAN --score; "
               "the run kept and checked", _harness("arm_r_stub")),
-        Check("arm R, kept dry run", "specfirst run check src/specfirst/harness/runs/R-... "
+        Check("arm R, kept dry run", "specfirst run check src/specfirst/harness/kept/R-... "
               "--kit KIT --score", _harness("arm_r")),
         Check("scratch removed", "the kit, tasks and runs of the gate", _harness("done")),
         Check("cache untouched", "specfirst fetch --verify", _pins),

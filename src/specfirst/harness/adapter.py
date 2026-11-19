@@ -2,8 +2,16 @@
 docs/decisions/ADR-010.md, decisions 1, 3 and 4).
 
     claude -p "<prompt>" --output-format stream-json --verbose --model claude-opus-5-5
-           --max-turns N --permission-mode default --allowedTools ... --disallowedTools ...
-           --settings <run>/settings.json --setting-sources "" --strict-mcp-config
+           --max-turns N --max-budget-usd D --permission-mode manual
+           --permission-prompts none --tools Read,Glob,Grep,Write,Edit,Bash
+           --allowedTools ... --disallowedTools ... --settings <run>/settings.json
+           --setting-sources "" --strict-mcp-config --disable-slash-commands
+           --no-session-persistence
+
+The flags are those of the CLI 2.1.327 (ADR-010, decision 1): `manual` is the
+permission mode that asks, and `--permission-prompts none` denies whatever
+would ask; `--tools` loads no other built-in tool; no user, project or local
+settings, no MCP server, no skill or command, and no session saved to disk.
 
 The reader's working directory is the task folder. The settings file denies
 the file tools on every protected folder. Every line the CLI prints is one
@@ -37,10 +45,14 @@ from specfirst.harness.record import MODEL, Budget
 TRANSCRIPT = "transcript.jsonl"
 SETTINGS = "settings.json"
 PROMPT = "Read TASK.md in the current folder and do the task it describes."
-ALLOWED_TOOLS = ("Read", "Glob", "Grep", "Write", "Edit", "Bash(bin/ask:*)",
-                 "Bash(./bin/ask:*)", "Bash(bin/check:*)", "Bash(./bin/check:*)")
-DISALLOWED_TOOLS = ("Task", "WebFetch", "WebSearch", "NotebookEdit", "Skill", "SlashCommand",
-                    "BashOutput", "KillShell")
+TOOLS = ("Read", "Glob", "Grep", "Write", "Edit", "Bash")
+# A rule for each of the two tools, in the form of `Bash(<prefix> *)` and the older
+# `Bash(<prefix>:*)`.
+ALLOWED_TOOLS = ("Read", "Glob", "Grep", "Write", "Edit",
+                 *(f"Bash({tool}{form})" for tool in ("bin/ask", "./bin/ask", "bin/check",
+                                                     "./bin/check") for form in (" *", ":*")))
+DISALLOWED_TOOLS = ("Agent", "Task", "WebFetch", "WebSearch", "NotebookEdit", "Skill",
+                    "SlashCommand", "BashOutput", "KillShell")
 FILE_TOOLS = ("Read", "Edit", "Write", "Glob", "Grep")
 WSL_ROOTS = ("//wsl.localhost", "//wsl$")
 
@@ -118,10 +130,13 @@ def command(reader: Reader, settings_file: Path, budget: Budget) -> list[str]:
     path = windows_path(settings_file) if reader.windows else str(settings_file)
     return [*reader.argv, "-p", reader.prompt, "--output-format", "stream-json", "--verbose",
             "--model", reader.model, "--max-turns", str(budget.turns),
-            "--permission-mode", "default",
+            "--max-budget-usd", f"{budget.usd:g}",
+            "--permission-mode", "manual", "--permission-prompts", "none",
+            "--tools", ",".join(TOOLS),
             "--allowedTools", ",".join(ALLOWED_TOOLS),
             "--disallowedTools", ",".join(DISALLOWED_TOOLS),
-            "--settings", path, "--setting-sources", "", "--strict-mcp-config"]
+            "--settings", path, "--setting-sources", "", "--strict-mcp-config",
+            "--disable-slash-commands", "--no-session-persistence"]
 
 
 def command_problems(argv: list[str], settings_value: dict, protected: list[Path],
@@ -133,10 +148,12 @@ def command_problems(argv: list[str], settings_value: dict, protected: list[Path
         return argv[argv.index(flag) + 1] if flag in argv[:-1] else None
 
     for flag, wanted in (("--output-format", "stream-json"), ("--model", MODEL),
-                         ("--permission-mode", "default"), ("--setting-sources", "")):
+                         ("--permission-mode", "manual"), ("--permission-prompts", "none"),
+                         ("--tools", ",".join(TOOLS)), ("--setting-sources", "")):
         if value(flag) != wanted:
             found.append(f"{flag} is {value(flag)!r}, not {wanted!r}")
-    for flag in ("-p", "--verbose", "--strict-mcp-config", "--max-turns", "--settings"):
+    for flag in ("-p", "--verbose", "--strict-mcp-config", "--max-turns", "--max-budget-usd",
+                 "--settings", "--disable-slash-commands", "--no-session-persistence"):
         if flag not in argv:
             found.append(f"no {flag}")
     allowed = set((value("--allowedTools") or "").split(","))

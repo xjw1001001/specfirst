@@ -43,11 +43,13 @@ def _print(event: dict) -> None:
 def _parse(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("-p", dest="prompt")
-    for flag in ("--output-format", "--model", "--max-turns", "--permission-mode",
-                 "--allowedTools", "--disallowedTools", "--settings", "--setting-sources"):
+    for flag in ("--output-format", "--model", "--max-turns", "--max-budget-usd",
+                 "--permission-mode", "--permission-prompts", "--tools", "--allowedTools",
+                 "--disallowedTools", "--settings", "--setting-sources"):
         parser.add_argument(flag)
-    parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--strict-mcp-config", action="store_true")
+    for flag in ("--verbose", "--strict-mcp-config", "--disable-slash-commands",
+                 "--no-session-persistence"):
+        parser.add_argument(flag, action="store_true")
     return parser.parse_known_args(argv)
 
 
@@ -82,7 +84,8 @@ def main(argv: list[str] | None = None) -> int:
         problems.append("no settings file")
     command = adapter.command(adapter.Reader(("stub",), str(args.model), str(args.prompt)),
                               Path(str(args.settings)), adapter.Budget(
-                                  int(args.max_turns or 0), 0, 0.0))[1:]
+                                  int(args.max_turns or 0), 0,
+                                  float(args.max_budget_usd or 0)))[1:]
     given = list(sys.argv[1:] if argv is None else argv)
     if given != command:
         problems.append("the command line is not the adapter's")

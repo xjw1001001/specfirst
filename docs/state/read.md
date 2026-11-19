@@ -208,7 +208,7 @@ For other tracks:
   Code CLI later (2026-11-18; ADR-010, the last section). read-2a waits for
   that: do not try the CLI before the owner says the login is done (through
   the base session). Then the isolation probe and the dry run of arm R
-  within the budget of decision 8, kept in src/specfirst/harness/runs; the
+  within the budget of decision 8, kept in src/specfirst/harness/kept; the
   gates read-2a, gen-3a, gen-2a and read-1a on clean clones; the report,
   the review, the merge.
 - Then the rest of read-1 Scorer (needs real-3 for fixtures, then gen-2),

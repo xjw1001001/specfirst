@@ -15,7 +15,7 @@ The folders of tasks and runs lie outside every checkout: `--tasks` and
 `--runs`, or SPECFIRST_TASKS and SPECFIRST_RUNS. The reader of arm R is the
 program SPECFIRST_READER names (default `claude`); `--stub PLAN` runs the
 stub reader with that plan instead. `--keep` copies the run into
-src/specfirst/harness/runs, as the gate reads it.
+src/specfirst/harness/kept, as the gate reads it.
 """
 
 from __future__ import annotations
@@ -59,9 +59,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_arm.add_argument("--stub", help="run the stub reader with this plan (a JSON file)")
     p_arm.add_argument("--score", action="store_true", help="score the run on its kit")
     p_arm.add_argument("--keep", action="store_true",
-                       help="copy the run into src/specfirst/harness/runs")
+                       help="copy the run into src/specfirst/harness/kept")
     p_check = commands.add_parser("check", help="check a kept run against its kit")
-    p_check.add_argument("kept", help="a folder of src/specfirst/harness/runs")
+    p_check.add_argument("kept", help="a folder of src/specfirst/harness/kept")
     p_check.add_argument("--kit", required=True)
     p_check.add_argument("--tasks")
     p_check.add_argument("--seed")

@@ -6,7 +6,7 @@ with valid output files. The canary scan is clean." The train kit is kit 4
 of the seed of the gate gen-2a (train, the ask demo), written again by a
 process of its own into a folder outside every checkout. No check calls a
 model (rule R4): the dry run of arm R made with the model is kept in
-src/specfirst/harness/runs/ and checked from its record; arms S and C, and
+src/specfirst/harness/kept/ and checked from its record; arms S and C, and
 arm R with the stub reader, run live.
 
     skills       core-reader and the reading notes v0: rendered, Agent Skills, no leak
@@ -412,7 +412,7 @@ def canary_check(root: Path, out: Out) -> bool:
     folder = _kit(root)
     made = tasks.build(root, folder, _scratch() / "tasks-canary")
     kit_sha = sha256_file(folder / genkits.MANIFEST)
-    found = runs.kit_canaries(root, folder, made.folder, "R", kit_sha, SEED)
+    found = runs.kit_canaries(root, folder, runs.task_texts(made), "R", kit_sha, SEED)
     counts = found.sources()
     kinds = {}
     for label, count in counts.items():
@@ -485,7 +485,30 @@ def canary_check(root: Path, out: Out) -> bool:
     out(f"a transcript of {len(allowed)} events with every file of the task, the oracle's "
         f"answers, the records of a reader that reads gold right and their statements: "
         + ("no canary" if not clean else f"{len(clean)} canaries, e.g. {clean[0].line()}"))
-    return not clean and all(planted) and len(found) > 0
+    # A reader that writes a wrong value which a statement of the store holds: its record,
+    # as the catalog renders it, is no canary; a quote it typed from the store is.
+    gold = {(r["id"], r["unit"]): r["value"] for r in genkits.read_decisions(folder)}
+    store_items = [json.loads(line) for line in (store / "paragraphs.jsonl").read_text(
+        encoding="ascii").splitlines() if line.strip()]
+    item = next(i for i in store_items if (i["entry"], i["unit"]) in made.keys
+                and i["value"] != gold.get((i["entry"], i["unit"])) and len(i["value"]) > 1)
+    written = [{"id": item["entry"], "unit": item["unit"], "value": item["value"],
+                "status": "stated", "class": "document_rule", "statement": item["statement"]}]
+    line = json.dumps(written[0], sort_keys=True)
+    texts = runs.task_texts(made)
+    own = runs.kit_canaries(root, folder, texts, "R", kit_sha, SEED, written)
+    out(f"a reader that writes {item['entry']} ({item['unit']}) as {item['value']}, a value "
+        "that a statement of the store holds: "
+        + ("no canary" if not own.find(line) else f"{len(own.find(line))} canaries"))
+    typed = [{**written[0], "statement": (store / "paragraphs.jsonl").read_text(
+        encoding="ascii")[:300]}]
+    planted += [
+        _holds(out, "the same record judged without the reader's records (the case exists)",
+               [c.source for c in found.find(line)]),
+        _holds(out, "a statement typed from the store", [c.source for c in runs.kit_canaries(
+            root, folder, texts, "R", kit_sha, SEED, typed).find(typed[0]["statement"])]),
+    ]
+    return not clean and not own.find(line) and all(planted) and len(found) > 0
 
 
 # ---- the dry runs ------------------------------------------------------------------------

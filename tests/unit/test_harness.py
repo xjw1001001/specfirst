@@ -334,3 +334,49 @@ def test_the_tool_wrappers_call_the_harness_and_keep_msys_from_rewriting_paths(m
     assert text.index('"$@"') < text.index("'--run'") < text.index("'--task'")
     runs.write_tools(folder, tmp_path / "run", windows=False)
     assert "wsl.exe" not in (folder / "bin" / "check").read_text(encoding="ascii")
+
+
+def test_what_the_reader_writes_into_out_is_scanned_not_allowed(root, kit_dir, scratch):
+    """The canaries come from the task as it was built: a line of gold that the reader
+    copies into out/ is a hit (an earlier version took the task folder after the run, out/
+    included, as the text a reader may read)."""
+    line = (kit_dir / "gold" / "decisions.jsonl").read_text(encoding="ascii").splitlines()[0]
+    plan = scratch / "copy-plan.json"
+    plan.write_text(json.dumps({"records": [], "unmapped": [],
+                                "write": {"out/notes.txt": f"copied: {line}\n"}}),
+                    encoding="ascii")
+    made = runs.run(root, kit_dir, "R", scratch / "tasks", scratch / "runs",
+                    reader=adapter.stub_reader(), env={"SPECFIRST_STUB_PLAN": str(plan)},
+                    name="R-copy")
+    assert any(hit.where == "workspace:out/notes.txt" for hit in made.hits)
+
+
+def _store_value(made_task, kit_dir):
+    """A value that a statement of the store holds, for a decision of the task, other
+    than the kit's gold value."""
+    gold = {(r["id"], r["unit"]): r["value"] for r in genkits.read_decisions(kit_dir)}
+    for line in (natural.store_dir() / "paragraphs.jsonl").read_text(
+            encoding="ascii").splitlines():
+        item = json.loads(line)
+        key = (item["entry"], item["unit"])
+        if key in made_task.keys and item["value"] != gold.get(key) and len(item["value"]) > 1:
+            return key, item["value"], item["statement"]
+    raise AssertionError("no such statement in the store")
+
+
+def test_a_wrong_value_that_the_store_states_is_no_canary(root, kit_dir, made, catalog):
+    key, value, statement = _store_value(made, kit_dir)
+    kit_sha = runs.sha256_file(kit_dir / "kit.yaml")
+    written = [{"id": key[0], "unit": key[1], "value": value, "status": "stated",
+                "class": "document_rule", "statement": statement}]
+    line = json.dumps(written[0], sort_keys=True)
+    plain = runs.kit_canaries(root, kit_dir, runs.task_texts(made), "R", kit_sha, None)
+    assert plain.find(line), "the case exists: without the reader's records it is a hit"
+    own = runs.kit_canaries(root, kit_dir, runs.task_texts(made), "R", kit_sha, None,
+                            written)
+    assert own.find(line) == []
+    # What the reader typed itself is not allowed: a quote that copies the store is a hit.
+    copied = [{**written[0], "citations": [{"doc": "sap", "anchor": "1/p1", "quote": (
+        natural.store_dir() / "paragraphs.jsonl").read_text(encoding="ascii")[:400]}]}]
+    assert runs.kit_canaries(root, kit_dir, runs.task_texts(made), "R", kit_sha, None,
+                             copied).find(copied[0]["citations"][0]["quote"])

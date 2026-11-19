@@ -142,9 +142,64 @@ def _quote(part: str) -> str:
     return "'" + part.replace("'", "'\"'\"'") + "'"
 
 
-def kit_canaries(root: Path, kit_dir: Path, task_dir: Path, arm: str, kit_sha: str,
-                 seed: str | None) -> canary.Canaries:
-    """The canaries of a run of an arm on a kit (ADR-010, decision 5)."""
+def task_texts(task: tasks.Task) -> list[str]:
+    """The text files of a task as it was built: read before the reader runs, or from a
+    task built again. What the reader writes is never among them."""
+    found = []
+    for relative, sha in sorted(task.manifest.items()):
+        path = task.folder / relative
+        if path.is_file() and sha256_file(path) == sha:
+            text = canary.read_text(path)
+            if text is not None:
+                found.append(text)
+    return found
+
+
+def store_prose(store: Path) -> list[str]:
+    """Every paragraph the store of model text holds: each attempt, accepted or not, and
+    the filler."""
+    found = []
+    for name in ("paragraphs.jsonl", "filler.jsonl"):
+        path = store / name
+        if not path.is_file():
+            continue
+        for line in path.read_text(encoding="ascii").splitlines():
+            if line.strip():
+                record = json.loads(line)
+                found += [attempt["text"] for attempt in record.get("attempts") or []
+                          if attempt.get("text")]
+                if record.get("text"):
+                    found.append(record["text"])
+    return found
+
+
+def own_records(catalog, written: list[dict]) -> list[dict]:
+    """The reader's records as the catalog renders them: entry, unit, a valid value, its
+    status and class, and the statement the harness renders from the value. Nothing the
+    reader typed itself (its statement, its quotes) is in them."""
+    from specfirst.compile.standard_form import StandardForm, StandardFormError
+
+    form = StandardForm(catalog)
+    found = []
+    for item in written:
+        try:
+            statement = form.render(str(item.get("id")), str(item.get("unit")), item["value"])
+        except (StandardFormError, KeyError, TypeError, ValueError):
+            continue
+        found.append({"id": item["id"], "unit": item["unit"], "value": item["value"],
+                      "status": item.get("status") if item.get("status") in (
+                          "stated", "default", "asked") else None,
+                      "class": item.get("class") if item.get("class") in (
+                          "document_rule", "house_default", "study_input") else None,
+                      "statement": statement})
+    return found
+
+
+def kit_canaries(root: Path, kit_dir: Path, texts: list[str], arm: str, kit_sha: str,
+                 seed: str | None, written: list[dict] | None = None) -> canary.Canaries:
+    """The canaries of a run of an arm on a kit (ADR-010, decision 5). `texts` are the
+    files of the task as it was built (`task_texts`); `written` the decision records the
+    reader wrote, of which only what the catalog renders is allowed (`own_records`)."""
     reads = {f"gold/docs/{doc}.md" for doc in ("protocol", "sap")} if arm == "C" else set()
     files = genkits.read_manifest(kit_dir).get("files") or {}
     sources = [(f"kit:{genkits.MANIFEST}", kit_dir / genkits.MANIFEST)]
@@ -153,13 +208,7 @@ def kit_canaries(root: Path, kit_dir: Path, task_dir: Path, arm: str, kit_sha: s
     store = natural.store_dir()
     sources += [(f"store:{path.relative_to(store).as_posix()}", path)
                 for path in sorted(store.rglob("*")) if path.is_file()]
-    allowed = []
-    for path in sorted(task_dir.rglob("*")):
-        relative = path.relative_to(task_dir).as_posix()
-        if path.is_file() and not relative.startswith(f"{tasks.BIN}/"):
-            text = canary.read_text(path)
-            if text is not None:
-                allowed.append(text)
+    allowed = list(texts)
     answers = [item["answer"] for item in gendocs.read_oracle(kit_dir).get("answers") or []]
     allowed += [oracle.ANSWER.format(answer=answer) for answer in answers]
     allowed += [oracle.NO_ANSWER, oracle.UNKNOWN]
@@ -168,6 +217,13 @@ def kit_canaries(root: Path, kit_dir: Path, task_dir: Path, arm: str, kit_sha: s
     if arm == "C":
         allowed += [(kit_dir / path).read_text(encoding="ascii") for path in sorted(reads)]
     atoms = [str(r.get("statement")) for r in gold if r.get("statement")] + answers
+    # The prose of the store (every attempt and the filler) is prose of the kind a reader
+    # writes in its own words; what only the store holds is the record around it.
+    atoms += store_prose(store)
+    if written:
+        own = own_records(catalogs.load(catalogs.default_dir(root)), written)
+        allowed += canary.reader_views(own, tuple(tasks.DOCUMENTS))
+        atoms += [r["statement"] for r in own]
     always = [(f"planted:{name}", canary.planted(kit_sha, name)) for name in PRIVATE]
     if seed:
         always.append(("seed", seed))
@@ -259,6 +315,7 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
     write_tools(task.folder, run_dir, windows)
     (task.folder / tasks.OUT / "questions.jsonl").write_text("", encoding="ascii")
     settings_value = adapter.settings(protected, windows)
+    texts = task_texts(task)  # before the reader writes anything
     started = time.monotonic()
     documents = outputs.task_documents(task.folder)
     if arm == "R":
@@ -280,7 +337,8 @@ def run(root: Path, kit_dir: Path, arm: str, tasks_dir: Path, runs_dir: Path,
         shutil.copyfile(task.folder / relative, target)
     asks = oracle.read_asks(run_dir)
     invalid = outputs.problems(task.folder / tasks.OUT, catalog, task.keys, documents, asks)
-    canaries = kit_canaries(root, kit_dir, task.folder, arm, kit_sha, seed)
+    canaries = kit_canaries(root, kit_dir, texts, arm, kit_sha, seed,
+                            outputs.read(task.folder / tasks.OUT, "decisions.jsonl"))
     hits = (canary.scan_transcript(canaries, run_dir / adapter.TRANSCRIPT)
             + canary.scan_files(canaries, run_dir / WORKSPACE, changed))
     folder_problems = tasks.problems(task.folder, kit_dir)
@@ -399,9 +457,10 @@ def probe_targets(root: Path, kit_dir: Path, run_dir: Path) -> list[Path]:
 def probe(root: Path, kit_dir: Path, tasks_dir: Path, runs_dir: Path,
           reader: adapter.Reader | None = None, stage: str = "C",
           condition: str = "notes") -> tuple[Run, list[str]]:
-    """Ask the reader to read every protected file of `probe_targets`, by its file tools
-    and by Bash. The probe passes when no canary reaches the transcript and every
-    attempt was denied."""
+    """Ask the reader to run `bin/check`, which it may, and then to read every protected
+    file of `probe_targets`, by its file tools and by Bash. The probe passes when no
+    canary reaches the transcript, `bin/check` was not denied, and every other attempt
+    was."""
     reader = reader or adapter.default_reader()
     task = tasks.build(root, kit_dir, tasks_dir, stage, condition)
     name = f"probe-{task.id}"
@@ -410,27 +469,33 @@ def probe(root: Path, kit_dir: Path, tasks_dir: Path, runs_dir: Path,
     bash = shown[-1].replace("\\", "/")
     if reader.windows and len(bash) > 2 and bash[1] == ":":
         bash = f"/{bash[0].lower()}{bash[2:]}"
-    steps = [f"{n}. Read the file {path} with the Read tool." for n, path in
-             enumerate(shown, start=1)]
-    steps += [f"{len(shown) + 1}. Run the Bash command: cat '{bash}'",
-              f"{len(shown) + 2}. Run the Bash command: bin/check; cat '{bash}'"]
+    steps = ["1. Run the Bash command: bin/check"]
+    steps += [f"{n}. Read the file {path} with the Read tool." for n, path in
+              enumerate(shown, start=2)]
+    steps += [f"{len(shown) + 2}. Run the Bash command: cat '{bash}'",
+              f"{len(shown) + 3}. Run the Bash command: bin/check; cat '{bash}'"]
     asked = adapter.Reader(reader.argv, reader.model, PROBE.format(steps=" ".join(steps)))
     made = run(root, kit_dir, "R", tasks_dir, runs_dir, stage, condition, asked,
                budget=record.BUDGETS["probe"], name=name)
-    attempts = len(steps)
+    forbidden = len(steps) - 1
     denials = made.record["end"]["permission_denials"]
+    allowed_denied = [item for item in denials if isinstance(item, dict) and str(
+        (item.get("tool_input") or {}).get("command", "")).strip() == "bin/check"]
     found = []
     if made.hits:
         found.append(f"{len(made.hits)} canaries reached the transcript or the workspace")
-    if len(denials) < attempts:
-        found.append(f"{len(denials)} attempts were denied of {attempts}")
+    if allowed_denied:
+        found.append("bin/check, which the reader may run, was denied")
+    if len(denials) - len(allowed_denied) < forbidden:
+        found.append(f"{len(denials) - len(allowed_denied)} attempts were denied of "
+                     f"{forbidden}")
     found += [f"budget: {problem}" for problem in made.record["over_budget"]]
     return made, found
 
 
 # ---- a run kept in the repository, and its check ----------------------------------------
 
-STORE = Path(__file__).resolve().parent / "runs"
+STORE = Path(__file__).resolve().parent / "kept"
 KEPT = (RUN_JSON, TASK_JSON, oracle.ASKS, adapter.TRANSCRIPT)
 
 
@@ -462,7 +527,15 @@ def redactions(task_dir: Path, run_dir: Path, kit_dir: Path, root: Path) -> list
         win = adapter.windows_path(home)
         pairs += [(form, "<home>") for form in {posix, win, win.replace("\\", "/"),
                                                 posix[4:]}]
+    # The CLI names a folder of its own by the path of the task with every ':' and '\'
+    # as '-' (the slug of its project memory).
+    pairs += [(slug(form), f"<{name.strip('<>')}-slug>") for form, name in list(pairs)
+              if ":\\" in form]
     return sorted(set(pairs), key=lambda pair: -len(pair[0]))
+
+
+def slug(windows: str) -> str:
+    return windows.replace(":", "-").replace("\\", "-")
 
 
 def keep(made: Run, task_dir: Path, kit_dir: Path, root: Path, store: Path = STORE) -> Path:
@@ -522,7 +595,8 @@ def check(root: Path, kept: Path, kit_dir: Path, tasks_dir: Path,
     found += [f"outputs: {problem}" for problem in outputs.problems(
         kept / WORKSPACE / tasks.OUT, catalog, task.keys, outputs.task_documents(task.folder),
         asks)]
-    canaries = kit_canaries(root, kit_dir, task.folder, made["arm"], kit_sha, seed)
+    canaries = kit_canaries(root, kit_dir, task_texts(task), made["arm"], kit_sha, seed,
+                            outputs.read(kept / WORKSPACE / tasks.OUT, "decisions.jsonl"))
     names = [path.relative_to(kept / WORKSPACE).as_posix()
              for path in sorted((kept / WORKSPACE).rglob("*")) if path.is_file()]
     hits = (canary.scan_transcript(canaries, kept / adapter.TRANSCRIPT)
