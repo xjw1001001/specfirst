@@ -120,6 +120,23 @@ def test_a_required_variable_stops_the_build_with_a_message(machine, gold, varia
     assert f"AE has no {variable}" in made.failure and "Required" in made.failure
 
 
+def test_a_variable_the_records_of_a_dataset_rest_on_leaves_that_dataset_out(root):
+    """The full house builds ADVS too. Every column of ADVS rests on its row templates,
+    and they read VS.VSSTRESN (Expected): without it ADVS is left out with a warning,
+    and the adverse event summary, which reads no ADVS, is built as gold (review of
+    std-issues, finding 2; before, the compile stopped: `ADVS: its key ... cannot be
+    built`)."""
+    machine = Machine(root)
+    gold = hand.gold_values(machine.catalog, machine.house)
+    assert "ADVS" in machine.compile(gold).datasets
+    made = machine.build(gold, without("visible", "vs", "VSSTRESN"), hand.ARMS)
+    assert made.ok, made.failure
+    assert "ADVS" not in made.adam
+    assert texts(made) == hand.expected_cells("visible")
+    assert any(line.startswith("ADVS is left out") and "VS has no VSSTRESN" in line
+               for line in made.warnings), made.warnings
+
+
 def test_the_compile_without_the_data_is_unchanged(machine, gold):
     """The generator and `specfirst compile` give no columns of SDTM: nothing is left
     out, and the files are those of before."""

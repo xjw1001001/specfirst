@@ -125,16 +125,58 @@ def test_the_standard_alone_builds_the_chain_with_the_related_row_pending(machin
 
 
 def test_a_table_decision_without_a_value_leaves_the_output_pending(machine, case):
-    """The rows of the table are asked and not answered: the whole output waits."""
+    """The rows of the table are asked and not answered: the whole output waits. It is
+    neither produced nor counted as not produced (ADR-014, decision 3): it leaves the
+    denominator of the outputs too (review of std-issues, finding 4)."""
     candidate = [r for r in case.gold if (r["id"], r["unit"]) != ROWS] + [asked(ROWS)]
     result = scorer.run(machine, case, candidate)
     assert result.pending == {ROWS: {"visible": 24, "twin": 24}}
     for score in result.builds.values():
         assert score.valid
-        assert (score.produced, score.in_gold, score.waiting) == (0, 1, 1)
+        assert (score.produced, score.in_gold, score.waiting) == (0, 0, 1)
+        assert (score.strict, score.lenient) == (0, 0)
         assert score.denominators() == {"shared_rows": 0, "produced": 0, "all": 0}
         assert score.wrong() == [] and not score.perfect
+        assert any("produced: 0 of 0 outputs in gold, and 1 waits for a decision" in line
+                   for line in score.lines())
     assert all(owners == [] for owners in result.owners.values())
+
+
+EFFICACY = ("pop.efficacy.rule", "mod-populations")
+POPULATION = ("tfl.population", "tfl-ae-summary")
+
+
+def test_an_optional_decision_without_a_value_that_a_table_reads(machine, case):
+    """The house lets a study leave out pop.efficacy.rule (`optional` of ADSL): its
+    column EFFFL is then not written. When the table is on the efficacy set it reads
+    EFFFL, and the decision is pending: the output waits for it, named (review of
+    std-issues, finding 1; before, the compile stopped: `the tables read ADSL.EFFFL,
+    which no decision of the study writes`)."""
+    records = [{**r, "value": {"rule": "efficacy"}} if (r["id"], r["unit"]) == POPULATION
+               else r for r in case.gold_vector() if (r["id"], r["unit"]) != EFFICACY]
+    made = machine.build(records, hand.data("visible"), hand.ARMS)
+    assert made.ok, made.failure
+    assert made.grids == {}
+    assert made.pending[f"output:{hand.OUTPUT}"] == (EFFICACY,)
+    assert made.pending["adam:ADSL.EFFFL"] == (EFFICACY,)
+    # A study that does not make the decision and reads no EFFFL waits for nothing.
+    plain = machine.build(case.gold_vector(), hand.data("visible"), hand.ARMS)
+    assert plain.ok and plain.pending == {}
+
+
+def test_a_decision_that_adds_records_makes_its_dataset_wait(machine, case):
+    """bds.eot.record adds the end-of-treatment records to ADVS (a row template).
+    Without a value the records of ADVS depend on it: ADVS waits as a whole, and the
+    adverse event summary, which reads no ADVS, is built (review of std-issues,
+    finding 3; before, ADVS was built without those records and nothing waited)."""
+    key = ("bds.eot.record", "mod-bds-visits")
+    assert key in {(r["id"], r["unit"]) for r in case.gold_vector()}
+    records = [r for r in case.gold_vector() if (r["id"], r["unit"]) != key]
+    made = machine.build(records, hand.data("visible"), hand.ARMS)
+    assert made.ok, made.failure
+    assert made.pending["adam:ADVS"] == (key,)
+    assert "ADVS" not in made.adam and "ADVS" in machine.compile(case.gold_vector()).datasets
+    assert cells(made) == hand.expected_cells("visible")
 
 
 def test_what_derives_from_a_pending_column_is_left_out_too(machine, case):
@@ -185,9 +227,10 @@ def test_pending_cells_are_neither_right_nor_wrong():
     # A whole output that waits is not produced and not wrong.
     every = {cell["id"]: (KEY,) for row in gold["rows"] for cell in row["cells"]}
     found = build.score("visible", {"Out_A": gold}, {}, pending=every)
-    assert (found.produced, found.waiting, found.wrong(), found.denominators()["all"]) == (
-        0, 1, [], 0)
+    assert (found.produced, found.in_gold, found.waiting, found.wrong(),
+            found.denominators()["all"]) == (0, 0, 1, [], 0)
     assert any("1 output waits" in line for line in found.lines())
+    assert not found.perfect
 
 
 def test_a_build_without_pending_cells_reads_as_before(machine, case):
