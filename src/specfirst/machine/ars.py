@@ -34,6 +34,10 @@ from specfirst.machine.registry import Registry, RegistryError
 
 REGISTRY_CONTEXT = "specfirst method registry"
 DESCRIPTION_PREFIX = "Method registry: "
+# The parameters of `programmingCode` (context REGISTRY_CONTEXT) that name columns
+# of the analysis dataset: the terms of a model (ADR-015). They are read like a
+# variable: `reads` gives them the role "model".
+MODEL_TERMS = ("factors", "covariates")
 COMPARATORS = ("EQ", "NE", "IN", "NOTIN", "GT", "GE", "LT", "LE")
 LOGICAL = ("AND", "OR", "NOT")
 ROLES = ("NUMERATOR", "DENOMINATOR")
@@ -205,12 +209,14 @@ def clause_problems(clause: dict) -> list[str]:
 def reads(event: Event, analysis_id: str, subject_key: str) -> list[tuple[str, str, str]]:
     """What an analysis reads: sorted (role, dataset, variable).
 
-    Roles: variable, set, subset, grouping, and key for the subject key of
-    every dataset that is read. These are the `reads` edges of PLAN.md
-    section 4.2, which real-3 puts into the graph.
+    Roles: variable, set, subset, grouping, model (a factor or a covariate
+    of a model-based method, ADR-015), and key for the subject key of every
+    dataset that is read. These are the `reads` edges of PLAN.md section
+    4.2, which real-3 puts into the graph.
     """
     analysis = event.analyses[analysis_id]
     found = {("variable", analysis["dataset"], analysis["variable"])}
+    found |= {("model", analysis["dataset"], column) for column in model_terms(analysis)}
     for role, key, known in (("set", "analysisSetId", event.sets),
                              ("subset", "dataSubsetId", event.subsets)):
         if analysis.get(key):
@@ -222,6 +228,16 @@ def reads(event: Event, analysis_id: str, subject_key: str) -> list[tuple[str, s
             found |= {("grouping", c["dataset"], c["variable"]) for c in conditions(group)}
     found |= {("key", dataset, subject_key) for _, dataset, _ in set(found)}
     return sorted(found)
+
+
+def model_terms(analysis: dict) -> list[str]:
+    """The columns an analysis names as the factors and covariates of its model."""
+    code = analysis.get("programmingCode") or {}
+    if code.get("context") != REGISTRY_CONTEXT:
+        return []
+    return sorted({str(value) for parameter in code.get("parameters") or []
+                   if parameter.get("name") in MODEL_TERMS
+                   for value in parameter.get("value") or []})
 
 
 def columns(event: Event, subject_key: str) -> dict[str, list[str]]:
@@ -320,10 +336,17 @@ def _analysis_parameters(analysis_id: str, analysis: dict, used: list[str],
     for parameter in code.get("parameters") or []:
         name, values = parameter.get("name"), parameter.get("value") or []
         owners = [method_id for method_id in used if name in registry.method(method_id).options]
+        option = registry.method(owners[0]).options[name] if len(owners) == 1 else {}
+        if option.get("takes") == "columns":  # the terms of a model: any number of columns
+            if name not in MODEL_TERMS:
+                raise ArsError(f"analysis '{analysis_id}': parameter '{name}' names columns, "
+                               f"and only {', '.join(MODEL_TERMS)} may (ADR-015)")
+            found.setdefault(owners[0], {})[name] = [str(value) for value in values]
+            continue
         if len(owners) != 1 or len(values) != 1:
             raise ArsError(f"analysis '{analysis_id}': parameter '{name}' must be one option of "
                            f"one of its methods ({', '.join(used)}), with one value")
-        default = registry.method(owners[0]).options[name]["default"]
+        default = option["default"]
         value: object = values[0]
         if isinstance(default, bool):
             value = {"true": True, "false": False}.get(str(value).lower(), value)

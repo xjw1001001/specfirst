@@ -56,11 +56,23 @@ class Document:
 
 
 @dataclass(frozen=True)
+class CsrTable:
+    """A table of a CSR that is the reference of a grid (ADR-012, decision 3; ADR-015)."""
+
+    file: str  # the CSR: a pinned file of the kit
+    page: int  # its page, counted from 1
+    table: str  # its number, as the page prints it after "Table "
+
+
+@dataclass(frozen=True)
 class Display:
     """One output of a reporting event that the kit builds as a grid (PLAN.md section 7.4)."""
 
     output: str  # the ID of the ARS output
     layout: str  # its layout: a file of our own in the kit folder
+    # The CSR table its cells are compared with; None: the formatted values the
+    # reporting event embeds are the reference (real-3a).
+    reference: CsrTable | None = None
 
 
 @dataclass(frozen=True)
@@ -68,7 +80,9 @@ class ResultSet:
     """One ARS reporting event of the kit, for the result engines (PLAN.md section 7.1)."""
 
     id: str
-    ars: str  # the reporting event: a pinned file; the results it embeds are a reference
+    # The reporting event: a pinned file, whose embedded results are a reference; or a
+    # file of our own in the kit folder, written from the documents (ADR-015).
+    ars: str
     schema: str | None  # the JSON Schema generated from the ARS model: a pinned file
     subject_key: str  # the column that says which records of two datasets belong together
     binding: dict  # ARS operations bound to the method registry, and method options
@@ -94,6 +108,9 @@ class Kit:
     results: tuple[ResultSet, ...] = ()
     # Our own file in the kit folder: the classified differences from the references.
     exceptions: str | None = None
+    # Our own file in the kit folder: decision records (PLAN.md section 4.3), one per
+    # line, for decisions the catalog does not hold yet (custom:<slug>, section 10).
+    decisions: str | None = None
 
     def paths(self) -> set[str]:
         return {entry.path for entry in self.files}
@@ -101,7 +118,9 @@ class Kit:
     def own_files(self) -> list[str]:
         """The files of our own that the kit folder holds next to the manifest."""
         layouts = [display.layout for spec in self.results for display in spec.displays]
-        return sorted({*layouts, *([self.exceptions] if self.exceptions else [])})
+        events = [spec.ars for spec in self.results if spec.ars not in self.paths()]
+        named = [name for name in (self.exceptions, self.decisions) if name]
+        return sorted({*layouts, *events, *named})
 
     def document(self, cited_as: str) -> Document | None:
         for document in self.documents:
@@ -240,6 +259,11 @@ def parse_kit(data: object) -> Kit:
         problems.append("build.exceptions: must be a file of our own under gold/, outside "
                         f"{', '.join(PINNED_AREAS)}")
         exceptions = None
+    decisions = build.get("decisions")
+    if decisions is not None and (not own(decisions) or decisions == exceptions):
+        problems.append("build.decisions: must be a file of our own under gold/, outside "
+                        f"{', '.join(PINNED_AREAS)}")
+        decisions = None
 
     result_sets: list[ResultSet] = []
     for i, entry in enumerate(data.get("results") or []):
@@ -253,17 +277,29 @@ def parse_kit(data: object) -> Kit:
             problems.append(f"{where}: unknown key {', '.join(unknown)}")
         displays: list[Display] = []
         for item in entry.get("outputs") or []:
-            if not isinstance(item, dict) or set(item) != {"id", "layout"} or not isinstance(
-                    item["id"], str) or not item["id"]:
-                problems.append(f"{where}: an output needs exactly its 'id' and its 'layout'")
+            if not isinstance(item, dict) or set(item) - {"reference"} != {"id", "layout"} or \
+                    not isinstance(item["id"], str) or not item["id"]:
+                problems.append(f"{where}: an output needs exactly its 'id' and its 'layout', "
+                                "and may name its 'reference'")
                 continue
-            if not own(item["layout"]) or item["layout"] == exceptions:
+            if not own(item["layout"]) or item["layout"] in (exceptions, decisions):
                 problems.append(f"{where}, output '{item['id']}': the layout must be a file of "
                                 f"our own under gold/, outside {', '.join(PINNED_AREAS)}")
                 continue
             if any(known.output == item["id"] for known in displays):
                 problems.append(f"{where}: output '{item['id']}' is listed twice")
-            displays.append(Display(item["id"], item["layout"]))
+            csr_table = None
+            given = item.get("reference")
+            if given is not None:
+                if not isinstance(given, dict) or set(given) != {"csr", "page", "table"} or \
+                        given.get("csr") not in seen or isinstance(given.get("page"), bool) or \
+                        not isinstance(given.get("page"), int) or given["page"] < 1 or \
+                        not isinstance(given.get("table"), str) or not given["table"]:
+                    problems.append(f"{where}, output '{item['id']}': a reference names the "
+                                    "'csr' (a listed file), its 'page' and its 'table'")
+                else:
+                    csr_table = CsrTable(given["csr"], given["page"], given["table"])
+            displays.append(Display(item["id"], item["layout"], csr_table))
         set_id = text(entry, "id", where)
         ars_file = text(entry, "ars", where)
         schema = entry.get("schema")
@@ -273,9 +309,12 @@ def parse_kit(data: object) -> Kit:
             problems.append(f"{where}: 'id' must match {_ID.pattern}")
         if any(known.id == set_id for known in result_sets):
             problems.append(f"{where}: id '{set_id}' is used twice")
-        for key, file in (("ars", ars_file), ("schema", schema)):
-            if file is not None and file not in seen:
-                problems.append(f"{where}: {key} '{file}' is not in the list of files")
+        if ars_file and ars_file not in seen and (
+                not own(ars_file) or ars_file in (exceptions, decisions)):
+            problems.append(f"{where}: ars '{ars_file}' is neither in the list of files nor a "
+                            f"file of our own under gold/, outside {', '.join(PINNED_AREAS)}")
+        if schema is not None and schema not in seen:
+            problems.append(f"{where}: schema '{schema}' is not in the list of files")
         if not isinstance(subject_key, str) or not subject_key:
             problems.append(f"{where}: 'subject_key' must name a column")
         if not isinstance(binding, dict) or set(binding) - {"operations", "options"} or not all(
@@ -288,6 +327,8 @@ def parse_kit(data: object) -> Kit:
     layouts = [display.layout for spec in result_sets for display in spec.displays]
     if len(set(layouts)) != len(layouts):
         problems.append("results: two outputs name the same layout file")
+    if set(layouts) & {spec.ars for spec in result_sets}:
+        problems.append("results: a layout file is also a reporting event")
 
     if problems:
         raise KitError("; ".join(problems))
@@ -298,7 +339,7 @@ def parse_kit(data: object) -> Kit:
         project=project, sdtm=sdtm.rstrip("/"), reference=reference.rstrip("/"),
         claims=claims.rstrip("/") if claims else None,
         documents=tuple(documents), files=tuple(files), trace_gaps=dict(gaps),
-        results=tuple(result_sets), exceptions=exceptions,
+        results=tuple(result_sets), exceptions=exceptions, decisions=decisions,
     )
 
 

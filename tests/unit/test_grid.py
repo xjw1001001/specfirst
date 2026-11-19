@@ -427,7 +427,21 @@ def test_a_page_with_spanners_and_sections(made):
     page = render.html(value)
     assert '<th class="spanner" colspan="2">Active</th><th class="spanner" colspan="1"></th>' \
         in page
-    assert 'data-section="Events"' in page and "padding-left: 2.7em" in page
+    assert 'data-section="1">Events</th>' in page and "padding-left: 2.7em" in page
+    assert render.projection_problems(value, page) == []
+    # The heading is held against the grid like any other text (real-5a).
+    wrong = page.replace('data-section="1">Events</th>', 'data-section="1">Other</th>')
+    assert any("section 1: the page has 'Other'" in problem
+               for problem in render.projection_problems(value, wrong))
+    # A row after the section has none: a separator, and no heading, stands before it.
+    extra = copy.deepcopy(value["rows"][1])
+    extra.pop("section")
+    extra["id"] = "r4"
+    for cell in extra["cells"]:
+        cell["id"] = cell["id"].replace("/r2/", "/r4/")
+    value["rows"].append(extra)
+    page = render.html(value)
+    assert page.count('<tr class="section"></tr>') == 1
     assert render.projection_problems(value, page) == []
 
 

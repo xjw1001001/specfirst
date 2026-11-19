@@ -117,6 +117,7 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
     sections = ars.display_sections(event, layout.output)
     used = {part.analysis or analysis_id for block in layout.blocks
             for analysis_id, _ in (block.analyses or ((None, None),)) for part in block.parts}
+    used |= {block.analysis for block in layout.blocks if block.kind == "statistics"}
     columns = [(f"c{number}", group, label) for number, (group, label)
                in enumerate(_columns(event, layout, rows, used), start=1)]
     if not columns:
@@ -135,8 +136,32 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
             made.append(PlannedCell(column, tuple(shown)))
         return tuple(made)
 
+    def statistics(block: layouts.Block) -> list[PlannedRow]:
+        """One row per statistic. A compared grouping has one result, in its listed column;
+        a column the block does not list has an empty cell."""
+        analysis = event.analyses[block.analysis]
+        split = bool(event.groupings_of(analysis)[0].get("resultsByGroup"))
+        made = []
+        for row in block.statistics:
+            row_cells = []
+            for column, group, _ in columns:
+                if block.columns is not None and group[1] not in block.columns:
+                    row_cells.append(PlannedCell(column, ()))
+                    continue
+                groups = {layout.grouping: group} if split else {}
+                row_cells.append(PlannedCell(column, tuple(
+                    Shown(part.name, ard_id(event, analysis, part.operation, groups),
+                          layouts.pattern_of(event, part), analysis["id"])
+                    for part in row.parts)))
+            made.append(PlannedRow(row.label, row.cell, tuple(row_cells), block.section,
+                                   row.indent))
+        return made
+
     planned = []
     for block in layout.blocks:
+        if block.kind == "statistics":
+            planned += statistics(block)
+            continue
         if block.kind == "header":
             label = block.label if block.label is not None else " ".join(
                 sections.get("Rowlabel Header", []))
@@ -157,7 +182,9 @@ Texts = dict[tuple[str, str], str]  # (ARD row, pattern) -> the text it is shown
 
 
 def cell_text(template: str, shown: tuple[Shown, ...], texts: Texts) -> str:
-    """A cell template filled with the text of every part."""
+    """A cell template filled with the text of every part; an empty cell shows nothing."""
+    if not shown:
+        return ""
     return template.format(**{item.name: texts[(item.ard, item.pattern)] for item in shown})
 
 

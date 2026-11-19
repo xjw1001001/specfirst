@@ -18,6 +18,7 @@ standard/schemas/: adding one there needs an ADR the owner approves
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,9 +27,17 @@ import yaml
 from specfirst.machine.canonical import content_hash, json_text
 
 FORMAT = 0
-KINDS = ("descriptive", "test", "display")
+# A model-based method (ANCOVA with LS means, its pairwise comparisons, the
+# dose-response test) is R only (PLAN.md section 7.3, ADR-015).
+KINDS = ("descriptive", "test", "display", "model")
 ENGINES = ("python", "r")
 RESULTS = ("integer", "number", "text")
+# What an option that is not chosen from a list of values takes (ADR-015):
+# `columns`, the names of columns of the analysis dataset (the terms of a model),
+# and `group`, the ID of a group of the analysis's grouping. Their values are
+# stated by the analysis; a `group` option has no default.
+TAKES = ("columns", "group")
+_COLUMN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 KEYS = ("id", "kind", "title", "takes", "operations", "semantics", "options", "implementations",
         "vectors", "xref")
 XREF_KEYS = ("ars_example", "siera", "acdc")
@@ -99,8 +108,21 @@ def parse_method(data: object, where: str) -> Method:
         problems.append("'options' must be a mapping; write {} for none")
         options = {}
     for name, option in options.items():
+        if isinstance(option, dict) and set(option) == {"takes", "default"}:
+            if option["takes"] not in TAKES:
+                problems.append(f"option '{name}': 'takes' must be one of {', '.join(TAKES)}")
+            elif option["takes"] == "columns" and option["default"] != []:
+                problems.append(f"option '{name}': a list of columns has the default []")
+            elif option["takes"] == "group" and option["default"] is not None:
+                problems.append(f"option '{name}': a group has no default (null); the "
+                                "analysis names it")
+            if data.get("kind") != "model":
+                problems.append(f"option '{name}': only a model-based method takes columns "
+                                "or a group")
+            continue
         if not isinstance(option, dict) or set(option) != {"values", "default"}:
-            problems.append(f"option '{name}': needs exactly 'values' and 'default'")
+            problems.append(f"option '{name}': needs exactly 'values' and 'default', or "
+                            "'takes' and 'default'")
             continue
         values = option["values"]
         if not isinstance(values, list) or not values or not all(_scalar(v) for v in values):
@@ -117,6 +139,9 @@ def parse_method(data: object, where: str) -> Method:
     elif data.get("kind") in ("descriptive", "test") and set(engines) != set(ENGINES):
         # Rule R11: two engines, one answer.
         problems.append("a descriptive method or a test needs both engines (rule R11)")
+    elif data.get("kind") == "model" and engines != ["r"]:
+        # Section 7.3: model-based methods are R only.
+        problems.append("a model-based method is implemented in R only (PLAN.md section 7.3)")
     xref = data.get("xref")
     if not isinstance(xref, dict) or set(xref) != set(XREF_KEYS):
         problems.append(f"'xref' needs exactly {', '.join(XREF_KEYS)}")
@@ -134,7 +159,8 @@ def parse_method(data: object, where: str) -> Method:
         operations={str(k): {"result": v["result"], "ars_names": list(v["ars_names"])}
                     for k, v in operations.items()},
         semantics=tuple(" ".join(s.split()) for s in semantics),
-        options={str(k): {"values": list(v["values"]), "default": v["default"]}
+        options={str(k): ({"takes": v["takes"], "default": v["default"]} if "takes" in v
+                          else {"values": list(v["values"]), "default": v["default"]})
                  for k, v in options.items()},
         implementations=tuple(engines), vectors=data["vectors"], xref=dict(xref),
     )
@@ -164,6 +190,20 @@ class Registry:
         resolved = {}
         for name, option in sorted(method.options.items()):
             value = given.pop(name, option["default"])
+            if option.get("takes") == "columns":
+                if not isinstance(value, list) or not all(
+                        isinstance(item, str) and _COLUMN.match(item) for item in value) or len(
+                        set(value)) != len(value):
+                    raise RegistryError(f"method '{method_id}', option '{name}': {value!r} is "
+                                        "not a list of distinct column names")
+                resolved[name] = list(value)
+                continue
+            if option.get("takes") == "group":
+                if not isinstance(value, str) or not value:
+                    raise RegistryError(f"method '{method_id}', option '{name}': the analysis "
+                                        f"must name a group, not {value!r}")
+                resolved[name] = value
+                continue
             if value not in option["values"] or type(value) is not type(option["default"]):
                 raise RegistryError(f"method '{method_id}', option '{name}': {value!r} is not "
                                     f"one of {option['values']}")
@@ -219,6 +259,15 @@ def load(root: Path) -> Registry:
         methods[method.id] = method
     if not methods and not problems:
         problems.append("standard/methods/ holds no entry")
+    # An option that takes columns is stated by an analysis under a name the ARS reader
+    # knows, so that the columns are read (the `reads` edges, ADR-015).
+    from specfirst.machine.ars import MODEL_TERMS
+
+    for method in methods.values():
+        problems += [f"standard/methods/{method.id}.yaml: option '{name}' takes columns, and "
+                     f"only {', '.join(MODEL_TERMS)} may"
+                     for name, option in method.options.items()
+                     if option.get("takes") == "columns" and name not in MODEL_TERMS]
     # A descriptive operation is found by the name ARS gives it, so no two may share one.
     taken: dict[str, str] = {}
     for method in methods.values():

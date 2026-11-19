@@ -16,14 +16,17 @@ def test_the_registry_of_this_repository_is_valid(root):
     known = registry.load(root)
     assert sorted(known.methods) == [
         "count.subjects", "display.pattern", "display.round.half_away_from_zero",
-        "display.round.half_even", "percent.subjects",
+        "display.round.half_even", "model.ancova.dose_response", "model.ancova.lsmeans",
+        "model.ancova.pairwise", "percent.subjects",
         "summary.continuous", "test.anova.oneway", "test.chisq", "test.fisher.exact",
     ]
     for method in known.methods.values():
         assert (root / method.vectors).is_file()
         assert method.semantics and all(" " in statement for statement in method.semantics)
-        # Rule R11: what is not a display rule has both engines.
-        assert method.kind == "display" or set(method.implementations) == {"python", "r"}
+        # Rule R11: what is not a display rule or a model-based method has both engines;
+        # a model-based method is R only (PLAN.md section 7.3, ADR-015).
+        assert method.kind == "display" or set(method.implementations) == (
+            {"r"} if method.kind == "model" else {"python", "r"})
     assert known.method("summary.continuous").options["quantile_definition"] == {
         "values": ["sas5", "r7"], "default": "sas5"}
 
@@ -73,6 +76,7 @@ def test_operations_are_found_by_the_name_ars_gives_them(root):
     assert known.by_ars_name("count of subjects") == [("count.subjects", "n")]
     assert known.by_ars_name(" Mean ") == [("summary.continuous", "mean")]
     assert known.by_ars_name("P-value") == [
+        ("model.ancova.dose_response", "p_value"), ("model.ancova.pairwise", "p_value"),
         ("test.anova.oneway", "p_value"), ("test.chisq", "p_value"),
         ("test.fisher.exact", "p_value")]
     assert known.by_ars_name("Geometric mean") == []
@@ -92,7 +96,7 @@ def entry(root, **changes) -> dict:
 @pytest.mark.parametrize(
     ("changes", "message"),
     [
-        ({"kind": "model"}, "'kind' must be one of"),
+        ({"kind": "trial"}, "'kind' must be one of"),
         ({"semantics": []}, "'semantics' must be a list of statements"),
         ({"semantics": None}, "'semantics' is missing"),
         ({"notes": "x"}, "unknown key 'notes'"),

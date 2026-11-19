@@ -1,0 +1,70 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+# A model-based method: R only (section 7.3; ADR-015).
+id: model.ancova.dose_response
+kind: model
+title: Analysis of covariance, test of a dose-response trend over the treatment groups
+takes: >-
+  the analysis records; the one grouping of the analysis, the treatment, which
+  is compared; the factors and the covariates the analysis names
+operations:
+  p_value:
+    result: number
+    ars_names: ["P-value"]
+  estimate:
+    result: number
+    ars_names: ["Estimate"]
+semantics:
+  - >-
+    The model records are those of model.ancova.lsmeans, statement 1. The
+    result is one per analysis: the treatment grouping is compared, not split.
+  - >-
+    The dose of a group, by the option dose. grouping_value: the value of the
+    grouping variable of the treatment grouping on the records of the group,
+    which must be a number and the same on every model record of the group.
+    group_rank: the place of the group in the order of the groups of the
+    grouping, counted from 1.
+  - >-
+    model continuous_dose: y = mu + b * dose + the factor terms + the covariate
+    terms + error, fitted by ordinary least squares to the model records, with
+    the factors and the covariates of model.ancova.lsmeans, statement 2, and
+    the variance of its statement 3. estimate: b. p_value: of the test of
+    b = 0. With N - r residual degrees of freedom it is the F test of the dose
+    term by Type III sums of squares (SAS PROC GLM; car::Anova, type 3), which
+    for this term of one degree of freedom is the t test of b.
+  - >-
+    model linear_contrast: the model of model.ancova.lsmeans, statement 2, with
+    the groups as a factor. estimate: the sum over the groups with model
+    records of c[group] * tau[group], where c[group] is the dose of the group
+    minus the mean of the doses of these groups, unweighted. p_value: of the
+    test that this contrast is 0.
+  - >-
+    p_value is two-sided: the probability that |T| is at least |estimate / se|,
+    where T has the t distribution with N - r degrees of freedom when the
+    option df is residual, and the standard normal distribution when it is
+    asymptotic.
+  - >-
+    Both results are missing when fewer than 2 groups have model records, when
+    their doses are all equal, when N - r is less than 1, or when the estimate
+    is not estimable.
+options:
+  factors:
+    takes: columns
+    default: []
+  covariates:
+    takes: columns
+    default: []
+  dose:
+    values: [grouping_value, group_rank]
+    default: grouping_value
+  model:
+    values: [continuous_dose, linear_contrast]
+    default: continuous_dose
+  df:
+    values: [residual, asymptotic]
+    default: residual
+implementations: [r]
+vectors: tests/methods/model_ancova_dose_response.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

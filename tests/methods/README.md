@@ -16,12 +16,21 @@ engine tests have those.
 
 | File | Content |
 | --- | --- |
-| `*.json` | the vectors: 99 cases for 8 entries |
+| `*.json` | the vectors: 150 cases for 12 entries, 30 of them for the three model-based entries (real-5a) |
 | `oracle.py` | the expected values computed again, with fractions and closed forms; used by no engine |
+| `oracle_models.py` | the same for the model-based entries: least squares in exact fractions, LS means and contrasts from their coefficient vectors, the t distribution from its closed form (ADR-015); shares nothing with lm, emmeans or car |
 | `test_methods.py` | the Python implementations, the R implementations and the oracle against the vectors; both Fisher sums against R's own `fisher.test` on tables larger than 2 x 2 (E27), and against exact fractions on the two tables where `fisher.test` is looser than statement 5; the limit of statement 6 in R |
 
+A model-based entry gives one value per group: its expected values are a
+mapping per operation, from group to value. Its vectors are run in R only
+(`r-vectors`, `model-vectors`); `model-vectors` also asks that the vectors
+give every option every value it has, and plants one defect per entry in
+the R implementation (an option ignored), which the vectors must see.
+
 Numbers must agree within a relative 1e-12. The tests that need R are
-skipped where R is not installed, except in a gate.
+skipped where R is not installed, except in a gate. Keep a value of a
+vector away from 0 when it is the difference of two larger numbers (a
+confidence limit near 0): its last digits are rounding, not arithmetic.
 
 To add a case: write its input, take the expected value from `oracle.py`
 or from a source you name in a `source` key, and run

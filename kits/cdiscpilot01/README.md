@@ -4,15 +4,17 @@ CDISCPILOT01, the CDISC SDTM/ADaM pilot study, as Pilot 7 stages it: the
 tier C kit of PLAN.md section 6.1, the reproduction anchor of D1 and D2.
 
 This folder holds `kit.yaml`, this file and the files of our own that the
-manifest names: `gold/exceptions.yaml` and one layout per output in
-`gold/layout/`. It holds nothing else. The study data and documents are not
+manifest names: `gold/exceptions.yaml`, one layout per output in
+`gold/layout/`, the reporting event of the efficacy tables in
+`gold/events/` and their decision records in `gold/decisions/` (real-5a,
+ADR-015). It holds nothing else. The study data and documents are not
 ours to redistribute
 (rule 4 of PLAN.md section 2.1, E20). They are fetched at pinned commits and
 assembled on demand:
 
 ```bash
-specfirst fetch                      # Pilot 7 and the ARS repository, into the cache
-specfirst kit assemble cdiscpilot01  # copy 66 files, checking the SHA-256 of each
+specfirst fetch                      # Pilot 7, Pilot 6 and the ARS repository, into the cache
+specfirst kit assemble cdiscpilot01  # copy 67 files, checking the SHA-256 of each
 specfirst build cdiscpilot01         # resolved specs, ADaM, results (needs R), grids, graph
 specfirst check cdiscpilot01         # P2 for ADaM, the trace, P2 for results, the engines, the grids
 specfirst check cdiscpilot01 --twice # first two fresh builds, each in its own folder (P1)
@@ -35,16 +37,23 @@ gold/                    never placed in an agent's workspace
                          analyses, 3,735 embedded results) and the JSON Schema generated
                          from the ARS model
   reference/adam/        the 10 reference ADaM datasets: what P2 compares with
+  reference/csr/CSR.pdf  the CSR (Pilot 6): its Tables 14-3.01, 14-3.03 and 14-3.05 are the
+                         references of the efficacy grids, parsed from their pages on
+                         every check into build/csr/cdiscpilot01/ (never into git)
   claims/                Pilot 7's reviewed claims, one file per dataset
   exceptions.yaml        a copy of ours: the classified differences from the references
   layout/                a copy of ours: one layout per output that is built as a grid
+  events/                a copy of ours: the reporting event of the efficacy tables
+  decisions/             a copy of ours: the decision records of the efficacy tables
   resolved/              built: each specification as yamaa composes it, with the file
                          and line of every element
   data/adam/             built: the 10 ADaM datasets, as canonical Parquet
   graph/                 built: nodes.jsonl, edges.jsonl, coverage.json
-  ard/                   built: the results of the 31 analyses, one row per value;
-                         <id>.jsonl from the Python engine, <id>.r.jsonl from the R engine
-  ars/                   built: the example with our results in place of the embedded ones
+  ard/                   built: the results of the analyses of each reporting event, one row
+                         per value; <id>.jsonl the gold ARD (the Python engine's rows, and
+                         the R engine's rows of the model-based methods, which only R
+                         implements), <id>.r.jsonl from the R engine
+  ars/                   built: each reporting event with our results as raw values
   grid/                  built: per output <id>.json, the display grid, and
                          <id>.shell.json, its mock shell (masks in place of numbers)
   out/                   built: a page for each of the two, <id>.html and <id>.shell.html

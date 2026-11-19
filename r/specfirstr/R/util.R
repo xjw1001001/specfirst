@@ -44,6 +44,10 @@ canonical_options <- function(options) {
   keys <- sort(names(options), method = "radix")
   parts <- vapply(keys, function(key) {
     value <- options[[key]]
+    if (is.list(value)) {  # the columns of a model (ADR-015): a list of texts
+      items <- vapply(value, function(item) json_string(as.character(item)), "")
+      return(paste0(json_string(key), ":[", paste(items, collapse = ","), "]"))
+    }
     if (is.double(value) && value == round(value)) value <- as.integer(value)
     if (is.double(value)) fail("option '", key, "' is not text, a whole number, true or false")
     paste0(json_string(key), ":", json_scalar(value))

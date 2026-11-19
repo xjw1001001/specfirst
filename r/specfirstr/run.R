@@ -7,7 +7,8 @@
 #
 # The code is sourced from this folder. It is not installed as a package:
 # `specfirst doctor` counts any package outside env/r-packages.lock as drift.
-# Only base R and jsonlite are used, from the locked library alone (lesson 6).
+# Only base R and jsonlite are used, and emmeans and car for the model-based methods
+# (models.R, ADR-015), from the locked library alone (lesson 6).
 
 lib <- Sys.getenv("SPECFIRST_R_LIBS")
 if (!nzchar(lib)) stop("SPECFIRST_R_LIBS is not set; run `. scripts/env.sh` first", call. = FALSE)
@@ -18,7 +19,7 @@ options(warn = 1, scipen = 0, digits = 15)
 
 script <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
 here <- dirname(normalizePath(script))
-for (name in c("util.R", "methods.R", "engine.R", "vectors.R")) {
+for (name in c("util.R", "methods.R", "models.R", "engine.R", "vectors.R")) {
   sys.source(file.path(here, "R", name), envir = globalenv())
 }
 

@@ -196,6 +196,7 @@ def _pilot_tests(ctx: Context) -> bool:
 
 # real-2 (PLAN.md section 13.3): the results the ARS example embeds, how many of
 # them both engines must reproduce (E2), and the tests the gate must see pass.
+PILOT_EXAMPLE = "common-safety-displays"  # the result set of the ARS example in kit.yaml
 PILOT_EMBEDDED, PILOT_REPRODUCED = 3735, 3711
 REAL2_PILOT_TESTS = (*REAL1_PILOT_TESTS, "A6-engine")
 REAL2_METHOD_TESTS = ("python-vectors", "r-vectors", "exact-arithmetic", "fisher-r")
@@ -239,6 +240,9 @@ def _results(ctx: Context) -> bool:
     from specfirst.machine import build
 
     passed, counts = build.result_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
+    # The counts of E2 are those of the ARS example; the kit's other result sets
+    # (real-5a: our own event, which embeds nothing) are checked by result_checks too.
+    counts = [count for count in counts if count["set"] == PILOT_EXAMPLE]
     engines = {count["engine"] for count in counts}
     if engines != {"Python", "R"}:
         ctx.out(f"results: expected the engines Python and R, found {sorted(engines)}")
@@ -291,7 +295,9 @@ def _grids(ctx: Context) -> bool:
     from specfirst.machine import build
 
     passed, counts = build.display_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
-    found = {count["output"]: count for count in counts}
+    # The outputs of the ARS example; the efficacy tables of real-5a are judged by
+    # display_checks too, and counted by the gate real-5a.
+    found = {count["output"]: count for count in counts if count["set"] == PILOT_EXAMPLE}
     if set(found) != set(PILOT_GRIDS):
         ctx.out(f"grids: the kit builds {sorted(found)}, the gate asks for {sorted(PILOT_GRIDS)}")
         return False
@@ -310,6 +316,58 @@ def _grids(ctx: Context) -> bool:
 
 def _defects_3a(ctx: Context) -> bool:
     return _pytest(ctx, "tests/defects", "defects.xml", REAL3A_DEFECTS)
+
+
+# real-5a (ADR-012, ADR-015): the three efficacy tables of the part, each with its
+# CSR table, its cells and the cells the CSR prints in; the classes of their
+# differences are counted, not fixed (the owner reviews them at N2).
+EFFICACY_SET = "efficacy-adas"
+EFFICACY_GRIDS = {"Out14-3-01": "14-3.01", "Out14-3-03": "14-3.03", "Out14-3-05": "14-3.05"}
+EFFICACY_CELLS, EFFICACY_PRINTED = 51, 40
+REAL5A_METHOD_TESTS = (*REAL2_METHOD_TESTS, "model-vectors")
+REAL5A_DEFECTS = (*REAL3A_DEFECTS, "D9-efficacy", "D10-trace-model")
+
+
+def _efficacy(ctx: Context) -> bool:
+    """Every printed cell equals the CSR, or has exactly one class with a proof that holds."""
+    from specfirst.machine import build
+
+    passed, counts = build.display_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
+    found = {count["output"]: count for count in counts if count["set"] == EFFICACY_SET}
+    if set(found) != set(EFFICACY_GRIDS):
+        ctx.out(f"efficacy: the kit builds {sorted(found)}, the gate asks for "
+                f"{sorted(EFFICACY_GRIDS)}")
+        return False
+    classes: dict[str, int] = {}
+    for output, count in sorted(found.items()):
+        if count.get("reference") != "csr" or (count["cells"], count["printed"]) != (
+                EFFICACY_CELLS, EFFICACY_PRINTED) or count["problems"] or (
+                count["equal"] + count["classified"] != count["cells"]):
+            ctx.out(f"efficacy: {output}: {count}. The gate asks for {EFFICACY_CELLS} cells "
+                    f"against CSR Table {EFFICACY_GRIDS[output]}, {EFFICACY_PRINTED} of them "
+                    "printed, each equal or with one classified difference, and no problem")
+            passed = False
+        for name, number in count["classes"].items():
+            classes[name] = classes.get(name, 0) + number
+    ctx.out(f"efficacy: {len(found)} tables, {sum(c['cells'] for c in found.values())} cells; "
+            f"{sum(c['equal'] for c in found.values())} equal the CSR; classified differences: "
+            + (", ".join(f"{number} {name}" for name, number in sorted(classes.items()))
+               or "none"))
+    return passed
+
+
+def _decisions(ctx: Context) -> bool:
+    from specfirst.machine import build
+
+    return build.decision_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
+
+
+def _method_vectors_5a(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/methods", "methods.xml", REAL5A_METHOD_TESTS)
+
+
+def _defects_5a(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/defects", "defects.xml", REAL5A_DEFECTS)
 
 
 def _score(name: str) -> Callable[[Context], bool]:
@@ -395,6 +453,36 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("grids", f"{_REAL1_CHECK} (its last part)", _grids),
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
         Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_3a),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # ADR-012, part real-5a of the slice efficacy-first (ADR-015): everything the gate
+    # of real-3a checks; the registry entries of ANCOVA, its pairwise comparisons and
+    # its dose-response test with their vectors, computed again another way (method
+    # vectors, model-vectors); every printed cell of Tables 14-3.01, 14-3.03 and
+    # 14-3.05 equals the CSR, parsed again from its pages, or has exactly one class
+    # with a proof (efficacy); the decision records hold against the reporting event
+    # (decisions); every cell has a complete trace (trace); the build is
+    # deterministic (P1); each check has planted defects (method vectors, D9, D10).
+    "real-5a": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("registry", "specfirst methods", _registry),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q",
+              _method_vectors_5a),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("P2 reproduction", f"{_REAL1_CHECK} (its second part)", _p2),
+        Check("trace", f"{_REAL1_CHECK} (its third part)", _trace),
+        Check("results", f"{_REAL1_CHECK} (its fourth part)", _results),
+        Check("grids", f"{_REAL1_CHECK} (its last part), the ARS example", _grids),
+        Check("efficacy", f"{_REAL1_CHECK} (its last part), the CSR tables", _efficacy),
+        Check("decisions", f"specfirst.machine.build.decision_checks on build/p1/{PILOT}/first",
+              _decisions),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
+        Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_5a),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
