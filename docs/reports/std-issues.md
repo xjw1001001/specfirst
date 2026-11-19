@@ -146,6 +146,26 @@ a91624ae4b2bca1b13ce40d0bd94c22119ca5389c04f7b0b11935f586337e218  kits-main/kit-
 e23d3a9099492e0e6978b6a107fc3fb6648dafdc0e9f5de8334e9eeb0e95bd18  kits-main/kit-004/kit.yaml
 ```
 
+After the fix of the review's findings and with `main` (`b0a5530`, read-2a)
+merged in, the same on a clone of `37e5b61`:
+
+```text
+$ python -m specfirst gen kits --out kits-final --count 4 --seed gen-2a    # clone of 37e5b61
+kit 1 of the set: sfpbt5zj, train, 127 files; 14 of 22 decisions separated on the twin
+kit 2 of the set: sfmyncmq, train, 127 files; 15 of 22 decisions separated on the twin
+kit 3 of the set: sfg5vbvq, train, 126 files; 15 of 21 decisions separated on the twin
+kit 4 of the set: sfrrl2uh, train, 127 files; 14 of 22 decisions separated on the twin
+$ diff -r kits-main kits-final && echo identical
+identical
+$ find kits-final -type f | wc -l
+511
+$ sha256sum kits-final/kit-00?/kit.yaml
+947f40b73a1078be6b299753315e83f828794bdd88e8366a1c8ecc2addb4f0bd  kits-final/kit-001/kit.yaml
+7602f342569f61f46feca20a47625beec1ffa56ba71afde2f33274ff50f1f6af  kits-final/kit-002/kit.yaml
+a91624ae4b2bca1b13ce40d0bd94c22119ca5389c04f7b0b11935f586337e218  kits-final/kit-003/kit.yaml
+e23d3a9099492e0e6978b6a107fc3fb6648dafdc0e9f5de8334e9eeb0e95bd18  kits-final/kit-004/kit.yaml
+```
+
 The manifest of a kit holds the SHA-256 of every file of the kit; all 511
 files are the same bytes, and the hashes of `kit.yaml` are those of
 docs/reports/issue-27.md (track real). Why: the generator compiles in the
@@ -318,12 +338,74 @@ $ python -m pytest -q --no-header -rf tests/unit/test_pending.py tests/unit/test
 122 passed in 142.93s (0:02:22)
 ```
 
+## Found in the gates: an axis was held against the whole gold axis
+
+The seven gates first ran on clean clones of `37e5b61` (that commit: `main`
+with read-2a merged, `b0a5530`, taken in `5d1876f`; the fix of the review's
+findings; the pointers in docs/state/read.md). All seven passed. Held
+against read-2a's own log of its gate, the log of the gate read-2a showed
+what ADR-014 says it would (arm S on kit 4 builds the chain; 3 cells
+pending on each dataset), and one line it should not:
+
+```text
+    axis rows of Out_AESUM: layer L5, decision ae.related.values, tfl.ae.summary.rows, confirmed yes, first element that differs ars:An_AESUM_N
+```
+
+The rows of arm S differ from gold's because of `tfl.ae.summary.rows`
+alone, once the row that waits is taken out of the axis (ADR-014, decision
+3). The build score takes it out; attribution, which builds the candidate
+again with decisions at gold and asks whether the axis is then the gold
+axis, held it against the whole gold axis, so the pending decision had to
+be set too. Now the rebuilt axis is held against the gold axis without the
+rows and columns that still wait in that rebuild
+(`attribute._Runs.axis`). A test came first, on a copy of the worktree at
+the code of `37e5b61`:
+
+```text
+$ python -m pytest -q --no-header -rf tests/unit/test_pending.py::test_an_axis_is_owned_without_the_rows_that_wait
+E             At index 0 diff: ('Out_AESUM', 'rows', (('ae.related.values', 'mod-ae-emergence'), ('tfl.ae.summary.rows', 'tfl-ae-summary')), True) != ('Out_AESUM', 'rows', (('tfl.ae.summary.rows', 'tfl-ae-summary'),), True)
+FAILED tests/unit/test_pending.py::test_an_axis_is_owned_without_the_rows_that_wait
+1 failed in 4.86s
+```
+
+With the fix:
+
+```text
+$ python -m pytest -q --no-header -rf tests/unit/test_pending.py tests/unit/test_sdtm_gaps.py tests/unit/test_score_hand.py tests/unit/test_score_build.py tests/unit/test_score_reading.py tests/unit/test_score_kit.py
+122 passed in 134.46s (0:02:14)
+$ python -m ruff check . && python -m specfirst.asciicheck
+All checks passed!
+ASCII check: 548 files checked, 0 with non-ASCII bytes
+```
+
 ## Gates on clean clones
 
-Not yet run when this was written. The merge waits for read-2a to be on
-`main`; then `track/std` takes the then-current `main`, and
-`scripts/clean_clone_gate.sh` runs std-1, real-2, real-3a, gen-2a, gen-3a,
-read-1a and read-2a on that commit, one at a time under the heavy lock.
+The gates then ran again on the commit with that fix, GATES-COMMIT, each on
+a fresh clone with a fresh install and fetch, one at a time under the heavy
+lock, on at most four processors:
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh <wp> /mnt/d/trial_work/specfirst/.git 37e5b61
+```
+
+| Gate | Checks | Unit tests | Result | Log |
+| --- | --- | --- | --- | --- |
+| std-1 | 12 PASS, 0 FAIL | 1117 passed, 23 deselected | GATE std-1: PASS | docs/reports/std-issues.std-1.gate.log |
+| real-2 | 15 PASS, 0 FAIL | (in the check "unit tests") | GATE real-2: PASS | docs/reports/std-issues.real-2.gate.log |
+| real-3a | 16 PASS, 0 FAIL | (idem) | GATE real-3a: PASS | docs/reports/std-issues.real-3a.gate.log |
+| gen-2a | 13 PASS, 0 FAIL | (idem) | GATE gen-2a: PASS | docs/reports/std-issues.gen-2a.gate.log |
+| gen-3a | 15 PASS, 0 FAIL | 1117 passed, 23 deselected | GATE gen-3a: PASS | docs/reports/std-issues.gen-3a.gate.log |
+| read-1a | 14 PASS, 0 FAIL | (idem) | GATE read-1a: PASS | docs/reports/std-issues.read-1a.gate.log |
+| read-2a | READ-2A-CHECKS | (idem) | READ-2A-RESULT | docs/reports/std-issues.read-2a.gate.log |
+
+The gate read-1a on a clean clone of `37e5b61` prints the same lines as
+its run on `d92dd57` above (the lines of the hand-made study, the arms,
+the planted defects, the ten kits and both sweeps: 488 lines, no
+difference): the fix of the review's findings and the merge of read-2a
+change none of them. Its numbers against those before ADR-014 are
+described above.
+
+READ-2A-NUMBERS
 
 ## Review
 

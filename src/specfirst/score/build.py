@@ -129,7 +129,7 @@ class OutputScore:
         return self.lenient and self.rows_equal and self.columns_equal
 
 
-def _waiting_axes(table: Table, waiting: set[tuple]) -> tuple[tuple, tuple]:
+def axes_without(table: Table, waiting: set[tuple]) -> tuple[tuple, tuple]:
     """The rows and the columns of a grid without those whose every cell waits."""
     def kept(axis: tuple, at: int) -> tuple:
         return tuple(name for name in axis if not {
@@ -160,7 +160,7 @@ def compare_output(output: str, gold: dict, candidate: dict | None,
                                  "not_produced") for (row, column), cell in counted.items()]
         return found
     theirs = table_of(candidate)
-    rows, columns = (_waiting_axes(ours, set(waits)) if waits else (ours.rows, ours.columns))
+    rows, columns = (axes_without(ours, set(waits)) if waits else (ours.rows, ours.columns))
     found = OutputScore(output, True, gold_cells=len(counted),
                         rows_equal=rows == theirs.rows,
                         columns_equal=columns == theirs.columns, pending=waited)

@@ -142,6 +142,24 @@ def test_a_table_decision_without_a_value_leaves_the_output_pending(machine, cas
     assert all(owners == [] for owners in result.owners.values())
 
 
+def test_an_axis_is_owned_without_the_rows_that_wait(machine, case):
+    """The rows of the table are read as ANY, RELATED, SERIOUS and ae.related.values
+    is asked. The axis of rows is held without the row that waits (gold: ANY, SERIOUS,
+    DISCONTINUATION, FATAL; the candidate: ANY, SERIOUS), and the rows decision alone
+    gives it back: it owns the axis. Before, the attribution held the axis against the
+    whole gold axis and named ae.related.values as well (seen in the gate read-2a)."""
+    rows = {"id": ROWS[0], "unit": ROWS[1],
+            "value": {"rule": "stated_rows", "rows": ["ANY", "RELATED", "SERIOUS"]}}
+    candidate = [r for r in case.gold if (r["id"], r["unit"]) not in (KEY, ROWS)] + [
+        asked(KEY), rows]
+    result = scorer.run(machine, case, candidate)
+    assert result.pending == {KEY: {"visible": 4, "twin": 4}}
+    for name in result.builds:
+        assert [(a.output, a.axis, a.decisions, a.confirmed) for a in result.axes[name]] == [
+            (hand.OUTPUT, "rows", (ROWS,), True)]
+        assert {o.decisions for o in result.owners[name]} == {(ROWS,)}
+
+
 EFFICACY = ("pop.efficacy.rule", "mod-populations")
 POPULATION = ("tfl.population", "tfl-ae-summary")
 
