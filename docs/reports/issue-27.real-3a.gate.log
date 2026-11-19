@@ -1,0 +1,469 @@
+clean clone gate real-3a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     c7f09a0
+clone:      /tmp/specfirst-clean-jNkmaI/specfirst
+environment and cache: /tmp/specfirst-clean-jNkmaI/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-jNkmaI/specfirst
+
+$ git -C /tmp/specfirst-clean-jNkmaI/specfirst checkout --quiet --detach c7f09a0
+
+$ git -C /tmp/specfirst-clean-jNkmaI/specfirst log -1 --format=%H %s
+c7f09a09c82771a6a3cce93e02116ce1e229b146 Merge main into track/real: README and ADR-012, before the fix of issue #27 merges
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-jNkmaI/env/venv-specfirst-1282136835
+R library: /tmp/specfirst-clean-jNkmaI/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-jNkmaI/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-jNkmaI/env/core/f3282a0d870b-d90ef34c553d
+source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
+python     3.12.3  (/tmp/specfirst-clean-jNkmaI/env/venv-specfirst-1282136835/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-jNkmaI/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate real-3a --clean
+gate real-3a at commit c7f09a09c82771a6a3cce93e02116ce1e229b146 (clean)
+
+== [1/16] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-jNkmaI/env/venv-specfirst-1282136835/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+-- PASS environment (0.4 s)
+
+== [2/16] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-jNkmaI/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (0.9 s)
+
+== [3/16] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/16] registry: specfirst methods
+count.subjects                     descriptive  4 statements  python+r operations: n; options: -
+display.pattern                    display      8 statements  python   operations: text; options: rounding=half_away_from_zero
+display.round.half_away_from_zero  display      5 statements  python   operations: text; options: -
+display.round.half_even            display      6 statements  python   operations: text; options: -
+percent.subjects                   descriptive  6 statements  python+r operations: pct; options: -
+summary.continuous                 descriptive 10 statements  python+r operations: n, mean, sd, median, q1, q3, min, max; options: quantile_definition=sas5, sd_denominator=n_minus_1
+test.anova.oneway                  test         5 statements  python+r operations: p_value; options: -
+test.chisq                         test         6 statements  python+r operations: p_value; options: correction=none
+test.fisher.exact                  test         8 statements  python+r operations: p_value; options: alternative=two_sided
+methods: 9 entries
+-- PASS registry (0.0 s)
+
+== [5/16] unit tests: pytest -m "not evidence" -q
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 33%]
+........................................................................ [ 40%]
+........................................................................ [ 47%]
+........................................................................ [ 54%]
+........................................................................ [ 61%]
+........................................................................ [ 67%]
+........................................................................ [ 74%]
+........................................................................ [ 81%]
+........................................................................ [ 88%]
+........................................................................ [ 95%]
+...................................................                      [100%]
+1059 passed, 23 deselected in 341.01s (0:05:41)
+-- PASS unit tests (341.6 s)
+
+== [6/16] method vectors: SPECFIRST_STRICT=1 pytest tests/methods -s -q
+
+--- python-vectors
+Python implementations: 120 cases of 9 methods, 0 differences
+.
+--- r-vectors
+R implementations: 64 cases of 6 methods, 0 differences
+.
+--- exact-arithmetic
+expected values computed again in exact arithmetic: 64 cases, 0 differences; written by hand: 56 cases (the display rules)
+.
+--- fisher-r
+2 x 3 2 x 3                                                   Python 0.13419913419913376    R 0.13419913419913415    fisher.test 0.13419913419913387
+3 x 3 3 x 3                                                   Python 0.2671753203049479     R 0.26717532030494984    fisher.test 0.26717532030494506
+3 x 3 3 x 3 of the size of a laboratory shift table           Python 0.4464490858573885     R 0.4464490858574556     fisher.test 0.44644908585743115
+3 x 3 3 x 3 with tables of equal probability                  Python 0.999999999999996      R 1                      fisher.test 0.9999999999999984
+3 x 3 rows and columns of zeros are left out                  Python 0.4857142857142849     R 0.4857142857142856     fisher.test 0.4857142857142856
+2 x 4 2 x 4                                                   Python 0.4587455887765525     R 0.45874558877654853    fisher.test 0.4587455887765442
+4 x 2 4 x 2: the same table turned                            Python 0.4587455887765526     R 0.45874558877654853    fisher.test 0.4587455887765442
+4 x 3 4 x 3                                                   Python 0.4410161267304116     R 0.4410161267304153     fisher.test 0.44101612673041296
+2 x 3 2 x 3 with one table a relative 2.7e-07 more probable:  Python 0.06040878692449231    R 0.060408786924501114   fisher.test 0.06533690837383269  (a table 2.666e-07 more probable)
+2 x 3 2 x 3 with one table a relative 3.2e-07 more probable:  Python 0.009798846806875698   R 0.009798846806877703   fisher.test 0.011455024125087577  (a table 3.209e-07 more probable)
+tables larger than 2 x 2: 10; with a table just above the observed probability, where fisher.test is looser: 2
+.
+--- fisher-limit
+R, with a limit of 50 tables: the R vectors run exited 1: Error: test.fisher.exact: more than 50 tables to sum; the method does not approximate
+..
+6 passed in 1.53s
+-- PASS method vectors (1.7 s)
+
+== [7/16] kit: specfirst kit assemble cdiscpilot01
+study data in git (E20): 491 maintained files checked, 0 problems
+kit cdiscpilot01: 66 files match their pinned SHA-256 (26 inputs, 40 gold) in /tmp/specfirst-clean-jNkmaI/specfirst/build/kits/cdiscpilot01
+-- PASS kit (0.1 s)
+
+== [8/16] P1 determinism: specfirst check cdiscpilot01 --twice (its first part)
+build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 892 nodes, 4153 edges, 30 files in /tmp/specfirst-clean-jNkmaI/specfirst/build/p1/cdiscpilot01/first)
+build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 892 nodes, 4153 edges, 30 files in /tmp/specfirst-clean-jNkmaI/specfirst/build/p1/cdiscpilot01/second)
+same      76c528ce523c6a13 76c528ce523c6a13 gold/ard/common-safety-displays.jsonl
+same      de20ea90cae0946d de20ea90cae0946d gold/ard/common-safety-displays.r.jsonl
+same      a3d51da218b6839e a3d51da218b6839e gold/ars/common-safety-displays.json
+same      98966f855b1f9a06 98966f855b1f9a06 gold/data/adam/adae.parquet
+same      87ea384e00bacdc3 87ea384e00bacdc3 gold/data/adam/adlbc.parquet
+same      d95331eea03d86b3 d95331eea03d86b3 gold/data/adam/adlbh.parquet
+same      182a39372904c356 182a39372904c356 gold/data/adam/adlbhy.parquet
+same      e16dc811e47eacc1 e16dc811e47eacc1 gold/data/adam/adqsadas.parquet
+same      d28be025f2926112 d28be025f2926112 gold/data/adam/adqscibc.parquet
+same      7c409eb6df376433 7c409eb6df376433 gold/data/adam/adqsnpix.parquet
+same      cc7e238ce918a8a7 cc7e238ce918a8a7 gold/data/adam/adsl.parquet
+same      9fc9404e60736ea5 9fc9404e60736ea5 gold/data/adam/adtte.parquet
+same      270cada0a4a60291 270cada0a4a60291 gold/data/adam/advs.parquet
+same      9089c86643646467 9089c86643646467 gold/graph/coverage.json
+same      9963981263e837e6 9963981263e837e6 gold/graph/edges.jsonl
+same      c5b9582b6f2f3870 c5b9582b6f2f3870 gold/graph/nodes.jsonl
+same      978c9e2977e3f5fc 978c9e2977e3f5fc gold/grid/Out14-3-1-1.json
+same      2ac2586e11fbb636 2ac2586e11fbb636 gold/grid/Out14-3-1-1.shell.json
+same      e9db6ca3f5d7ce63 e9db6ca3f5d7ce63 gold/out/Out14-3-1-1.html
+same      41c207f1d512d596 41c207f1d512d596 gold/out/Out14-3-1-1.shell.html
+same      c219f3b1fce3ce3b c219f3b1fce3ce3b gold/resolved/adae.json
+same      0801da1da1f9b09e 0801da1da1f9b09e gold/resolved/adlbc.json
+same      c08b51b5d9edaf0a c08b51b5d9edaf0a gold/resolved/adlbh.json
+same      149e79b32a48012c 149e79b32a48012c gold/resolved/adlbhy.json
+same      c984b124c68bef94 c984b124c68bef94 gold/resolved/adqsadas.json
+same      ddcd7b62b6020aa6 ddcd7b62b6020aa6 gold/resolved/adqscibc.json
+same      5e29d4624ac55f52 5e29d4624ac55f52 gold/resolved/adqsnpix.json
+same      5b4ccf4019ca253e 5b4ccf4019ca253e gold/resolved/adsl.json
+same      2faaa1493e74c8c1 2faaa1493e74c8c1 gold/resolved/adtte.json
+same      b3c5b4f08f26ae5a b3c5b4f08f26ae5a gold/resolved/advs.json
+P1 determinism: 30 of 30 files have the same SHA-256 in both builds
+-- PASS P1 determinism (41.8 s)
+
+== [9/16] P2 reproduction: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its second part)
+ADSL      rows=   254 cols= 48 cells=   12192 mismatched=     0 storage_type_diffs=28
+ADAE      rows=  1191 cols= 55 cells=   65505 mismatched=     0 storage_type_diffs=38
+ADLBC     rows= 74264 cols= 46 cells= 3416144 mismatched=     0 storage_type_diffs=22
+ADLBH     rows= 49932 cols= 46 cells= 2296872 mismatched=     0 storage_type_diffs=22
+ADLBHY    rows=  9954 cols= 43 cells=  428022 mismatched=     0 storage_type_diffs=21
+ADQSADAS  rows= 12463 cols= 40 cells=  498520 mismatched=     0 storage_type_diffs=20
+ADQSCIBC  rows=   730 cols= 36 cells=   26280 mismatched=     0 storage_type_diffs=19
+ADQSNPIX  rows= 31140 cols= 41 cells= 1276740 mismatched=     0 storage_type_diffs=21
+ADTTE     rows=   254 cols= 26 cells=    6604 mismatched=     0 storage_type_diffs=14
+ADVS      rows= 32139 cols= 34 cells= 1092726 mismatched=     0 storage_type_diffs=16
+TOTAL cells=9119605 mismatched=0
+numbers equal within the tolerance but not exactly: 1869 cells, largest difference 4.5e-13
+storage type only, same values (reference -> built): large_string -> string in 221 columns
+P2 reproduction: 10 of 10 datasets equal their reference (numeric tolerance 1e-10)
+-- PASS P2 reproduction (0.4 s)
+
+== [10/16] trace: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its third part)
+dataset   columns to SDTM by rows literal  gaps
+ADSL           48      48       0       0     0
+ADAE           55      55       0       0     0
+ADLBC          46      46       1       0     0
+ADLBH          46      46       1       0     0
+ADLBHY         43      43       3       0     0
+ADQSADAS       40      40       1       0     0
+ADQSCIBC       36      36       5       0     0
+ADQSNPIX       41      41       3       0     0
+ADTTE          26      24       0       2     0
+ADVS           34      34       0       0     0
+TOTAL         415     413      14       2     0
+to SDTM: reaches SDTM columns through derives_from. by rows: those of them whose own rule reads no column
+and that reach SDTM only through a filter on rows (of a row template or of the specification).
+nodes: L0 279, L3 111, L4 415, L5 9, L6 51, L7 27
+edges: cites 706, computes 75, derives_from 3269, reads 52, shows 51
+cites edges: 706 imported, 0 with a verified quote, 0 approved by a person
+literal columns sit on rows of: adam:ADSL (2)
+claims ADAE       21 claims,  57 citations of kit documents ->  49 cites edges (one per column and span); 28 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBC      22 claims,  98 citations of kit documents ->  67 cites edges (one per column and span); 31 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBH      23 claims, 120 citations of kit documents ->  78 cites edges (one per column and span); 29 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBHY     23 claims, 102 citations of kit documents ->  74 cites edges (one per column and span); 49 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSADAS   22 claims,  92 citations of kit documents ->  83 cites edges (one per column and span); 43 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSCIBC   19 claims,  87 citations of kit documents ->  68 cites edges (one per column and span); 53 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSNPIX   24 claims,  89 citations of kit documents ->  74 cites edges (one per column and span); 27 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADSL       34 claims,  87 citations of kit documents ->  70 cites edges (one per column and span); 38 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADTTE      22 claims, 101 citations of kit documents ->  85 cites edges (one per column and span); 30 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADVS       12 claims,  80 citations of kit documents ->  58 cites edges (one per column and span); 20 citations of programs or other files, not imported; 0 variables that are not output columns
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+  through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
+trace: complete
+-- PASS trace (1.0 s)
+
+== [11/16] results: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its fourth part)
+ARS schema (gold/spec/ars/ars_ldm.schema.json): gold/spec/ars/common-safety-displays.json fits; gold/ars/common-safety-displays.json fits
+results common-safety-displays, Python engine: 3735 embedded results, 3711 reproduced as printed, 23 with another value, 1 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 1 (each needs a class, like the others)
+    ard:An03_01_Age_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_5_Q1/AnlsGrouping_01_Trt_3: embedded 70, ours 70.5
+  equal only at the edge of the allowance: 2
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_3_SD/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_2/AnlsGrouping_09_Visit_04: embedded 9.5960516021, ours 9.596051602049998
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_09: embedded 0.07719298250000001, ours 0.0771929824561402
+  explained:   1 reference_error, proof between_equal_values
+  explained:   1 reference_error, proof no_alternative
+  explained:   1 reference_error, proof no_records
+  explained:  22 reference_error, proof value_of_other_result
+results common-safety-displays, Python engine: 0 unexplained
+results common-safety-displays, R engine: 3735 embedded results, 3711 reproduced as printed, 23 with another value, 1 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 1 (each needs a class, like the others)
+    ard:An03_01_Age_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_5_Q1/AnlsGrouping_01_Trt_3: embedded 70, ours 70.5
+  equal only at the edge of the allowance: 2
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_3_SD/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_2/AnlsGrouping_09_Visit_04: embedded 9.5960516021, ours 9.596051602049998
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_09: embedded 0.07719298250000001, ours 0.0771929824561402
+  explained:   1 reference_error, proof between_equal_values
+  explained:   1 reference_error, proof no_alternative
+  explained:   1 reference_error, proof no_records
+  explained:  22 reference_error, proof value_of_other_result
+results common-safety-displays, R engine: 0 unexplained
+results common-safety-displays: 504 results of ours that the reference does not list: An07_09_Soc_Comp_ByTrt_PlacHigh 21, An07_09_Soc_Comp_ByTrt_PlacLow 21, An07_10_SocPt_Comp_ByTrt_PlacHigh 186, An07_10_SocPt_Comp_ByTrt_PlacLow 180, An08_02_ChgBl_Summ_ByTrt 96
+results common-safety-displays: gold/ars/common-safety-displays.json carries the 4238 results of the Python ARD as raw values
+results common-safety-displays, engines: 4238 results in both, 0 disagree; largest relative difference 2.4e-13 (allowed 1e-09)
+results: pass
+-- PASS results (3.6 s)
+
+== [12/16] grids: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its last part)
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+grid Out14-3-1-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grids: 1 outputs, pass
+-- PASS grids (2.5 s)
+
+== [13/16] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -s -q
+
+--- A1-resolve
+ADSL      composed specification equals Pilot 7's snapshot: True
+ADAE      composed specification equals Pilot 7's snapshot: True
+ADLBC     composed specification equals Pilot 7's snapshot: True
+ADLBH     composed specification equals Pilot 7's snapshot: True
+ADLBHY    composed specification equals Pilot 7's snapshot: True
+ADQSADAS  composed specification equals Pilot 7's snapshot: True
+ADQSCIBC  composed specification equals Pilot 7's snapshot: True
+ADQSNPIX  composed specification equals Pilot 7's snapshot: True
+ADTTE     composed specification equals Pilot 7's snapshot: True
+ADVS      composed specification equals Pilot 7's snapshot: True
+Pilot 7 pins yamaa at git revision c039509082b545fe913c00d1686426c3d245778c (cdiscpilot01/program/adam/python/requirements.txt)
+snapshots were made with yamaa 0.7.0 built from git revision c039509082b545fe913c00d1686426c3d245778c
+installed: yamaa 0.7.0 (wheel)
+.
+--- A2-runner
+ADSL         254 rows x  48 columns: runner equals yamaa's project run: True
+ADAE        1191 rows x  55 columns: runner equals yamaa's project run: True
+ADLBC      74264 rows x  46 columns: runner equals yamaa's project run: True
+ADLBH      49932 rows x  46 columns: runner equals yamaa's project run: True
+ADLBHY      9954 rows x  43 columns: runner equals yamaa's project run: True
+ADQSADAS   12463 rows x  40 columns: runner equals yamaa's project run: True
+ADQSCIBC     730 rows x  36 columns: runner equals yamaa's project run: True
+ADQSNPIX   31140 rows x  41 columns: runner equals yamaa's project run: True
+ADTTE        254 rows x  26 columns: runner equals yamaa's project run: True
+ADVS       32139 rows x  34 columns: runner equals yamaa's project run: True
+.
+--- A3-lineage
+ADSL       305 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADAE       167 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBC      182 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBH      184 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBHY     347 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSADAS   119 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSCIBC   102 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSNPIX   652 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADTTE      110 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADVS       152 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+.
+--- A4-unread
+SDTM columns with a node in the graph: 111; without one: 202, every one of them changed (1 all missing, filled, 70 constant, emptied, 131 rolled)
+ADaM datasets that changed: none
+.
+--- A5-adapted
+recorded as adapted: src/specfirst/machine/lineage.py shares 73 lines with cached sources
+recorded as adapted: src/specfirst/machine/runner.py shares 3 lines with cached sources
+compared 136 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 1 (allowed: 2)
+compared 5 R files of ours with 827 of 13 cached sources; the most lines a file that is not recorded shares: 2 (allowed: 2)
+.
+--- A6-engine
+Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.43 s (the spike: about 3 minutes; the target: under 10 seconds)
+embedded results: 3735; reproduced as printed: 3711
+rows per analysis: 31 analyses, 4238 rows; expected 31 analyses, 4238 rows
+.
+6 passed in 60.79s (0:01:00)
+-- PASS pilot tests (61.1 s)
+
+== [14/16] planted defects: SPECFIRST_STRICT=1 pytest tests/defects -s -q
+
+--- D1-arms
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+low and high dose exchanged: check passes: False; 1836 of 3735 reproduced; 1898 other values, of which 1896 are our value of the other arm
+entries with the proof value_of_other_result that are reproduced now: 22 of 22
+low and high dose exchanged in An03_03_Sex_Summ_ByTrt only: 8 values change; check passes: False; unexplained 8, of which stale entries 0; against the other engine 8 disagree
+low and high dose exchanged in An03_01_Age_Summ_ByTrt only: 12 values change; check passes: False; unexplained 12, of which stale entries 0; against the other engine 12 disagree
+low and high dose exchanged in An07_03_SerTEAE_Summ_ByTrt only: 4 values change; check passes: False; unexplained 4, of which stale entries 0; against the other engine 4 disagree
+low and high dose exchanged in An08_01_Obs_Summ_ByTrt only: 600 values change; check passes: False; unexplained 31, of which stale entries 0; against the other engine 600 disagree
+low and high dose exchanged in An03_04_Ethnic_Summ_ByTrt only: 8 values change; check passes: False; unexplained 8, of which stale entries 8; against the other engine 8 disagree
+.
+--- D2-set
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+safety set read from EFFFL: check passes: False; 2754 of 3735 reproduced; differences in 28 analyses
+intent-to-treat set in place of the safety set: 0 results change (both sets hold the same subjects in the pilot: not separable on these data)
+.
+--- D3-quantile
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+quantile definition r7: check passes: False; 3662 of 3735 reproduced as printed, 49 fewer (E4: 49); at the precision of the result pattern 97 new differences: {'Q1': 45, 'Q3': 52}
+.
+--- D4-subset
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+An07_01_TEAE_Summ_ByTrt without its data subset: check passes: False; new differences 4
+each of the 18 analyses with a data subset, one at a time:
+  caught: 15
+  changes no result: 1 (An08_01_Obs_Summ_ByTrt)
+  changes only results the reference does not list: 2 (An07_09_Soc_Comp_ByTrt_PlacLow, An08_02_ChgBl_Summ_ByTrt)
+.
+--- D5-engines
+unchanged: engines: 4238 results in both, 0 disagree; largest relative difference 2.4e-13 (allowed 1e-09)
+R engine alone, low and high dose exchanged: 1930 results disagree
+R engine alone, safety set read from EFFFL: 1287 results disagree
+R engine alone, quantile definition r7: 2160 results disagree
+R engine alone, An07_01_TEAE_Summ_ByTrt without its data subset: 4 results disagree
+.
+--- D6-proofs
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+A3 an exchanged count, proven by the placebo arm, which has the same value: check passes: False; the proof (value_of_other_result) does not hold: the reference's value of ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/AnlsGrouping_05_Ethnic_1 (3) is not our value of this result (6): the two are not exchanged
+A8 the quartile of age, by an option with one value: check passes: False; the proof (no_alternative) does not hold: no value of sd_denominator changes a result of the operation Mth02_ContVar_Summ_ByGrp_5_Q1: the option says nothing about this result
+A9 an exchanged mean, as the same under every quantile definition: check passes: False; the proof (same_under_every) does not hold: no value of quantile_definition changes a result of the operation Mth02_ContVar_Summ_ByGrp_2_Mean: the option says nothing about this result
+A10 the same mean, as given by no quantile definition: check passes: False; the proof (no_alternative) does not hold: no value of quantile_definition changes a result of the operation Mth02_ContVar_Summ_ByGrp_2_Mean: the option says nothing about this result
+A11 no records, by a count of 0 of another analysis: check passes: False; the proof (no_records) does not hold: ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/AnlsGrouping_04_Race_1 is not a count of the cell's own groups in one group of AnlsGrouping_01_Trt
+no records, by the count of one of the two compared arms: check passes: False; the proof (no_records) does not hold: the counts are for the groups AnlsGrouping_01_Trt_1 of AnlsGrouping_01_Trt; the test compares AnlsGrouping_01_Trt_1, AnlsGrouping_01_Trt_2: one count per compared group is needed
+the median of height, as the same under every quantile definition: check passes: False; the proof (same_under_every) does not hold: no value of quantile_definition changes a result of the operation Mth02_ContVar_Summ_ByGrp_4_Median: the option says nothing about this result
+.
+--- D7-display
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+layout, the percent under the pattern (XX.X), without the blank: 24 cells differ, 24 problems
+layout, the percent with two decimals: 24 cells differ, 24 problems
+layout, the count with one decimal: 24 cells differ, 24 problems
+layout, the header count without its brackets: 3 cells differ, 3 problems
+layout, the percent in place of the count: 24 cells differ, 48 problems
+layout, the last row left out: 0 cells differ, 6 problems
+layout, the header left out: 0 cells differ, 3 problems
+layout, the first two rows in the other order: 0 cells differ, 1 problems
+results, low and high dose exchanged in An07_01_TEAE_Summ_ByTrt: 2 cells differ, 2 problems
+results, every percent of the first row with the placebo arm as its denominator: 2 cells differ, 2 problems
+grid file, a text changed: 1 problems, for example: cell:Out14-3-1-1/r2/c1: the text '66 ( 76.7)' is not what the layout and the ARD give
+grid file, the texts of two cells of a row exchanged: 2 problems, for example: cell:Out14-3-1-1/r2/c1: the text '76 ( 90.5)' is not what the layout and the ARD give
+grid file, the cells of a row in another order: 1 problems, for example: row r2: its cells are not one per column, in order
+grid file, the ARD rows of a cell taken from the next row: 1 problems, for example: cell:Out14-3-1-1/r2/c1: its ARD rows are not those the layout shows there
+not separable by this reference: the percent before the count: 0 problems (it formats results, not cells)
+not separable on these data: the rounding rule; results of the output that lie on a half at their displayed decimals: 0 of 51
+.
+--- D8-trace
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+  through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
+shows: 51 results changed one at a time, 4187 results without a shows edge changed at once; 0 problems
+reads: 9 analyses; for each, the columns without a reads edge emptied and rolled (310 changes of a column in all), then the columns it reads emptied; 0 problems
+reads: 9 analyses; for each, the columns without a reads edge emptied and rolled (312 changes of a column in all), then the columns it reads emptied; 2 problems
+planted, the reads edge from An07_01_TEAE_Summ_ByTrt to ADAE.TRTEMFL left out (1 edges): 2 problems, for example: ars:An07_01_TEAE_Summ_ByTrt: with the 19 columns it has no reads edge to emptied, 6 of its 6 results change, for example ard:An07_01_TEAE_Summ_ByTrt/M
+shows: 51 results changed one at a time, 4189 results without a shows edge changed at once; 3 problems
+planted, the shows edges of cell:Out14-3-1-1/r2/c1 left out (2 edges): 3 problems, for example: ard:An07_01_TEAE_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1: changing it changes the cells ['cell:Out14-3-1-1/r2/c1']; its shows edg
+planted in the files, a result node left out: 2 problems
+planted in the files, every computes edge left out: 52 problems
+planted in the files, every reads edge left out: 103 problems
+....................................................
+59 passed in 67.35s (0:01:07)
+-- PASS planted defects (67.7 s)
+
+== [15/16] cache untouched: specfirst fetch --verify
+cache: /tmp/specfirst-clean-jNkmaI/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS cache untouched (0.1 s)
+
+== [16/16] ASCII: python -m specfirst.asciicheck
+ASCII check: 491 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.4 s
+PASS  pins                 0.9 s
+PASS  lint                 0.0 s
+PASS  registry             0.0 s
+PASS  unit tests         341.6 s
+PASS  method vectors       1.7 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      41.8 s
+PASS  P2 reproduction      0.4 s
+PASS  trace                1.0 s
+PASS  results              3.6 s
+PASS  grids                2.5 s
+PASS  pilot tests         61.1 s
+PASS  planted defects     67.7 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-3a: PASS
+
+clean clone gate real-3a: PASS (clone: /tmp/specfirst-clean-jNkmaI/specfirst)
+The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
+minute after the last command ends. Copy what must be kept in the same command that
+runs this script (docs/lessons.md, lesson 39). The log is in build/gates/real-3a/ here.

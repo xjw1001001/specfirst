@@ -148,7 +148,7 @@ class Build:
     adam: dict = field(default_factory=dict)  # dataset -> Arrow table
     ard: dict[str, dict] = field(default_factory=dict)  # ARD rows by ID
     # (grouping, group) -> the name and the condition of the group in the reporting
-    # event that was run, where the groups of a data-driven grouping are listed.
+    # event that was run, where the groups of a data-driven grouping on ADSL are listed.
     groups: dict[tuple[str, str], dict] = field(default_factory=dict)
     grids: dict[str, dict] = field(default_factory=dict)  # output ID -> grid
     not_produced: dict[str, str] = field(default_factory=dict)  # output ID -> why

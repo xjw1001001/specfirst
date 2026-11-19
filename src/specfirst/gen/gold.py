@@ -6,8 +6,9 @@
       -> compile          specfirst.compile: yamaa specs, one ARS file, layout files
       -> run              yamaa through the thin runner of the machine: ADaM
       -> list the groups  a treatment grouping of the house standard is
-                          data-driven; its groups are listed from the ADaM
-                          data, in the order the layout asks for
+                          data-driven; the groups of a grouping on ADSL
+                          are listed from the ADaM data, in the order the
+                          layout asks for
       -> results          both engines of the machine: the ARD
       -> grid             specfirst.gen.display: the compiled layout and the ARD
       -> graph            the trace of the machine, and the `decides` edges
@@ -26,11 +27,19 @@ I9 of standard/methods/README.md). An arm in which no subject has a serious
 event then has no result for the serious events, not a count of zero, and a
 cell that prints 0 would have no ARD row behind it. A grouping with listed
 groups gives every group a result (rule I8). So before the engines run, a
-data-driven grouping is replaced by the list of the values its variable
-has in the analysis set, in the grouping's own dataset. The order of the
-list is the column order the layout asks for (tfl.columns.arms), which
-needs what no decision carries: the arms of the protocol with their doses
-(`arms_of`, from the design).
+data-driven grouping on ADSL, which subdivides the subject population, is
+replaced by the list of the values its variable has in the analysis set.
+The order of the list is the column order the layout asks for
+(tfl.columns.arms), which needs what no decision carries: the arms of the
+protocol with their doses (`arms_of`, from the design).
+
+A data-driven grouping on another dataset subdivides its records: the
+organ class and the preferred term of ADAE. It stays data-driven, as in
+CDISC's example "Common Safety Displays". The engines then give the
+combinations of its values that occur on the records of an analysis (rule
+I9), each with every listed group (rule I10): arms x the pairs of organ
+class and term that occur. Listed, rule I10 would cross every organ class
+with every term (issue #27, docs/decisions/ADR-011.md).
 """
 
 from __future__ import annotations
@@ -58,6 +67,9 @@ from specfirst.machine.canonical import (
 from specfirst.machine.lineage import column_dependencies
 
 SUBJECT_KEY = "USUBJID"
+# The subject-level analysis dataset of ADaM: one record per subject. A grouping on it
+# subdivides the subject population, and only such a grouping has its groups listed.
+SUBJECT_DATASET = "ADSL"
 SLICE_DATASETS = ("ADSL", "ADAE")
 # Where the parts of a kit are, relative to its folder.
 HOUSE = "inputs/house"
@@ -202,13 +214,15 @@ def engine_tables(plans: list[runner.SpecPlan], event: ars.Event) -> dict[str, a
 
 def resolve_groupings(data: dict, tables: dict[str, ard.Table], layouts: dict[str, dict],
                       arms: list[dict]) -> dict:
-    """A copy of a reporting event whose data-driven groupings list their groups.
+    """A copy of a reporting event whose data-driven groupings on ADSL list their groups.
 
     The groups of a grouping are the values of its variable, in its own
     dataset, on the records of the analysis set of the analyses that use it.
     A group has the ID `<grouping>_<n>`, n counting the values in sorted
     order, so that the ID of a result does not depend on the column order;
-    its `order` is the place the layout gives its column.
+    its `order` is the place the layout gives its column. A data-driven
+    grouping on another dataset (organ class, preferred term) is left as it
+    is: its groups are the combinations that occur (rule I9; ADR-011).
     """
     data = copy.deepcopy(data)
     event = ars.index(data)
@@ -218,7 +232,7 @@ def resolve_groupings(data: dict, tables: dict[str, ard.Table], layouts: dict[st
     rules = {layout["columns"]["grouping"]: layout["columns"].get("order")
              for layout in layouts.values()}
     for grouping in data.get("analysisGroupings") or []:
-        if not grouping.get("dataDriven"):
+        if not grouping.get("dataDriven") or grouping["groupingDataset"] != SUBJECT_DATASET:
             continue
         users = [analysis for analysis in event.analyses.values()
                  if any(entry["groupingId"] == grouping["id"]
