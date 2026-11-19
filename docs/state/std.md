@@ -16,6 +16,27 @@ section 13.4).
   docs/decisions/ADR-004.md, "Node N1: the owner's answer". The gate on
   the frozen commit is in docs/reports/std-1.md, "After node N1".
 
+## In progress
+
+- std-issues (2026-11-18): the parts of issues #26, #24 and #25 that change
+  neither `catalog@1`, nor `open-default@1`, nor the generator. On
+  `track/std`, not merged: the owner approved docs/decisions/ADR-014.md
+  (#26) on 2026-11-18; the merge waits for read-2a, the gates on clean
+  clones and the review. Report: docs/reports/std-issues.md.
+  - #26: the scorer compiles in the pending mode
+    (`compile_decisions(pending=True)`): a decision without a value that
+    the build needs leaves out what it binds, and the build score counts
+    those gold cells apart. `specfirst compile` and the generator are
+    unchanged.
+  - #25: `compile_decisions(sdtm=...)` leaves out a column that derives
+    from a variable the SDTM lacks and SDTMIG does not require (warning);
+    a table reading one is not produced; a Required one stops the compile.
+  - #24: the scorer's build stops after ADaM when no subject has TRTSDT,
+    naming the decision, its filter and the empty variable.
+  - Left for later: a `trt.end.source` alternative that reads no dose
+    (`catalog@2`, #23), a probe with EXDOSE missing everywhere (generator),
+    `specfirst compile --sdtm`.
+
 ## Open
 
 - A change of an entry, an alternative, a default or a statement of
