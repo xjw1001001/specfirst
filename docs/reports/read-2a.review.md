@@ -29,7 +29,7 @@ run of the model.
 - Windows git for the diff and the history (`git -C
   /d/trial_work/specfirst-read ...`); nothing committed, branched or
   stashed. Nothing was read, listed or searched outside the worktree, my
-  scratch folders (`C:\Users\11764\AppData\Local\Temp\review-read2a\`,
+  scratch folders (`<home>\AppData\Local\Temp\review-read2a\`,
   `/tmp/review-read2a/`, `/root/scratch-review-read2a/`) and the author's
   kit `/root/scratch-read2a/kits/kit-004` (read and copied, never written).
   `reference/` was not touched.
@@ -48,7 +48,7 @@ run of the model.
   /root/scratch-read2a/kits/kit-004 /root/scratch-review-read2a/kits/`;
   `kit.yaml` SHA-256 `e23d3a90...95bd18`, the kit the kept run read.
 - My scripts `r1.py` to `r4.py`, `t1.sh`, `t2.sh` are in
-  `C:\Users\11764\AppData\Local\Temp\review-read2a\` and are not kept;
+  `<home>\AppData\Local\Temp\review-read2a\` and are not kept;
   each is described where its output is quoted.
 - No file of the repository was changed but this one.
 
