@@ -28,6 +28,14 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   installed environment, which built the same bytes. Review:
   docs/reports/real-3a.review.md (PASS, nine findings that do not block;
   they are listed under "Open"). Decisions: docs/decisions/ADR-003.md.
+- Fix of issue #27 (2026-11-18): the table by organ class and term counts
+  arms x the pairs that occur, not every organ class with every term.
+  Gates: `scripts/clean_clone_gate.sh` real-2, real-3a, gen-2a, gen-3a and
+  read-1a exited 0 on clean clones of `c7f09a0` (the change `e00bbb7` with
+  `main` merged in). Evidence: docs/reports/issue-27.md and
+  issue-27.<gate>.gate.log. Review: docs/reports/issue-27.review.md
+  (SIGNED, four findings that do not block, nothing for the owner).
+  Decisions: docs/decisions/ADR-011.md.
 
 ## Open
 
@@ -225,9 +233,36 @@ for 3,580 of them):
   and term), one row per statistic, columns that compare two groups
   (p-values), a total column, sort and threshold rules. The plan of a grid
   (`grid.plan`) is the place: the builder, the comparison and the trace all
-  read the plan.
+  read the plan. For organ class and term the results are ready since the
+  fix of issue #27 (ADR-011): the analysis by term gives arms x the pairs
+  that occur, each result identified by its values
+  (`.../Grp_TRT01A_1/=<organ class>/=<term>`), so the rows of the grid are
+  read from the ARD; the rows themselves are still layout work.
 - Display rules that are not registry entries yet: p-value formats and the
   truncation of long terms (E25).
+
+## Handed over by the fix of issue #27
+
+- `specfirst.gen.gold.resolve_groupings` lists the groups of a data-driven
+  grouping only when its dataset is ADSL (it subdivides the subject
+  population). A data-driven grouping on another dataset (ADAE.AESOC,
+  ADAE.AEDECOD) stays data-driven, and the engines give the combinations
+  that occur (rules I9, I10), each with every listed arm. This is how
+  CDISC's example "Common Safety Displays" models the table, and why
+  ADR-011 chose it over nesting in the ARS file or a grouping on the pair:
+  the ARS model has neither a nested nor a dependent grouping.
+- `tests/unit/test_soc_pt_pairs.py` is the vector of the issue (two sizes,
+  invented data): counts, the total column, the organ classes, and the R
+  engine on the same event (rule R11).
+- For real-4 (review of the fix, F4): the rule is a dataset name. A
+  grouping of records whose categories a table shows in full (severity or
+  relationship as rows or columns) gets no result for a category without a
+  record, so its template gives it defined groups, as CDISC's examples do
+  for every grouping but organ class and term; or real-4 widens the rule.
+  The vector covers the scorer's build and no analysis of event counts.
+- ADR-007's item 1 for the owner (decision 1 or a change of rule I9) is
+  still open; whichever stays has to keep the pairs that occur for
+  groupings of records.
 
 ## Handed over by real-3a
 
