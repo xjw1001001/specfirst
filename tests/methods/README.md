@@ -24,8 +24,10 @@ engine tests have those.
 A model-based entry gives one value per group: its expected values are a
 mapping per operation, from group to value. Its vectors are run in R only
 (`r-vectors`, `model-vectors`); `model-vectors` also asks that the vectors
-give every option every value it has, and plants one defect per entry in
-the R implementation (an option ignored), which the vectors must see.
+give every option every value it has, and runs the vectors again with one
+option of each entry fixed at one value in the inputs (what an
+implementation that ignored the option would compute), which the vectors
+must see. That defect is planted in the inputs, not in the R code.
 
 Numbers must agree within a relative 1e-12. The tests that need R are
 skipped where R is not installed, except in a gate. Keep a value of a

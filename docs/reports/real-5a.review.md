@@ -617,3 +617,372 @@ owner's choice before the merge (item 1 above); that is not a defect of
 real-5a.
 
 Verdict: NOT SIGNED (blocking: F1, F2)
+
+## Pass 2
+
+Reviewer: another independent agent with a fresh context, which wrote
+neither the work nor pass 1. Date: 2026-11-19. Correctness only.
+
+Under review: commit `2626186` (the executor's answer to pass 1), read as
+the full diff `d2e6d8b..2626186`: ADR-015, docs/reports/real-5a.md, this
+file (pass 1 as above), `kits/cdiscpilot01/gold/decisions/efficacy.jsonl`,
+`src/specfirst/machine/build.py`, `src/specfirst/machine/decisions.py`,
+tests/defects/README.md. Read besides: PLAN.md sections 2.3, 4.3, 4.5 and
+4.8; decision-record.schema.json; `build.csr_comparison` and
+`build.decision_checks`; `specfirst.harness.task` (what a task folder
+copies, its ID); `specfirst.gen.documents` (how a generated kit writes an
+`asked` record); the SAP and the Define-XML themselves. The checkout's
+working tree also holds an uncommitted paragraph in docs/reports/real-5a.md
+("For the base session", on pass 1's recommendation); it is not part of
+`2626186` and not reviewed here.
+
+### Files I quote, with their SHA-256
+
+At `2626186` (`git show 2626186:<path> | sha256sum`):
+
+```text
+a918658798bb1443c0f9f1ab153c07172a699324d16f02651af51231bad81dd7  docs/decisions/ADR-015.md
+d0676bf50e86f059b282ba7beb7a83ed62091edd952e06a6f83ebcf29792ba18  docs/reports/real-5a.md
+d3381ed855e693e9106c566da1948595446c25d270636c0f3efe64155c745bea  docs/reports/real-5a.review.md
+2befca3beba883658cfaa40ddabe85981d50424b9429dfc732eb55d97790a793  kits/cdiscpilot01/gold/decisions/efficacy.jsonl
+2d151aa2923ed96e195e1a4348e5180c495f8b25f6029082d5dc72c274456585  src/specfirst/machine/build.py
+386f26fffaf6799bbb6e8783c97850175b3e14ea71aff6274872bc8268c73da9  src/specfirst/machine/decisions.py
+7c15436e0da641837703ea0268c65f86f0106c4ef75e677324ef4c59e60a222d  tests/defects/README.md
+1c606e284d791ef092a029e5b40f4aff4e46e04b2f605cfec4d9517970548bfc  standard/schemas/decision-record.schema.json
+```
+
+The pinned sources, read only in the fetch cache, have the SHA-256 pass 1
+gives (SAP.pdf `210b7f1f...`, define-adam.xml `7e6d580e...`, CSR.pdf
+`0cab016c...`; `sha256sum` again today, the same). I quote no cell of the
+CSR.
+
+### Commands I ran, with their output (rule R8)
+
+Setup, under WSL Ubuntu-24.04; scratch only under
+`/root/scratch-review2-real5a/`; nothing written into the checkout but
+this section, nor into the fetch cache:
+
+```text
+$ git clone -q --no-local /mnt/d/trial_work/specfirst/.git /root/scratch-review2-real5a/clone
+$ git -C /root/scratch-review2-real5a/clone checkout -q --detach 2626186
+$ . /mnt/d/trial_work/specfirst-real/scripts/env.sh
+$ cd /root/scratch-review2-real5a/clone; export SPECFIRST_ROOT=$PWD PYTHONPATH=$PWD/src
+$ pdftotext -layout $SPECFIRST_CACHE/p6/documents/SAP.pdf ../text/sap.txt   (poppler 24.02.0; 2035 lines)
+```
+
+#### D1. The SAP and the Define-XML at the places the records cite
+
+Line numbers of sap.txt as `sed -n` counts them.
+
+```text
+$ sed -n 396,404p sap.txt   (SAP 7.3)
+7.3.        Multiple Comparisons and Multiplicity
+...
+The primary analyses for the 2 primary efficacy endpoints will be a test for dose
+response. Within each primary efficacy endpoint, 3 sets of pairwise comparisons for the
+2 active treatment groups and placebo will only be performed if the test for dose response
+is significant.
+$ sed -n 582,596p sap.txt   (SAP 10.1.1; abridged)
+10.1.1.     ADAS-COG (11)
+... an ANCOVA model will be used with the baseline score, site,
+and treatment included as independent variables. Treatment will be included as a
+continuous variable, and results for a test of dose response will be produced. Interaction
+terms will not be investigated. If the test for dose response is statistically significant,
+pairwise comparisons among the 3 groups will be performed and evaluated at a
+significance level of 0.05.
+
+Summary statistics will be generated for each visit including baseline using the efficacy
+population with LOCF imputation. ...
+$ sed -n 808,809p sap.txt   (the SAP's list of tables)
+14.        ADAS Cog (11) - Mean and Mean Change from Baseline over Time (Template
+      9)
+$ sed -n 1026p sap.txt; sed -n 1036p sap.txt   (template 5)
+    P-value(Xan - Placebo) [1][3]                                x.xxx              x.xxx
+[3] Pairwise comparison with treatment as a categorical variable: p-values without adjustment for multiple
+$ sed -n 18405,18485p define-adam.xml   (Table_14-3.01; abridged, file line numbers in front)
+18409 OID="Table_14-3.01.R.1" ResultIdentifier="dose response analysis for ADAS-Cog changes from baseline"
+18430 Linear model analysis of CHG for dose response; using randomized dose (0 for
+      placebo; 54 for low dose; 81 for high dose) and site group in model. ...
+18437   class sitegr1;
+18438   model CHG = trtpn sitegr1;
+18443 OID="Table_14-3.01.R.2" ResultIdentifier="pairwise comparisons to placebo for ADAS-Cog changes from baseline"
+18471   class trtpn sitegr1;
+18472   model CHG = trtpn sitegr1 base;
+18474   lsmeans trtpn / OM STDERR PDIFF CL;
+```
+
+#### D2. The records against the schema, and their citations against the sources
+
+`p_records.py`: jsonschema's Draft 2020-12 validator on each record with
+the schema of the clone; the same records with three plants; every SAP
+quote searched in sap.txt (blanks and line ends as one blank); every
+Define-XML quote searched in the text of the elements whose `OID` is the
+citation's anchor (ElementTree).
+
+```text
+$ python -I p_records.py clone text/sap.txt $SPECFIRST_CACHE/p7/cdiscpilot01/spec/define/define-adam.xml
+jsonschema 4.26.0: 8 records
+  custom:eff-analysis-set: status stated, class document_rule, 3 citations, schema errors 0 []
+  custom:eff-visit-record: status stated, class document_rule, 3 citations, schema errors 0 []
+  custom:eff-model-terms: status conflict, class None, 5 citations, schema errors 0 []
+  custom:eff-dose-response: status stated, class document_rule, 3 citations, schema errors 0 []
+  custom:eff-pairwise: status conflict, class None, 5 citations, schema errors 0 []
+  custom:eff-lsmeans-weights: status stated, class document_rule, 1 citations, schema errors 0 []
+  custom:eff-baseline-rows: status asked, class study_input, 0 citations, schema errors 0 []
+  custom:eff-display-decimals: status stated, class document_rule, 2 citations, schema errors 0 []
+  planted, conflict record without class but status stated: 1 schema errors
+  planted, asked record without class: 1 schema errors
+  planted, a stated document_rule without citations: 1 schema errors
+citations:
+  custom:eff-analysis-set sap '6': 1 x at sap.txt lines [362]: ...
+  custom:eff-visit-record sap '8.1': 1 x at sap.txt lines [418]: ...
+  custom:eff-visit-record sap '8.2': 1 x at sap.txt lines [437]: ...
+  custom:eff-model-terms sap '10.1.1': 2 x at sap.txt lines [587, 641]: 'an ANCOVA model will be used with the baseline score, site, and treatment'
+  custom:eff-model-terms sap '7.1': 1 x at sap.txt lines [383]: ...
+  custom:eff-model-terms sap '15.1': 1 x at sap.txt lines [1914]: ...
+  custom:eff-model-terms define 'Table_14-3.01.R.2': in the element True ...: 'model CHG = trtpn sitegr1 base'
+  custom:eff-model-terms define 'Table_14-3.01.R.1': in the element True (2 elements with that OID);
+      also in ['CDISC.ADaM.2.1', 'CDISCPILOT01', 'Table_14-3.01', 'Table_14-3.01.R.2']: 'model CHG = trtpn sitegr1'
+  custom:eff-dose-response sap '3.3': 2 x at sap.txt lines [296, 300]: ...
+  custom:eff-dose-response sap '10.1.1': 3 x at sap.txt lines [588, 625, 643]: ...
+  custom:eff-dose-response define 'Table_14-3.01.R.1': in the element True ...: 'randomized dose (0 for placebo; 54 for low dose; 81 for high dose)'
+  custom:eff-pairwise sap '10.1.1': 3 x at sap.txt lines [590, 626, 644]: 'If the test for dose response is statistically significant, pairwise comparisons among the 3 groups will be performed'
+  custom:eff-pairwise sap '7.3': 1 x at sap.txt lines [403]: 'will only be performed if the test for dose response is significant'
+  custom:eff-pairwise sap 'template 5': 5 x at sap.txt lines [1026, 1060, 1104, 1147, 1255]: 'P-value(Xan - Placebo) [1][3]'
+  custom:eff-pairwise sap 'template 5, footnote 3': 5 x at sap.txt lines [1036, 1069, 1114, 1157, 1267]: ...
+  custom:eff-pairwise define 'Table_14-3.01.R.2': in the element True ...: 'lsmeans trtpn / OM STDERR PDIFF CL'
+  custom:eff-lsmeans-weights define 'Table_14-3.01.R.2': in the element True ...
+  custom:eff-display-decimals sap 'template 5': 10 x at sap.txt lines [1027, ...]: 'Diff. of LS Means (SE) xx.x(x.xx)'
+  custom:eff-display-decimals sap 'template 5': 12 x at sap.txt lines [1028, ...]: '95% CI (xx.xx;xx.xx)'
+  (the two quotes of the Define-XML's selection, EFFFL="Y" and ANL01FL="Y" and AVISIT="Week 24",
+   are in Table_14-3.01.R.2.SC1: True; "using randomized treatment as class variable" in R.2: True)
+R.1 code has 'model CHG = trtpn sitegr1;': True | R.1 mentions base: False
+R.2 code has 'model CHG = trtpn sitegr1 base;': True
+$ (specfirst.schemas.problems("decision-record", record) on the clone, each record)
+custom:eff-analysis-set [] ... custom:eff-display-decimals []   (8 of 8 empty)
+```
+
+The first match of each SAP quote lies in the section its anchor names
+(3.3 starts at line 291, 6 at 341, 7.1 at 381, 7.3 at 396, 8.1 at 409, 8.2
+at 428, 10.1.1 at 582, template 5 at 1003, 15.1 at 1912).
+
+#### D3. The line `build.py` replaced, on the records of 2626186
+
+```text
+$ python -I - clone   (Counter(r.get("class") for r in records); sorted(by_class.items()), as at d2e6d8b)
+TypeError: '<' not supported between instances of 'NoneType' and 'str'
+```
+
+#### D4. The gate, on the clone of 2626186
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -m specfirst gate real-5a --clean
+  (queued at 08:27 UTC behind another session's clean-clone gates; exit 0 at 08:50; output 531 lines)
+== [5/18] unit tests: pytest -m "not evidence" -q
+1129 passed, 25 deselected in 325.00s (0:05:25)
+...
+efficacy: 3 tables, 153 cells; 144 equal the CSR; classified differences: 9 rule_choice
+== [14/18] decisions: specfirst.machine.build.decision_checks on build/p1/cdiscpilot01/first
+decisions: 8 records, 8 IDs; 45 options of analyses held against the decisions that set them; 0 problems
+decisions: by class: 5 document_rule, 2 no class (conflict), 1 study_input; by status: 1 asked, 2 conflict, 5 stated
+decisions: pass
+...
+--- D9-efficacy
+unchanged: 0 problems
+... (the 7 plants in the reporting event: 19, 3, 26, 8, 3, 109 and 22 problems, as pass 1)
+decision records, unchanged: 0 problems
+decision records, the ANCOVA without the baseline covariate: 9 problems, for example: custom:eff-model-terms: ars:An_ADAS_W24_Dose has covariates = [], the decision covariates = ['BASE']
+... (the 6 plants in the reference and the exceptions: 1, 9, 1, 1, 1 and 1 problems, as pass 1)
+61 passed in 75.70s (0:01:15)
+...
+PASS  environment          0.3 s
+PASS  pins                 0.1 s
+PASS  lint                 0.0 s
+PASS  registry             0.0 s
+PASS  unit tests         325.6 s
+PASS  method vectors       6.1 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      38.1 s
+PASS  P2 reproduction      0.4 s
+PASS  trace                1.1 s
+PASS  results              3.2 s
+PASS  grids                2.3 s
+PASS  efficacy             2.3 s
+PASS  decisions            0.4 s
+PASS  pilot tests         51.9 s
+PASS  planted defects     76.1 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-5a: PASS
+$ git -C clone status --short    (empty)
+```
+
+#### D5. The check `decisions` with defects planted in the records
+
+`p_decisions.py` calls `build.decision_checks`, the function of the gate
+check, on the gate's first build, with `decisions.load` returning the
+records of 2626186 with one plant each (in memory):
+
+```text
+$ python p_decisions.py clone
+control: the records of 2626186: decision_checks returned True; 0 problems
+conflict eff-model-terms with covariates []: decision_checks returned False; 12 problems
+  e.g. decisions: custom:eff-model-terms: ars:An_ADAS_W24_Dose has covariates = ['BASE'], the decision covariates = []
+conflict eff-model-terms with factors ['SITEID']: decision_checks returned False; 12 problems
+conflict eff-pairwise with df asymptotic: decision_checks returned False; 6 problems
+conflict eff-pairwise with confidence_level 90: decision_checks returned False; 6 problems
+conflict eff-model-terms made stated, still without class: decision_checks returned False; 1 problems
+  e.g. decisions: custom:eff-model-terms: <root>: 'class' is a required property
+asked eff-baseline-rows without class: decision_checks returned False; 1 problems
+conflict eff-pairwise binds ars:An_NONE: decision_checks returned False; 1 problems
+not held (F4 and the new key): eff-pairwise shown if_significant: decision_checks returned True; 0 problems
+not held (F4): eff-display-decimals confidence_limit 1: decision_checks returned True; 0 problems
+```
+
+### Answers
+
+#### 1. F1 and F2
+
+**F1 is resolved.** ADR-015 "Consequences" now says every generated kit's
+kit.yaml changes (its `registry_sha256`), every reader task folder and its
+ID change, the data, gold and documents of a generated kit do not depend on
+the new entries ("not checked byte for byte"), and read-2a's kept dry run
+fails. Each part holds in the code: `gen/kits.py` pins the registry's hash
+(pass 1, C6); `harness/task.py` copies `standard/methods/registry.json`
+into every task folder (line 51) and its ID is the hash of the folder's
+manifest (lines 113 and 114); the `method_options_hash` of an ARD row is
+the hash of that method's resolved options (`registry.py` lines 216 to 218),
+so new entries do not reach the rows of a kit that does not use them. The
+report's section "Generated kits and reader task folders" says the same.
+
+**F2 is resolved.** Each of the three records now says what its sources say
+(D1, D2):
+
+- `custom:eff-model-terms`: status `conflict`, no class (the schema allows
+  none for `conflict`, section 4.5 asks for none). It cites both sides:
+  SAP 10.1.1, 7.1, 15.1 and R.2's `model CHG = trtpn sitegr1 base` keep
+  BASE; R.1's `model CHG = trtpn sitegr1` leaves it out (line 18438; R.1
+  has no "base" anywhere). Its statement names the disagreement, says the
+  value is the executor's reading under which the CSR is reproduced, and
+  that a person decides. The value is unchanged and still held by the
+  check `decisions` (12 options, D5).
+- `custom:eff-pairwise`: status `conflict`, no class. SAP 10.1.1 is now
+  quoted with its condition, SAP 7.3 is cited, and template 5's row
+  "P-value(Xan - Placebo) [1][3]" stands for the other side. The value
+  gains `shown: always`, which is what the build does; no check reads that
+  key (D5) and nothing claims one does.
+- `custom:eff-baseline-rows`: status `asked`, class `study_input`, no
+  citation. That is section 4.5's `study_input` and the project's own form
+  of an asked gold record (`gen/documents.py` lines 355, 356, 684 and 690:
+  an asked record has the class `study_input` and cites nothing). The
+  nearest text, SAP 10.1.1 "Summary statistics will be generated for each
+  visit including baseline", belongs to the by-visit table (template 9,
+  sap.txt line 808), not to template 5, so "No document says it" stands.
+
+All 8 records fit the schema (jsonschema and `specfirst.schemas`, D2), and
+the schema sees a `stated` record without class and an `asked` one without
+class (D2, D5). Every quote of the 8 records is a real quote of its
+document, at the anchor it names: each SAP quote's first match is in the
+named section, each Define-XML quote is in the element with the named OID
+(D2). The other five records are unchanged from `d2e6d8b`.
+
+#### 2. The check `decisions` with the conflict records
+
+It passes and still fails. The gate passes with `--clean` on a fresh
+clone of 2626186 with the installed environment (D4), with the new line "by class: 5 document_rule, 2 no
+class (conflict), 1 study_input; by status: 1 asked, 2 conflict, 5 stated".
+D9's plant (the event without BASE) gives 9 problems, as before; my plants
+in the conflict and asked records give 12, 12, 6, 6, 1, 1 and 1 problems
+(D5). The change in `build.decision_checks` was needed: the line it
+replaced raises a TypeError on records without a class (D3), outside the
+`try` of the check, and the gate counts a crashing check as failed
+(`gates.py` line 701). The unit tests,
+`tests/unit/test_efficacy.py` and `tests/unit/test_gates.py` among them,
+pass inside the gate (1129 passed).
+
+#### 3. What the changes introduce; the non-blocking findings of pass 1
+
+Nothing in the diff is wrong in a way that changes a number, a check or a
+record's meaning. The non-blocking findings, against what the report and
+ADR-015 say:
+
+- F3, F7: in the report's "What the checks do not cover", as pass 1 found
+  them. Honest.
+- F4: in the same section and in the docstring of `decisions.py`. Which
+  records are held is stated rightly; one clause says more (G3 below).
+- F5: in the same section, open for real-5b. Honest; it names the LS means
+  with one group, not the pairwise comparisons when only the reference has
+  records (pass 1, C5), which fail the same way.
+- F8: ADR-015, "For the owner", item 4. Honest.
+- F9: fixed. The docstring names tests/unit/test_efficacy.py, which plants
+  a changed value of a record; the table of tests/defects/README.md is one
+  table from D1 to D10 (the empty lines after D6 and D8 are gone).
+- F6: neither fixed nor recorded (G1 below).
+
+Findings of this pass, none blocking:
+
+- **G1. F6 is dropped silently.** ADR-015 decision 5, the report (its
+  summary and "The methods") and tests/methods/README.md still say that
+  `model-vectors` plants defects "in the R implementation". It overwrites
+  an option of the inputs (pass 1, F6). Fix the wording, or record F6 with
+  the others.
+- **G2. The report's gate evidence is of `b8bb1f5`.** It shows
+  "decisions: by class: 7 document_rule, 1 study_input", which 2626186 no
+  longer prints, and no run covers the change of `build.decision_checks`.
+  D4 shows the gate passing on 2626186; the report should carry the
+  clean-clone run of the commit that merges (its section "The gates on
+  clean clones" is still to be filled).
+- **G3. "The decimals are held by the comparison with the CSR and the 9
+  exceptions"** (report, F4 item; `decisions.py`: "the decimals are seen by
+  the comparison with the CSR and its exceptions"). The comparison holds
+  the masks of the reporting event. Of the decision records it reads only
+  their IDs (`build.csr_comparison`, `build.py` lines 492 to 494). A record
+  `custom:eff-display-decimals` with `confidence_limit: 1` passes
+  `decisions` (D5) and the CSR check (pass 1, P2). Say "the decimals the
+  event prints are held by the CSR; the record's value is held by nothing".
+- **G4. Two smaller points about the conflict records.** (a) The quote of
+  R.1, `model CHG = trtpn sitegr1`, is also the start of R.2's line 18472.
+  It is true of R.1, but it does not show by itself that BASE is left out.
+  The quote with its semicolon, or R.1's "randomized dose ... and site
+  group in model", would. (b) `conflict` covers whole records: the 12
+  analyses of `eff-model-terms`, where the documents disagree on the 3
+  dose-response tests, and every option of `eff-pairwise`, where they
+  disagree only on `shown`. This asks more of the owner than needed and
+  claims nothing false. When the owner answers, the parts the documents
+  agree on can go back to `document_rule`.
+
+#### 4. What is left for the owner (PLAN.md section 2.3)
+
+- **read-2a's kept dry run**: the report states it correctly. "arm R, kept
+  dry run" fails on any change of `registry.json`, because the kept task
+  pins it and the kit.yaml written again now pins its hash (pass 1,
+  question 5; `harness/task.py` lines 51 and 113 confirm that the task's
+  files and ID change). The remedies the report lists (a new model run,
+  which is the owner's spend and login, or a change of read-2a's gate)
+  are the owner's. The executor's option 1 merges with a red check on
+  `main`; pass 1 recommends otherwise.
+- **N2**: the class `rule_choice` of the 9 cells, together with the labels
+  (ADR-015, "For the owner", items 1 and 4).
+- **Section 4.5**: the two `conflict` records (the dose-response model;
+  showing the pairwise comparisons when the dose response is not
+  significant) and the `asked` record (the Baseline rows). Each keeps the
+  value the build uses until the owner answers. The answers turn them
+  into records that cite the answer, with no change to a cell (both
+  readings of the Baseline rows give the same cells; the other answers
+  change cells, and D9 shows which).
+- The proposals for `catalog@2` go to the std track. Nothing is needed for
+  real-5a.
+
+None of these is the executor's to settle, and none blocks this signature.
+
+### Verdict of pass 2
+
+F1 and F2 are resolved. The records say what their sources say, fit the
+schema and quote the SAP and the Define-XML truly. The gate passes on a
+fresh clone of 2626186 (installed environment, not
+`scripts/clean_clone_gate.sh`), and the check `decisions` fails on the defects
+planted in the new conflict and asked records. G1 to G4 do not block. The
+merge still waits for the owner's choice on read-2a's kept dry run, which
+is not a defect of real-5a.
+
+Verdict: SIGNED

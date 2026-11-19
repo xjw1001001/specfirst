@@ -21,8 +21,9 @@ tests/defects (D9-efficacy) plants the first on the pilot.
 
 What it does not hold (review of real-5a, F4): the values of the records
 that set no registry option (the analysis set, the visit record, the
-baseline rows, the decimals) are held against nothing here; the decimals
-are seen by the comparison with the CSR and its exceptions. A record in
+baseline rows, the decimals) are held against nothing here, nor
+elsewhere: the proofs of the CSR's exceptions ask only that the decision
+they name exists (review of real-5a, G3). A record in
 conflict keeps the value the build uses until a person decides.
 """
 

@@ -34,7 +34,8 @@ In short, what the gate shows (section "The gate"):
   SDTM columns.
 - Each new method has vectors: 10, 9 and 11 cases, their expected values
   computed in exact fractions outside R; the R implementation gives them to
-  a relative 1e-12, and three defects planted in it are seen.
+  a relative 1e-12, and three planted defects are seen (an option fixed at
+  one value, as an implementation that ignored it would compute).
 - P1: two builds in two processes give 45 of 45 files with the same
   SHA-256.
 - Each new check fails on defects planted for it: D9-efficacy (13 plants),
@@ -91,8 +92,11 @@ and Stegun 26.7.3 and 26.7.4) in 60-digit decimals, a quantile by
 bisection. It shares nothing with lm, emmeans or car. ADR-012 says "a
 second R route, or published values"; an exact computation outside R is a
 stronger independence, and the CSR checks the methods again on real data.
-The vectors give every option every value, and `model-vectors` plants one
-defect per entry in the R implementation (an option ignored):
+The vectors give every option every value, and `model-vectors` runs them
+again with one option of each entry fixed at one value in the inputs, what
+an implementation that ignored the option would compute (the defect is
+planted in the inputs, not in the R code: review, F6; the reviewer's own
+plants in the R code were seen):
 
 ```text
 $ SPECFIRST_STRICT=1 pytest tests/methods -s -q   (gate check "method vectors")
@@ -214,6 +218,9 @@ The records `custom:eff-model-terms` and `custom:eff-pairwise` are
 `conflict` for the first and the third point: each cites both sides and
 keeps the value under which the CSR's numbers are reproduced, until the
 owner decides; an answer turns them into `stated` records that cite it.
+A status is a record's: `conflict` covers the whole record, although the
+documents disagree on a part of each (the covariate of the dose-response
+test; when the comparisons are shown) (review, G4).
 
 ## The gate
 
@@ -450,8 +457,10 @@ owner (section "For the base session").
 - The check `decisions` holds the values of the four records that set an
   option of the registry; the other four, among them
   `custom:eff-display-decimals`, are held against nothing there (review,
-  F4). The decimals are held by the comparison with the CSR and the 9
-  exceptions.
+  F4). Nothing else holds the decimals record either: the proofs of the 9
+  exceptions ask only that the decision they name exists (review, G3); a
+  record saying 1 decimal passes every check. The decimals themselves are
+  in the ARS operations' masks, which the CSR comparison does hold.
 - Three edge cases of the R implementation that no vector covers and the
   pilot does not meet (review, F5): with only one group of records the
   LS means stop with an error instead of a missing result; group IDs
@@ -525,13 +534,48 @@ The options, with the executor's recommendation first:
    the task folder would no longer show the reader the registry the
    machine uses.
 
+The independent review (pass 1, `docs/reports/real-5a.review.md`) agrees
+with the analysis and recommends otherwise on the order: not to merge with
+read-2a's gate failing on `main`, but to record the new kept dry run of arm
+R on the commit that will be merged, run read-2a's gate on a clean clone of
+it, and then merge; and, before real-5b changes the registry again, to make
+a kept run survive a change of the registry. Both orders need the owner's
+model run; they differ in whether `main` carries a failing check of
+read-2a until then.
+
 The base session's answer, in its words:
 
 @@ANSWER@@
 
 ## Review
 
-@@REVIEW@@
+Two passes by fresh-context reviewers (rule R7);
+`docs/reports/real-5a.review.md` has both in full.
+
+- Pass 1, on `d2e6d8b`: NOT SIGNED. Blocking: F1 (ADR-015 said generated
+  kits' bytes do not change; their kit.yaml pins the registry's hash) and
+  F2 (three decision records claimed more than their sources). Not
+  blocking: F3 to F9. The reviewer ran the method vectors, the gate (18 of
+  18), an independent fit in numpy and scipy (all 102 model-based gold rows
+  to a relative 5.3e-14), its own comparison of the grids with the CSR
+  pages (the same 9 cells differ), and defects of its own in models.R,
+  `csr.compare`, `grid.plan` and `decisions.problems`, each seen.
+- The fixes, in `2626186`: ADR-015 corrected; `custom:eff-model-terms` and
+  `custom:eff-pairwise` are `conflict`, citing both sides;
+  `custom:eff-baseline-rows` is `asked`; the check `decisions` counts a
+  record without a class by its status (it raised a TypeError on one);
+  F3, F4, F5 and F7 are in "What the checks do not cover", F8 is for the
+  owner in ADR-015, F9 is fixed.
+- Pass 2, on `2626186`: SIGNED. The reviewer validated the records against
+  the schema, read every quote in the SAP and the Define-XML, ran the gate
+  on a clone (18 of 18) and planted defects in the new records (each
+  seen). Not blocking: G1 (F6 said defects planted "in the R
+  implementation"; they are planted in the inputs), G2 (the gate evidence
+  was of `b8bb1f5`), G3 (nothing holds the decimals record), G4 (the quote
+  of the dose-response code was also the start of the other line; a
+  `conflict` covers a whole record). G1, G3 and G4 are corrected in the
+  text, and the quotes now end with the semicolon of each line; G2 by the
+  gates of the commit that merges (section "The gates on clean clones").
 
 ## GitHub and CI
 

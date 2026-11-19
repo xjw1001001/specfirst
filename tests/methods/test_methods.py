@@ -153,9 +153,10 @@ def model_vectors(tmp_path) -> list[str]:
     The expected values come from oracle_models (exact fractions and the
     closed form of the t distribution), which shares nothing with the R
     implementation. A vector file whose cases leave an option at one value
-    proves nothing about it; and a planted defect of the implementation (an
-    option ignored: the LS means always with equal weights, the comparisons
-    always with residual degrees of freedom, the dose always by its rank)
+    proves nothing about it; and what an implementation that ignored an
+    option would compute (the LS means always with equal weights, the
+    comparisons always with residual degrees of freedom, the dose always by
+    its rank), planted by fixing the option in the inputs, not in the R code,
     must be seen by the vectors (rule R5).
     """
     need_r()
