@@ -625,9 +625,14 @@ def decision_checks(root: Path, kit_id: str, folder: Path | None = None,
         return False
     for line in lines:
         out(line)
-    by_class = Counter(record.get("class") for record in records)
+    # A record in conflict has no class (section 4.5): it is counted by its status.
+    by_class = Counter(str(record.get("class") or f"no class ({record.get('status')})")
+                       for record in records)
+    by_status = Counter(str(record.get("status")) for record in records)
     out("decisions: by class: " + ", ".join(f"{count} {name}"
-                                           for name, count in sorted(by_class.items())))
+                                           for name, count in sorted(by_class.items()))
+        + "; by status: " + ", ".join(f"{count} {name}"
+                                      for name, count in sorted(by_status.items())))
     for problem in problems:
         out(f"decisions: {problem}")
     out(f"decisions: {'pass' if not problems else 'FAIL'}")

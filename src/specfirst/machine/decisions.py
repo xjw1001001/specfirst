@@ -16,7 +16,14 @@ holds them together:
   every analysis it binds resolves that option to the decision's value.
 
 A changed parameter in the reporting event, or a changed value in a record,
-is seen by the last rule; tests/unit/test_decisions.py plants both.
+is seen by the last rule; tests/unit/test_efficacy.py plants both, and
+tests/defects (D9-efficacy) plants the first on the pilot.
+
+What it does not hold (review of real-5a, F4): the values of the records
+that set no registry option (the analysis set, the visit record, the
+baseline rows, the decimals) are held against nothing here; the decimals
+are seen by the comparison with the CSR and its exceptions. A record in
+conflict keeps the value the build uses until a person decides.
 """
 
 from __future__ import annotations

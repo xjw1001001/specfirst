@@ -166,22 +166,25 @@ Eight records, `kits/cdiscpilot01/gold/decisions/efficacy.jsonl`, each
 fitting decision-record.schema.json. They are custom by their ID
 (`custom:eff-*`, PLAN.md sections 4.3 and 10). The brief asked for "status
 custom"; the schema's statuses are `stated`, `default`, `asked`,
-`conflict` and `not_applicable`, so the records are `stated` (ADR-015,
-decision 10). The gate check `decisions` holds them against the reporting
+`conflict` and `not_applicable` (ADR-015, decision 10). Five are `stated`;
+two are `conflict`, where the documents disagree and section 4.5 asks a
+person, each citing both sides and keeping the value the build uses; one
+is `asked`. The first version had all eight `stated`; the review (finding
+F2) showed that three of them claimed more than their sources. The gate check `decisions` holds them against the reporting
 event: every bound element exists, and the 45 options the model terms, the
 dose-response test, the pairwise inference and the weights set in the
 analyses they bind are the decisions' values.
 
-| Record | Unit | Value | Class | Source |
+| Record | Unit | Value | Status, class | Source |
 | --- | --- | --- | --- | --- |
-| `custom:eff-analysis-set` | tfl-efficacy-ancova | ADSL.EFFFL = Y; columns by ADSL.TRT01PN | document_rule | SAP 6; Define-XML, Table_14-3.01.R.2 |
-| `custom:eff-visit-record` | mod-bds-visits | the ADQSADAS record of the week with ANL01FL = Y (windowed; LOCF where the window is empty) | document_rule | SAP 8.1, 8.2; Define-XML |
-| `custom:eff-model-terms` | tfl-efficacy-ancova | factors treatment and SITEGR1, covariate BASE, no interaction | document_rule | SAP 10.1.1, 7.1, 15.1; Define-XML R.2 |
-| `custom:eff-dose-response` | tfl-efficacy-ancova | the planned dose (0, 54, 81) as a continuous variable; the test of its coefficient | document_rule | SAP 3.3, 10.1.1; Define-XML R.1 |
-| `custom:eff-pairwise` | tfl-efficacy-ancova | each dose against placebo, the high dose against the low; residual df; 95%; not adjusted | document_rule | SAP 10.1.1, template 5 footnote 3; Define-XML R.2 |
-| `custom:eff-lsmeans-weights` | tfl-efficacy-ancova | proportional (observed margins) | document_rule | Define-XML R.2 (`OM`) |
-| `custom:eff-baseline-rows` | tfl-efficacy-ancova | the Baseline rows summarize BASE on the week's records | study_input | none |
-| `custom:eff-display-decimals` | tfl-efficacy-ancova | the decimals of SAP template 5; CI limits 2 | document_rule | SAP template 5 |
+| `custom:eff-analysis-set` | tfl-efficacy-ancova | ADSL.EFFFL = Y; columns by ADSL.TRT01PN | stated, document_rule | SAP 6; Define-XML, Table_14-3.01.R.2 |
+| `custom:eff-visit-record` | mod-bds-visits | the ADQSADAS record of the week with ANL01FL = Y (windowed; LOCF where the window is empty) | stated, document_rule | SAP 8.1, 8.2; Define-XML |
+| `custom:eff-model-terms` | tfl-efficacy-ancova | factors treatment and SITEGR1, covariate BASE, no interaction | conflict | SAP 10.1.1, 7.1, 15.1 and Define-XML R.2 keep BASE; Define-XML R.1 (the dose-response test) leaves it out |
+| `custom:eff-dose-response` | tfl-efficacy-ancova | the planned dose (0, 54, 81) as a continuous variable; the test of its coefficient | stated, document_rule | SAP 3.3, 10.1.1; Define-XML R.1 |
+| `custom:eff-pairwise` | tfl-efficacy-ancova | each dose against placebo, the high dose against the low; residual df; 95%; not adjusted; shown always | conflict | SAP 10.1.1 and 7.3 (only if the dose response is significant) against template 5 (shown); Define-XML R.2 |
+| `custom:eff-lsmeans-weights` | tfl-efficacy-ancova | proportional (observed margins) | stated, document_rule | Define-XML R.2 (`OM`) |
+| `custom:eff-baseline-rows` | tfl-efficacy-ancova | the Baseline rows summarize BASE on the week's records | asked, study_input | none |
+| `custom:eff-display-decimals` | tfl-efficacy-ancova | the decimals of SAP template 5; CI limits 2 | stated, document_rule | SAP template 5 |
 
 What the data cannot show (printed by D9, not counted as caught): the LS
 means' weights change the 36 LS means and no printed cell, because the
@@ -206,6 +209,11 @@ population has a baseline record and a record in every week.
 - SAP 10.1.1 says "site"; SAP 7.1, the Define-XML and the CSR say the
   pooled site group. Gold uses SITEGR1; D9 plants SITEID and sees 26
   problems.
+
+The records `custom:eff-model-terms` and `custom:eff-pairwise` are
+`conflict` for the first and the third point: each cites both sides and
+keeps the value under which the CSR's numbers are reproduced, until the
+owner decides; an answer turns them into `stated` records that cite it.
 
 ## The gate
 
@@ -433,6 +441,24 @@ owner (section "For the base session").
   not rebuild the grid with the decision's other value.
 - The CSR's parse rests on its layout: a page of another shape (a table
   over two pages, a column without a count line) is refused, not read.
+- The CSR's page header "Population: Efficacy" is parsed and not compared
+  (review, F7); the analysis set is held by the counts under the column
+  labels, which are compared.
+- An exception's proof asks that its decision is a record of the kit, not
+  that the record is about the cell (review, F3: all 9 entries naming
+  `custom:eff-analysis-set` pass).
+- The check `decisions` holds the values of the four records that set an
+  option of the registry; the other four, among them
+  `custom:eff-display-decimals`, are held against nothing there (review,
+  F4). The decimals are held by the comparison with the CSR and the 9
+  exceptions.
+- Three edge cases of the R implementation that no vector covers and the
+  pilot does not meet (review, F5): with only one group of records the
+  LS means stop with an error instead of a missing result; group IDs
+  containing "-" make emmeans label the contrasts so that the lookup
+  misses them (missing results, no error); a factor nested in the groups
+  gives an LS mean where statement 7 says missing. They are open for
+  real-5b, with a vector each.
 
 ## Proposals for `catalog@2`
 
