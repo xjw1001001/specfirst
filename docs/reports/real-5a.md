@@ -8,14 +8,15 @@ amendment "of real-5a" at the end of docs/decisions/ADR-003.md.
 ## Verdict
 
 The gate passed. `scripts/clean_clone_gate.sh real-5a` exited 0 on a clean
-clone of commit `b8bb1f5` (this work with `main` `b0a5530` merged in), after
+clone of commit `29b15ca` (this work with `main` `1a94134` merged in), after
 a fresh install and a fresh fetch: 18 of 18 checks
 (`docs/reports/real-5a.clean-clone.gate.log`; section "The gate").
 
-Not merged yet. The gates of the other work packages on clean clones of
-the same commit are in section "The gates on clean clones"; read-2a's
-cannot pass after a change of the method registry, and that is put to the
-base session (section "For the base session").
+On clean clones of the same commit the gates real-2, real-3a, gen-2a,
+gen-3a, read-1a and std-1 passed; read-2a passed every check but "arm R,
+kept dry run", which cannot pass after a change of the method registry
+(section "The gates on clean clones"). That is put to the base session
+(section "For the base session").
 
 In short, what the gate shows (section "The gate"):
 
@@ -174,10 +175,11 @@ custom"; the schema's statuses are `stated`, `default`, `asked`,
 two are `conflict`, where the documents disagree and section 4.5 asks a
 person, each citing both sides and keeping the value the build uses; one
 is `asked`. The first version had all eight `stated`; the review (finding
-F2) showed that three of them claimed more than their sources. The gate check `decisions` holds them against the reporting
-event: every bound element exists, and the 45 options the model terms, the
-dose-response test, the pairwise inference and the weights set in the
-analyses they bind are the decisions' values.
+F2) showed that three of them claimed more than their sources. The gate
+check `decisions` holds them against the reporting event: every bound
+element exists, and the 45 options the model terms, the dose-response
+test, the pairwise inference and the weights set in the analyses they bind
+are the decisions' values.
 
 | Record | Unit | Value | Status, class | Source |
 | --- | --- | --- | --- | --- |
@@ -228,14 +230,16 @@ test; when the comparisons are shown) (review, G4).
 (`efficacy`, `decisions`); `method vectors` and `planted defects` require
 the tests of real-5a (`model-vectors`, `D9-efficacy`, `D10-trace-model`).
 
-It ran on a clean clone of `b8bb1f5` (a fresh clone, a fresh install of the
+It ran on a clean clone of `29b15ca` (a fresh clone, a fresh install of the
 Python environment and the R library, a fresh fetch), under the shared lock:
 
 ```text
-$ scripts/clean_clone_gate.sh real-5a /mnt/d/trial_work/specfirst/.git b8bb1f5
+$ scripts/clean_clone_gate.sh real-5a /mnt/d/trial_work/specfirst/.git 29b15ca
 clean clone gate real-5a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     b8bb1f5
+commit:     29b15ca
+...
+1158 passed, 25 deselected in 325.54s (0:05:25)
 ...
 model-based methods in R: 30 cases of 3 methods, 0 differences
 planted: model.ancova.dose_response always with dose = group_rank: 7 cases differ
@@ -264,36 +268,36 @@ grid Out14-3-05 against CSR Table 14-3.05: 51 cells, 40 of them printed in the C
 grid Out14-3-05: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
 grids: 4 outputs, pass
 efficacy: 3 tables, 153 cells; 144 equal the CSR; classified differences: 9 rule_choice
--- PASS efficacy (2.4 s)
+-- PASS efficacy (2.3 s)
 
 ...
 decisions: 8 records, 8 IDs; 45 options of analyses held against the decisions that set them; 0 problems
-decisions: by class: 7 document_rule, 1 study_input
+decisions: by class: 5 document_rule, 2 no class (conflict), 1 study_input; by status: 1 asked, 2 conflict, 5 stated
 decisions: pass
 ...
-PASS  environment          0.3 s
-PASS  pins                 0.7 s
+PASS  environment          0.4 s
+PASS  pins                 0.8 s
 PASS  lint                 0.0 s
 PASS  registry             0.0 s
-PASS  unit tests         324.1 s
-PASS  method vectors       6.0 s
+PASS  unit tests         326.0 s
+PASS  method vectors       5.9 s
 PASS  kit                  0.1 s
-PASS  P1 determinism      38.8 s
+PASS  P1 determinism      38.3 s
 PASS  P2 reproduction      0.3 s
 PASS  trace                1.1 s
 PASS  results              3.2 s
-PASS  grids                2.4 s
-PASS  efficacy             2.4 s
-PASS  decisions            0.5 s
-PASS  pilot tests         52.3 s
-PASS  planted defects     77.0 s
+PASS  grids                2.3 s
+PASS  efficacy             2.3 s
+PASS  decisions            0.4 s
+PASS  pilot tests         51.9 s
+PASS  planted defects     76.0 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE real-5a: PASS
 ```
 
 The complete output is `docs/reports/real-5a.clean-clone.gate.log`
-(588 lines). The trace check walks the efficacy grids like the
+(589 lines). The trace check walks the efficacy grids like the
 example's (`grid Out14-3-0x: 51 cells, 40 print a number; 40 of the 40 cells
 with results have a complete path to SDTM columns`). P1 builds the whole
 kit twice in two processes; the 45 files include the ARD of both result
@@ -315,8 +319,9 @@ calls (`build.csr_against`), and the decision records are held against the
 event planted without the baseline:
 
 ```text
-$ SPECFIRST_STRICT=1 pytest tests/defects -s -q -k "D8 or D9 or D10"
-  (on a clone of b8bb1f5 with the installed environment, under the lock)
+$ SPECFIRST_STRICT=1 pytest tests/defects -s -q
+  (the gate's check "planted defects" on the clean clone of 29b15ca; its log)
+...
 --- D9-efficacy
 unchanged: 0 problems
 planted, the ANCOVA without the baseline covariate: 19 problems, for example: Out14-3-01: cell:Out14-3-01/r11/c3: ours '0.253', CSR '0.245': a difference with no class
@@ -349,8 +354,9 @@ the edges to ADQSADAS.BASE, the covariate, are then left out:
   planted: the 2 columns without a reads edge emptied: 66 of 66 results change
   planted: the 2 columns without a reads edge rolled: 0 of 66 results change
 planted, the reads edges to ADQSADAS.BASE left out (12 edges): 1 problems, for example: with the 2 columns they have no reads edge to emptied, 66 results change, for example ard:An_ADAS_W08_Dose/Mth_AncovaDose_1_pval/*
-.
-3 passed, 58 deselected in 36.89s
+....................................................
+61 passed in 75.72s (0:01:15)
+-- PASS planted defects (76.0 s)
 ```
 
 Rolling BASE by one row changes nothing (the rows above a record are the
@@ -409,23 +415,26 @@ kit or anything a reader's task folder holds. It does:
   changes.
 - The gate read-2a holds its kept dry run of arm R
   (`src/specfirst/harness/kept/R-task-50024a8d7ca2/`) against the task and
-  the kit.yaml written again now. On a clone of `553375a` (this work with
-  main `b0a5530` merged in, the environment installed), every check of
-  read-2a passed but that one:
+  the kit.yaml written again now. On a clean clone of `29b15ca`, every
+  check of read-2a passed but that one
+  (`docs/reports/real-5a.read-2a.gate.log`):
 
 ```text
-$ PYTHONPATH=<clone>/src python -m specfirst gate read-2a --clean
-  (clone of 553375a, the environment installed; build/gates/read-2a/gate.log)
+$ scripts/clean_clone_gate.sh read-2a /mnt/d/trial_work/specfirst/.git 29b15ca
+...
+== [16/19] arm R, kept dry run: specfirst run check src/specfirst/harness/kept/R-... --kit KIT --score
 kept run R-task-50024a8d7ca2: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
   task task-50024a8d7ca2, built again now: task-04119188ff71
+  ...
   task: built again, 1 files differ from the task the run read, for example standard/methods/registry.json
   kit: kit.yaml is not the one the run read
   the task it read, within budget, valid output files, canary scan clean against the canaries of the kit written now: NO
 ...
-PASS  arm R, stub reader     10.6 s
+PASS  arm R, stub reader     10.5 s
 FAIL  arm R, kept dry run      2.4 s
+PASS  scratch removed      0.0 s
 ...
-GATE read-2a: FAIL   (the other 17 checks: PASS)
+GATE read-2a: FAIL   (the other 18 checks: PASS)
 ```
 
 Nothing else differs: the task differs in that one file. The kept run is
@@ -506,7 +515,33 @@ track, next to issue #23; nothing is added to `catalog@1`.
 
 ## The gates on clean clones
 
-Running at the time of writing; filled in when the chain has ended.
+All eight on clean clones of `29b15ca` (track/real with `main` `1a94134`,
+the std track's issues #26, #24 and #25, merged in), one after another,
+each under the shared lock with at most 4 processors:
+
+```text
+$ for wp in real-5a real-2 real-3a gen-2a gen-3a read-1a std-1 read-2a; do
+    flock /run/lock/specfirst-heavy.lock taskset -c 0-3 \
+      bash scripts/clean_clone_gate.sh $wp /mnt/d/trial_work/specfirst/.git 29b15ca
+  done
+real-5a: 18 PASS, 0 FAIL; clean clone gate real-5a: PASS    (603 s)
+real-2:  15 PASS, 0 FAIL; clean clone gate real-2: PASS     (595 s)
+real-3a: 16 PASS, 0 FAIL; clean clone gate real-3a: PASS    (599 s)
+gen-2a:  13 PASS, 0 FAIL; clean clone gate gen-2a: PASS     (672 s)
+gen-3a:  15 PASS, 0 FAIL; clean clone gate gen-3a: PASS     (470 s)
+read-1a: 14 PASS, 0 FAIL; clean clone gate read-1a: PASS    (1004 s)
+std-1:   12 PASS, 0 FAIL; clean clone gate std-1: PASS      (442 s)
+read-2a: 18 PASS, 1 FAIL; clean clone gate read-2a: FAIL    (481 s)
+         FAIL  arm R, kept dry run (section "Generated kits and reader task folders")
+```
+
+The logs of real-5a and read-2a are in docs/reports
+(`real-5a.clean-clone.gate.log`, `real-5a.read-2a.gate.log`); the six
+others are not copied, and the line per gate above is counted from their
+logs. The same eight ran before on clean clones of `90c5198`
+(this work before `main` moved to `1a94134`), with the same result: seven
+PASS, read-2a FAIL in that one check alone. The commits after `29b15ca`
+change docs/reports and docs/state only.
 
 ## For the base session
 
@@ -545,7 +580,8 @@ read-2a until then.
 
 The base session's answer, in its words:
 
-@@ANSWER@@
+Not answered yet at the time of writing (asked 2026-11-19; the question
+reached the base session).
 
 ## Review
 
@@ -575,8 +611,11 @@ Two passes by fresh-context reviewers (rule R7);
   of the dose-response code was also the start of the other line; a
   `conflict` covers a whole record). G1, G3 and G4 are corrected in the
   text, and the quotes now end with the semicolon of each line; G2 by the
-  gates of the commit that merges (section "The gates on clean clones").
+  gates of the commit that merges (section "The gates on clean clones"):
+  `29b15ca`, which is `90c5198` with `main` `1a94134` merged in; no file
+  both sides changed.
 
 ## GitHub and CI
 
-@@CI@@
+Not merged yet: the merge waits for the base session's answer (section
+"For the base session").
