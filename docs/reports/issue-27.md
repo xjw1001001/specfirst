@@ -23,8 +23,10 @@ computes every SOC x PT pair". The route is ADR-011.
 - Generated kits are the same bytes before and after (kits 1 to 4 of the
   seed `gen-2a`, 511 files); no task folder of a reader changes.
   CDISCPILOT01 does not go through the changed code.
-- Gates on clean clones: running when this was written (next sections).
-- Review: not yet done when this was written.
+- The gates real-2, real-3a, gen-2a, gen-3a and read-1a pass on clean
+  clones of `c7f09a0` (the change with `main` merged in).
+- The independent review signs (four findings, none blocking; nothing for
+  the owner).
 
 ## What the issue shows, and where it came from
 
@@ -349,11 +351,12 @@ time. The test times the same builds with `time.perf_counter()`:
 | 10 x 5, 300 records, 50 pairs | 1,500 | 150 | 2.0 s; 1.3 s | 0.1 s |
 | 20 x 10, 1,500 records, 200 pairs | 12,000 | 600 | 65.5 s; 65.7 s | 0.2 s |
 
-The two times before are the two runs above; the first build of a run
-also compiles the decisions, which the second size then takes from the
-cache of the machine. The issue's repro gave 1.1 s and 61.6 s before
-(wall clock, first section). With the R engine, the four tests took 257 s
-before and 2.7 s after.
+The two times before are the two runs above. Why the small case took
+2.0 s in one and 1.3 s in the other was not measured (review, F3); the
+issue's repro gave 1.1 s for it (wall clock, first section), and the
+review's own run 1.1 s. The large case is what the issue is about: 61.6 s
+to 65.7 s before, 0.2 s after. With the R engine, the four tests took
+257 s before and 2.7 s after.
 
 ## Generated kits and the task folder of a reader
 
@@ -402,13 +405,83 @@ For read-2a: a task folder holds the catalog, the method registry, the
 schemas, the skills and a generated kit. This change touches none of the
 first four, and the kits are the same bytes, so no task folder changes.
 
+The scorer's builds of the hand-made study HAND01 and of the pilot
+(`specfirst score hand|pilot`) also go through `resolve_groupings`. Their
+vectors include the adverse event summary only, whose one data-driven
+grouping is on ADSL; the review compiled the base vector with all four
+outputs and found that the listing differs in `Grp_AESOC` and
+`Grp_AEDECOD` only, and that every result of every other analysis has the
+same ID before and after (review, R3 and F3).
+
+What the vector does not hold (review, F4): it runs the scorer's build
+(`Machine.build`), not `gen.gold.build`, which calls the same two functions
+(`resolve_groupings`, `python_results`); and it has no analysis of event
+counts (`tfl.ae.socpt.counts` = `subjects_and_events`), which the template
+groups the same way.
+
 ## Gates on clean clones
 
-Running when this was written: `scripts/clean_clone_gate.sh` for real-2,
-real-3a, gen-2a, gen-3a and read-1a on commit `c7f09a0` (`e00bbb7` with
-`main` = `5b8ff85` merged in; `5b8ff85` changes README.md and ADR-012
-only), one at a time under the heavy lock, on at most four processors.
+`scripts/clean_clone_gate.sh` for real-2, real-3a, gen-2a, gen-3a and
+read-1a on commit `c7f09a0`: `e00bbb7` (the change) with `main` =
+`5b8ff85` merged in (`5b8ff85` changes README.md and ADR-012 only). One gate
+at a time, each under the heavy lock and on four processors; each clone
+gets a fresh install and a fresh fetch. The commits after `c7f09a0` change
+documents only (ADR-011, this report, the review, the logs, the state
+file). Each log is committed in full as
+`docs/reports/issue-27.<gate>.gate.log`.
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh <gate> <repository> c7f09a0
+real-2 exit 0 after 1957 s
+real-3a exit 0 after 1174 s
+gen-2a exit 0 after 744 s
+gen-3a exit 0 after 715 s
+read-1a exit 0 after 1483 s
+```
+
+The last lines of each log:
+
+| Gate | Checks | Unit tests | Last line |
+| --- | --- | --- | --- |
+| real-2 | 15 PASS, 0 FAIL | 1059 passed, 23 deselected | `GATE real-2: PASS`, `clean clone gate real-2: PASS` |
+| real-3a | 16 PASS, 0 FAIL | 1059 passed, 23 deselected | `GATE real-3a: PASS`, `clean clone gate real-3a: PASS` |
+| gen-2a | 13 PASS, 0 FAIL | 1059 passed, 23 deselected | `GATE gen-2a: PASS`, `clean clone gate gen-2a: PASS` |
+| gen-3a | 15 PASS, 0 FAIL | 1059 passed, 23 deselected | `GATE gen-3a: PASS`, `clean clone gate gen-3a: PASS` |
+| read-1a | 14 PASS, 0 FAIL | 1059 passed, 23 deselected | `GATE read-1a: PASS`, `clean clone gate read-1a: PASS` |
+
+The unit tests of every gate include the four tests of the vector, the R
+test among them (R is installed in the clones). real-2 and real-3a hold the
+CDISCPILOT01 kit: P1, P2, the trace, both engines on all 4,238 results and
+the grid of the adverse event summary pass unchanged. gen-2a writes its ten
+kits again and checks P1 to P4 and the agreement of the engines; gen-3a
+and read-1a build and score generated kits through the changed function.
+
+The gate read-2a is not on `main` and was not run (the base session
+changed the brief on 2026-11-18: this fix need not wait for read-2a,
+because no file a task folder holds changes; see "Generated kits").
 
 ## Review
 
-Not yet done when this was written.
+`docs/reports/issue-27.review.md`, by an independent agent with a fresh
+context (rule R7), of `5313741`: **SIGNED**, four findings, none blocking.
+Nothing is for the owner. What was done with each:
+
+- F1 (closed by the review itself): the final test file, R test included,
+  fails 4 of 4 on `3fbe162` in the reviewer's run.
+- F2: the gate section above, the review section here, and
+  `docs/state/real.md` ("Passed", the open layout kind, and "Handed over by
+  the fix of issue #27").
+- F3: the sentence that explained the two small-case times is gone; the
+  table and ADR-011 give the times as measured. ADR-011 says that the
+  rows of zeros that disappear follow from the code and are shown by no
+  run. The scorer's builds of HAND01 and of the pilot are named among what
+  does not change.
+- F4: ADR-011 and the state file name the wider limit (a grouping of
+  records whose categories a table shows in full), and this report what the
+  vector does not hold.
+
+The reviewer also ran the case before the fix (63.5 s for the larger
+build), planted the opposite defect (nothing listed: the vector fails 3 of
+3), recounted every count and percent of the four analyses by organ class
+and term (240 and 880 cells), compiled all four house templates before and
+after, and wrote the kits again: everything as the report says.
