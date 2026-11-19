@@ -1,24 +1,24 @@
 clean clone gate read-2a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     29b15ca
-clone:      /tmp/specfirst-clean-b2IXG7/specfirst
-environment and cache: /tmp/specfirst-clean-b2IXG7/env
+commit:     4d0b3cf
+clone:      /tmp/specfirst-clean-bKqwxV/specfirst
+environment and cache: /tmp/specfirst-clean-bKqwxV/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-b2IXG7/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-bKqwxV/specfirst
 
-$ git -C /tmp/specfirst-clean-b2IXG7/specfirst checkout --quiet --detach 29b15ca
+$ git -C /tmp/specfirst-clean-bKqwxV/specfirst checkout --quiet --detach 4d0b3cf
 
-$ git -C /tmp/specfirst-clean-b2IXG7/specfirst log -1 --format=%H %s
-29b15ca9f5758a41644ed3a30d038449cdc15590 Merge main (1a94134) into track/real: std-issues (ADR-014)
+$ git -C /tmp/specfirst-clean-bKqwxV/specfirst log -1 --format=%H %s
+4d0b3cf74ef21de2d2f25f12f7727e49183b3afe real-5a: the dry run of arm R made again and kept (owner's answer)
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-b2IXG7/env/venv-specfirst-878715524
-R library: /tmp/specfirst-clean-b2IXG7/env/r-lib
+python environment: /tmp/specfirst-clean-bKqwxV/env/venv-specfirst-1228384163
+R library: /tmp/specfirst-clean-bKqwxV/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-b2IXG7/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-b2IXG7/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-bKqwxV/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-bKqwxV/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-b2IXG7/env/venv-specfirst-878715524/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-bKqwxV/env/venv-specfirst-1228384163/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-b2IXG7/env/cache
+cache: /tmp/specfirst-clean-bKqwxV/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate read-2a --clean
-gate read-2a at commit 29b15ca9f5758a41644ed3a30d038449cdc15590 (clean)
+gate read-2a at commit 4d0b3cf74ef21de2d2f25f12f7727e49183b3afe (clean)
 
 == [1/19] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-b2IXG7/env/venv-specfirst-878715524/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-bKqwxV/env/venv-specfirst-1228384163/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.3 s)
+-- PASS environment (0.4 s)
 
 == [2/19] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-b2IXG7/env/cache
+cache: /tmp/specfirst-clean-bKqwxV/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,7 +84,7 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (0.9 s)
+-- PASS pins (1.0 s)
 
 == [3/19] lint: ruff check .
 All checks passed!
@@ -108,13 +108,13 @@ All checks passed!
 ........................................................................ [ 93%]
 ........................................................................ [ 99%]
 ......                                                                   [100%]
-1158 passed, 25 deselected in 333.57s (0:05:33)
--- PASS unit tests (334.1 s)
+1158 passed, 25 deselected in 336.92s (0:05:36)
+-- PASS unit tests (337.4 s)
 
 == [5/19] kit: specfirst.harness.gate.kit: kit 4 of the seed of the gate gen-2a, written again; its gold built again
 kit 4 of the set of the seed 'gen-2a': sfrrl2uh, split train, generator gen-3a.2, tier ask, kit.yaml 3ec2364e440d0a8e
 the gold built again is the gold of the kit: yes
--- PASS kit (11.7 s)
+-- PASS kit (11.6 s)
 
 == [6/19] skills: specfirst run skills: core-reader and the reading notes v0 of the four units; the leak check
 skill core-reader: 115 lines, written by hand
@@ -140,7 +140,7 @@ stage T, condition catalog: task task-05e7869b88a5, 7 decisions of tfl-ae-summar
   planted, a file outside the allow list: found (notes.txt: not a file a task holds)
   planted, a TASK.md that names the kit: found (names 'sfrrl2uh')
   planted, a TASK.md that names the seed: found (names 'gen-2a/kit-4')
--- PASS task (0.2 s)
+-- PASS task (0.1 s)
 
 == [8/19] oracle: specfirst ask: every decision of the task, and an entry the catalog lacks
 the oracle file of kit 4 lists 2 decisions: pop.efficacy.rule (mod-populations), ae.related.values (mod-ae-emergence)
@@ -152,8 +152,8 @@ asked about 23 decisions (every decision of the task and one entry the catalog l
 Windows reader: 30 arguments, 54 deny rules on 10 folders: as ADR-010 says
 Linux reader: 29 arguments, 22 deny rules on 4 folders: as ADR-010 says
 command: claude -p "Read TASK.md in the current folder and do the task it describes." --output-format stream-json --verbose --model claude-opus-5-5 --max-turns 100 --max-budget-usd 10 --permission-mode manual --permission-prompts none --tools Read,Glob,Grep,Write,Edit,Bash --allowedTools "Read,Glob,Grep,Write,Edit,Bash(bin/ask *),Bash(bin/ask:*),Bash(./bin/ask *),Bash(./bin/ask:*),Bash(bin/check *),Bash(bin/check:*),Bash(./bin/check *),Bash(./bin/check:*)" --disallowedTools Agent,Task,WebFetch,WebSearch,NotebookEdit,Skill,SlashCommand,BashOutput,KillShell --settings <run>/settings.json --setting-sources "" --strict-mcp-config --disable-slash-commands --no-session-persistence
-  planted, settings without the deny rule of the store: found (the settings do not deny the file tools on /tmp/specfirst-clean-b2IXG7/specfirst/src/specfirst/gen/rewrites)
-  planted, settings that let the reader write bin/: found (the settings let the reader write the tools in /tmp/specfirst-read2a-bsny7wo2/tasks/task-x/bin)
+  planted, settings without the deny rule of the store: found (the settings do not deny the file tools on /tmp/specfirst-clean-bKqwxV/specfirst/src/specfirst/gen/rewrites)
+  planted, settings that let the reader write bin/: found (the settings let the reader write the tools in /tmp/specfirst-read2a-tx4zfuhq/tasks/task-x/bin)
   planted, no --strict-mcp-config: found (no --strict-mcp-config)
   planted, an --add-dir: found (the command widens the reader's reach)
   planted, another model: found (--model is 'claude-sonnet-5-5', not 'claude-opus-5-5')
@@ -290,7 +290,7 @@ score (report only):
   wrong by value, and these data cannot show it (alone, on gold, it changes no cell and no axis of any dataset): trt.actual.source (mod-treatment), pop.randomized.rule (mod-populations)
   pending: ae.related.values (mod-ae-emergence) has no value, and the build left out what it binds (ADR-014); gold cells that wait for it: 3 of visible, 3 of twin
   case sfrrl2uh, arm S: not every score is 100%
--- PASS arm S (19.8 s)
+-- PASS arm S (19.4 s)
 
 == [14/19] arm C: specfirst run arm KIT --arm C --score
 run C-task-04119188ff71: arm C, stage C, condition notes, kit sfrrl2uh (train), task task-04119188ff71 (22 decisions)
@@ -336,7 +336,7 @@ score (report only):
     twin: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
     twin: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
   case sfrrl2uh, arm C: every score is 100%
--- PASS arm C (1.9 s)
+-- PASS arm C (1.8 s)
 
 == [15/19] arm R, stub reader: specfirst run arm KIT --arm R --stub PLAN --score; the run kept and checked
 run R-stub: arm R, stage C, condition notes, kit sfrrl2uh (train), task task-04119188ff71 (22 decisions)
@@ -390,37 +390,32 @@ the stub run kept and checked again: no problem
   planted, a kept run whose task differs by one file: found (task: built again, 1 files differ from the task the run read, for example TASK.md)
   planted, a kept transcript that read gold/summary.md: found (transcript:13: holds 'Arms in protocol order: MVK50 (Active, dose 50), PBO (Placebo, dose 0)' (from kit:gold/summary.md:4))
   planted, a kept record over budget: found (cost: usd is 99.0 in the record, 0.00044 from the transcript)
--- PASS arm R, stub reader (10.5 s)
+-- PASS arm R, stub reader (10.7 s)
 
 == [16/19] arm R, kept dry run: specfirst run check src/specfirst/harness/kept/R-... --kit KIT --score
-kept run R-task-50024a8d7ca2: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
-  task task-50024a8d7ca2, built again now: task-04119188ff71
-  cost: 20 turns, 71.3 s, tokens {'cache_read': 317644, 'cache_write': 43185, 'input': 22, 'output': 7084}, USD 0.5508 (CLI 0.5507768000000001); budget {'seconds': 2700, 'turns': 100, 'usd': 10.0}
+kept run R-task-04119188ff71: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  task task-04119188ff71, built again now: task-04119188ff71
+  cost: 23 turns, 73.8 s, tokens {'cache_read': 375403, 'cache_write': 44168, 'input': 24, 'output': 7585}, USD 0.5802 (CLI 0.5802206); budget {'seconds': 2700, 'turns': 100, 'usd': 10.0}
   asks: [('pop.efficacy.rule', 'mod-populations', True), ('ae.related.values', 'mod-ae-emergence', True)]
-  permission denials: 1
-  task: built again, 1 files differ from the task the run read, for example standard/methods/registry.json
-  kit: kit.yaml is not the one the run read
-  the task it read, within budget, valid output files, canary scan clean against the canaries of the kit written now: NO
+  permission denials: 2
+  the task it read, within budget, valid output files, canary scan clean against the canaries of the kit written now: yes
   score (report only):
     case sfrrl2uh, arm R, stage C
     reading score: 22 gold decisions of the units mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary
       by class:                     decisions  value       status      quote       span        
         document_rule                       7  7 of 7      7 of 7      7 of 7      7 of 7      
-        house_default                      13  12 of 13    11 of 13    13 of 13    11 of 13    
+        house_default                      13  13 of 13    13 of 13    13 of 13    13 of 13    
         study_input                         2  2 of 2      2 of 2      -           -           
       by unit:                      decisions  value       status      quote       span        
         mod-ae-emergence                    4  4 of 4      4 of 4      3 of 3      3 of 3      
-        mod-populations                     5  4 of 5      4 of 5      4 of 4      3 of 4      
+        mod-populations                     5  5 of 5      5 of 5      4 of 4      4 of 4      
         mod-treatment                       6  6 of 6      6 of 6      6 of 6      6 of 6      
-        tfl-ae-summary                      7  7 of 7      6 of 7      7 of 7      6 of 7      
+        tfl-ae-summary                      7  7 of 7      7 of 7      7 of 7      7 of 7      
       (value and status: right, of the decisions scored on it; quote: every quote stands in its document; span: a quote stands inside an anchor that gold cites)
       asks: 2 given, 2 in gold (decisions with the status asked), 2 of them right; precision 1.00, recall 1.00
       unmapped: 0 given, 0 in gold (what the catalog lacks), 0 of them right; precision none to judge, recall none to judge
-      decisions a reviewer would have to change: 1
-        disp.status.record (mod-populations), house_default: gold {"rule": "disposition_event"}; the candidate (given) has {"rule": "disposition_event_by_subcategory", "subcategory": "STUDY PARTICIPATION"}
-        disp.status.record (mod-populations): wrong in status, span: cites protocol#4.3/p1; gold cites house#2/s4
-        tfl.output.include (tfl-ae-summary): wrong in status, span: cites sap#4.1/p1; gold cites house#7/s1
-      unseparated in gold, compared by value only: 8 trt.actual.source (right), trt.end.source (right), date.studyday.origin (right), pop.randomized.rule (right), pop.safety.rule (right), pop.safety.grouping (right), disp.status.record (wrong), tfl.rounding.rule (right)
+      decisions a reviewer would have to change: 0
+      unseparated in gold, compared by value only: 8 trt.actual.source (right), trt.end.source (right), date.studyday.origin (right), pop.randomized.rule (right), pop.safety.rule (right), pop.safety.grouping (right), disp.status.record (right), tfl.rounding.rule (right)
     build score:
       visible: valid: yes
       visible: produced: 1 of 1 outputs in gold
@@ -436,16 +431,15 @@ kept run R-task-50024a8d7ca2: arm R, reader claude-code, model claude-opus-5-5, 
       twin: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
       twin: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
       twin: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
-    wrong by value, and these data cannot show it (alone, on gold, it changes no cell and no axis of any dataset): disp.status.record (mod-populations)
-    case sfrrl2uh, arm R: not every score is 100%
--- FAIL arm R, kept dry run (2.4 s)
+    case sfrrl2uh, arm R: every score is 100%
+-- PASS arm R, kept dry run (1.8 s)
 
 == [17/19] scratch removed: the kit, tasks and runs of the gate
 the kit, the tasks and the runs of the gate are removed
 -- PASS scratch removed (0.0 s)
 
 == [18/19] cache untouched: specfirst fetch --verify
-cache: /tmp/specfirst-clean-b2IXG7/env/cache
+cache: /tmp/specfirst-clean-bKqwxV/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -466,27 +460,31 @@ fetch: every pin verified
 -- PASS cache untouched (0.1 s)
 
 == [19/19] ASCII: python -m specfirst.asciicheck
-ASCII check: 568 files checked, 0 with non-ASCII bytes
+ASCII check: 569 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.3 s
-PASS  pins                 0.9 s
+PASS  environment          0.4 s
+PASS  pins                 1.0 s
 PASS  lint                 0.0 s
-PASS  unit tests         334.1 s
-PASS  kit                 11.7 s
+PASS  unit tests         337.4 s
+PASS  kit                 11.6 s
 PASS  skills               1.2 s
-PASS  task                 0.2 s
+PASS  task                 0.1 s
 PASS  oracle               0.1 s
 PASS  adapter              0.0 s
 PASS  budget               0.0 s
 PASS  output files         0.1 s
 PASS  canary scan          4.7 s
-PASS  arm S               19.8 s
-PASS  arm C                1.9 s
-PASS  arm R, stub reader     10.5 s
-FAIL  arm R, kept dry run      2.4 s
+PASS  arm S               19.4 s
+PASS  arm C                1.8 s
+PASS  arm R, stub reader     10.7 s
+PASS  arm R, kept dry run      1.8 s
 PASS  scratch removed      0.0 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
-GATE read-2a: FAIL
-clean clone gate read-2a: FAIL ('specfirst gate read-2a --clean' exited 1; clone: /tmp/specfirst-clean-b2IXG7/specfirst, which does not last)
+GATE read-2a: PASS
+
+clean clone gate read-2a: PASS (clone: /tmp/specfirst-clean-bKqwxV/specfirst)
+The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
+minute after the last command ends. Copy what must be kept in the same command that
+runs this script (docs/lessons.md, lesson 39). The log is in build/gates/read-2a/ here.

@@ -1,24 +1,24 @@
 clean clone gate real-5a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     29b15ca
-clone:      /tmp/specfirst-clean-dzKX4t/specfirst
-environment and cache: /tmp/specfirst-clean-dzKX4t/env
+commit:     4d0b3cf
+clone:      /tmp/specfirst-clean-JM9Xb3/specfirst
+environment and cache: /tmp/specfirst-clean-JM9Xb3/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-dzKX4t/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-JM9Xb3/specfirst
 
-$ git -C /tmp/specfirst-clean-dzKX4t/specfirst checkout --quiet --detach 29b15ca
+$ git -C /tmp/specfirst-clean-JM9Xb3/specfirst checkout --quiet --detach 4d0b3cf
 
-$ git -C /tmp/specfirst-clean-dzKX4t/specfirst log -1 --format=%H %s
-29b15ca9f5758a41644ed3a30d038449cdc15590 Merge main (1a94134) into track/real: std-issues (ADR-014)
+$ git -C /tmp/specfirst-clean-JM9Xb3/specfirst log -1 --format=%H %s
+4d0b3cf74ef21de2d2f25f12f7727e49183b3afe real-5a: the dry run of arm R made again and kept (owner's answer)
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-dzKX4t/env/venv-specfirst-2230567493
-R library: /tmp/specfirst-clean-dzKX4t/env/r-lib
+python environment: /tmp/specfirst-clean-JM9Xb3/env/venv-specfirst-2230048515
+R library: /tmp/specfirst-clean-JM9Xb3/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-dzKX4t/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-dzKX4t/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-JM9Xb3/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-JM9Xb3/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-dzKX4t/env/venv-specfirst-2230567493/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-JM9Xb3/env/venv-specfirst-2230048515/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-dzKX4t/env/cache
+cache: /tmp/specfirst-clean-JM9Xb3/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate real-5a --clean
-gate real-5a at commit 29b15ca9f5758a41644ed3a30d038449cdc15590 (clean)
+gate real-5a at commit 4d0b3cf74ef21de2d2f25f12f7727e49183b3afe (clean)
 
 == [1/18] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-dzKX4t/env/venv-specfirst-2230567493/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-JM9Xb3/env/venv-specfirst-2230048515/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.4 s)
+-- PASS environment (0.3 s)
 
 == [2/18] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-dzKX4t/env/cache
+cache: /tmp/specfirst-clean-JM9Xb3/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,7 +84,7 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (0.8 s)
+-- PASS pins (0.9 s)
 
 == [3/18] lint: ruff check .
 All checks passed!
@@ -124,8 +124,8 @@ methods: 12 entries
 ........................................................................ [ 93%]
 ........................................................................ [ 99%]
 ......                                                                   [100%]
-1158 passed, 25 deselected in 325.54s (0:05:25)
--- PASS unit tests (326.0 s)
+1158 passed, 25 deselected in 340.68s (0:05:40)
+-- PASS unit tests (341.2 s)
 
 == [6/18] method vectors: SPECFIRST_STRICT=1 pytest tests/methods -s -q
 
@@ -160,17 +160,17 @@ planted: model.ancova.dose_response always with dose = group_rank: 7 cases diffe
 planted: model.ancova.lsmeans always with weights = equal: 1 cases differ
 planted: model.ancova.pairwise always with df = residual: 1 cases differ
 ..
-7 passed in 5.76s
--- PASS method vectors (5.9 s)
+7 passed in 6.16s
+-- PASS method vectors (6.3 s)
 
 == [7/18] kit: specfirst kit assemble cdiscpilot01
-study data in git (E20): 568 maintained files checked, 0 problems
-kit cdiscpilot01: 67 files match their pinned SHA-256 (26 inputs, 41 gold) in /tmp/specfirst-clean-dzKX4t/specfirst/build/kits/cdiscpilot01
+study data in git (E20): 569 maintained files checked, 0 problems
+kit cdiscpilot01: 67 files match their pinned SHA-256 (26 inputs, 41 gold) in /tmp/specfirst-clean-JM9Xb3/specfirst/build/kits/cdiscpilot01
 -- PASS kit (0.1 s)
 
 == [8/18] P1 determinism: specfirst check cdiscpilot01 --twice (its first part)
-build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 1277 nodes, 4750 edges, 45 files in /tmp/specfirst-clean-dzKX4t/specfirst/build/p1/cdiscpilot01/first)
-build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 1277 nodes, 4750 edges, 45 files in /tmp/specfirst-clean-dzKX4t/specfirst/build/p1/cdiscpilot01/second)
+build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 1277 nodes, 4750 edges, 45 files in /tmp/specfirst-clean-JM9Xb3/specfirst/build/p1/cdiscpilot01/first)
+build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 1277 nodes, 4750 edges, 45 files in /tmp/specfirst-clean-JM9Xb3/specfirst/build/p1/cdiscpilot01/second)
 same      76c528ce523c6a13 76c528ce523c6a13 gold/ard/common-safety-displays.jsonl
 same      de20ea90cae0946d de20ea90cae0946d gold/ard/common-safety-displays.r.jsonl
 same      b965125f0501f502 b965125f0501f502 gold/ard/efficacy-adas.jsonl
@@ -217,7 +217,7 @@ same      5b4ccf4019ca253e 5b4ccf4019ca253e gold/resolved/adsl.json
 same      2faaa1493e74c8c1 2faaa1493e74c8c1 gold/resolved/adtte.json
 same      b3c5b4f08f26ae5a b3c5b4f08f26ae5a gold/resolved/advs.json
 P1 determinism: 45 of 45 files have the same SHA-256 in both builds
--- PASS P1 determinism (38.3 s)
+-- PASS P1 determinism (41.7 s)
 
 == [9/18] P2 reproduction: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its second part)
 ADSL      rows=   254 cols= 48 cells=   12192 mismatched=     0 storage_type_diffs=28
@@ -234,7 +234,7 @@ TOTAL cells=9119605 mismatched=0
 numbers equal within the tolerance but not exactly: 1869 cells, largest difference 4.5e-13
 storage type only, same values (reference -> built): large_string -> string in 221 columns
 P2 reproduction: 10 of 10 datasets equal their reference (numeric tolerance 1e-10)
--- PASS P2 reproduction (0.3 s)
+-- PASS P2 reproduction (0.4 s)
 
 == [10/18] trace: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its third part)
 dataset   columns to SDTM by rows literal  gaps
@@ -274,7 +274,7 @@ grid Out14-3-05: 51 cells, 40 print a number; 40 of the 40 cells with results ha
 grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
   through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
 trace: complete
--- PASS trace (1.1 s)
+-- PASS trace (1.2 s)
 
 == [11/18] results: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its fourth part)
 ARS schema (gold/spec/ars/ars_ldm.schema.json): gold/spec/ars/common-safety-displays.json fits; gold/ars/common-safety-displays.json fits
@@ -315,7 +315,7 @@ results efficacy-adas: gold/ars/efficacy-adas.json carries the 267 results of th
 results efficacy-adas: 102 results of model-based methods (R only, section 7.3): the gold ARD holds them as the R engine gave them, each stamped with the registry's hash of its options
 results efficacy-adas, engines: 165 results in both, 0 disagree; largest relative difference 2.1e-16 (allowed 1e-09)
 results: pass
--- PASS results (3.2 s)
+-- PASS results (3.7 s)
 
 == [12/18] grids: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its last part), the ARS example
 grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
@@ -336,7 +336,7 @@ grid Out14-3-05 against CSR Table 14-3.05: 51 cells, 40 of them printed in the C
   cell:Out14-3-05/r17/c3: ours '(-1.95;1.14)', CSR '(-1.9;1.1)' (rule_choice)
 grid Out14-3-05: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
 grids: 4 outputs, pass
--- PASS grids (2.3 s)
+-- PASS grids (2.5 s)
 
 == [13/18] efficacy: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its last part), the CSR tables
 grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
@@ -358,13 +358,13 @@ grid Out14-3-05 against CSR Table 14-3.05: 51 cells, 40 of them printed in the C
 grid Out14-3-05: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
 grids: 4 outputs, pass
 efficacy: 3 tables, 153 cells; 144 equal the CSR; classified differences: 9 rule_choice
--- PASS efficacy (2.3 s)
+-- PASS efficacy (2.5 s)
 
 == [14/18] decisions: specfirst.machine.build.decision_checks on build/p1/cdiscpilot01/first
 decisions: 8 records, 8 IDs; 45 options of analyses held against the decisions that set them; 0 problems
 decisions: by class: 5 document_rule, 2 no class (conflict), 1 study_input; by status: 1 asked, 2 conflict, 5 stated
 decisions: pass
--- PASS decisions (0.4 s)
+-- PASS decisions (0.5 s)
 
 == [15/18] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -s -q
 
@@ -422,8 +422,8 @@ Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.36 
 embedded results: 3735; reproduced as printed: 3711
 rows per analysis: 31 analyses, 4238 rows; expected 31 analyses, 4238 rows
 .
-6 passed in 51.69s
--- PASS pilot tests (51.9 s)
+6 passed in 54.07s
+-- PASS pilot tests (54.3 s)
 
 == [16/18] planted defects: SPECFIRST_STRICT=1 pytest tests/defects -s -q
 
@@ -535,11 +535,11 @@ planted, an exception that names no decision record: 1 problems, for example: Ou
   planted: the 2 columns without a reads edge rolled: 0 of 66 results change
 planted, the reads edges to ADQSADAS.BASE left out (12 edges): 1 problems, for example: with the 2 columns they have no reads edge to emptied, 66 results change, for example ard:An_ADAS_W08_Dose/Mth_AncovaDose_1_pval/*
 ....................................................
-61 passed in 75.72s (0:01:15)
--- PASS planted defects (76.0 s)
+61 passed in 78.39s (0:01:18)
+-- PASS planted defects (78.7 s)
 
 == [17/18] cache untouched: specfirst fetch --verify
-cache: /tmp/specfirst-clean-dzKX4t/env/cache
+cache: /tmp/specfirst-clean-JM9Xb3/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -560,30 +560,30 @@ fetch: every pin verified
 -- PASS cache untouched (0.1 s)
 
 == [18/18] ASCII: python -m specfirst.asciicheck
-ASCII check: 568 files checked, 0 with non-ASCII bytes
+ASCII check: 569 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.4 s
-PASS  pins                 0.8 s
+PASS  environment          0.3 s
+PASS  pins                 0.9 s
 PASS  lint                 0.0 s
 PASS  registry             0.0 s
-PASS  unit tests         326.0 s
-PASS  method vectors       5.9 s
+PASS  unit tests         341.2 s
+PASS  method vectors       6.3 s
 PASS  kit                  0.1 s
-PASS  P1 determinism      38.3 s
-PASS  P2 reproduction      0.3 s
-PASS  trace                1.1 s
-PASS  results              3.2 s
-PASS  grids                2.3 s
-PASS  efficacy             2.3 s
-PASS  decisions            0.4 s
-PASS  pilot tests         51.9 s
-PASS  planted defects     76.0 s
+PASS  P1 determinism      41.7 s
+PASS  P2 reproduction      0.4 s
+PASS  trace                1.2 s
+PASS  results              3.7 s
+PASS  grids                2.5 s
+PASS  efficacy             2.5 s
+PASS  decisions            0.5 s
+PASS  pilot tests         54.3 s
+PASS  planted defects     78.7 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE real-5a: PASS
 
-clean clone gate real-5a: PASS (clone: /tmp/specfirst-clean-dzKX4t/specfirst)
+clean clone gate real-5a: PASS (clone: /tmp/specfirst-clean-JM9Xb3/specfirst)
 The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
 minute after the last command ends. Copy what must be kept in the same command that
 runs this script (docs/lessons.md, lesson 39). The log is in build/gates/real-5a/ here.

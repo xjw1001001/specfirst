@@ -8,18 +8,18 @@ amendment "of real-5a" at the end of docs/decisions/ADR-003.md.
 ## Verdict
 
 The gate passed. `scripts/clean_clone_gate.sh real-5a` exited 0 on a clean
-clone of commit `29b15ca` (this work with `main` `1a94134` merged in), after
-a fresh install and a fresh fetch: 18 of 18 checks
-(`docs/reports/real-5a.clean-clone.gate.log`; section "The gate").
+clone of commit `4d0b3cf` (this work with `main` `1a94134` merged in and
+the dry run of arm R made again), after a fresh install and a fresh fetch:
+18 of 18 checks (`docs/reports/real-5a.clean-clone.gate.log`; section "The
+gate").
 
-On clean clones of the same commit the gates real-2, real-3a, gen-2a,
-gen-3a, read-1a and std-1 passed; read-2a passed every check but "arm R,
-kept dry run", which cannot pass after a change of the method registry
-(section "The gates on clean clones"). At the owner's answer (section "For
-the base session") the dry run of arm R was made again and kept in place of
-the old one (USD 0.58; section "The dry run of arm R, made again"), and all
-eight gates run again on clean clones of the commit that holds it (at the
-time of writing; section "The gates on clean clones").
+A change of the method registry makes read-2a's kept dry run of arm R
+fail (section "Generated kits and reader task folders"). At the owner's
+answer (section "For the base session") that run was made again and kept
+in place of the old one (USD 0.58; section "The dry run of arm R, made
+again"). On clean clones of `4d0b3cf` all eight gates passed: real-5a,
+read-2a (19 of 19, the kept run included), real-2, real-3a, gen-2a, gen-3a,
+read-1a and std-1 (section "The gates on clean clones").
 
 In short, what the gate shows (section "The gate"):
 
@@ -233,16 +233,16 @@ test; when the comparisons are shown) (review, G4).
 (`efficacy`, `decisions`); `method vectors` and `planted defects` require
 the tests of real-5a (`model-vectors`, `D9-efficacy`, `D10-trace-model`).
 
-It ran on a clean clone of `29b15ca` (a fresh clone, a fresh install of the
+It ran on a clean clone of `4d0b3cf` (a fresh clone, a fresh install of the
 Python environment and the R library, a fresh fetch), under the shared lock:
 
 ```text
-$ scripts/clean_clone_gate.sh real-5a /mnt/d/trial_work/specfirst/.git 29b15ca
+$ scripts/clean_clone_gate.sh real-5a /mnt/d/trial_work/specfirst/.git 4d0b3cf
 clean clone gate real-5a
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     29b15ca
+commit:     4d0b3cf
 ...
-1158 passed, 25 deselected in 325.54s (0:05:25)
+1158 passed, 25 deselected in 340.68s (0:05:40)
 ...
 model-based methods in R: 30 cases of 3 methods, 0 differences
 planted: model.ancova.dose_response always with dose = group_rank: 7 cases differ
@@ -271,29 +271,29 @@ grid Out14-3-05 against CSR Table 14-3.05: 51 cells, 40 of them printed in the C
 grid Out14-3-05: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
 grids: 4 outputs, pass
 efficacy: 3 tables, 153 cells; 144 equal the CSR; classified differences: 9 rule_choice
--- PASS efficacy (2.3 s)
+-- PASS efficacy (2.5 s)
 
 ...
 decisions: 8 records, 8 IDs; 45 options of analyses held against the decisions that set them; 0 problems
 decisions: by class: 5 document_rule, 2 no class (conflict), 1 study_input; by status: 1 asked, 2 conflict, 5 stated
 decisions: pass
 ...
-PASS  environment          0.4 s
-PASS  pins                 0.8 s
+PASS  environment          0.3 s
+PASS  pins                 0.9 s
 PASS  lint                 0.0 s
 PASS  registry             0.0 s
-PASS  unit tests         326.0 s
-PASS  method vectors       5.9 s
+PASS  unit tests         341.2 s
+PASS  method vectors       6.3 s
 PASS  kit                  0.1 s
-PASS  P1 determinism      38.3 s
-PASS  P2 reproduction      0.3 s
-PASS  trace                1.1 s
-PASS  results              3.2 s
-PASS  grids                2.3 s
-PASS  efficacy             2.3 s
-PASS  decisions            0.4 s
-PASS  pilot tests         51.9 s
-PASS  planted defects     76.0 s
+PASS  P1 determinism      41.7 s
+PASS  P2 reproduction      0.4 s
+PASS  trace                1.2 s
+PASS  results              3.7 s
+PASS  grids                2.5 s
+PASS  efficacy             2.5 s
+PASS  decisions            0.5 s
+PASS  pilot tests         54.3 s
+PASS  planted defects     78.7 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE real-5a: PASS
@@ -323,7 +323,7 @@ event planted without the baseline:
 
 ```text
 $ SPECFIRST_STRICT=1 pytest tests/defects -s -q
-  (the gate's check "planted defects" on the clean clone of 29b15ca; its log)
+  (the gate's check "planted defects" on the clean clone of 4d0b3cf; its log)
 ...
 --- D9-efficacy
 unchanged: 0 problems
@@ -358,8 +358,8 @@ the edges to ADQSADAS.BASE, the covariate, are then left out:
   planted: the 2 columns without a reads edge rolled: 0 of 66 results change
 planted, the reads edges to ADQSADAS.BASE left out (12 edges): 1 problems, for example: with the 2 columns they have no reads edge to emptied, 66 results change, for example ard:An_ADAS_W08_Dose/Mth_AncovaDose_1_pval/*
 ....................................................
-61 passed in 75.72s (0:01:15)
--- PASS planted defects (76.0 s)
+61 passed in 78.39s (0:01:18)
+-- PASS planted defects (78.7 s)
 ```
 
 Rolling BASE by one row changes nothing (the rows above a record are the
@@ -418,9 +418,10 @@ kit or anything a reader's task folder holds. It does:
   changes.
 - The gate read-2a holds its kept dry run of arm R
   (`src/specfirst/harness/kept/R-task-50024a8d7ca2/`) against the task and
-  the kit.yaml written again now. On a clean clone of `29b15ca`, every
-  check of read-2a passed but that one
-  (`docs/reports/real-5a.read-2a.gate.log`):
+  the kit.yaml written again now. On a clean clone of `29b15ca`, before
+  the run was made again, every check of read-2a passed but that one (its
+  log was `docs/reports/real-5a.read-2a.gate.log` at commit `6bad961`; the
+  file now holds the log of `4d0b3cf`, where all 19 pass):
 
 ```text
 $ scripts/clean_clone_gate.sh read-2a /mnt/d/trial_work/specfirst/.git 29b15ca
@@ -494,9 +495,17 @@ tools, as the old run did after its one denial. The old kept run
 
 Model use of real-5a: USD 0.58, computed from the tokens at the prices of
 ADR-010, decision 7, on the owner's subscription; the CLI's own figure is
-the same to the fourth decimal. The kept files hold no local path (the
-home folder is `<home>`, the checkout `<checkout>`, as `runs.keep` writes
-them), no account name and no key (`api_key_source: none`); they are ASCII.
+the same to the fourth decimal. The kept files hold no user's path: the
+home folder is `<home>` and the checkout `<checkout>`, as `runs.keep` writes
+them. Paths of the machine stay, as in the old run (review, K2): the drive
+folder of the checkouts, the WSL folder of the kit, the Python environment,
+and the CLI's folders under `<home>`. No account name, no computer name and
+no key (`api_key_source: none`); they are ASCII. The transcript keeps the
+CLI's `rate_limit_event`: the utilization of the subscription's 5-hour and
+7-day windows (0.01 and 0.58) and that overage is disabled for the
+organization. It is no credential, and the old run on `main` has the same
+event (review, K3); whether it may stay in a public repository is the
+owner's to say (section "For the owner").
 
 The kept run checked again, as the gate does:
 
@@ -519,6 +528,26 @@ case sfrrl2uh, arm R: every score is 100%
 The scores are report only (they decide nothing in a gate); the old run
 had 21 of 22 values right. One run of a model says nothing about a
 difference between the two.
+
+The gate read-2a on a clean clone of `4d0b3cf`, the commit that holds the
+new run (`docs/reports/real-5a.read-2a.gate.log`):
+
+```text
+$ scripts/clean_clone_gate.sh read-2a /mnt/d/trial_work/specfirst/.git 4d0b3cf
+...
+== [16/19] arm R, kept dry run: specfirst run check src/specfirst/harness/kept/R-... --kit KIT --score
+kept run R-task-04119188ff71: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  task task-04119188ff71, built again now: task-04119188ff71
+...
+    case sfrrl2uh, arm R: every score is 100%
+-- PASS arm R, kept dry run (1.8 s)
+...
+PASS  arm R, stub reader     10.7 s
+PASS  arm R, kept dry run      1.8 s
+PASS  scratch removed      0.0 s
+...
+GATE read-2a: PASS
+```
 
 What stays as it was: the isolation probe kept beside it
 (`src/specfirst/harness/kept/probe-task-50024a8d7ca2/`) is of the old task.
@@ -606,33 +635,38 @@ track, next to issue #23; nothing is added to `catalog@1`.
 
 ## The gates on clean clones
 
-All eight on clean clones of `29b15ca` (track/real with `main` `1a94134`,
-the std track's issues #26, #24 and #25, merged in), one after another,
-each under the shared lock with at most 4 processors:
+All eight on clean clones of `4d0b3cf`, the commit that holds the new kept
+run (track/real with `main` `1a94134`, the std track's issues #26, #24 and
+#25, merged in at `29b15ca`), one after another, each under the shared lock
+with at most 4 processors:
 
 ```text
-$ for wp in real-5a real-2 real-3a gen-2a gen-3a read-1a std-1 read-2a; do
+$ for wp in real-5a read-2a real-2 real-3a gen-2a gen-3a read-1a std-1; do
     flock /run/lock/specfirst-heavy.lock taskset -c 0-3 \
-      bash scripts/clean_clone_gate.sh $wp /mnt/d/trial_work/specfirst/.git 29b15ca
+      bash scripts/clean_clone_gate.sh $wp /mnt/d/trial_work/specfirst/.git 4d0b3cf
   done
-real-5a: 18 PASS, 0 FAIL; clean clone gate real-5a: PASS    (603 s)
-real-2:  15 PASS, 0 FAIL; clean clone gate real-2: PASS     (595 s)
-real-3a: 16 PASS, 0 FAIL; clean clone gate real-3a: PASS    (599 s)
-gen-2a:  13 PASS, 0 FAIL; clean clone gate gen-2a: PASS     (672 s)
-gen-3a:  15 PASS, 0 FAIL; clean clone gate gen-3a: PASS     (470 s)
-read-1a: 14 PASS, 0 FAIL; clean clone gate read-1a: PASS    (1004 s)
-std-1:   12 PASS, 0 FAIL; clean clone gate std-1: PASS      (442 s)
-read-2a: 18 PASS, 1 FAIL; clean clone gate read-2a: FAIL    (481 s)
-         FAIL  arm R, kept dry run (section "Generated kits and reader task folders")
+real-5a: 18 PASS, 0 FAIL; clean clone gate real-5a: PASS    (645 s)
+read-2a: 19 PASS, 0 FAIL; clean clone gate read-2a: PASS    (601 s)
+real-2:  15 PASS, 0 FAIL; clean clone gate real-2: PASS     (1230 s)
+real-3a: 16 PASS, 0 FAIL; clean clone gate real-3a: PASS    (1681 s)
+gen-2a:  13 PASS, 0 FAIL; clean clone gate gen-2a: PASS     (750 s)
+gen-3a:  15 PASS, 0 FAIL; clean clone gate gen-3a: PASS     (472 s)
+read-1a: 14 PASS, 0 FAIL; clean clone gate read-1a: PASS    (1020 s)
+std-1:   12 PASS, 0 FAIL; clean clone gate std-1: PASS      (447 s)
 ```
 
-The logs of real-5a and read-2a are in docs/reports
+The seconds include the waits for the lock, which other sessions held in
+between. The logs of real-5a and read-2a are in docs/reports
 (`real-5a.clean-clone.gate.log`, `real-5a.read-2a.gate.log`); the six
 others are not copied, and the line per gate above is counted from their
-logs. The same eight ran before on clean clones of `90c5198`
-(this work before `main` moved to `1a94134`), with the same result: seven
-PASS, read-2a FAIL in that one check alone. The commits after `29b15ca`
-change docs/reports and docs/state only.
+logs. read-2a passes all 19 checks, "arm R, kept dry run" among them
+(section "The dry run of arm R, made again").
+
+Before the run was made again, the same eight ran on clean clones of
+`29b15ca` and of `90c5198` (this work before `main` moved to `1a94134`):
+seven PASS each time, read-2a 18 PASS and FAIL in "arm R, kept dry run"
+alone (section "Generated kits and reader task folders"). The commits
+after `4d0b3cf` change docs/reports and docs/state only.
 
 ## For the base session
 
@@ -699,8 +733,8 @@ R, made again".
 
 ## Review
 
-Two passes by fresh-context reviewers (rule R7);
-`docs/reports/real-5a.review.md` has both in full.
+Three passes by fresh-context reviewers (rule R7);
+`docs/reports/real-5a.review.md` has them in full.
 
 - Pass 1, on `d2e6d8b`: NOT SIGNED. Blocking: F1 (ADR-015 said generated
   kits' bytes do not change; their kit.yaml pins the registry's hash) and
@@ -725,11 +759,67 @@ Two passes by fresh-context reviewers (rule R7);
   of the dose-response code was also the start of the other line; a
   `conflict` covers a whole record). G1, G3 and G4 are corrected in the
   text, and the quotes now end with the semicolon of each line; G2 by the
-  gates of the commit that merges (section "The gates on clean clones"):
-  `29b15ca`, which is `90c5198` with `main` `1a94134` merged in; no file
-  both sides changed.
+  gates of the commit that holds the new kept run (section "The gates on
+  clean clones"): `4d0b3cf`, which is `90c5198` with `main` `1a94134`
+  merged in (`29b15ca`; no file both sides changed), the report of the
+  gates of `29b15ca` and the new kept run.
+- Pass 3, on `4d0b3cf` (the merge of `main`, the new kept run, the docs):
+  SIGNED. The reviewer wrote kit 4 as the gate does, checked the kept run
+  (PASS, every score 100%), compared the kept files with the run folder
+  they were kept from (the same after the redaction of `runs.keep`), ran
+  the gate read-2a on a clone of `4d0b3cf` (19 of 19) and planted 22
+  defects in copies of the kept run, among them the old registry's hash, a
+  changed TASK.md and the old run itself, each seen. Not blocking: K1 (two
+  statements of this report were out of date at `4d0b3cf`; corrected), K2
+  ("no local path" claimed too much; corrected above), K3 (the CLI's usage
+  event in the transcript; for the owner), K4 (the check of a kept run
+  does not tie its output files to what the run wrote: a kept
+  decisions.jsonl with one record changed to another valid value passes;
+  read-2a's since it was made, booked in docs/state/read.md), K5 (a kept
+  run is tied to more than the registry, the catalog and the generator;
+  binding it to versions changes ADR-010, decision 9, and needs an ADR the
+  owner approves; booked in docs/state/read.md).
+
+## For the owner
+
+From review pass 3, with the reviewer's recommendation:
+
+- Binding a kept run to versions instead of bytes (K5) changes ADR-010,
+  decision 9: an ADR for the owner to approve before real-5b changes the
+  registry again. Without it, real-5b needs another model run of arm R
+  (about USD 0.6).
+- The CLI's usage event in the kept transcripts (K3), in the old run on
+  `main` and in the new one: the reviewer finds it acceptable as it is.
+- No new isolation probe for now (it is of the old task, and the gate does
+  not check it).
+- N2 (the classes of the 9 differences) and the two `conflict` records of
+  section 4.5 stay open from passes 1 and 2.
 
 ## GitHub and CI
 
-Not merged yet: the merge waits for the gates of the commit that holds
-the new kept run and for the review's pass 3.
+`track/real` is pushed to the owner's repository (public since ADR-013).
+CI (`.github/workflows/ci.yml`: the ASCII check, lint, the unit tests, on
+GitHub's runner, which has no R and no fetch cache) ran on every pushed
+commit of the branch. On `4d0b3cf`, the commit the gates ran on:
+
+```text
+run 44526368227 on track/real at 4d0b3cf: completed, success
+ASCII check: 569 files checked, 0 with non-ASCII bytes
+All checks passed!
+1137 passed, 21 skipped, 25 deselected in 413.39s (0:06:53)
+```
+
+The 21 skipped tests need R; in the gate, where R is installed, the same
+selection gives 1158 passed and none skipped. The earlier runs of real-5a:
+
+```text
+run 44480802266 on track/real at d2e6d8b: completed, success
+run 44487137550 on track/real at 2626186: completed, success
+run 44491745408 on track/real at 90c5198: completed, success
+run 44507326056 on track/real at 29b15ca: completed, success
+run 44519974752 on track/real at 6bad961: completed, success
+```
+
+The runs on the commit that holds this report and on `main` after the
+merge cannot be in it; they are in GitHub, and docs/state/real.md records
+them.

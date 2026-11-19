@@ -153,8 +153,19 @@ in real-5a):
   computed from the tokens). The read track is to tie a
   kept run to their versions instead (the registry's, `catalog@N`, the
   generator's), so that a kept run no longer goes stale on every change.
-  The isolation probe kept beside it (probe-task-50024a8d7ca2) is of the
-  old task; the gate does not check it.
+  The bytes it is tied to are more than those three (review of real-5a,
+  K5): TASK.md, the skills, the house standard, the record schema, the
+  data, documents and gold of the kit. Binding to versions changes ADR-010,
+  decision 9: an ADR the owner approves, best before real-5b changes the
+  registry again (else real-5b makes the run again, about USD 0.6). The
+  isolation probe kept beside it (probe-task-50024a8d7ca2) is of the old
+  task; the gate does not check it.
+- Review of real-5a, K4 (since read-2a): the check of a kept run does not
+  tie its kept output files to what the run wrote. A kept decisions.jsonl
+  with one record removed, or one value changed to another valid one,
+  still passes. What settles it: the check compares the kept files with
+  the SHA-256 the record holds for each (`outputs`), and with what the
+  transcript's writes give, since the record can be edited too.
 
 From the review of read-2a (docs/reports/read-2a.review.md), not blocking:
 

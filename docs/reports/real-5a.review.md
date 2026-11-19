@@ -986,3 +986,497 @@ merge still waits for the owner's choice on read-2a's kept dry run, which
 is not a defect of real-5a.
 
 Verdict: SIGNED
+
+## Pass 3
+
+Reviewer: another independent agent with a fresh context, which wrote
+neither the work nor passes 1 and 2. Date: 2026-11-19. Correctness only.
+
+Under review: commit `4d0b3cf` on `track/real`, read as `2626186..4d0b3cf`:
+`90c5198` (the text fixes of G1, G3 and G4), `29b15ca` (`main` `1a94134`
+merged in), `6bad961` (the gate logs of `29b15ca`) and `4d0b3cf` (the dry
+run of arm R made again and kept; the report; docs/state/read.md). Read:
+CLAUDE.md; ADR-010 decisions 1 and 4 to 9 and "Consequences";
+docs/reports/read-2a.md (the probe, the dry run, the check of a kept run)
+and read-2a.review.md (H12); `specfirst.harness.runs` (`run`,
+`redactions`, `keep`, `check`, `kept_problems`) and
+`specfirst.harness.gate` (`_kit`, `arm_r_stub`, `kept_runs`, `arm_r`);
+the report's sections "Verdict", "Generated kits and reader task folders",
+"The dry run of arm R, made again", "The gates on clean clones", "For the
+base session", "Review" and "GitHub and CI"; the new Open item of
+docs/state/read.md; PLAN.md section 2.3; lessons 47 and 54.
+
+### Files I quote, with their SHA-256
+
+At `4d0b3cf` (`git show 4d0b3cf:<path> | sha256sum`; the worktree has the
+same tracked files):
+
+```text
+49b321b3f5d5e3d33ede3de4597ba45a9b372ff0865658b771e5aa4114d5b93b  docs/reports/real-5a.md
+c6b2d7389a6bc09b3bb317f678bf7dc0687605b49f1e9a246b34efcc029f12b7  docs/state/read.md
+620a0195cda8f299ae57216e37fd88b4784544a5a523f8f6d78ec449a9b9e29a  docs/reports/real-5a.clean-clone.gate.log
+eac4c03dd7d9a1fc50a857e36e71a9420d57f089fd5eaad593b66390263ace53  docs/reports/real-5a.read-2a.gate.log
+265306cede904afad14be95927b4ffb5c329666cf4ecb91f31713f530f276f2f  docs/decisions/ADR-010.md
+528d99205b5f8dc5162f476aaf4859a832a38082f755ef368a0831c3ecef6bf3  src/specfirst/harness/runs.py
+bb303d3f449d0a5d974bb2758995c06440b9e9ed0fd1a9906acd9f2168040440  src/specfirst/harness/gate.py
+45bc636e8193c58efaac0534c1189973dcc0cef5870284718f414779450a3069  kept/R-task-04119188ff71/run.json
+b55676e4111b49abe7e7c6455d84a362841b57d3cb7cd86e59cd17cb5c98f057  kept/R-task-04119188ff71/task.json
+5e0c39ccdf247c6f3b5234cda887527a67de23d84e87d6ebce89ded121623afd  kept/R-task-04119188ff71/asks.jsonl
+903764bd21fdf38b75cacb301d5cb8f0e49d7d5766d238d9a8768a9bf3b6225d  kept/R-task-04119188ff71/transcript.jsonl
+23d04828362c8e5637c344ed79e0a3d006aa82c181960b8c880d59b2ee8a0dcb  kept/R-task-04119188ff71/workspace/out/decisions.jsonl
+c5cf72b10b1c6313eb9d3ac71526d27a798ffa7f34e306ee3e9a67e4fc4c4946  kept/R-task-04119188ff71/workspace/out/questions.jsonl
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  kept/R-task-04119188ff71/workspace/out/unmapped.jsonl
+```
+
+(`kept/` is `src/specfirst/harness/kept/`.)
+
+### Commands I ran, with their output (rule R8)
+
+Under WSL Ubuntu-24.04 with the worktree's environment
+(`. /mnt/d/trial_work/specfirst-real/scripts/env.sh`); scratch only under
+`/root/scratch-review3-real5a/` and a temporary folder of my own on
+Windows; nothing written into the checkout but this section, nor into the
+fetch cache. Every heavy step under
+`flock /run/lock/specfirst-heavy.lock taskset -c 0-3`. The home folder of the
+Windows user is written `<home>`, as `keep` writes it.
+
+```text
+$ git clone -q --no-local /mnt/d/trial_work/specfirst/.git /root/scratch-review3-real5a/clone
+$ git -C /root/scratch-review3-real5a/clone checkout -q --detach 4d0b3cf
+$ cd /root/scratch-review3-real5a/clone; export SPECFIRST_ROOT=$PWD PYTHONPATH=$PWD/src
+```
+
+#### E1. Kit 4 of the gate seed, written as `gate._kit` writes it, and the kept run checked
+
+`mkkit.py` calls `genkits.generate_apart(root, gate.SEED, folder,
+genkits.split_of(gate.NUMBER), number=gate.NUMBER, hash_seed="1",
+zone=None)`, the call of `gate._kit`, with the clone as root:
+
+```text
+$ python mkkit.py clone /root/scratch-review3-real5a/kits/kit-004
+specfirst from /root/scratch-review3-real5a/clone/src/specfirst/__init__.py
+gate.NUMBER 4 gate.SEED gen-2a/kit-4 split train
+kit sfrrl2uh split train generator gen-3a.2
+kit.yaml sha256 3ec2364e440d0a8e319dba4368ae075dd370a965c163393cd87caae0121b915d
+pins in kit.yaml {'engines': {'yamaa': '0.7.0', 'pyarrow': '25.0.1', 'R': '4.6.2'}, 'registry_sha256': 'e5f47480c46d1aae1affb3bd9f4b69f4c9d2ec5d8d99c4e78f30dd5ecb5634cb'}
+seed matches: True
+$ python -m specfirst run check src/specfirst/harness/kept/R-task-04119188ff71 --kit /root/scratch-review3-real5a/kits/kit-004 --tasks /root/scratch-review3-real5a/tasks-check --seed gen-2a/kit-4 --score
+kept run R-task-04119188ff71: PASS
+case sfrrl2uh, arm R, stage C
+reading score: 22 gold decisions of the units mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary
+  by class:                     decisions  value       status      quote       span
+    document_rule                       7  7 of 7      7 of 7      7 of 7      7 of 7
+    house_default                      13  13 of 13    13 of 13    13 of 13    13 of 13
+    study_input                         2  2 of 2      2 of 2      -           -
+  ...
+  asks: 2 given, 2 in gold (decisions with the status asked), 2 of them right; precision 1.00, recall 1.00
+  decisions a reviewer would have to change: 0
+  ...
+  visible: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+  ...
+  twin: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+  ...
+case sfrrl2uh, arm R: every score is 100%
+exit 0
+```
+
+The kit.yaml I wrote is the one the record names (`kit_yaml_sha256`
+`3ec2364e...`), and it pins the registry with the three entries of real-5a
+(`e5f47480...`, the hash pass 1 gives for `registry.json` at `d2e6d8b`).
+
+#### E2. The record and the transcript
+
+From `run.json` and the transcript's `init` and `result` events (my
+script, the standard library only):
+
+```text
+arm R, stage C, condition notes; kit sfrrl2uh (train, gen-3a.2); task task-04119188ff71, 22 decisions, 92 files
+reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327, api_key_source none
+budget {'seconds': 2700, 'turns': 100, 'usd': 10.0}; over_budget []; command_problems []; tools_changed []
+cost: 23 turns, 73.8 s wall, 60.4 s API; tokens in 24, out 7585, cache write 44168 (all 1 h), cache read 375403
+  USD 0.580221 (CLI 0.5802206); result event: is_error false, duration_ms 71759, duration_api_ms 60431
+init event: model claude-opus-5-5, tools [Bash, Edit, Glob, Grep, Read, Write], mcp_servers [], skills [], slash_commands []
+outputs: decisions.jsonl 22 lines, questions.jsonl 2, unmapped.jsonl 0; valid; canary 29347 from 81 sources, hits []
+permission denials 2 (tool uses 2 and 11, both Bash: "cd <task>; ls ...; cat ..."); tool uses 3 to 10 and 12 to 15
+  then Read and Glob the files; 18 and 19 bin/ask; 20 and 21 Write out/; 22 bin/check
+recorded argv and budget: identical to those of the old kept run R-task-50024a8d7ca2 (diff of the two run.json)
+```
+
+At the prices of ADR-010, decision 7 (USD per million tokens), (24 x 4.00
++ 7585 x 20.00 + 44168 x 8.00 for one-hour writes + 375403 x 0.20) / 10^6
+= 0.5802206, the CLI's figure exactly. The report's line and its cost table
+(23 turns, 73.8 s, 60.4 s, 24, 7,585, 44,168, 375,403, 0.5802) are the
+record; the old row is the old record.
+
+#### E3. The kept files against the run they were kept from
+
+The run and task folders the author used are still in the Windows temp
+folder (`<home>/AppData/Local/Temp/specfirst-real5a/{runs,tasks}`, one run
+folder, `R-task-04119188ff71`). `runs.redactions` of those folders, applied
+by `runs._redact` to the originals, and compared with the kept files:
+
+```text
+22 redaction pairs
+transcript.jsonl 77 77 equal after the redaction of keep(): True
+asks.jsonl 2 2 equal after the redaction of keep(): True
+workspace/out/decisions.jsonl 22 22 equal after the redaction of keep(): True
+workspace/out/questions.jsonl 2 2 equal after the redaction of keep(): True
+run.json equal after the redaction of keep(): True
+task.json equal after the redaction of keep(): True
+decisions.jsonl original sha256 = record: True (and questions.jsonl, unmapped.jsonl)
+```
+
+So the kept run is the run that was made, changed only by `keep`.
+
+#### E4. What the kept files hold
+
+```text
+non-ASCII bytes: 0 in each of the 7 files
+the account name (5 characters), the computer name, "Users", "/mnt/c", "C:/": 0 matches in each file
+"sk-ant", "oauth", "bearer", "authorization", "x-api-key", "cookie", "credential", "password",
+  "secret", "email", "ANTHROPIC_", an address with "@": 0; "token" only in the names of token counts
+kit ID sfrrl2uh, "gen-2a", "kit-4", "kit-004" in the transcript: 0 (the kit ID is in run.json, as in the old run)
+thinking blocks: 4, each a signature only (no plain text), as in the old transcript
+paths that remain (run.json "deny", the transcript):
+  //D:/trial_work, //d/trial_work                       (the folder that holds the checkouts)
+  //wsl$/Ubuntu-24.04/root/scratch-real5a/kits           (the kit's folder)
+  <home>/AppData/Local/Temp/specfirst-real5a/runs        (the runs folder)
+  /root/.local/share/specfirst/venv-specfirst-real-17298088/bin/python   (in bin/ask, read by the reader)
+  C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe              (init event)
+  <home>\AppData\Local\Temp\claude\<hash>\<session>\scratchpad, <home>\.claude\projects\<task-slug>\memory\  (init event)
+rate_limit_event (line 3): five_hour utilization 0.01, seven_day 0.58, resetsAt, overageStatus rejected,
+  overageDisabledReason org_level_disabled  (the old transcript: 0.1 and 0.51)
+init event of the new and the old transcript: the same keys; they differ only in session_id, uuid,
+  messaging_socket_path, scratchpad_path and startup_timing
+```
+
+#### E5. Defects I planted in copies of the kept run
+
+`plants.py` copies `kept/R-task-04119188ff71` to a scratch folder, changes
+one file, and calls `runs.check` (what the gate check calls) on it with
+the kit of E1; "FAIL" is the gate's verdict (`not (found or hits)` and
+the adapter `claude-code`, `gate.arm_r`):
+
+```text
+$ python plants.py clone kits/kit-004 plants
+control: the kept run unchanged: 0 problems, 0 hits -> PASS
+task.json: the manifest's registry.json at the hash of the old registry (21b83df6...): 1 problems, 0 hits -> FAIL; task: built again, 1 files differ from the task the run read, for example standard/methods/registry.json
+task.json: one hash of the manifest (TASK.md) changed by one digit: 1 problems, 0 hits -> FAIL; task: built again, 1 files differ from the task the run read, for example TASK.md
+run.json: kit_yaml_sha256 of the old kit (e23d3a90...): 1 problems, 0 hits -> FAIL; kit: kit.yaml is not the one the run read
+run.json: cost.usd 0.48 (the transcript says 0.58): 1 problems, 0 hits -> FAIL; cost: usd is 0.48 in the record, 0.580221 from the transcript
+run.json: budget usd 100: 1 problems, 0 hits -> FAIL; budget: {'seconds': 2700, 'turns': 100, 'usd': 100.0} is not the budget of arm R (ADR-010, decision 8)
+run.json: stage T: 17 problems, 0 hits -> FAIL; task: built again, 29 files differ from the task the run read, ...
+run.json: reader adapter stub: 0 problems, 0 hits -> FAIL; adapter stub (gate.arm_r)
+transcript.jsonl: output tokens of the result event + 1: 0 problems, 0 hits -> PASS
+transcript.jsonl: the init event names claude-sonnet-5-5: 1 problems, 0 hits -> FAIL; reader: the init event names claude-sonnet-5-5, the tokens ['claude-opus-5-5']; the reader is claude-opus-5-5
+transcript.jsonl: is_error true at the end: 1 problems, 0 hits -> FAIL; budget: the reader ended with an error: None
+transcript.jsonl: a tool result that holds the longest line of gold/summary.md: 0 problems, 1 hits -> FAIL; transcript:78: holds '...' (abridged; from kit:gold/summary.md:46)
+transcript.jsonl: the seed in an assistant text: 0 problems, 1 hits -> FAIL; transcript:78: holds 'gen-2a/kit-4' (from seed)
+workspace/out/decisions.jsonl: one record left out: 0 problems, 0 hits -> PASS
+workspace/out/questions.jsonl: one question left out: 1 problems, 0 hits -> FAIL; outputs: questions.jsonl: 1 lines, the ask log of the run has 2; ...
+asks.jsonl: one ask left out: 1 problems, 0 hits -> FAIL; outputs: questions.jsonl: 2 lines, the ask log of the run has 1; ...
+not tied: run.json passed false, valid false, a canary hit and an over_budget line: 0 problems, 0 hits -> PASS
+not tied: run.json outputs.decisions.jsonl sha256 of zeros: 0 problems, 0 hits -> PASS
+not tied: decisions.jsonl tfl.percent.format with another valid alternative: 0 problems, 0 hits -> PASS
+not tied: an assistant text of the transcript rewritten: 0 problems, 0 hits -> PASS
+$ python -m specfirst run check plants/p01 --kit kits/kit-004 --tasks tasks-cli --seed gen-2a/kit-4
+task: built again, 1 files differ from the task the run read, for example standard/methods/registry.json
+kept run p01: FAIL
+exit 1
+$ python -m specfirst run check plants/p00 ... (the control)
+kept run p00: PASS
+exit 0
+```
+
+The plant on `usage.output_tokens` passed because `record.tokens_by_model`
+reads `modelUsage` and takes `usage` only when `modelUsage` names no
+model. The same plant in `modelUsage`, and one in `num_turns`, and the old
+kept run of `2626186` held against the kit of `4d0b3cf` (`plants2.py`):
+
+```text
+$ python plants2.py clone kits/kit-004 plants2 old-kept/R-task-50024a8d7ca2
+modelUsage outputTokens + 1: 3 problems, 0 hits; cost: tokens is {'cache_read': 375403, 'cache_write': 44168, 'input': 24, 'output': 7585} in the record, {'input': 24, 'output': 7586, 'cache_write': 44168, 'cache_read': 375403} from the transcript
+num_turns + 1: 1 problems, 0 hits; cost: turns is 23 in the record, 24 from the transcript
+the old kept run R-task-50024a8d7ca2 (of 2626186): 2 problems, 0 hits; built again now: task-04119188ff71
+  task: built again, 1 files differ from the task the run read, for example standard/methods/registry.json
+  kit: kit.yaml is not the one the run read
+```
+
+#### E6. The merge `29b15ca`
+
+```text
+$ git merge-base 90c5198 1a94134
+b0a5530592242ad4967aba8c1549d586b693ddca
+$ git diff --name-only b0a5530 90c5198 | sort > real; git diff --name-only b0a5530 1a94134 | sort > std
+real side: 51 files; std side: 28 files; in both (comm -12): none
+$ git diff --name-only 1a94134 29b15ca = the real side; git diff --name-only 90c5198 29b15ca = the std side
+blob of every real-side file at 29b15ca = at 90c5198, of every std-side file = at 1a94134: 0 mismatches
+$ git diff --stat b0a5530 4d0b3cf -- src/specfirst/harness ':!src/specfirst/harness/kept' skills \
+    standard/catalog standard/schemas standard/houses src/specfirst/gen
+(empty)
+$ git diff --stat 29b15ca 6bad961        -> docs/reports only (2 logs, the report)
+$ git diff --stat 6bad961 4d0b3cf        -> docs/reports/real-5a.md, docs/state/read.md, src/specfirst/harness/kept/
+$ git diff 2626186 90c5198 -- src tests kits   -> two docstrings and two quotes of efficacy.jsonl
+  ("model CHG = trtpn sitegr1;" and "model CHG = trtpn sitegr1 base;", each with its semicolon)
+docs/reports/std-issues.read-2a.gate.log (the std track at 42212b8, without real-5a):
+  kit 4 ... kit.yaml e23d3a9099492e0e   (= the old record's kit_yaml_sha256)
+  task task-50024a8d7ca2, built again now: task-50024a8d7ca2;  PASS  arm R, kept dry run
+```
+
+#### E7. The author's clean-clone logs (`/root/scratch-real5a/logs/`)
+
+```text
+90c5198/summary.txt: real-5a, real-2, real-3a, gen-2a, gen-3a, read-1a, std-1 exit 0; read-2a exit 1
+  read-2a.log: FAIL  arm R, kept dry run (task-50024a8d7ca2 built again now: task-04119188ff71;
+  1 files differ ... standard/methods/registry.json; kit.yaml is not the one the run read); the other 18 PASS
+29b15ca/summary.txt: the same; times 603, 595, 599, 672, 470, 1004, 442, 481 s; the PASS counts
+  18, 15, 16, 13, 15, 14, 12 and 18 + 1 FAIL, as the report's table; unit tests 1158 passed in each
+4d0b3cf (running while I write; 13:24 UTC): real-5a 18 PASS (645 s), read-2a 19 PASS (601 s;
+  "task task-04119188ff71, built again now: task-04119188ff71"), real-2 15 PASS (1230 s); clean clone
+  gate ...: PASS for each; real-3a running, gen-2a, gen-3a, read-1a and std-1 still to run
+```
+
+#### E8. The gate read-2a on my clone of `4d0b3cf`
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -m specfirst gate read-2a
+gate read-2a at commit 4d0b3cf74ef21de2d2f25f12f7727e49183b3afe (clean)
+1158 passed, 25 deselected in 332.18s (0:05:32)
+kit 4 of the set of the seed 'gen-2a': sfrrl2uh, split train, generator gen-3a.2, tier ask, kit.yaml 3ec2364e440d0a8e
+task task-04119188ff71: 92 files, 22 decisions of mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary; built twice in two folders: the same files
+29347 canaries from 81 sources: ...
+== [16/19] arm R, kept dry run: specfirst run check src/specfirst/harness/kept/R-... --kit KIT --score
+kept run R-task-04119188ff71: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  task task-04119188ff71, built again now: task-04119188ff71
+  cost: 23 turns, 73.8 s, tokens {'cache_read': 375403, 'cache_write': 44168, 'input': 24, 'output': 7585}, USD 0.5802 (CLI 0.5802206); budget {'seconds': 2700, 'turns': 100, 'usd': 10.0}
+  asks: [('pop.efficacy.rule', 'mod-populations', True), ('ae.related.values', 'mod-ae-emergence', True)]
+  permission denials: 2
+  the task it read, within budget, valid output files, canary scan clean against the canaries of the kit written now: yes
+  ...
+    case sfrrl2uh, arm R: every score is 100%
+-- PASS arm R, kept dry run (1.7 s)
+...
+PASS  environment          0.5 s
+PASS  pins                 0.2 s
+PASS  lint                 0.1 s
+PASS  unit tests         332.8 s
+PASS  kit                 11.7 s
+PASS  skills               1.2 s
+PASS  task                 0.1 s
+PASS  oracle               0.1 s
+PASS  adapter              0.0 s
+PASS  budget               0.0 s
+PASS  output files         0.1 s
+PASS  canary scan          4.6 s
+PASS  arm S               19.3 s
+PASS  arm C                1.9 s
+PASS  arm R, stub reader     10.7 s
+PASS  arm R, kept dry run      1.7 s
+PASS  scratch removed      0.0 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE read-2a: PASS
+$ git -C clone status --short      (empty)
+```
+
+### Answers
+
+#### 1. Is the new kept run what the owner asked for?
+
+Yes. The kit I wrote as `gate._kit` writes it has the kit.yaml the record
+names (`3ec2364e...`), pinning the registry with real-5a's three entries
+(E1). The recorded command line and budget are those of the old kept run
+word for word, and the budget is decision 8's (100 turns, 2700 s, USD 10;
+stage C, condition notes) (E2). The canary scan is the same code:
+`src/specfirst/harness` (but `kept/`), the skills, the catalog, the
+schemas, the house files and `src/specfirst/gen` are unchanged since
+`main` `b0a5530` (E6), and the run's scan counts 29347 canaries from 81
+sources, as the gate's own check does on this kit (E8). `specfirst run
+check ... --score` on my kit passes (E1): the task built again is
+`task-04119188ff71`, within budget, the output files valid, the scan clean;
+every score is 100% (report only). The record says what the report says:
+23 turns, 73.8 s wall, 60.4 s API, tokens 24 / 7,585 / 44,168 / 375,403,
+USD 0.5802 computed and from the CLI, `claude-opus-5-5`, CLI 2.1.327 (E2).
+The kept files are the run in the author's temporary folder, changed only
+by `keep`'s redaction (E3). That the run passed the first time I cannot
+prove; the temporary folder holds one run folder of that name (a second
+run would have replaced it), and the report says so.
+
+#### 2. What the kept run holds
+
+No credential, token or key (`api_key_source` `none`; none of the patterns
+of E4), no account name, no computer name, no path into the user's home
+but as `<home>`; ASCII only. It does hold other local paths and account
+data (K2, K3). Of the kit's gold and the seed it holds nothing the scan
+does not allow: the scan against the kit written now is clean (E1, E8);
+neither the seed nor the kit ID is in the transcript (E4); the decision
+records are gold's values as the reader wrote them, which decision 5
+allows; the four thinking blocks carry signatures only, no text.
+
+#### 3. The old run gone; the check passing for the right reason
+
+The old run is gone: at `4d0b3cf` `kept/` holds `R-task-04119188ff71` and
+the probe; `gate.kept_runs` (`R-*`) finds the new run only. The check now
+passes because the task built again from the kit written now has, file by
+file, the manifest the run recorded, and the kit.yaml is the one it read,
+not because of anything the work filled in: changing one hash of
+`task.json` (to the old registry's, or TASK.md's) or the kit.yaml hash of
+`run.json` fails it with the lines the gates of `29b15ca` printed for the
+old run (E5), and the old run itself still fails against this kit (E5,
+`plants2.py`). The other parts fail on their plants too: the cost against
+the transcript, the budget, the stage, the model, an error at the end, a
+line of gold and the seed in the transcript, the questions against the
+ask log, the adapter (E5). The record's own verdict fields (`passed`,
+`valid`, `over_budget`, `canary.hits`) are not read; the check computes
+them again, which is right (lesson 47: nothing it passes on is the work's
+own claim). Its limits are K4. The gate read-2a passes 19 of 19 on my
+clone of `4d0b3cf` (E8) and on the author's clean clone of `4d0b3cf` (E7).
+
+#### 4. The merge `29b15ca`
+
+It changed nothing either side depends on, as far as the evidence reaches.
+No file was changed on both sides, and the merge's tree is the union of
+the two (E6). The std side changed `compile/compiler.py`,
+`compile/template.py` and `score/`; none of them is copied into a task
+folder, and on the std track alone kit 4 kept the old kit.yaml
+(`e23d3a90...`) and the old kept run passed
+(docs/reports/std-issues.read-2a.gate.log), so std changes neither kit 4
+nor the task. `score/candidate.py` imports `machine.ars`, `registry`,
+`grid` and other modules real-5a changed; the unit tests (1158, std's
+test_pending and test_sdtm_gaps among them), read-1a, gen-2a and std-1
+pass on clean clones of `29b15ca` (E7), and real-5a's own gate passes
+there and on `4d0b3cf`. The other way round, real-5a's registry change
+reaches the std side through the kit.yaml of generated kits, and the std
+tests and gates pass with it (E7).
+
+#### 5. The report and the Open item
+
+Supported by the logs and the files: the Verdict's gates of `29b15ca` (18
+of 18; seven PASS and read-2a's one FAIL), the table of "The gates on clean
+clones" (each count and time is in the author's logs, E7), the earlier
+chain on `90c5198`, the answer and the instructions quoted in "For the
+base session", every number of "The dry run of arm R, made again" (E1,
+E2), the two denials and what the reader did after them, "the old kept run
+is deleted", the task being the one the gate builds now. The isolation
+probe is described honestly: it is of the old task, unchanged since
+`dbc4d69`, not read by the gate (`kept_runs` takes `R-*`; read-2a's review,
+H12), and nothing in the report or the state claims it covers the new run.
+Not supported: one sentence and one clause about the gates (K1), the "no
+local path" of the kept files (K2); and the Open item is narrower than
+what a kept run is tied to (K5).
+
+#### 6. What is the owner's
+
+See "The owner's choices" below.
+
+### Findings
+
+#### K1 (does not block this signature; to fix before the merge): two statements about the gates are stale at `4d0b3cf`
+
+"The gates on clean clones" ends: "The commits after `29b15ca` change
+docs/reports and docs/state only." `4d0b3cf` changes
+`src/specfirst/harness/kept/` (E6), the one thing read-2a's gate reads
+that `29b15ca` does not have. "Review" says G2 is met "by the gates of the
+commit that merges ...: `29b15ca`"; the commit that merges is one with the
+new kept run, and only its gates show read-2a passing. The Verdict and
+"GitHub and CI" say rightly that the gates of that commit are running. At
+the time of writing the author's chain on `4d0b3cf` had real-5a PASS
+(645 s), read-2a PASS (601 s; 19 of 19; "built again now:
+task-04119188ff71") and real-2 PASS (1230 s), the five others still
+running (E7). The report should carry that chain, and name the commit
+G2 rests on, before the merge.
+
+#### K2 (does not block): "The kept files hold no local path" says too much
+
+The report ("The dry run of arm R, made again"): "The kept files hold no
+local path (the home folder is `<home>`, the checkout `<checkout>` ...)".
+They hold no path into the home but as `<home>`, and no account name. They
+do hold other local paths (E4): `D:/trial_work` (the folder that holds the
+checkouts, in `deny`), the WSL folder of the kit
+(`/root/scratch-real5a/kits`), the runs folder under `<home>`, the WSL
+virtual environment's python (in `bin/ask`, as the reader read it),
+PowerShell's path, and the CLI's scratchpad and memory folders under
+`<home>`. None names a person; the old kept run had the same kinds. Say
+"no path into the home folder but as `<home>`, and no account name".
+
+#### K3 (does not block; the owner's to judge): the transcript keeps the subscription's usage
+
+Line 3 of the transcript is the CLI's `rate_limit_event`: the five-hour and
+seven-day utilization of the owner's subscription at that moment (0.01 and
+0.58), their reset times, and that overage is disabled at the level of the
+organization (E4). It is no credential and names nobody; the old kept run,
+on `main` since `b0a5530`, had the same event (0.1 and 0.51). No report or
+review of read-2a or real-5a mentions it. The check reads only the `init`
+and `result` events and the tool uses, and scans every string, so `keep`
+could drop this event without weakening the check.
+
+#### K4 (does not block; read track, since read-2a): what the check does not tie
+
+`runs.check` holds the kept output files for validity and the scan, not
+against what the run wrote: a kept `decisions.jsonl` with one record left
+out, or with `tfl.percent.format` changed to another valid alternative,
+passes (E5). The record's `outputs` (lines and SHA-256 of the files as the
+reader wrote them; `keep` writes them again in canonical JSON, so the
+hashes cannot simply be compared) and the transcript's `Write` inputs are
+not compared with them, and the transcript outside its `init` and `result`
+events is held only by the scan. A hand edit of a kept run would change
+the scores the gate reports and still pass. Today the kept files are the
+run's (E3). For the read track: tie the kept outputs to the transcript's
+`Write` inputs, or record the hashes of the files `keep` writes.
+
+#### K5 (does not block; read track): the Open item names three of the things a kept run is tied to
+
+docs/state/read.md (Open) and the report: a kept run is tied to "the
+method registry, the catalog and the generator". The task's manifest also
+holds TASK.md, the five skills (`knowledge/`), the house standard (15
+files of `inputs/house`), the record schema, the documents and the visible
+SDTM (92 files, E2); the kit.yaml the check compares holds the SHA-256 of
+every file of the kit, gold included, which the compiler, the machine and
+the R engine write (ADR-010, decision 5; its "Consequences" name the
+skills and the task builder as well). A binding to the versions of the
+registry, `catalog@N` and the generator would still go stale on a change
+of any of those, and it weakens decision 9's "its manifest must be the
+recorded one, so the run read exactly this task", the reading the owner
+approved for the slice. The item should list them, and say that the new
+binding changes read-2a's reading of its gate (an ADR, for the owner).
+
+### The owner's choices (PLAN.md section 2.3), with my recommendation
+
+1. **The binding of a kept run to versions** (the owner's direction; K5).
+   It changes how read-2a's gate reads its text (ADR-010, decision 9; "a
+   gate cannot pass without changing the gate"). Recommendation: an ADR of
+   the read track that says what is bound by version and what still by
+   bytes (the skills, TASK.md, the schema, the house standard, the data and
+   documents of the task), approved by the owner before real-5b.
+2. **real-5b changes the registry again** (the mixed model, CMH). Until
+   item 1 lands, that is one more model run of about USD 0.6 on the
+   owner's subscription. Recommendation: item 1 first; if real-5b comes
+   first, put the run in its brief.
+3. **The usage data in kept transcripts** (K3). Recommendation: acceptable
+   as it is (no identity, no credential); if the owner wants it out of the
+   public repository, the read track drops `rate_limit_event` in `keep`
+   with the next kept run.
+4. **The isolation probe of the old task.** It is no gate's evidence, and
+   its deny rules come from code that has not changed since. Recommendation:
+   no new probe now (the owner's spend); probe again with item 1.
+5. Open from passes 1 and 2 and unchanged by this pass: N2 (the class of
+   the 9 cells, with the labels) and the three records of section 4.5
+   (ADR-015, "For the owner").
+
+The merge itself is not the owner's choice: it waits for the five gates
+of `4d0b3cf` still running and for K1.
+
+### Verdict of pass 3
+
+The kept dry run of arm R is the run the owner asked for: read-2a's
+command, budget and canary scan, on kit 4 as the gate writes it, within
+budget (USD 0.58), its files valid, the scan clean, its record the
+report's numbers, its files the run's own after `keep`. It holds no
+credential and no account name. The old run is gone, and "arm R, kept dry
+run" passes because the task and the kit match the record, and fails on
+every plant that breaks that tie; read-2a passes 19 of 19 on my clone of
+`4d0b3cf` and on the author's clean clone of it. The merge of `main`
+touched no file on both sides. K1 to K5 do not block; K1 is to be fixed,
+with the gates of `4d0b3cf`, before the merge.
+
+Verdict: SIGNED

@@ -36,8 +36,59 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   issue-27.<gate>.gate.log. Review: docs/reports/issue-27.review.md
   (SIGNED, four findings that do not block, nothing for the owner).
   Decisions: docs/decisions/ADR-011.md.
+- real-5a ANCOVA and Tables 14-3.01, 14-3.03 and 14-3.05 against the CSR
+  (slice `efficacy-first`, ADR-012, approved 2026-11-18). Gate:
+  `scripts/clean_clone_gate.sh real-5a` exited 0 on a clean clone of
+  commit `4d0b3cf` (the work with `main` `1a94134` merged in), 18 of 18
+  checks (2026-11-19). On clean clones of the same commit real-2, real-3a,
+  gen-2a, gen-3a, read-1a, std-1 and read-2a (19 of 19) passed too.
+  read-2a's kept dry run of arm R was made again at the owner's answer and
+  kept in place of the old one (USD 0.58). Evidence:
+  docs/reports/real-5a.md, real-5a.clean-clone.gate.log and
+  real-5a.read-2a.gate.log. Review: docs/reports/real-5a.review.md (pass 1
+  NOT SIGNED, its two blocking findings fixed; passes 2 and 3 SIGNED).
+  Decisions: docs/decisions/ADR-015.md and the amendment "of real-5a" at
+  the end of ADR-003.md.
 
 ## Open
+
+For the owner, from real-5a (ADR-015 "For the owner" and
+docs/reports/real-5a.md, sections "For the owner" and "Where the documents
+disagree", say each in full):
+
+- N2: the 9 cells that differ from the CSR (the limits of the 95%
+  confidence intervals, 2 decimals by SAP template 5, 1 in the CSR) are
+  classed `rule_choice`. Also the row labels, which follow the CSR, not
+  the template (review, F8).
+- Two `conflict` records, where the documents disagree (section 4.5):
+  `custom:eff-model-terms` (the Define-XML's dose-response code leaves the
+  baseline out; the SAP and the CSR keep it) and `custom:eff-pairwise`
+  (SAP 7.3 shows the comparisons only after a significant dose response;
+  template 5 and the CSR show them anyway). Gold keeps the values under
+  which the CSR's numbers are reproduced. `custom:eff-baseline-rows` is
+  `asked`: no source; both readings give the same cells here.
+- The proposals for `catalog@2` (an efficacy table family, an imputation
+  rule in `mod-bds-visits`, the pooling of sites), for the std track.
+- A kept dry run of arm R is tied to the bytes of the registry, the
+  catalog, the generator and more (docs/state/read.md, Open). real-5b
+  changes the registry again: without an ADR that ties a kept run to
+  versions (ADR-010, decision 9), real-5b needs another model run of arm R
+  (about USD 0.6, the owner's spend).
+- The kept transcript holds the Claude Code CLI's usage event (the
+  subscription's usage, no credential); the old run on `main` had it too.
+  The reviewer finds it acceptable (review pass 3, K3).
+
+Left open by the review of real-5a (none blocks; the report's section
+"What the checks do not cover" has each):
+
+- F3: an exception's proof asks that its decision exists, not that it is
+  about the cell. F4 and G3: the check `decisions` holds 4 of the 8
+  records; nothing holds `custom:eff-display-decimals`.
+- F5: three edge cases of models.R that no vector covers (one group of
+  records stops with an error; group IDs with "-" lose the contrasts; a
+  factor nested in the groups gives an LS mean where statement 7 says
+  missing). For real-5b, with a vector each.
+- F7: the CSR's population line is parsed and not compared.
 
 For the owner, from real-3a (ADR-003 and docs/reports/real-3a.md say each
 in full):
@@ -169,8 +220,9 @@ reading.
 
 Other open points:
 
-- Layout spec v0 has two kinds of block (`header`, `analyses`). The other
-  four outputs of the example need more (see "Next").
+- Layout spec v0 has three kinds of block (`header`, `analyses` and, since
+  real-5a, `statistics`). The other four outputs of the example need more
+  (see "Next").
 - A difference of display has no class yet. The exceptions file has no
   section for cells: a cell that differs takes the class of the result it
   shows, and any other difference blocks the gate until a proof kind
@@ -206,8 +258,12 @@ Other open points:
 
 ## Next
 
-- First, the findings F1 to F9 of the review of real-3a ("Open" above),
-  as one commit with a gate run.
+- real-5b (ADR-012): the mixed model for repeated measures (R only) and
+  CMH (Python and R), Tables 14-3.11 and 14-3.13, with the cell rule of
+  real-5a. Before it changes the registry, mind read-2a's kept dry run
+  ("Open", real-5a). Start with the F5 edge cases of models.R.
+- The findings F1 to F9 of the review of real-3a ("Open" above), as one
+  commit with a gate run.
 - The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it:
   the other four outputs of the example as grids, the citations through the
   ARS `documentRefs`, the viewer. It runs the code of real-3a on more
@@ -230,8 +286,9 @@ for 3,580 of them):
   kind for a difference of display.
 - Layout kinds that do not exist yet: one row per group of a row grouping
   (defined groups for demographics; data-driven and nested for organ class
-  and term), one row per statistic, columns that compare two groups
-  (p-values), a total column, sort and threshold rules. The plan of a grid
+  and term), a total column, sort and threshold rules (a row per statistic
+  and columns that compare two groups exist since real-5a: the block kind
+  `statistics`). The plan of a grid
   (`grid.plan`) is the place: the builder, the comparison and the trace all
   read the plan. For organ class and term the results are ready since the
   fix of issue #27 (ADR-011): the analysis by term gives arms x the pairs
@@ -240,6 +297,34 @@ for 3,580 of them):
   read from the ARD; the rows themselves are still layout work.
 - Display rules that are not registry entries yet: p-value formats and the
   truncation of long terms (E25).
+
+## Handed over by real-5a
+
+- Model-based methods are kind `model`, R only (ADR-015):
+  `model.ancova.lsmeans`, `.pairwise`, `.dose_response` in
+  standard/methods/, R in r/specfirstr/R/models.R (stats::lm, emmeans,
+  car). An analysis names its terms in `programmingCode` (`factors`,
+  `covariates`, `reference`; `ars.reads` role `model`); rules I16 to I19 of
+  standard/methods/README.md. The gold ARD takes the R engine's rows. Their
+  vectors' expected values come from tests/methods/oracle_models.py (exact
+  fractions), not from R.
+- A CSR table is a reference grid: `specfirst.machine.csr` parses the page
+  with poppler's pdftotext into build/csr/<kit>/ on every check, never into
+  the cache or git; an output names it as `reference: {csr, page, table}`
+  in kit.yaml. A cell that differs needs one entry in the `cells` section
+  of gold/exceptions.yaml (proof `other_pattern` exists).
+- Layout spec v0 has a block kind `statistics` (a row per statistic,
+  `columns` for comparisons); pages show section headings (the amendment
+  of ADR-003).
+- Decision records of the pilot are in kits/cdiscpilot01/gold/decisions/
+  (`build.decisions` in kit.yaml); the gate check `decisions` holds the
+  options they set against the reporting event.
+- The gates real-2 and real-3a count the ARS example's result set only
+  (`gates.PILOT_EXAMPLE`).
+- A change of standard/methods/ changes every generated kit.yaml
+  (`registry_sha256`) and every reader task folder, and makes read-2a's
+  check "arm R, kept dry run" fail until the run is made again (CLAUDE.md,
+  Gotchas).
 
 ## Handed over by the fix of issue #27
 
