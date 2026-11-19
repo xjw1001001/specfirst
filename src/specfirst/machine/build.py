@@ -31,6 +31,7 @@ from specfirst.machine import (
     ard,
     ars,
     compare,
+    csr,
     graph,
     grid,
     methods,
@@ -213,6 +214,16 @@ def build_displays(root: Path, into: Path, spec: kits.ResultSet, event: ars.Even
     return written
 
 
+def gold_rows(python: list[dict], r: list[dict], registry: registries.Registry) -> list[dict]:
+    """The gold ARD: the Python engine's rows and the R engine's rows of the methods only R
+    implements, the model-based ones (section 7.3, ADR-015), sorted by their ID."""
+    r_only = results.r_only_methods(registry)
+    if any(row["method_id"] in r_only for row in python):
+        raise ard.EngineError("the Python engine gave a result of a model-based method")
+    modelled = [row for row in r if row["method_id"] in r_only]
+    return sorted([*python, *modelled], key=lambda row: row["id"]) if modelled else python
+
+
 def build_results(root: Path, kit: kits.Kit, into: Path, record: dict, out: Out,
                   displays: list[graph.Display] | None = None) -> list[Path]:
     """Run both engines on every result set of the kit; write the two ARDs and the gold ARS.
@@ -241,6 +252,14 @@ def build_results(root: Path, kit: kits.Kit, into: Path, record: dict, out: Out,
         results.write_ard(into / ARD / f"{spec.id}.r.jsonl", other, root)
         out(f"results {spec.id}: R engine {meta.get('r')}, {len(other)} rows in "
             f"{meta.get('seconds')} s; it read the same values of {len(meta['columns'])} columns")
+        # Model-based methods are R only (section 7.3, ADR-015): their rows of the gold
+        # ARD are the R engine's.
+        merged = gold_rows(rows, other, inputs.registry)
+        if len(merged) != len(rows):
+            out(f"results {spec.id}: {len(merged) - len(rows)} results of model-based methods "
+                f"(R only) join the gold ARD, which has {len(merged)} rows")
+            rows = merged
+            results.write_ard(into / ARD / f"{spec.id}.jsonl", rows, root)
         record["engines"]["R"] = meta.get("r")
         gold = results.with_results(inputs.event, rows)
         if spec.schema:
@@ -379,8 +398,30 @@ def result_checks(root: Path, kit_id: str, folder: Path | None = None,
             else:
                 out(f"results {spec.id}: {ARS_OUT}/{spec.id}.json carries the {len(ours)} "
                     "results of the Python ARD as raw values")
-            lines, disagreements = results.agreement(results.by_id(rows["Python"]),
-                                                     results.by_id(rows["R"]))
+            # Rule R11 holds for the methods both engines implement. The results of a
+            # model-based method are the R engine's in both files (ADR-015).
+            r_only = results.r_only_methods(inputs.registry)
+            both = {name: {key: row for key, row in results.by_id(found).items()
+                           if row["method_id"] not in r_only} for name, found in rows.items()}
+            modelled = {name: {key: row for key, row in results.by_id(found).items()
+                               if row["method_id"] in r_only} for name, found in rows.items()}
+            lines, disagreements = results.agreement(both["Python"], both["R"])
+            # Only R stamps these rows: their options hash is held against the registry's.
+            stamps = [
+                f"{key}: the R engine stamps the options hash {row['method_options_hash']}, "
+                "the registry gives another"
+                for key, row in sorted(modelled["R"].items())
+                if row["method_options_hash"] != inputs.registry.options_hash(
+                    row["method_id"],
+                    inputs.binding.options[row["analysis_id"]][row["method_id"]])]
+            problems += stamps
+            if modelled["Python"] != modelled["R"]:
+                problems.append("the gold ARD does not hold the R engine's results of the "
+                                "model-based methods as the R engine gave them")
+            elif modelled["R"] and not stamps:
+                out(f"results {spec.id}: {len(modelled['R'])} results of model-based methods "
+                    "(R only, section 7.3): the gold ARD holds them as the R engine gave them, "
+                    "each stamped with the registry's hash of its options")
             for line in lines:
                 out(f"results {spec.id}, {line}")
             for problem in [*problems, *disagreements[:20]]:
@@ -434,6 +475,38 @@ def display_problems(root: Path, event: ars.Event, layout: layouts.Layout, made:
     return compared, problems
 
 
+def csr_reference_dir(root: Path, kit_id: str) -> Path:
+    """Where the reference grids parsed from a CSR are written: an ignored folder of the
+    checkout, never the fetch cache and never git (rule 4; ADR-015)."""
+    return build_dir(root) / "csr" / kit_id
+
+
+def csr_comparison(root: Path, kit: kits.Kit, folder: Path, display: kits.Display,
+                   event: ars.Event, layout: layouts.Layout, made: dict, rows: results.Rows,
+                   entries: list[dict]) -> csr.Comparison:
+    """P2 for a grid whose reference is a CSR table: parse the page again, compare every
+    cell, and hold each difference against its one entry (specfirst.machine.csr)."""
+    reference = display.reference
+    table = csr.read_table(folder / reference.file, reference.page, reference.table)
+    write_json(csr_reference_dir(root, kit.id) / f"{reference.table}.json", table)
+    decisions = set()
+    if kit.decisions:
+        decisions = {record["id"] for record in read_jsonl(folder / kit.decisions)}
+    return csr_against(made, table, event, layout, rows, entries, decisions)
+
+
+def csr_against(made: dict, table: dict, event: ars.Event, layout: layouts.Layout,
+                rows: results.Rows, entries: list[dict], decisions: set[str]) -> csr.Comparison:
+    """A grid against a parsed CSR table, each difference held against its entry."""
+    compared = csr.compare(made, table)
+    planned = grid.plan(event, layout, rows)
+    cells = {f"cell:{made['output_id']}/r{number}/{cell.column}": (row.template, cell.shown)
+             for number, row in enumerate(planned.rows, start=1) for cell in row.cells}
+    csr.judge(compared, entries, cells, {key: row["raw_value"] for key, row in rows.items()},
+              decisions)
+    return compared
+
+
 def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                    out: Out = print) -> tuple[bool, list[dict]]:
     """P2 for grid text, on a build. Returns whether all holds, and the counts per output.
@@ -452,6 +525,12 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
     passed, counts = True, []
     try:
         listed = results.load_exceptions(folder / kit.exceptions) if kit.exceptions else {}
+        cell_entries = csr.load_exceptions(folder / kit.exceptions) if kit.exceptions else {}
+        outputs = {display.output for spec in kit.results for display in spec.displays
+                   if display.reference is not None}
+        for output in sorted(set(cell_entries) - outputs):
+            out(f"grids: the exceptions name cells of {output}, which has no CSR reference")
+            passed = False
         for spec in kit.results:
             if not spec.displays:
                 continue
@@ -472,6 +551,28 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                 compared, problems = display_problems(
                     root, inputs.event, layout, made, shell, pages, rows["Python"], rows["R"],
                     classes)
+                if display.reference is not None:
+                    # The reference is a CSR table: the event embeds no formatted value.
+                    against = csr_comparison(root, kit, folder, display, inputs.event, layout,
+                                             made, rows["Python"],
+                                             cell_entries.get(display.output, []))
+                    problems += against.problems
+                    for line in against.lines():
+                        out(line)
+                    out(f"grid {display.output}: the R engine's rows give the same grid; the "
+                        f"mock shell and the two pages hold; {len(problems)} problems"
+                        if not problems else f"grid {display.output}: {len(problems)} problems")
+                    for problem in problems[:UNEXPLAINED_SHOWN]:
+                        out(f"  grid {display.output}: {problem}")
+                    passed &= not problems
+                    counts.append({
+                        "set": spec.id, "output": display.output, "reference": "csr",
+                        "cells": against.cells, "printed": against.printed,
+                        "equal": against.equal, "differing": len(against.differing),
+                        "classified": len(against.classified),
+                        "classes": dict(Counter(against.classified.values())),
+                        "problems": len(problems)})
+                    continue
                 for line in compared.lines():
                     out(line)
                 for problem in problems[:UNEXPLAINED_SHOWN]:
@@ -483,18 +584,59 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                     if not problems else f"grid {display.output}: {len(problems)} problems")
                 passed &= not problems
                 counts.append({
-                    "set": spec.id, "output": display.output, "cells": compared.cells,
+                    "set": spec.id, "output": display.output, "reference": "ars",
+                    "cells": compared.cells,
                     "results": compared.results, "equal": compared.equal,
                     "differing": len(compared.differing),
                     "classified": sum(compared.classified.values()),
                     "no_reference": len(compared.no_reference), "problems": len(problems),
                 })
     except (ars.ArsError, ard.EngineError, results.ResultsError, registries.RegistryError,
-            layouts.LayoutError, OSError, ValueError) as error:
+            layouts.LayoutError, csr.CsrError, grid.GridError, OSError, ValueError) as error:
         out(f"grids: {error}")
         passed = False
     out(f"grids: {len(counts)} outputs, {'pass' if passed else 'FAIL'}")
     return passed, counts
+
+
+def decision_checks(root: Path, kit_id: str, folder: Path | None = None,
+                    out: Out = print) -> bool:
+    """The kit's decision records against its reporting events (specfirst.machine.decisions)."""
+    from specfirst.machine import decisions
+
+    found = _built(root, kit_id, folder, out)
+    if found is None:
+        return False
+    kit, folder = found
+    if not kit.decisions:
+        out("decisions: the kit names no decision records")
+        return True
+    try:
+        records = decisions.load(folder / kit.decisions)
+        events = []
+        registry = None
+        for spec in kit.results:
+            inputs = result_inputs(root, folder, spec)
+            events.append((inputs.event, inputs.binding))
+            registry = inputs.registry
+        lines, problems = decisions.problems(root, records, events, registry)
+    except (ars.ArsError, registries.RegistryError, OSError, ValueError) as error:
+        out(f"decisions: {error}")
+        return False
+    for line in lines:
+        out(line)
+    # A record in conflict has no class (section 4.5): it is counted by its status.
+    by_class = Counter(str(record.get("class") or f"no class ({record.get('status')})")
+                       for record in records)
+    by_status = Counter(str(record.get("status")) for record in records)
+    out("decisions: by class: " + ", ".join(f"{count} {name}"
+                                           for name, count in sorted(by_class.items()))
+        + "; by status: " + ", ".join(f"{count} {name}"
+                                      for name, count in sorted(by_status.items())))
+    for problem in problems:
+        out(f"decisions: {problem}")
+    out(f"decisions: {'pass' if not problems else 'FAIL'}")
+    return not problems
 
 
 def read_manifest(folder: Path) -> dict:

@@ -76,13 +76,16 @@ def test_manifest_problems_are_reported(data, message):
 
 def test_the_pilot_kit_is_pinned_like_the_sources(root):
     kit = kits.load_kit(root, "cdiscpilot01")
-    assert kit.tier == "C" and len(kit.files) == 66
+    assert kit.tier == "C" and len(kit.files) == 67
     manifest_of_sources = sources.load_manifest(sources.manifest_path(root))
     assert kits.pin_problems(kit, manifest_of_sources) == []
-    # 64 files of Pilot 7; the ARS example and the schema of the ARS model from CDISC.
+    # 64 files of Pilot 7; the ARS example and the schema of the ARS model from CDISC;
+    # the CSR of Pilot 6, the reference of the efficacy grids (real-5a).
     assert sorted(entry.path for entry in kit.files if entry.source == "ars") == [
         "gold/spec/ars/ars_ldm.schema.json", "gold/spec/ars/common-safety-displays.json"]
-    assert {entry.source for entry in kit.files} == {"p7", "ars"}
+    assert {entry.source for entry in kit.files} == {"p7", "ars", "p6"}
+    assert [entry.path for entry in kit.files if entry.source == "p6"] == [
+        "gold/reference/csr/CSR.pdf"]
     inputs = [entry.path for entry in kit.files if entry.path.startswith("inputs/")]
     assert len(inputs) == 26  # 22 SDTM datasets, their Define-XML, and 3 documents
     # No reference data, specification or claim is among the inputs.
@@ -91,9 +94,17 @@ def test_the_pilot_kit_is_pinned_like_the_sources(root):
     # The ARS example is the file PLAN.md appendix A pins by its hash.
     example = next(entry for entry in kit.files if entry.path.endswith("displays.json"))
     assert example.sha256 in {pin.sha256 for pin in manifest_of_sources.files}
-    assert [spec.id for spec in kit.results] == ["common-safety-displays"]
+    assert [spec.id for spec in kit.results] == ["common-safety-displays", "efficacy-adas"]
     assert kit.results[0].ars == example.path and kit.exceptions == "gold/exceptions.yaml"
     assert (root / "kits" / "cdiscpilot01" / kit.exceptions).is_file()
+    # real-5a: the reporting event is our own file; each grid has its CSR table.
+    efficacy = kit.results[1]
+    assert efficacy.ars == "gold/events/efficacy-adas.json" and efficacy.ars in kit.own_files()
+    assert [(d.output, d.reference.page, d.reference.table) for d in efficacy.displays] == [
+        ("Out14-3-01", 49, "14-3.01"), ("Out14-3-03", 51, "14-3.03"),
+        ("Out14-3-05", 53, "14-3.05")]
+    assert kit.decisions == "gold/decisions/efficacy.jsonl" and kit.decisions in kit.own_files()
+    assert all((root / "kits" / "cdiscpilot01" / name).is_file() for name in kit.own_files())
 
 
 def with_results(**changes) -> dict:
@@ -114,7 +125,8 @@ def test_result_sets_and_the_exceptions_file_of_a_kit():
     build = {**manifest()["build"], "exceptions": "gold/exceptions.yaml"}
     assert kits.parse_kit(manifest(build=build)).exceptions == "gold/exceptions.yaml"
     for data, message in (
-        (with_results(ars="gold/spec/ars/none.json"), "ars 'gold/spec/ars/none.json' is not in"),
+        (with_results(ars="gold/spec/ars/none.json"),
+         "ars 'gold/spec/ars/none.json' is neither in"),
         (with_results(schema="gold/spec/ars/schema.json"), "schema 'gold/spec/ars/schema.json'"),
         (with_results(id="Event 1"), "'id' must match"),
         (with_results(binding={"methods": {}}), "'binding' may hold 'operations' and 'options'"),
@@ -130,6 +142,41 @@ def test_result_sets_and_the_exceptions_file_of_a_kit():
     twice["results"].append(dict(twice["results"][0]))
     with pytest.raises(kits.KitError, match="id 'event' is used twice"):
         kits.parse_kit(twice)
+
+
+def test_an_event_of_our_own_a_csr_reference_and_decision_records():
+    """real-5a (ADR-015): our own reporting event, a CSR table per output, decisions."""
+    files = [*manifest()["files"], {"path": "gold/reference/csr/CSR.pdf", "source": "p7",
+                                    "from": "a/CSR.pdf", "sha256": SHA}]
+    build = {**manifest()["build"], "decisions": "gold/decisions/d.jsonl"}
+
+    def made(**output) -> dict:
+        entry = {"id": "eff", "ars": "gold/events/eff.json",
+                 "outputs": [{"id": "Out1", "layout": "gold/layout/Out1.yaml", **output}]}
+        return manifest(files=files, build=build, results=[entry])
+
+    kit = kits.parse_kit(made(reference={"csr": "gold/reference/csr/CSR.pdf", "page": 49,
+                                         "table": "14-3.01"}))
+    assert kit.results[0].displays[0].reference == kits.CsrTable(
+        "gold/reference/csr/CSR.pdf", 49, "14-3.01")
+    assert kit.own_files() == ["gold/decisions/d.jsonl", "gold/events/eff.json",
+                               "gold/layout/Out1.yaml"]
+    assert kits.parse_kit(made()).results[0].displays[0].reference is None
+    for data, message in (
+        (made(reference={"csr": "gold/reference/csr/other.pdf", "page": 49, "table": "1"}),
+         "a reference names the 'csr'"),
+        (made(reference={"csr": "gold/reference/csr/CSR.pdf", "page": 0, "table": "1"}),
+         "a reference names the 'csr'"),
+        (made(reference={"csr": "gold/reference/csr/CSR.pdf", "page": 1}),
+         "a reference names the 'csr'"),
+        (made(note="x"), "may name its 'reference'"),
+        (manifest(files=files, build={**build, "decisions": "gold/spec/d.jsonl"}),
+         "build.decisions: must be a file of our own"),
+        (manifest(files=files, results=[{"id": "eff", "ars": "gold/reference/csr/eff.json"}]),
+         "is neither in the list of files nor a file of our own"),
+    ):
+        with pytest.raises(kits.KitError, match=message):
+            kits.parse_kit(data)
 
 
 @pytest.fixture

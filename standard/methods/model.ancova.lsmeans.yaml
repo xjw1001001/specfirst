@@ -1,0 +1,81 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+# A model-based method: R only (section 7.3; ADR-015).
+id: model.ancova.lsmeans
+kind: model
+title: Analysis of covariance, least-squares means by treatment group
+takes: >-
+  the analysis records; the one grouping of the analysis, the treatment, with
+  results by group; the factors and the covariates the analysis names
+operations:
+  lsmean:
+    result: number
+    ars_names: ["LS mean"]
+  se:
+    result: number
+    ars_names: ["Standard error"]
+  lower_cl:
+    result: number
+    ars_names: ["Lower confidence limit"]
+  upper_cl:
+    result: number
+    ars_names: ["Upper confidence limit"]
+semantics:
+  - >-
+    The model records are the analysis records that belong to a group of the
+    treatment grouping and have a value of the analysis variable, of every
+    factor and of every covariate (missing as in rule I1).
+  - >-
+    The model is y = mu + tau[group] + the sum over the factors of
+    beta[factor, level] + the sum over the covariates of gamma[covariate] *
+    covariate + error, fitted by ordinary least squares to the model records,
+    where y is the analysis variable. The levels of a factor are its distinct
+    values on the model records, as text. A factor with one level on the model
+    records is left out. No interaction is fitted.
+  - >-
+    The errors are taken as independent with one variance. It is estimated by
+    the residual sum of squares divided by the residual degrees of freedom
+    N - r, where N is the number of model records and r the rank of the design
+    matrix.
+  - >-
+    lsmean of a group: the prediction of the model for that group with every
+    covariate at its mean over the model records, averaged over the levels of
+    every factor with the weights of the option weights. equal: each of the L
+    levels of a factor weighs 1/L. proportional: a level weighs its number of
+    model records divided by N (SAS PROC GLM, LSMEANS with OM; emmeans, weights
+    proportional). Without interactions, the average over several factors is
+    the sum of the averages over each.
+  - >-
+    se: the square root of l' V l, where l is the vector of coefficients that
+    gives lsmean (statement 4) and V the estimated covariance matrix of the
+    coefficients of the model, with the variance of statement 3.
+  - >-
+    lower_cl and upper_cl: lsmean minus and plus q * se, where q is the quantile
+    at 1 - (1 - level / 100) / 2, level the option confidence_level, of the t
+    distribution with N - r degrees of freedom when the option df is residual,
+    and of the standard normal distribution when it is asymptotic.
+  - >-
+    A group without model records, or whose lsmean is not a linear combination
+    of the rows of the design matrix (not estimable), gives missing results.
+  - When N - r is less than 1, every result is missing.
+options:
+  factors:
+    takes: columns
+    default: []
+  covariates:
+    takes: columns
+    default: []
+  weights:
+    values: [equal, proportional]
+    default: equal
+  df:
+    values: [residual, asymptotic]
+    default: residual
+  confidence_level:
+    values: [90, 95, 99]
+    default: 95
+implementations: [r]
+vectors: tests/methods/model_ancova_lsmeans.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

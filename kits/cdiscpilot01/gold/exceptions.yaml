@@ -275,3 +275,70 @@ results:
       sources:
         - "The analysis compares placebo with low dose. No subject of these two arms has a treatment-emergent event with this term, so the data-driven grouping has no such group and there is no table to test."
         - "The example lists the result with an empty raw value and without a formatted value."
+# cells: differences between a grid and its table in the CSR (real-5a, ADR-015;
+# specfirst.machine.csr), one list per output. Cells are compared without
+# their blanks. An entry has
+#   cell      the ID of the cell of the grid
+#   csr       the text the CSR prints in the cell
+#   class     rule_choice, reference_error or data_difference
+#   decision  the decision record the difference is about (gold/decisions/)
+#   proof     a kind the check knows, with what it needs:
+#               other_pattern  the results of the cell, shown by the patterns
+#                              `patterns` (part of the cell -> pattern), give
+#                              the CSR's text, and ours is another (the proof
+#                              of a rule_choice)
+#
+# The three outputs of the efficacy tables: the limits of each 95% confidence
+# interval of a difference of LS means. SAP template 5 shows them with 2
+# decimals, "(xx.xx;xx.xx)", and gold follows the SAP (decision 17 of PLAN.md:
+# the documents decide; custom:eff-display-decimals). The CSR prints 1 decimal.
+# Our limits, shown with 1 decimal, are the CSR's text in all 9 cells.
+cells:
+  Out14-3-01:
+    - cell: cell:Out14-3-01/r14/c2
+      csr: "(-2.1;1.1)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+    - cell: cell:Out14-3-01/r14/c3
+      csr: "(-2.7;0.7)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+    - cell: cell:Out14-3-01/r17/c3
+      csr: "(-2.2;1.1)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+  Out14-3-03:
+    - cell: cell:Out14-3-03/r14/c2
+      csr: "(-0.2;2.4)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+    - cell: cell:Out14-3-03/r14/c3
+      csr: "(-1.1;1.5)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+    - cell: cell:Out14-3-03/r17/c3
+      csr: "(-2.2;0.4)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+  Out14-3-05:
+    - cell: cell:Out14-3-05/r14/c2
+      csr: "(-1.8;1.2)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+    - cell: cell:Out14-3-05/r14/c3
+      csr: "(-2.2;0.9)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}
+    - cell: cell:Out14-3-05/r17/c3
+      csr: "(-1.9;1.1)"
+      class: rule_choice
+      decision: custom:eff-display-decimals
+      proof: {kind: other_pattern, patterns: {lower: X.X, upper: X.X}}

@@ -652,7 +652,9 @@ def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
     for edge in edges:
         if edge["type"] == "reads":
             reads.setdefault(edge["from"], set()).add(edge["to"])
-        elif edge["type"] == "computes":
+        elif edge["type"] == "computes" and edge["from"] in pilot.gold:
+            # The ARD rows of the example; those of the kit's other result sets (the
+            # efficacy tables of real-5a) are held against the R engine by D10.
             own = graph.ars_id(pilot.gold[edge["from"]]["analysis_id"])
             from_results.setdefault(own, set()).add(edge["to"])
 
@@ -715,7 +717,12 @@ def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
     """P3 for the cells of the grid: complete paths, held against the builder and the engine."""
     shown, _, made, _ = _display(pilot)
     nodes, edges = _graph_of(pilot)
-    lines, problems = graph.check_cells(pilot.folder / build.GRAPH, {shown.output: made})
+    # coverage.json holds every grid of the build (the efficacy tables of real-5a too).
+    grids = {display.output: json.loads((pilot.folder / build.GRID / f"{display.output}.json")
+                                        .read_text(encoding="utf-8"))
+             for spec in kits.load_kit(pilot.root, KIT).results for display in spec.displays}
+    assert grids[shown.output] == made
+    lines, problems = graph.check_cells(pilot.folder / build.GRAPH, grids)
     for line in lines:
         print(line)
     problems = [f"the unchanged graph does not pass: {p}" for p in problems[:3]]
@@ -750,16 +757,326 @@ def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
         for file in ("nodes.jsonl", "edges.jsonl"):
             records = [r for r in (nodes if file == "nodes.jsonl" else edges) if keep(r)]
             (copied / file).write_text("".join(json.dumps(r) + "\n" for r in records), "ascii")
-        _, found = graph.check_cells(copied, {shown.output: made})
-        print(f"planted in the files, {name}: {len(found)} problems")
+        _, found = graph.check_cells(copied, grids)
+        found = [problem for problem in found if shown.output in problem]
+        print(f"planted in the files, {name}: {len(found)} problems of {shown.output}")
         if not found:
             problems.append(f"{name}: the check of the files passes")
     return problems
 
 
+# ---- real-5a: the efficacy tables against the CSR (ADR-012, ADR-015) --------------------
+
+EFFICACY = "efficacy-adas"
+W24 = "An_ADAS_W24"
+MODEL_SUFFIXES = ("Dose", "PwPbo", "PwLow")
+_EFFICACY: dict[int, Efficacy] = {}
+
+
+@dataclass
+class Efficacy:
+    spec: kits.ResultSet
+    event: ars.Event
+    layouts: dict[str, layouts.Layout]  # output -> layout
+    tables: dict[str, dict]  # output -> its CSR table, parsed from the page of the build's CSR
+    entries: dict[str, list[dict]]  # output -> the kit's exceptions for its cells
+    decisions: set[str]
+    gold: results.Rows  # the gold ARD of the build
+
+
+def efficacy(pilot: Pilot) -> Efficacy:
+    if id(pilot) not in _EFFICACY:
+        from specfirst.machine import csr
+
+        kit = kits.load_kit(pilot.root, KIT)
+        spec = next(s for s in kit.results if s.id == EFFICACY)
+        inputs = build.result_inputs(pilot.root, pilot.folder, spec)
+        found = {display.output: (layouts.read(pilot.folder / display.layout),
+                                  csr.read_table(pilot.folder / display.reference.file,
+                                                 display.reference.page,
+                                                 display.reference.table))
+                 for display in spec.displays}
+        _EFFICACY[id(pilot)] = Efficacy(
+            spec, inputs.event, {key: value[0] for key, value in found.items()},
+            {key: value[1] for key, value in found.items()},
+            csr.load_exceptions(pilot.folder / kit.exceptions),
+            {record["id"] for record in results_jsonl(pilot.folder / kit.decisions)},
+            results.by_id(results_jsonl(pilot.folder / build.ARD / f"{EFFICACY}.jsonl")))
+    return _EFFICACY[id(pilot)]
+
+
+def results_jsonl(path: Path) -> list[dict]:
+    with open(path, encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def efficacy_rows(pilot: Pilot, eff: Efficacy, data: dict, work: Path) -> results.Rows:
+    """Both engines on a changed reporting event, merged as the build merges them."""
+    event = ars.index(data)
+    assert event.problems == []
+    bound = ars.bind(event, pilot.registry, eff.spec.binding)
+    tables = ard.load_tables(pilot.folder / build.ADAM, ars.columns(event, eff.spec.subject_key))
+    python = ard.run(event, pilot.registry, bound, tables, eff.spec.subject_key)
+    work.mkdir(parents=True, exist_ok=True)
+    path = work / "event.json"
+    path.write_text(json.dumps(data), encoding="ascii")
+    other, meta, _ = rengine.run(pilot.root, work, path, registry.json_path(pilot.root), bound,
+                                 tables, eff.spec.subject_key)
+    assert rengine.data_problems(meta, tables) == []
+    return results.by_id(build.gold_rows(python, other, pilot.registry))
+
+
+def efficacy_problems(eff: Efficacy, rows: results.Rows, event: ars.Event | None = None,
+                      tables: dict | None = None, entries: dict | None = None) -> list[str]:
+    """The check of the gate on every output: each grid against its CSR table."""
+    problems = []
+    for output, layout in sorted(eff.layouts.items()):
+        try:
+            made = grid.build(event or eff.event, layout, rows)
+        except grid.GridError as error:
+            problems.append(f"{output}: the grid cannot be built: {error}")
+            continue
+        compared = build.csr_against(made, (tables or eff.tables)[output], event or eff.event,
+                                     layout, rows, (entries or eff.entries).get(output, []),
+                                     eff.decisions)
+        problems += [f"{output}: {problem}" for problem in compared.problems]
+    return problems
+
+
+def _parameters(data: dict, suffixes: tuple[str, ...], change) -> dict:
+    """The event with the programmingCode parameters of some analyses of every week changed."""
+    for analysis in data["analyses"]:
+        if analysis["id"].rsplit("_", 1)[-1] in suffixes:
+            code = analysis["programmingCode"]
+            code["parameters"] = change([dict(p) for p in code["parameters"]])
+    return data
+
+
+def d9_efficacy(pilot: Pilot, tmp_path) -> list[str]:
+    """Defects planted in the efficacy tables: each must fail the check of the gate.
+
+    In the reporting event, run by both engines: a decision the CSR's numbers
+    rest on taken another way. In the reference and in the kit's exceptions:
+    a changed cell of the CSR, and exceptions that are stale, missing or prove
+    nothing. One defect the CSR cannot show is printed, not counted: the
+    weights of the LS means change no printed cell (the tables print
+    differences of LS means only).
+    """
+    eff = efficacy(pilot)
+    problems = []
+    control_problems = efficacy_problems(eff, eff.gold)
+    print(f"unchanged: {len(control_problems)} problems")
+    if control_problems:
+        return ["the unchanged inputs do not pass the check", *control_problems[:5]]
+
+    def data() -> dict:
+        return copy.deepcopy(eff.event.data)
+
+    def no_baseline(parameters):
+        return [p for p in parameters if p["name"] != "covariates"]
+
+    def by_rank(parameters):
+        return [dict(p, value=["group_rank"]) if p["name"] == "dose" else p for p in parameters]
+
+    def site_ids(parameters):
+        return [dict(p, value=["SITEID"]) if p["name"] == "factors" else p for p in parameters]
+
+    def asymptotic(parameters):
+        return [*parameters, {"name": "df", "value": ["asymptotic"]}]
+
+    def other_reference(parameters):
+        return [dict(p, value=["Grp_Low"]) if p["name"] == "reference" else p
+                for p in parameters]
+
+    def itt(value: dict) -> dict:
+        chosen = value["analysisSets"][0]
+        assert chosen["condition"]["variable"] == "EFFFL"
+        chosen["condition"]["variable"] = "ITTFL"
+        return value
+
+    def week16(value: dict) -> dict:
+        subset = next(s for s in value["dataSubsets"] if s["id"] == "DS_ADAS_W24")
+        visit = subset["compoundExpression"]["whereClauses"][1]["condition"]
+        assert visit["value"] == ["Week 24"]
+        visit["value"] = ["Week 16"]
+        return value
+
+    in_event = {
+        "the ANCOVA without the baseline covariate":
+            _parameters(data(), MODEL_SUFFIXES, no_baseline),
+        "the dose as the rank of the group": _parameters(data(), ("Dose",), by_rank),
+        "the site in place of the pooled site group":
+            _parameters(data(), MODEL_SUFFIXES, site_ids),
+        "the comparisons with asymptotic degrees of freedom":
+            _parameters(data(), ("PwPbo", "PwLow"), asymptotic),
+        "the comparison with placebo made against the low dose":
+            _parameters(data(), ("PwPbo",), other_reference),
+        "the intent-to-treat set in place of the efficacy set": itt(data()),
+        "week 16 in place of week 24": week16(data()),
+    }
+    for number, (name, value) in enumerate(in_event.items()):
+        rows = efficacy_rows(pilot, eff, value, tmp_path / f"event-{number}")
+        found = efficacy_problems(eff, rows, ars.index(value))
+        print(f"planted, {name}: {len(found)} problems"
+              + (f", for example: {found[0][:160]}" if found else ""))
+        if not found:
+            problems.append(f"{name}: not seen")
+    # The decision records against the event: the ANCOVA without the baseline is not
+    # what custom:eff-model-terms says (gate check `decisions`).
+    from specfirst.machine import decisions
+
+    records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
+    for name, value in (("unchanged", data()),
+                        ("the ANCOVA without the baseline covariate",
+                         in_event["the ANCOVA without the baseline covariate"])):
+        event = ars.index(value)
+        _, found = decisions.problems(
+            pilot.root, records, [(event, ars.bind(event, pilot.registry, eff.spec.binding))],
+            pilot.registry)
+        print(f"decision records, {name}: {len(found)} problems"
+              + (f", for example: {found[0][:160]}" if found else ""))
+        if (name == "unchanged") == bool(found):
+            problems.append(f"decision records, {name}: {len(found)} problems")
+    # The weights of the LS means: the LS means change, and no printed cell does.
+    value = _parameters(data(), ("LSM",), lambda ps: [
+        dict(p, value=["equal"]) if p["name"] == "weights" else p for p in ps])
+    rows = efficacy_rows(pilot, eff, value, tmp_path / "weights")
+    moved = [key for key, row in eff.gold.items() if "_LSM/" in key and not results.same(
+        rows[key]["raw_value"], row["raw_value"])]
+    found = efficacy_problems(eff, rows, ars.index(value))
+    print(f"what the CSR cannot show: the LS means with equal weights change {len(moved)} "
+          f"results of the LS means and {len(found)} cells (the tables print no LS mean)")
+    if not moved or found:
+        problems.append("the weights of the LS means: expected changed LS means and no "
+                        f"changed cell, found {len(moved)} and {len(found)}")
+    # In the reference and in the exceptions.
+    changed_table = copy.deepcopy(eff.tables)
+    line = next(line for line in changed_table["Out14-3-01"]["lines"]
+                if line["label"].startswith("p-value(Dose"))
+    assert line["cells"][2] == "0.245"
+    line["cells"][2] = "0.254"
+    as_printed = data()
+    for method in as_printed["methods"]:
+        for operation in method["operations"]:
+            if operation["id"] in ("Mth_AncovaPw_3_lcl", "Mth_AncovaPw_4_ucl"):
+                operation["resultPattern"] = "X.X"
+    first = eff.entries["Out14-3-01"][0]
+    planted = {
+        "a cell of the CSR changed (0.245 to 0.254)":
+            lambda: efficacy_problems(eff, eff.gold, tables=changed_table),
+        "the confidence limits shown with the CSR's 1 decimal (the 9 exceptions are stale)":
+            lambda: efficacy_problems(eff, eff.gold, event=ars.index(as_printed)),
+        "an exception whose other pattern proves nothing (3 decimals)": lambda: efficacy_problems(
+            eff, eff.gold, entries={**eff.entries, "Out14-3-01": [dict(first, proof={
+                "kind": "other_pattern", "patterns": {"lower": "X.XXX", "upper": "X.XXX"}}),
+                *eff.entries["Out14-3-01"][1:]]}),
+        "an exception left out": lambda: efficacy_problems(
+            eff, eff.gold, entries={**eff.entries, "Out14-3-01": eff.entries["Out14-3-01"][1:]}),
+        "an exception with the class reference_error": lambda: efficacy_problems(
+            eff, eff.gold, entries={**eff.entries, "Out14-3-01": [
+                dict(first, **{"class": "reference_error"}), *eff.entries["Out14-3-01"][1:]]}),
+        "an exception that names no decision record": lambda: efficacy_problems(
+            eff, eff.gold, entries={**eff.entries, "Out14-3-01": [
+                dict(first, decision="custom:none"), *eff.entries["Out14-3-01"][1:]]}),
+    }
+    for name, check in planted.items():
+        found = check()
+        print(f"planted, {name}: {len(found)} problems"
+              + (f", for example: {found[0][:160]}" if found else ""))
+        if not found:
+            problems.append(f"{name}: not seen")
+    return problems
+
+
+def d10_trace_model(pilot: Pilot, tmp_path) -> list[str]:
+    """The `reads` edges of the model-based analyses against the R engine (lesson 16).
+
+    D8 for the analyses only the R engine runs. The analyses of the three
+    tables that fit a model are run on the columns the event hands over, with
+    every column they have no `reads` edge to emptied, then rolled by one
+    row: their results must stay the same. With every column they read
+    emptied, a result must change. Planted: the edge to ADQSADAS.BASE, the
+    covariate of the model (a parameter of the analysis, not a variable, a
+    set or a grouping), left out: its roll must be seen.
+    """
+    import numpy as np
+
+    eff = efficacy(pilot)
+    _, edges = _graph_of(pilot)
+    names = {f"{W24.replace('W24', week)}_{suffix}" for week in ("W24", "W08", "W16")
+             for suffix in MODEL_SUFFIXES}
+    data = copy.deepcopy(eff.event.data)
+    data["analyses"] = [a for a in data["analyses"] if a["id"] in names]
+    only = ars.index(data)
+    bound = ars.bind(only, pilot.registry, eff.spec.binding)
+    tables = ard.load_tables(pilot.folder / build.ADAM,
+                             ars.columns(eff.event, eff.spec.subject_key))
+    gold = {key: row for key, row in eff.gold.items() if row["analysis_id"] in names}
+    path = tmp_path / "event.json"
+    path.write_text(json.dumps(data), encoding="ascii")
+
+    def empty(values):
+        if values.dtype == object:
+            made = np.empty(len(values), dtype=object)
+            made[:] = ""
+            return made
+        return np.full(len(values), np.nan)
+
+    def moved(columns: set[str], change, read: bool, tag: str) -> tuple[list[str], int]:
+        other, count = {}, 0
+        for name, table in tables.items():
+            values = dict(table.columns)
+            for column in table.columns:
+                if (graph.adam_id(name, column) in columns) == read:
+                    values[column] = change(table.columns[column])
+                    count += 1
+            other[name] = ard.Table(name, table.rows, values, table.kinds)
+        try:
+            rows, _, _ = rengine.run(pilot.root, tmp_path / tag, path,
+                                     registry.json_path(pilot.root), bound, other,
+                                     eff.spec.subject_key)
+        except rengine.REngineError:
+            return sorted(gold), count
+        found = results.by_id(rows)
+        return [key for key, row in gold.items() if key not in found or not results.same(
+            found[key]["raw_value"], row["raw_value"])], count
+
+    def check(edges_used: list[dict], tag: str) -> list[str]:
+        reads: set[str] = set()
+        for name in names:
+            reads |= {edge["to"] for edge in edges_used
+                      if edge["type"] == "reads" and edge["from"] == graph.ars_id(name)}
+        found = []
+        for label, change in (("emptied", empty), ("rolled", lambda v: np.roll(v, 1))):
+            differing, count = moved(reads, change, False, f"{tag}-{label}")
+            print(f"  {tag}: the {count} columns without a reads edge {label}: "
+                  f"{len(differing)} of {len(gold)} results change")
+            if differing:
+                found.append(f"with the {count} columns they have no reads edge to {label}, "
+                             f"{len(differing)} results change, for example {differing[0]}")
+        differing, count = moved(reads, empty, True, f"{tag}-read")
+        if not differing:
+            found.append(f"emptying the {count} columns they read changes no result")
+        return found
+
+    problems = check(edges, "unchanged")
+    if not any(edge["type"] == "reads" and edge["to"] == "adam:ADQSADAS.BASE"
+               and edge["from"] == graph.ars_id(f"{W24}_Dose") for edge in edges):
+        problems.append("no reads edge from the dose-response analysis to ADQSADAS.BASE")
+    without = [edge for edge in edges if not (
+        edge["type"] == "reads" and edge["to"] == "adam:ADQSADAS.BASE")]
+    found = check(without, "planted")
+    print(f"planted, the reads edges to ADQSADAS.BASE left out ({len(edges) - len(without)} "
+          f"edges): {len(found)} problems" + (f", for example: {found[0][:150]}" if found else ""))
+    if not found:
+        problems.append("the reads edges to ADQSADAS.BASE left out: not seen")
+    return problems
+
+
 CASES = {"D1-arms": d1_arms, "D2-set": d2_set, "D3-quantile": d3_quantile,
          "D4-subset": d4_subset, "D5-engines": d5_engines, "D6-proofs": d6_proofs,
-         "D7-display": d7_display, "D8-trace": d8_trace}
+         "D7-display": d7_display, "D8-trace": d8_trace, "D9-efficacy": d9_efficacy,
+         "D10-trace-model": d10_trace_model}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

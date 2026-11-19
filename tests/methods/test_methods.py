@@ -68,11 +68,18 @@ def python_result(method: str, case: dict) -> dict:
 
 
 def differences(expected: dict, found: dict) -> list[str]:
+    """What differs. A model-based method gives one value per group: a mapping."""
     problems = []
     if set(expected) != set(found):
         return [f"operations {sorted(found)} for {sorted(expected)}"]
     for name, want in expected.items():
         got = found[name]
+        if isinstance(want, dict) or isinstance(got, dict):
+            if not isinstance(want, dict) or not isinstance(got, dict):
+                problems.append(f"{name}: {got!r}, expected {want!r}")
+            else:
+                problems += [f"{name}, {problem}" for problem in differences(want, got)]
+            continue
         if want is None or got is None or isinstance(want, str):
             if want != got:
                 problems.append(f"{name}: {got!r}, expected {want!r}")
@@ -90,12 +97,16 @@ def need_r() -> None:
 
 def python_vectors(tmp_path) -> list[str]:
     problems, count = [], 0
+    known = registry.load(ROOT).methods
     for file in vector_files():
+        if "python" not in known[file["method"]].implementations:
+            continue  # a model-based method is R only (section 7.3)
         for case in file["cases"]:
             count += 1
             problems += [f"{file['method']}, {case['name']}: {problem}" for problem in
                          differences(case["expected"], python_result(file["method"], case))]
-    print(f"Python implementations: {count} cases of {len(vector_files())} methods, "
+    print(f"Python implementations: {count} cases of "
+          f"{sum('python' in m.implementations for m in known.values())} methods, "
           f"{len(problems)} differences")
     return problems
 
@@ -130,6 +141,62 @@ def exact_arithmetic(tmp_path) -> list[str]:
                          for problem in differences(expected, case["expected"])]
     print(f"expected values computed again in exact arithmetic: {covered} cases, {len(problems)} "
           f"differences; written by hand: {by_hand} cases (the display rules)")
+    return problems
+
+
+MODEL_METHODS = ("model.ancova.lsmeans", "model.ancova.pairwise", "model.ancova.dose_response")
+
+
+def model_vectors(tmp_path) -> list[str]:
+    """The model-based methods (R only): every vector, and every option seen to matter.
+
+    The expected values come from oracle_models (exact fractions and the
+    closed form of the t distribution), which shares nothing with the R
+    implementation. A vector file whose cases leave an option at one value
+    proves nothing about it; and what an implementation that ignored an
+    option would compute (the LS means always with equal weights, the
+    comparisons always with residual degrees of freedom, the dose always by
+    its rank), planted by fixing the option in the inputs, not in the R code,
+    must be seen by the vectors (rule R5).
+    """
+    need_r()
+    files = [file for file in vector_files() if file["method"] in MODEL_METHODS]
+    if [file["method"] for file in files] != sorted(MODEL_METHODS):
+        return [f"vector files of the model-based methods: {[f['method'] for f in files]}"]
+    problems, count = [], 0
+    found = rengine.run_vectors(ROOT, tmp_path / "honest", files)
+    for file in files:
+        for index, case in enumerate(file["cases"]):
+            count += 1
+            problems += [f"{file['method']}, {case['name']}: {problem}" for problem in
+                         differences(case["expected"], found[(file["method"], index)])]
+    known = registry.load(ROOT).methods
+    for file in files:
+        for name, option in known[file["method"]].options.items():
+            if "values" not in option:
+                continue
+            used = {json.dumps((case.get("options") or {}).get(name, option["default"]))
+                    for case in file["cases"]}
+            if len(used) != len(option["values"]):
+                problems.append(f"{file['method']}: the vectors give option {name} "
+                                f"{len(used)} of its {len(option['values'])} values")
+    print(f"model-based methods in R: {count} cases of {len(files)} methods, {len(problems)} "
+          "differences")
+    planted = {"model.ancova.lsmeans": ("weights", "equal"),
+               "model.ancova.pairwise": ("df", "residual"),
+               "model.ancova.dose_response": ("dose", "group_rank")}
+    for file in files:
+        option, fixed = planted[file["method"]]
+        changed = [dict(case, options={**(case.get("options") or {}), option: fixed})
+                   for case in file["cases"]]
+        wrong = rengine.run_vectors(ROOT, tmp_path / f"planted-{option}",
+                                    [dict(file, cases=changed)])
+        seen = sum(bool(differences(case["expected"], wrong[(file["method"], index)]))
+                   for index, case in enumerate(file["cases"]))
+        print(f"planted: {file['method']} always with {option} = {fixed}: {seen} cases differ")
+        if not seen:
+            problems.append(f"{file['method']}: the vectors do not see option {option} "
+                            f"fixed at {fixed}")
     return problems
 
 
@@ -207,7 +274,7 @@ def fisher_limit(tmp_path) -> list[str]:
 
 CASES = {"python-vectors": python_vectors, "r-vectors": r_vectors,
          "exact-arithmetic": exact_arithmetic, "fisher-r": fisher_r,
-         "fisher-limit": fisher_limit}
+         "fisher-limit": fisher_limit, "model-vectors": model_vectors}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

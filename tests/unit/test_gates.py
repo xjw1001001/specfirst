@@ -118,10 +118,13 @@ def test_real2_gate_has_the_checks_of_the_plan(root, tmp_path):
     from specfirst.machine import build
 
     def counts(python, r=None):
-        found = [{"set": "x", "engine": "Python", "total": 3735, "reproduced": python,
-                  "not_reproduced": 3735 - python, "explained": True}]
+        found = [{"set": gates.PILOT_EXAMPLE, "engine": "Python", "total": 3735,
+                  "reproduced": python, "not_reproduced": 3735 - python, "explained": True}]
         if r is not None:
             found.append({**found[0], "engine": "R", "reproduced": r})
+        # Another result set of the kit (real-5a: our own event, nothing embedded) is
+        # judged by result_checks, not counted against E2.
+        found.append({**found[0], "set": "efficacy-adas", "total": 0, "reproduced": 0})
         return found
 
     said: list[str] = []
@@ -162,8 +165,9 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
     from specfirst.machine import build
 
     def count(**changed):
-        return {"set": "x", "output": "Out14-3-1-1", "cells": 27, "results": 51, "equal": 27,
-                "differing": 0, "classified": 0, "no_reference": 0, "problems": 0, **changed}
+        return {"set": gates.PILOT_EXAMPLE, "output": "Out14-3-1-1", "cells": 27,
+                "results": 51, "equal": 27, "differing": 0, "classified": 0,
+                "no_reference": 0, "problems": 0, **changed}
 
     said: list[str] = []
     ctx = gates.Context(tmp_path, "demo", said.append)
@@ -177,6 +181,7 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
             ([count(equal=26, no_reference=1)], True, False),
             ([], True, False),
             ([count(), count(output="Out14-1-1")], True, False),  # an output it does not know
+            ([count(), count(set="efficacy-adas", output="Out14-3-01")], True, True),  # real-5a
         ):
             monkeypatch.setattr(build, "display_checks",
                                 lambda *args, g=given, p=passes, **kwargs: (p, g))
@@ -185,6 +190,55 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
         ctx.close()
     assert any("The gate asks for 27 cells that show 51 results" in line for line in said)
     assert any("the kit builds [], the gate asks for ['Out14-3-1-1']" in line for line in said)
+
+
+def test_real5a_gate_has_the_checks_of_adr_012(tmp_path, monkeypatch):
+    """ADR-012, part real-5a: the gate of real-3a, the CSR tables, the decisions."""
+    checks = gates.GATES["real-5a"]
+    names = [check.name for check in checks]
+    assert names[0] == "environment"
+    before = {check.name: check.run for check in gates.GATES["real-3a"]}
+    after = {check.name: check.run for check in checks}
+    assert set(after) == {*before, "efficacy", "decisions"}
+    changed = {"method vectors", "planted defects"}  # with the tests of real-5a required
+    assert all(after[name] is run for name, run in before.items() if name not in changed)
+    assert names.index("P1 determinism") < names.index("trace") < names.index("efficacy")
+    assert names.index("efficacy") < names.index("planted defects") < names.index(
+        "cache untouched")
+    assert set(gates.REAL5A_DEFECTS) == {*gates.REAL3A_DEFECTS, "D9-efficacy",
+                                         "D10-trace-model"}
+    assert "model-vectors" in gates.REAL5A_METHOD_TESTS
+    assert set(gates.EFFICACY_GRIDS) == {"Out14-3-01", "Out14-3-03", "Out14-3-05"}
+
+    from specfirst.machine import build
+
+    def count(output: str, **changed) -> dict:
+        return {"set": gates.EFFICACY_SET, "output": output, "reference": "csr",
+                "cells": 51, "printed": 40, "equal": 48, "differing": 3, "classified": 3,
+                "classes": {"rule_choice": 3}, "problems": 0, **changed}
+
+    every = [count(name) for name in sorted(gates.EFFICACY_GRIDS)]
+    said: list[str] = []
+    ctx = gates.Context(tmp_path, "demo", said.append)
+    try:
+        for given, passes, expected in (
+            (every, True, True),
+            (every, False, False),  # the check of the build itself failed
+            ([*every[:2], count("Out14-3-05", classified=2)], True, False),  # one with no class
+            ([*every[:2], count("Out14-3-05", problems=1)], True, False),
+            ([*every[:2], count("Out14-3-05", cells=48, equal=45)], True, False),  # a row less
+            ([*every[:2], count("Out14-3-05", printed=39)], True, False),
+            ([*every[:2], count("Out14-3-05", reference="ars")], True, False),
+            (every[:2], True, False),  # a table missing
+            ([*every, count("Out14-3-07")], True, False),  # a table it does not know
+        ):
+            monkeypatch.setattr(build, "display_checks",
+                                lambda *args, g=given, p=passes, **kwargs: (p, g))
+            assert gates._efficacy(ctx) is expected, given
+    finally:
+        ctx.close()
+    assert any("classified differences: 9 rule_choice" in line for line in said)
+    assert any("The gate asks for 51 cells against CSR Table 14-3.05" in line for line in said)
 
 
 def test_std1_gate_has_the_checks_of_the_plan():

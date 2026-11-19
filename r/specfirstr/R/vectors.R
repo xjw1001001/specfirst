@@ -42,7 +42,57 @@ vector_result <- function(method, input, options) {
   if (method == "test.anova.oneway") {
     return(list(p_value = m_anova_oneway_p(lapply(input$groups, values_of))))
   }
+  if (method %in% MODEL_METHODS) return(model_vector(method, input, options))
   fail("the R engine does not implement ", method)
+}
+
+# A vector of a model-based method: the columns the options name, taken from the input.
+model_vector <- function(method, input, options) {
+  columns <- function(kind) {
+    out <- list()
+    for (name in unlist(options[[kind]])) out[[name]] <- values_of(input[[kind]][[name]])
+    out
+  }
+  y <- values_of(input$y)
+  group <- values_of(input$group)
+  groups <- unlist(input$groups)
+  factors <- columns("factors")
+  covariates <- columns("covariates")
+  df <- options$df %||% "residual"
+  level <- as.numeric(options$confidence_level %||% 95)
+  if (method == "model.ancova.lsmeans") {
+    by_group <- m_ancova_lsmeans(y, group, groups, factors, covariates,
+                                 options$weights %||% "equal", df, level)
+  } else if (method == "model.ancova.pairwise") {
+    by_group <- m_ancova_pairwise(y, group, groups, options$reference, factors, covariates,
+                                  df, level)
+  } else {
+    return(m_ancova_dose_response(y, group, groups, values_of(input$dose), factors, covariates,
+                                  options$dose %||% "grouping_value",
+                                  options$model %||% "continuous_dose", df))
+  }
+  # One mapping per operation, from group to value.
+  operations <- names(by_group[[1]])
+  out <- list()
+  for (operation in operations) {
+    out[[operation]] <- lapply(by_group, function(values) values[[operation]])
+  }
+  out
+}
+
+# A result of a vector as JSON: a number, or a mapping of a group to a number.
+json_result <- function(value) {
+  if (is.list(value)) {
+    keys <- names(value)
+    parts <- vapply(keys, function(key) {
+      v <- value[[key]]
+      if (is.nan(v)) v <- NA_real_
+      paste0(json_string(key), ":", json_scalar(v))
+    }, "")
+    return(paste0("{", paste(parts, collapse = ","), "}"))
+  }
+  if (is.nan(value)) value <- NA_real_
+  json_scalar(value)
 }
 
 run_vectors <- function(in_path, out_path) {
@@ -53,9 +103,7 @@ run_vectors <- function(in_path, out_path) {
       case <- file$cases[[i]]
       result <- vector_result(file$method, case$input, case$options %||% list())
       fields <- vapply(names(result), function(name) {
-        value <- result[[name]]
-        if (is.nan(value)) value <- NA_real_
-        paste0(json_string(name), ":", json_scalar(value))
+        paste0(json_string(name), ":", json_result(result[[name]]))
       }, "")
       lines <- c(lines, paste0("{\"method\":", json_string(file$method), ",\"case\":", i - 1,
                                ",\"result\":{", paste(fields, collapse = ","), "}}"))

@@ -20,6 +20,8 @@ pins:
   sources:
     p7: 213cb6ab3adc51abe4295cbbc546c0e6d46c3df8
     ars: 2c9b4b68724386e8f91dc576724855af7fafac65
+    # Pilot 6: the CSR, the reference of the efficacy grids (real-5a, ADR-015).
+    p6: a4f85c95cfef1f6aa27795362630f8ae43210185
 
 build:
   # The yamaa project that builds the ADaM datasets (ADR-001).
@@ -35,6 +37,10 @@ build:
   # Our own file, in this folder: every difference between our results and a
   # reference, with its class and its proof (PLAN.md section 4.8, ADR-002).
   exceptions: gold/exceptions.yaml
+  # Our own file, in this folder: the decision records of the efficacy tables of
+  # real-5a, custom decisions (custom:<slug>) until catalog@2 (PLAN.md section 10,
+  # ADR-012 decision 2, ADR-015).
+  decisions: gold/decisions/efficacy.jsonl
 
 # The ARS reporting events whose analyses the result engines run on the ADaM
 # datasets of the build (ADR-002).
@@ -66,6 +72,25 @@ results:
     outputs:
       - id: Out14-3-1-1
         layout: gold/layout/Out14-3-1-1.yaml
+  # real-5a (ADR-012, ADR-015): ADAS-Cog (11), change from baseline to weeks 24, 8
+  # and 16, LOCF, by ANCOVA. The reporting event is our own file, written from the
+  # SAP, the analysis results metadata of the Define-XML and the CSR's shells; it
+  # embeds no result. The reference of each grid is its table in the CSR, parsed
+  # from its page on every check (specfirst.machine.csr), never kept in git.
+  - id: efficacy-adas
+    ars: gold/events/efficacy-adas.json
+    schema: gold/spec/ars/ars_ldm.schema.json
+    subject_key: USUBJID
+    outputs:
+      - id: Out14-3-01
+        layout: gold/layout/Out14-3-01.yaml
+        reference: {csr: gold/reference/csr/CSR.pdf, page: 49, table: "14-3.01"}
+      - id: Out14-3-03
+        layout: gold/layout/Out14-3-03.yaml
+        reference: {csr: gold/reference/csr/CSR.pdf, page: 51, table: "14-3.03"}
+      - id: Out14-3-05
+        layout: gold/layout/Out14-3-05.yaml
+        reference: {csr: gold/reference/csr/CSR.pdf, page: 53, table: "14-3.05"}
 
 # The documents of the kit. `cited_as` is how Pilot 7's claims name them.
 documents:
@@ -166,6 +191,10 @@ files:
     source: p7
     from: cdiscpilot01/data/adam/advs.parquet
     sha256: 5053968c04dd8b795f641c69f812f5e200664abbdfaf10a6e84280aeea4ba482
+  - path: gold/reference/csr/CSR.pdf
+    source: p6
+    from: documents/CSR.pdf
+    sha256: 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
   - path: gold/spec/ars/ars_ldm.schema.json
     source: ars
     from: project/jsonschema/ars_ldm.schema.json

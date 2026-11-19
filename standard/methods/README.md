@@ -16,6 +16,13 @@ Version 0, started by real-2 (ADR-002).
 | `display.round.half_away_from_zero` | display | text |
 | `display.round.half_even` | display | text |
 | `display.pattern` | display | text |
+| `model.ancova.lsmeans` | model | lsmean, se, lower_cl, upper_cl |
+| `model.ancova.pairwise` | model | estimate, se, lower_cl, upper_cl, p_value |
+| `model.ancova.dose_response` | model | p_value, estimate |
+
+The three `model` entries are real-5a's (ADR-015): ANCOVA with LS means, its
+pairwise comparisons and its dose-response test. A model-based method is R
+only (PLAN.md section 7.3).
 
 `specfirst methods` lists the entries and checks `registry.json`.
 
@@ -25,12 +32,12 @@ One YAML file per entry, named `<id>.yaml`.
 
 | Key | Content |
 | --- | --- |
-| `id`, `kind`, `title` | The kind is `descriptive`, `test` or `display`. |
+| `id`, `kind`, `title` | The kind is `descriptive`, `test`, `display` or `model`. |
 | `takes` | What the method is given, in words. |
 | `operations` | Per operation: `result` (`integer`, `number` or `text`) and `ars_names`, the names an ARS operation may have to be this one. |
 | `semantics` | The statements that fix the arithmetic. Statement k is cited as "statement k" of the entry; their order is part of the contract. |
-| `options` | Per option: its `values` and its `default`. A value is text, a whole number, or true or false. |
-| `implementations` | `python`, `r` or both. A descriptive method or a test needs both (rule R11). |
+| `options` | Per option: its `values` and its `default`. A value is text, a whole number, or true or false. A model-based method may also have an option `{takes: columns, default: []}`, the names of columns of the analysis dataset (only `factors` and `covariates`, which the ARS reader knows), and `{takes: group, default: null}`, the ID of a group of the analysis's grouping; the analysis states both (ADR-015). |
+| `implementations` | `python`, `r` or both. A descriptive method or a test needs both (rule R11); a model-based method is `r` only. |
 | `vectors` | The file of test vectors in `tests/methods/`. |
 | `xref` | `ars_example`: operation IDs of CDISC's ARS example. `siera`: method templates of siera. `acdc`: the AC/DC method ID, null until M2 (E11). |
 
@@ -65,7 +72,7 @@ bound by B1 or B2.
 Options, in rising order of weight: the defaults of the registry; what the
 caller gives per registry method; the parameters an analysis states itself
 (`programmingCode` with the context `specfirst method registry`, one value
-per parameter).
+per parameter, or any number for an option that takes columns).
 
 ## How an analysis is run
 
@@ -88,6 +95,10 @@ Both engines follow these rules. They are the choices ARS leaves to code.
 | I13 | The population of rule I12b: the subjects of the analysis set, in the one dataset its conditions name, restricted by those parts of the data subset that are joined by AND at its top and whose conditions are all on that dataset. "Treatment-emergent and arm in (placebo, low dose)" restricts the population to the two arms; "treatment-emergent" alone does not restrict it. |
 | I14 | A result is identified by its analysis, its ARS operation and, per grouping, the group's ID (defined group), the value (data-driven group) or nothing (compared grouping). |
 | I15 | The percent of a cell follows `percent.subjects`: the numerator in the same cell, the denominator from the one result of the referenced analysis whose groups are all groups of the cell. |
+| I16 | A model-based method (kind `model`) is run by the R engine alone. The Python engine gives no row for its analysis; the gold ARD takes the R engine's rows (ADR-015). An analysis binds the operations of one model-based method and of nothing else. |
+| I17 | A model-based analysis has exactly one grouping, the treatment. Its model is fitted once, to the analysis records (rule I6). The group of a record is the group whose where clause it fulfils (rule I8, rule I4 across datasets) or its value (rule I9); a record in two groups is an error. |
+| I18 | Its results: one per group of the grouping and operation when the grouping has results by group (LS means; a comparison with a reference group, where the reference itself gives none); one per operation when the grouping is compared (the dose-response test), identified with `*` for the grouping (rule I14). |
+| I19 | The factors and covariates of the model are the columns its `factors` and `covariates` parameters name, read on the analysis dataset; they are read like the analysis variable (`ars.reads`, role `model`). The dose of a group is the value of the grouping variable, which must be a number column, read across datasets by the subject key as in rule I9. |
 
 ## An ARD row
 

@@ -1,0 +1,1533 @@
+{
+  "id": "RE_CDISCPILOT01_EFF_ADAS",
+  "name": "CDISCPILOT01: ADAS-Cog (11) change from baseline by ANCOVA, LOCF",
+  "description": "Written by specfirst (real-5a, ADR-012, ADR-015) from the SAP, the analysis results metadata of the pilot's Define-XML and the shells of the CSR. MIT license.",
+  "version": 1,
+  "mainListOfContents": {
+    "name": "Efficacy tables of real-5a",
+    "contentsList": {
+      "listItems": [
+        {
+          "name": "Table 14-3.01: Primary Endpoint Analysis: ADAS Cog (11) - Change from Baseline to Week 24 - LOCF",
+          "level": 1,
+          "order": 1,
+          "outputId": "Out14-3-01",
+          "sublist": {
+            "listItems": [
+              {
+                "name": "Subjects",
+                "level": 2,
+                "order": 1,
+                "analysisId": "An_EFF_N"
+              },
+              {
+                "name": "Baseline",
+                "level": 2,
+                "order": 2,
+                "analysisId": "An_ADAS_W24_Base"
+              },
+              {
+                "name": "Week 24",
+                "level": 2,
+                "order": 3,
+                "analysisId": "An_ADAS_W24_Aval"
+              },
+              {
+                "name": "Change from baseline",
+                "level": 2,
+                "order": 4,
+                "analysisId": "An_ADAS_W24_Chg"
+              },
+              {
+                "name": "Dose response",
+                "level": 2,
+                "order": 5,
+                "analysisId": "An_ADAS_W24_Dose"
+              },
+              {
+                "name": "Each dose against placebo",
+                "level": 2,
+                "order": 6,
+                "analysisId": "An_ADAS_W24_PwPbo"
+              },
+              {
+                "name": "High dose against low dose",
+                "level": 2,
+                "order": 7,
+                "analysisId": "An_ADAS_W24_PwLow"
+              },
+              {
+                "name": "LS means",
+                "level": 2,
+                "order": 8,
+                "analysisId": "An_ADAS_W24_LSM"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Table 14-3.03: ADAS Cog (11) - Change from Baseline to Week 8 - LOCF",
+          "level": 1,
+          "order": 2,
+          "outputId": "Out14-3-03",
+          "sublist": {
+            "listItems": [
+              {
+                "name": "Subjects",
+                "level": 2,
+                "order": 1,
+                "analysisId": "An_EFF_N"
+              },
+              {
+                "name": "Baseline",
+                "level": 2,
+                "order": 2,
+                "analysisId": "An_ADAS_W08_Base"
+              },
+              {
+                "name": "Week 8",
+                "level": 2,
+                "order": 3,
+                "analysisId": "An_ADAS_W08_Aval"
+              },
+              {
+                "name": "Change from baseline",
+                "level": 2,
+                "order": 4,
+                "analysisId": "An_ADAS_W08_Chg"
+              },
+              {
+                "name": "Dose response",
+                "level": 2,
+                "order": 5,
+                "analysisId": "An_ADAS_W08_Dose"
+              },
+              {
+                "name": "Each dose against placebo",
+                "level": 2,
+                "order": 6,
+                "analysisId": "An_ADAS_W08_PwPbo"
+              },
+              {
+                "name": "High dose against low dose",
+                "level": 2,
+                "order": 7,
+                "analysisId": "An_ADAS_W08_PwLow"
+              },
+              {
+                "name": "LS means",
+                "level": 2,
+                "order": 8,
+                "analysisId": "An_ADAS_W08_LSM"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Table 14-3.05: ADAS Cog (11) - Change from Baseline to Week 16 - LOCF",
+          "level": 1,
+          "order": 3,
+          "outputId": "Out14-3-05",
+          "sublist": {
+            "listItems": [
+              {
+                "name": "Subjects",
+                "level": 2,
+                "order": 1,
+                "analysisId": "An_EFF_N"
+              },
+              {
+                "name": "Baseline",
+                "level": 2,
+                "order": 2,
+                "analysisId": "An_ADAS_W16_Base"
+              },
+              {
+                "name": "Week 16",
+                "level": 2,
+                "order": 3,
+                "analysisId": "An_ADAS_W16_Aval"
+              },
+              {
+                "name": "Change from baseline",
+                "level": 2,
+                "order": 4,
+                "analysisId": "An_ADAS_W16_Chg"
+              },
+              {
+                "name": "Dose response",
+                "level": 2,
+                "order": 5,
+                "analysisId": "An_ADAS_W16_Dose"
+              },
+              {
+                "name": "Each dose against placebo",
+                "level": 2,
+                "order": 6,
+                "analysisId": "An_ADAS_W16_PwPbo"
+              },
+              {
+                "name": "High dose against low dose",
+                "level": 2,
+                "order": 7,
+                "analysisId": "An_ADAS_W16_PwLow"
+              },
+              {
+                "name": "LS means",
+                "level": 2,
+                "order": 8,
+                "analysisId": "An_ADAS_W16_LSM"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "analysisSets": [
+    {
+      "id": "AnalysisSet_EFF",
+      "name": "Efficacy population",
+      "level": 1,
+      "order": 1,
+      "condition": {
+        "dataset": "ADSL",
+        "variable": "EFFFL",
+        "comparator": "EQ",
+        "value": [
+          "Y"
+        ]
+      }
+    }
+  ],
+  "dataSubsets": [
+    {
+      "id": "DS_ADAS_W24",
+      "name": "ADAS-Cog (11) total score at Week 24, LOCF",
+      "level": 1,
+      "order": 1,
+      "compoundExpression": {
+        "logicalOperator": "AND",
+        "whereClauses": [
+          {
+            "level": 2,
+            "order": 1,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "PARAMCD",
+              "comparator": "EQ",
+              "value": [
+                "ACTOT"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 2,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "AVISIT",
+              "comparator": "EQ",
+              "value": [
+                "Week 24"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 3,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "ANL01FL",
+              "comparator": "EQ",
+              "value": [
+                "Y"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "DS_ADAS_W08",
+      "name": "ADAS-Cog (11) total score at Week 8, LOCF",
+      "level": 1,
+      "order": 2,
+      "compoundExpression": {
+        "logicalOperator": "AND",
+        "whereClauses": [
+          {
+            "level": 2,
+            "order": 1,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "PARAMCD",
+              "comparator": "EQ",
+              "value": [
+                "ACTOT"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 2,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "AVISIT",
+              "comparator": "EQ",
+              "value": [
+                "Week 8"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 3,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "ANL01FL",
+              "comparator": "EQ",
+              "value": [
+                "Y"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "DS_ADAS_W16",
+      "name": "ADAS-Cog (11) total score at Week 16, LOCF",
+      "level": 1,
+      "order": 3,
+      "compoundExpression": {
+        "logicalOperator": "AND",
+        "whereClauses": [
+          {
+            "level": 2,
+            "order": 1,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "PARAMCD",
+              "comparator": "EQ",
+              "value": [
+                "ACTOT"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 2,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "AVISIT",
+              "comparator": "EQ",
+              "value": [
+                "Week 16"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 3,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "ANL01FL",
+              "comparator": "EQ",
+              "value": [
+                "Y"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "analysisGroupings": [
+    {
+      "id": "AnlsGrouping_TRT01P",
+      "name": "Planned treatment",
+      "groupingDataset": "ADSL",
+      "groupingVariable": "TRT01PN",
+      "dataDriven": false,
+      "groups": [
+        {
+          "id": "Grp_Pbo",
+          "name": "Placebo",
+          "level": 1,
+          "order": 1,
+          "condition": {
+            "dataset": "ADSL",
+            "variable": "TRT01PN",
+            "comparator": "EQ",
+            "value": [
+              "0"
+            ]
+          }
+        },
+        {
+          "id": "Grp_Low",
+          "name": "Xanomeline Low Dose",
+          "level": 1,
+          "order": 2,
+          "condition": {
+            "dataset": "ADSL",
+            "variable": "TRT01PN",
+            "comparator": "EQ",
+            "value": [
+              "54"
+            ]
+          }
+        },
+        {
+          "id": "Grp_High",
+          "name": "Xanomeline High Dose",
+          "level": 1,
+          "order": 3,
+          "condition": {
+            "dataset": "ADSL",
+            "variable": "TRT01PN",
+            "comparator": "EQ",
+            "value": [
+              "81"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "Mth_Count",
+      "name": "Count of subjects",
+      "label": "Count of subjects",
+      "description": "Method registry: count.subjects",
+      "operations": [
+        {
+          "id": "Mth_Count_1_n",
+          "name": "Count of subjects",
+          "order": 1,
+          "resultPattern": "(N=X)"
+        }
+      ]
+    },
+    {
+      "id": "Mth_ContSumm",
+      "name": "Summary of a continuous variable",
+      "label": "Summary of a continuous variable",
+      "description": "Method registry: summary.continuous",
+      "operations": [
+        {
+          "id": "Mth_ContSumm_1_n",
+          "name": "Count of non-missing values",
+          "order": 1,
+          "resultPattern": "X"
+        },
+        {
+          "id": "Mth_ContSumm_2_Mean",
+          "name": "Mean",
+          "order": 2,
+          "resultPattern": "X.X"
+        },
+        {
+          "id": "Mth_ContSumm_3_SD",
+          "name": "Standard deviation",
+          "order": 3,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_ContSumm_4_Median",
+          "name": "Median",
+          "order": 4,
+          "resultPattern": "X.X"
+        },
+        {
+          "id": "Mth_ContSumm_5_Min",
+          "name": "Minimum",
+          "order": 5,
+          "resultPattern": "X"
+        },
+        {
+          "id": "Mth_ContSumm_6_Max",
+          "name": "Maximum",
+          "order": 6,
+          "resultPattern": "X"
+        }
+      ]
+    },
+    {
+      "id": "Mth_AncovaDose",
+      "name": "ANCOVA, test of a dose-response trend",
+      "label": "ANCOVA dose-response test",
+      "description": "Method registry: model.ancova.dose_response",
+      "operations": [
+        {
+          "id": "Mth_AncovaDose_1_pval",
+          "name": "P-value",
+          "order": 1,
+          "resultPattern": "X.XXX"
+        },
+        {
+          "id": "Mth_AncovaDose_2_est",
+          "name": "Estimate",
+          "order": 2,
+          "resultPattern": "X.XXX"
+        }
+      ]
+    },
+    {
+      "id": "Mth_AncovaPw",
+      "name": "ANCOVA, each group against a reference group",
+      "label": "ANCOVA pairwise comparison",
+      "description": "Method registry: model.ancova.pairwise",
+      "operations": [
+        {
+          "id": "Mth_AncovaPw_1_diff",
+          "name": "Difference of LS means",
+          "order": 1,
+          "resultPattern": "X.X"
+        },
+        {
+          "id": "Mth_AncovaPw_2_se",
+          "name": "Standard error",
+          "order": 2,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_AncovaPw_3_lcl",
+          "name": "Lower confidence limit",
+          "order": 3,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_AncovaPw_4_ucl",
+          "name": "Upper confidence limit",
+          "order": 4,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_AncovaPw_5_pval",
+          "name": "P-value",
+          "order": 5,
+          "resultPattern": "X.XXX"
+        }
+      ]
+    },
+    {
+      "id": "Mth_AncovaLsm",
+      "name": "ANCOVA, least-squares means by group",
+      "label": "ANCOVA LS means",
+      "description": "Method registry: model.ancova.lsmeans",
+      "operations": [
+        {
+          "id": "Mth_AncovaLsm_1_lsm",
+          "name": "LS mean",
+          "order": 1,
+          "resultPattern": "X.X"
+        },
+        {
+          "id": "Mth_AncovaLsm_2_se",
+          "name": "Standard error",
+          "order": 2,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_AncovaLsm_3_lcl",
+          "name": "Lower confidence limit",
+          "order": 3,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_AncovaLsm_4_ucl",
+          "name": "Upper confidence limit",
+          "order": 4,
+          "resultPattern": "X.XX"
+        }
+      ]
+    }
+  ],
+  "analyses": [
+    {
+      "id": "An_EFF_N",
+      "name": "Number of subjects in the efficacy population by planned treatment",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADSL",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "methodId": "Mth_Count",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W24_Base",
+      "name": "ADAS-Cog (11) at baseline, subjects at Week 24",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "BASE",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W24",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W24_Aval",
+      "name": "ADAS-Cog (11) at Week 24, LOCF",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "AVAL",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W24",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W24_Chg",
+      "name": "ADAS-Cog (11), change from baseline to Week 24, LOCF",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W24",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W24_Dose",
+      "name": "ADAS-Cog (11), change to Week 24: test of dose response",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W24",
+      "methodId": "Mth_AncovaDose",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": false
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "dose",
+            "value": [
+              "grouping_value"
+            ]
+          },
+          {
+            "name": "model",
+            "value": [
+              "continuous_dose"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W24_PwPbo",
+      "name": "ADAS-Cog (11), change to Week 24: each dose against placebo",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W24",
+      "methodId": "Mth_AncovaPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Pbo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W24_PwLow",
+      "name": "ADAS-Cog (11), change to Week 24: high dose against low dose",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W24",
+      "methodId": "Mth_AncovaPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Low"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W24_LSM",
+      "name": "ADAS-Cog (11), change to Week 24: LS means",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W24",
+      "methodId": "Mth_AncovaLsm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "weights",
+            "value": [
+              "proportional"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W08_Base",
+      "name": "ADAS-Cog (11) at baseline, subjects at Week 8",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "BASE",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W08",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W08_Aval",
+      "name": "ADAS-Cog (11) at Week 8, LOCF",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "AVAL",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W08",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W08_Chg",
+      "name": "ADAS-Cog (11), change from baseline to Week 8, LOCF",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W08",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W08_Dose",
+      "name": "ADAS-Cog (11), change to Week 8: test of dose response",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W08",
+      "methodId": "Mth_AncovaDose",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": false
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "dose",
+            "value": [
+              "grouping_value"
+            ]
+          },
+          {
+            "name": "model",
+            "value": [
+              "continuous_dose"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W08_PwPbo",
+      "name": "ADAS-Cog (11), change to Week 8: each dose against placebo",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W08",
+      "methodId": "Mth_AncovaPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Pbo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W08_PwLow",
+      "name": "ADAS-Cog (11), change to Week 8: high dose against low dose",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W08",
+      "methodId": "Mth_AncovaPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Low"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W08_LSM",
+      "name": "ADAS-Cog (11), change to Week 8: LS means",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W08",
+      "methodId": "Mth_AncovaLsm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "weights",
+            "value": [
+              "proportional"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W16_Base",
+      "name": "ADAS-Cog (11) at baseline, subjects at Week 16",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "BASE",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W16",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W16_Aval",
+      "name": "ADAS-Cog (11) at Week 16, LOCF",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "AVAL",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W16",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W16_Chg",
+      "name": "ADAS-Cog (11), change from baseline to Week 16, LOCF",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W16",
+      "methodId": "Mth_ContSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_ADAS_W16_Dose",
+      "name": "ADAS-Cog (11), change to Week 16: test of dose response",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W16",
+      "methodId": "Mth_AncovaDose",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": false
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "dose",
+            "value": [
+              "grouping_value"
+            ]
+          },
+          {
+            "name": "model",
+            "value": [
+              "continuous_dose"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W16_PwPbo",
+      "name": "ADAS-Cog (11), change to Week 16: each dose against placebo",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W16",
+      "methodId": "Mth_AncovaPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Pbo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W16_PwLow",
+      "name": "ADAS-Cog (11), change to Week 16: high dose against low dose",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W16",
+      "methodId": "Mth_AncovaPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Low"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_W16_LSM",
+      "name": "ADAS-Cog (11), change to Week 16: LS means",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_W16",
+      "methodId": "Mth_AncovaLsm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "weights",
+            "value": [
+              "proportional"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "globalDisplaySections": [
+    {
+      "sectionType": "Footnote",
+      "subSections": [
+        {
+          "id": "Fn_ANCOVA_1",
+          "text": "[1] ANCOVA of the change from baseline: treatment and pooled site group as factors, the baseline value as a covariate."
+        },
+        {
+          "id": "Fn_ANCOVA_2",
+          "text": "[2] Dose response: the test that the coefficient of the planned dose (0, 54, 81), taken as a continuous variable in the same model, is 0."
+        },
+        {
+          "id": "Fn_ANCOVA_3",
+          "text": "[3] Pairwise: treatment as a categorical variable; differences of LS means with their standard errors and 95% confidence intervals; p-values not adjusted for multiplicity."
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "id": "Out14-3-01",
+      "name": "Table 14-3.01",
+      "version": 1,
+      "displays": [
+        {
+          "order": 1,
+          "display": {
+            "id": "Disp14-3-01",
+            "name": "Table 14-3.01",
+            "version": 1,
+            "displayTitle": "Primary Endpoint Analysis: ADAS Cog (11) - Change from Baseline to Week 24 - LOCF",
+            "displaySections": [
+              {
+                "sectionType": "Title",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSection": {
+                      "id": "Out14-3-01_T1",
+                      "text": "Table 14-3.01"
+                    }
+                  },
+                  {
+                    "order": 2,
+                    "subSection": {
+                      "id": "Out14-3-01_T2",
+                      "text": "Primary Endpoint Analysis: ADAS Cog (11) - Change from Baseline to Week 24 - LOCF"
+                    }
+                  }
+                ]
+              },
+              {
+                "sectionType": "Footnote",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSectionId": "Fn_ANCOVA_1"
+                  },
+                  {
+                    "order": 2,
+                    "subSectionId": "Fn_ANCOVA_2"
+                  },
+                  {
+                    "order": 3,
+                    "subSectionId": "Fn_ANCOVA_3"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Out14-3-03",
+      "name": "Table 14-3.03",
+      "version": 1,
+      "displays": [
+        {
+          "order": 1,
+          "display": {
+            "id": "Disp14-3-03",
+            "name": "Table 14-3.03",
+            "version": 1,
+            "displayTitle": "ADAS Cog (11) - Change from Baseline to Week 8 - LOCF",
+            "displaySections": [
+              {
+                "sectionType": "Title",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSection": {
+                      "id": "Out14-3-03_T1",
+                      "text": "Table 14-3.03"
+                    }
+                  },
+                  {
+                    "order": 2,
+                    "subSection": {
+                      "id": "Out14-3-03_T2",
+                      "text": "ADAS Cog (11) - Change from Baseline to Week 8 - LOCF"
+                    }
+                  }
+                ]
+              },
+              {
+                "sectionType": "Footnote",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSectionId": "Fn_ANCOVA_1"
+                  },
+                  {
+                    "order": 2,
+                    "subSectionId": "Fn_ANCOVA_2"
+                  },
+                  {
+                    "order": 3,
+                    "subSectionId": "Fn_ANCOVA_3"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Out14-3-05",
+      "name": "Table 14-3.05",
+      "version": 1,
+      "displays": [
+        {
+          "order": 1,
+          "display": {
+            "id": "Disp14-3-05",
+            "name": "Table 14-3.05",
+            "version": 1,
+            "displayTitle": "ADAS Cog (11) - Change from Baseline to Week 16 - LOCF",
+            "displaySections": [
+              {
+                "sectionType": "Title",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSection": {
+                      "id": "Out14-3-05_T1",
+                      "text": "Table 14-3.05"
+                    }
+                  },
+                  {
+                    "order": 2,
+                    "subSection": {
+                      "id": "Out14-3-05_T2",
+                      "text": "ADAS Cog (11) - Change from Baseline to Week 16 - LOCF"
+                    }
+                  }
+                ]
+              },
+              {
+                "sectionType": "Footnote",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSectionId": "Fn_ANCOVA_1"
+                  },
+                  {
+                    "order": 2,
+                    "subSectionId": "Fn_ANCOVA_2"
+                  },
+                  {
+                    "order": 3,
+                    "subSectionId": "Fn_ANCOVA_3"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
