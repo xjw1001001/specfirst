@@ -4,15 +4,16 @@ base-0 provides doctor, fetch, status and gate. real-1 adds kit, build and
 check. std-1 adds catalog, house, compile, render and parse. real-2 adds
 methods, and the results to build and check. real-3a adds the grids, their
 mock shells and pages, and the trace of their cells. gen-1a adds gen, and
-gen-2a its actions kit, kits and verify. read-1a adds score. The other
-commands of PLAN.md section 12 (preview, rebuild, run, ask) arrive with the
-work packages that build them.
+gen-2a its actions kit, kits and verify. read-1a adds score. read-2a adds
+run (the reader harness) and ask (the oracle). The other commands of PLAN.md
+section 12 (preview, rebuild) arrive with the work packages that build them.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -123,6 +124,17 @@ def build_parser() -> argparse.ArgumentParser:
         "score", add_help=False,
         help="score decisions: `score hand`, `score defects`, `score pilot` (see `score --help`)")
     p_score.add_argument("rest", nargs=argparse.REMAINDER)
+
+    p_run = commands.add_parser(
+        "run", add_help=False,
+        help="the reader harness: `run task|arm|probe|check|score|skills|validate` "
+             "(see `run --help`)")
+    p_run.add_argument("rest", nargs=argparse.REMAINDER)
+
+    p_ask = commands.add_parser(
+        "ask", add_help=False,
+        help='ask about one decision: `ask "<question>" --decision ID --run RUN --task TASK`')
+    p_ask.add_argument("rest", nargs=argparse.REMAINDER)
     return parser
 
 
@@ -223,7 +235,16 @@ def _parse(root: Path, args: argparse.Namespace) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    given = list(sys.argv[1:] if argv is None else argv)
+    if given and given[0] in ("run", "ask"):
+        # The rest goes to the harness as it is: the REMAINDER of a subparser drops a
+        # rest that starts with an option (`ask --run RUN "<question>"`).
+        from specfirst.harness import command as harness_command
+
+        if given[0] == "ask":
+            return harness_command.ask_main(repo_root(), given[1:])
+        return harness_command.main(repo_root(), given[1:])
+    args = build_parser().parse_args(given)
     root = repo_root()
     if args.command == "doctor":
         return doctor.run(root)
