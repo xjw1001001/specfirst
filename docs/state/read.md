@@ -138,6 +138,24 @@ Numbers are in docs/reports/read-1a.md. In short:
 
 ## Open
 
+For the read track, from the owner (2026-11-19, relayed by the base session
+in real-5a):
+
+- A kept run is tied to the bytes of the method registry, the catalog and
+  the generator (ADR-010, decision 9): the task folder copies
+  `standard/methods/registry.json` and the catalog, and the kit's kit.yaml
+  pins `registry_sha256` and the generator. A change of any of them gives
+  another task and another kit.yaml, and the check "arm R, kept dry run" of
+  the gate read-2a fails until the dry run is made again. real-5a (three
+  entries of the registry) made it again before its merge, at the owner's
+  answer (docs/reports/real-5a.md, "For the base session"); the old run
+  R-task-50024a8d7ca2 is replaced by R-task-04119188ff71 (USD 0.58,
+  computed from the tokens). The read track is to tie a
+  kept run to their versions instead (the registry's, `catalog@N`, the
+  generator's), so that a kept run no longer goes stale on every change.
+  The isolation probe kept beside it (probe-task-50024a8d7ca2) is of the
+  old task; the gate does not check it.
+
 From the review of read-2a (docs/reports/read-2a.review.md), not blocking:
 
 - H10, before read-3 relies on the scan: a list slot filled with texts the

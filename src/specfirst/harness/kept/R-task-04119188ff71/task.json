@@ -1,6 +1,6 @@
 {
  "condition": "notes",
- "id": "task-50024a8d7ca2",
+ "id": "task-04119188ff71",
  "keys": [
   [
    "trt.planned.source",
@@ -182,7 +182,7 @@
   "standard/catalog/entries/trt.end.source.yaml": "d14c9ae893def7faf039d28d6729ae9cccb79b88dff2293878e49565eb4d80b3",
   "standard/catalog/entries/trt.planned.source.yaml": "97ce53bfca222ea54449269b7fb5e08ac93d929602a609d1ec88b68c804440c9",
   "standard/catalog/entries/trt.start.source.yaml": "97fc96757f4612eb45c9c062b547902e73d47e51bc8fcc07b0e402e6f4a3354f",
-  "standard/methods/registry.json": "21b83df6c573f54fbaa79c311a2e8aea4b5053674067938c3d226f8d026eafe5",
+  "standard/methods/registry.json": "e5f47480c46d1aae1affb3bd9f4b69f4c9d2ec5d8d99c4e78f30dd5ecb5634cb",
   "standard/schemas/decision-record.schema.json": "1c606e284d791ef092a029e5b40f4aff4e46e04b2f605cfec4d9517970548bfc"
  },
  "stage": "C",

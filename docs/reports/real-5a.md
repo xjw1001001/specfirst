@@ -15,8 +15,11 @@ a fresh install and a fresh fetch: 18 of 18 checks
 On clean clones of the same commit the gates real-2, real-3a, gen-2a,
 gen-3a, read-1a and std-1 passed; read-2a passed every check but "arm R,
 kept dry run", which cannot pass after a change of the method registry
-(section "The gates on clean clones"). That is put to the base session
-(section "For the base session").
+(section "The gates on clean clones"). At the owner's answer (section "For
+the base session") the dry run of arm R was made again and kept in place of
+the old one (USD 0.58; section "The dry run of arm R, made again"), and all
+eight gates run again on clean clones of the commit that holds it (at the
+time of writing; section "The gates on clean clones").
 
 In short, what the gate shows (section "The gate"):
 
@@ -43,11 +46,11 @@ In short, what the gate shows (section "The gate"):
   D10-trace-model, `model-vectors`, and the unit tests of the CSR parser,
   the comparison, the layout and the decision records.
 
-One thing is for the base session before the merge (section "Generated
-kits and reader task folders"): the three registry entries change the
-registry, so every generated kit's kit.yaml and every reader's task folder
-changes, and the check "arm R, kept dry run" of the gate read-2a fails on
-its kept run, which is tied to those bytes.
+What the change alters outside the pilot (section "Generated kits and
+reader task folders"): the three registry entries change the registry, so
+every generated kit's kit.yaml and every reader's task folder changes, and
+read-2a's kept dry run of arm R, tied to those bytes, had to be made again.
+No catalog entry, house file, schema or skill changes.
 
 ## What real-5a asks for, and where it stands
 
@@ -439,8 +442,96 @@ GATE read-2a: FAIL   (the other 18 checks: PASS)
 
 Nothing else differs: the task differs in that one file. The kept run is
 tied to the bytes of the registry by design (ADR-010, decision 9); any
-change of the registry makes it fail. That is for the base session and the
-owner (section "For the base session").
+change of the registry makes it fail. The owner answered (section "For the
+base session"): the run is made again before the merge, below.
+
+## The dry run of arm R, made again
+
+At the owner's answer. Kit 4 of the gate seed was written again as the gate
+writes it (`specfirst.harness.gate._kit`: `genkits.generate_apart(root,
+gate.SEED, folder, split_of(4), number=4, hash_seed="1", zone=None)`), from
+the worktree at `6bad961` (the code of `29b15ca`), outside the checkout:
+
+```text
+kit sfrrl2uh split train generator gen-3a.2
+seed given matches the kit: True and the gate's seed: True
+  (kit.yaml: registry_sha256: e5f47480c46d..., the SHA-256 of
+   standard/methods/registry.json with the three entries of real-5a)
+```
+
+Then read-2a's command, budget and canary scan, once, with the Claude Code
+CLI the owner logged in, the task and run folders on a Windows drive
+outside every checkout (ADR-010, decision 1), under the shared lock:
+
+```text
+$ specfirst run arm <kit-004> --arm R --seed gen-2a/kit-4 --keep
+run R-task-04119188ff71: arm R, stage C, condition notes, kit sfrrl2uh (train), task task-04119188ff71 (22 decisions)
+  reader: claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  cost: 23 turns, 73.8 s wall, 60.4 s API, tokens in 24 out 7585 cache write 44168 cache read 375403, USD 0.5802 (CLI: 0.5802206)
+  budget: {'turns': 100, 'seconds': 2700, 'usd': 10.0}: within
+  outputs: decisions.jsonl 22 lines, questions.jsonl 2 lines, unmapped.jsonl 0 lines
+  asks: 2, answered 2; pop.efficacy.rule (mod-populations); ae.related.values (mod-ae-emergence)
+  output files: valid
+  task folder: holds only what a reader may see
+  canary scan: 29347 canaries from 81 files; clean
+  permission denials: 2
+  RUN R-task-04119188ff71: PASS
+kept in <checkout>/src/specfirst/harness/kept/R-task-04119188ff71
+```
+
+It passed the first time; no second run was made. Its task,
+`task-04119188ff71`, is the one the gate read-2a builds now (the line
+"built again now: task-04119188ff71" of the failing runs above). The two
+denials are Bash commands other than `bin/check` (a listing of the task
+and `cat` of its files); the reader then read the files with its file
+tools, as the old run did after its one denial. The old kept run
+`R-task-50024a8d7ca2` is deleted; the new one is in its place.
+
+| Run | Model | Turns | Wall | API | Input | Output | Cache write | Cache read | USD (computed) | USD (CLI) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| arm R, kept dry run of read-2a (deleted) | claude-opus-5-5 | 20 | 71.3 s | 55.5 s | 22 | 7,084 | 43,185 | 317,644 | 0.5508 | 0.5508 |
+| arm R, kept dry run of real-5a | claude-opus-5-5 | 23 | 73.8 s | 60.4 s | 24 | 7,585 | 44,168 | 375,403 | 0.5802 | 0.5802 |
+
+Model use of real-5a: USD 0.58, computed from the tokens at the prices of
+ADR-010, decision 7, on the owner's subscription; the CLI's own figure is
+the same to the fourth decimal. The kept files hold no local path (the
+home folder is `<home>`, the checkout `<checkout>`, as `runs.keep` writes
+them), no account name and no key (`api_key_source: none`); they are ASCII.
+
+The kept run checked again, as the gate does:
+
+```text
+$ specfirst run check src/specfirst/harness/kept/R-task-04119188ff71 --kit <kit-004> --tasks <scratch> --seed gen-2a/kit-4 --score
+kept run R-task-04119188ff71: PASS
+case sfrrl2uh, arm R, stage C
+...
+  asks: 2 given, 2 in gold (decisions with the status asked), 2 of them right; precision 1.00, recall 1.00
+...
+  decisions a reviewer would have to change: 0
+...
+  visible: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+...
+  twin: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+...
+case sfrrl2uh, arm R: every score is 100%
+```
+
+The scores are report only (they decide nothing in a gate); the old run
+had 21 of 22 values right. One run of a model says nothing about a
+difference between the two.
+
+What stays as it was: the isolation probe kept beside it
+(`src/specfirst/harness/kept/probe-task-50024a8d7ca2/`) is of the old task.
+The gate does not check it (read-2a's review, H12), and the owner asked
+for the dry run of arm R only.
+
+A kept run is tied to the bytes of the method registry, the catalog and
+the generator: the task folder copies `standard/methods/registry.json` and
+the catalog, and the kit's kit.yaml pins `registry_sha256` and the
+generator. Any change of them makes the check "arm R, kept dry run" fail
+until the run is made again. The owner's direction is that the read track
+tie a kept run to their versions instead; it is an Open item of
+docs/state/read.md.
 
 ## What the checks do not cover
 
@@ -578,10 +669,33 @@ a kept run survive a change of the registry. Both orders need the owner's
 model run; they differ in whether `main` carries a failing check of
 read-2a until then.
 
-The base session's answer, in its words:
+The base session's answer, in its words. The owner answered in the
+owner's question dialog on 2026-11-19, in Chinese; this file stays ASCII
+(rule R10), so the answer is quoted in the base session's translation:
 
-Not answered yet at the time of writing (asked 2026-11-19; the question
-reached the base session).
+> The owner's answer verbatim: "[in Chinese: run the dry run once more
+> before the merge] (Recommended)", which means re-record the run before
+> merging. The option said:
+> - real-5a re-generates the kit with the new registry on its own branch
+>   and runs the arm R dry run once more, then keeps it. About USD 0.55, on
+>   the owner's subscription.
+> - At the merge, every gate on main passes.
+> - Afterwards the read track changes the binding to a version, so that a
+>   kept run no longer goes stale on every change.
+
+And the base session's instructions with it: write kit 4 of the gate seed
+again through read-2a's harness and make the arm R dry run once more, with
+the same command, the same budget (ADR-010, decision 8) and the same canary
+scan; keep it in place of the old one and record its cost; stop and report
+if it fails or goes over budget, retrying at most once; run all eight gates
+again on a clean clone of the final commit, read-2a's kept run included;
+write in docs/state/read.md (Open) and here that a kept run is tied to the
+bytes of the registry, the catalog and the generator, and that the read
+track is to tie it to their versions instead.
+
+That is the order the review recommended (option 1 of the list above with
+the run made before the merge). What was done: section "The dry run of arm
+R, made again".
 
 ## Review
 
@@ -617,5 +731,5 @@ Two passes by fresh-context reviewers (rule R7);
 
 ## GitHub and CI
 
-Not merged yet: the merge waits for the base session's answer (section
-"For the base session").
+Not merged yet: the merge waits for the gates of the commit that holds
+the new kept run and for the review's pass 3.
