@@ -6,7 +6,7 @@
                          [--questions FILE] [--unmapped FILE]]
     specfirst score kits DIR
     specfirst score defects [--kit DIR]
-    specfirst score pilot
+    specfirst score pilot [--run RUN]
 
 `hand` scores on the hand-made study HAND01 (specfirst.score.hand): an arm
 that needs no reader, or the decision records of a file. `kit` does the
@@ -16,7 +16,8 @@ gold of the kit built again, both arms in both stages, the planted defects
 and the sweep of its matrix. `kits` does that for every kit of a folder
 and decides as the gate does. `defects` plants the defects of section 9.5
 that apply to the slice, on HAND01 or on a kit. `pilot` is the report on
-CDISCPILOT01 of ADR-005, decision 5; it needs the fetch cache.
+CDISCPILOT01 of ADR-005, decision 5; it needs the fetch cache. With `--run`
+it is the report of a run of `specfirst run pilot` (arm S or R).
 """
 
 from __future__ import annotations
@@ -56,7 +57,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_kits.add_argument("folder", help="a folder of kit folders")
     p_defects = commands.add_parser("defects", help="plant the defects of section 9.5")
     p_defects.add_argument("--kit", help="a kit folder; default: the hand-made study HAND01")
-    commands.add_parser("pilot", help="arm S on the reference ADaM of CDISCPILOT01 (report only)")
+    p_pilot = commands.add_parser(
+        "pilot", help="arm S on the reference ADaM of CDISCPILOT01 (report only)")
+    p_pilot.add_argument("--run", help="a run of `specfirst run pilot`: the report of its arm")
     return parser
 
 
@@ -74,6 +77,11 @@ def main(root: Path, argv: list[str]) -> int:
     args = build_parser().parse_args(argv)
     if args.what == "kits":
         return 0 if kits.score_set(root, Path(args.folder)) else 1
+    if args.what == "pilot" and args.run:
+        from specfirst.harness import pilot as pilot_task
+
+        print("\n".join(pilot_task.score(root, Path(args.run))))
+        return 0
     if args.what == "pilot":
         try:
             found = pilot.run(Machine(root))

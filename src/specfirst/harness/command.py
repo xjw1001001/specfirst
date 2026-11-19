@@ -9,6 +9,8 @@
     specfirst run score RUN --kit KIT
     specfirst run skills [--write]
     specfirst run validate --run RUN --task TASK            (what bin/check runs)
+    specfirst run pilot --arm S|R --folder DIR [--condition] [--tasks DIR] [--runs DIR]
+                  [--score]                                 (CDISCPILOT01, stage T)
     specfirst ask "<question>" --decision ID [--unit UNIT] --run RUN --task TASK
 
 The folders of tasks and runs lie outside every checkout: `--tasks` and
@@ -74,6 +76,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_validate = commands.add_parser("validate", help="the problems of the files in out/")
     p_validate.add_argument("--run", required=True)
     p_validate.add_argument("--task", required=True)
+    p_pilot = commands.add_parser("pilot", help="run arm S or R on the pilot, stage T "
+                                  "(ADR-005, decision 5; report only)")
+    p_pilot.add_argument("--arm", choices=("S", "R"), required=True)
+    p_pilot.add_argument("--folder", required=True, help="where the pilot folder is written, "
+                         "outside every checkout (third-party material)")
+    p_pilot.add_argument("--condition", choices=tasks.CONDITIONS, default="notes")
+    p_pilot.add_argument("--tasks", help="the folder of task folders (SPECFIRST_TASKS)")
+    p_pilot.add_argument("--runs", help="the folder of run folders (SPECFIRST_RUNS)")
+    p_pilot.add_argument("--score", action="store_true", help="the pilot report of the run")
     return parser
 
 
@@ -133,6 +144,16 @@ def main(root: Path, argv: list[str]) -> int:
         return 1 if found or hits else 0
     tasks_dir = _folder(args.tasks, "SPECFIRST_TASKS")
     runs_dir = _folder(args.runs, "SPECFIRST_RUNS")
+    if args.what == "pilot":
+        from specfirst.harness import pilot
+
+        folder = pilot.write(root, Path(args.folder))
+        print(f"pilot folder: {folder}")
+        made = runs.run(root, folder, args.arm, tasks_dir, runs_dir, "T", args.condition)
+        print("\n".join(runs.lines(made)))
+        if args.score:
+            print("\n".join(pilot.score(root, made.folder)))
+        return 0 if made.passed else 1
     if args.what == "probe":
         made, found = runs.probe(root, Path(args.kit), tasks_dir, runs_dir)
         print("\n".join(runs.lines(made)))
