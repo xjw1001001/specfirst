@@ -108,6 +108,10 @@ def lines(result: Result) -> list[str]:
         said.append(f"wrong by value, and behind another owner: {key[0]} ({key[1]}); alone, on "
                     "gold, it changes " + ", ".join(
                         f"{count} cells or axes of {name}" for name, count in changed.items()))
+    for key, cells in result.pending.items():
+        said.append(f"pending: {key[0]} ({key[1]}) has no value, and the build left out what "
+                    "it binds (ADR-014); gold cells that wait for it: " + ", ".join(
+                        f"{count} of {name}" for name, count in cells.items()))
     said.append(f"case {result.case}, arm {result.arm}: "
                 f"{'every score is 100%' if result.perfect else 'not every score is 100%'}")
     return said
