@@ -200,6 +200,13 @@ For other tracks:
   canary scan, run records; the `core-reader` skill and reading notes v0;
   the three arms. Then the report docs/reports/slice-ae-summary.md. It is
   not a delivery.
+  In progress on `track/read` (2026-11-18): everything that needs no model
+  is built and tested (`specfirst.harness`, skills/, the gate `read-2a`);
+  arms S and C and the stub reader pass their dry runs on kit 4 of the gate
+  seed. Waiting for the owner (docs/decisions/ADR-010.md, "For the owner"):
+  the Claude Code CLI is not logged in, and the gate's reading of its text
+  for arm R (decision 9) is the owner's to approve. Then the isolation probe
+  and the dry run of arm R, kept in src/specfirst/harness/runs.
 - Then the rest of read-1 Scorer (needs real-3 for fixtures, then gen-2),
   read-2 (needs gen-2) and read-3 (D3, node N3).
 

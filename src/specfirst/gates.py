@@ -329,6 +329,15 @@ def _score_pilot_tests(ctx: Context) -> bool:
     return _pytest(ctx, "tests/score", "score.xml", READ1A_PILOT_TESTS)
 
 
+def _harness(name: str) -> Callable[[Context], bool]:
+    """A check of the reader harness (specfirst.harness.gate), by its function name."""
+    def run(ctx: Context) -> bool:
+        from specfirst.harness import gate
+
+        return getattr(gate, name)(ctx.root, ctx.out)
+    return run
+
+
 _REAL1_CHECK = f"specfirst check {PILOT} --build build/p1/{PILOT}/first"
 
 GATES: dict[str, tuple[Check, ...]] = {
@@ -511,6 +520,42 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("visible probes", "specfirst.gen.gate3.visible_probes: listed in kit.yaml and "
               "found in the visible data", _gen3("visible_probes")),
         Check("summary", "specfirst.gen.gate3.summaries: one page per kit", _gen3("summaries")),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # ADR-005, part read-2a (PLAN.md section 13.6, read-2 for the slice;
+    # docs/decisions/ADR-010.md): a dry run of each arm on one train kit ends within
+    # budget with valid output files; the canary scan is clean. The train kit is kit 4
+    # of the seed of the gate gen-2a. No check calls a model: the dry run of arm R made
+    # with the model is kept in src/specfirst/harness/runs and checked from its record.
+    "read-2a": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("kit", "specfirst.harness.gate.kit: kit 4 of the seed of the gate gen-2a, "
+              "written again; its gold built again", _harness("kit")),
+        Check("skills", "specfirst run skills: core-reader and the reading notes v0 of "
+              "the four units; the leak check", _harness("skills")),
+        Check("task", "specfirst run task: the task folder of the kit, twice; stage T",
+              _harness("task")),
+        Check("oracle", "specfirst ask: every decision of the task, and an entry the "
+              "catalog lacks", _harness("oracle_check")),
+        Check("adapter", "specfirst.harness.adapter: the command line and the deny rules",
+              _harness("adapter_check")),
+        Check("budget", "specfirst.harness.record: a run record against its budget",
+              _harness("budget")),
+        Check("output files", "specfirst run validate: the rules of ADR-010, decision 6",
+              _harness("outputs_check")),
+        Check("canary scan", "specfirst.harness.canary: the canaries of each protected "
+              "kind", _harness("canary_check")),
+        Check("arm S", "specfirst run arm KIT --arm S --score", _harness("arm_s")),
+        Check("arm C", "specfirst run arm KIT --arm C --score", _harness("arm_c")),
+        Check("arm R, stub reader", "specfirst run arm KIT --arm R --stub PLAN --score; "
+              "the run kept and checked", _harness("arm_r_stub")),
+        Check("arm R, kept dry run", "specfirst run check src/specfirst/harness/runs/R-... "
+              "--kit KIT --score", _harness("arm_r")),
+        Check("scratch removed", "the kit, tasks and runs of the gate", _harness("done")),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
