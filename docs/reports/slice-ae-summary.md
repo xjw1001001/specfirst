@@ -497,6 +497,10 @@ arms and with the public templates, can narrow its table decisions. The
 four scores and the pending cells are now summed over the four kits, and
 the number of arms per kit is not given (ADR-016, decision 4).
 
+Pass 3 confirmed both (the rebuilt history holds none of the withheld
+text, and the summed rows equal the rows pass 1 checked against the
+records) and signed.
+
 Questions Q2 and Q3 of the review are the owner's and went to the base
 session: whether first scores on kits with template paragraphs stand (Q2),
 and whether more runs are wanted within the USD 10 (Q3). Q1 does not need
