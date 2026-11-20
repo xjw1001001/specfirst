@@ -18,8 +18,10 @@ arm R with the stub reader, run live.
     outputs      the validation of out/
     canary       the canaries of each protected kind are found; allowed text is not
     arm S, arm C the dry runs, live; their scores are reported
-    arm R, stub  the adapter with the stub reader, live
-    arm R        the dry run of arm R, kept: its task, budget, files, scan; its score
+    arm R, stub  the adapter with the stub reader, live; the stub run kept and checked,
+                 with the plants of the binding of a kept run (ADR-017, decision 7)
+    arm R        the dry run of arm R, kept: its task, by bytes where the slice reaches
+                 and by version where it does not (ADR-017), budget, files, scan; its score
 
 Each check first shows that it fails on what it is for (rule R5).
 """
@@ -27,6 +29,7 @@ Each check first shows that it fails on what it is for (rule R5).
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 import shutil
 import tempfile
@@ -37,7 +40,7 @@ from specfirst.compile import catalog as catalogs
 from specfirst.gen import documents as gendocs
 from specfirst.gen import gate2, natural
 from specfirst.gen import kits as genkits
-from specfirst.harness import adapter, canary, knowledge, oracle, outputs, record, runs
+from specfirst.harness import adapter, binding, canary, knowledge, oracle, outputs, record, runs
 from specfirst.harness import task as tasks
 from specfirst.machine.canonical import json_text, sha256_file
 
@@ -679,7 +682,153 @@ def arm_r_stub(root: Path, out: Out) -> bool:
         _holds(out, "a kept record over budget",
                runs.check(root, over, folder, _scratch() / "tasks-kept", SEED)[0]),
     ]
+    planted += bound_plants(root, out, kept, folder)
     return made.passed and answered == wanted != set() and not (found or hits) and all(planted)
+
+
+# ---- the binding of a kept run (docs/decisions/ADR-017.md, decision 7) --------------------
+
+
+def _passes(out: Out, name: str, problems: list[str]) -> bool:
+    """A planted change that the binding does not bind passes, as the clean run does."""
+    out(f"  planted, {name}: " + ("passes, as the clean run does" if not problems
+                                   else f"FAILS ({problems[0]})"))
+    return not problems
+
+
+def _registry_changed(root: Path, kit_dir: Path, where: Path,
+                      change: Callable[[dict], None]) -> tasks.Task:
+    """The task of a kit built into `where`, with its registry.json changed."""
+    task = tasks.build(root, kit_dir, where)
+    path = task.folder / binding.REGISTRY
+    data = json.loads(path.read_text(encoding="ascii"))
+    change(data)
+    path.write_text(json_text(data) + "\n", encoding="ascii", newline="\n")
+    manifest = tasks.manifest(task.folder)
+    return dataclasses.replace(task, manifest=manifest, id=tasks.task_id(manifest))
+
+
+def _kit_changed(kit_dir: Path, name: str, change: Callable[[Path, dict], None]) -> Path:
+    """A copy of the kit, its files and its kit.yaml changed."""
+    copy_of = _scratch() / "kits-planted" / name
+    shutil.rmtree(copy_of, ignore_errors=True)
+    shutil.copytree(kit_dir, copy_of)
+    manifest = genkits.read_manifest(copy_of)
+    change(copy_of, manifest)
+    genkits.write_manifest(copy_of, manifest)
+    return copy_of
+
+
+def _kept_changed(kept: Path, name: str, change: Callable[[Path], None],
+                  rebind: bool = True) -> Path:
+    """A copy of a kept run, changed; with `rebind`, its binding file records the
+    changed files, as a hand edit of the run and of its binding file would."""
+    copy_of = _scratch() / "kept-bound" / name
+    shutil.rmtree(copy_of, ignore_errors=True)
+    shutil.copytree(kept, copy_of)
+    change(copy_of)
+    if rebind:
+        made = binding.read(copy_of) or {}
+        made["files"] = binding.kept_files(copy_of)
+        binding.save(copy_of, made)
+    return copy_of
+
+
+def _decisions_changed(change: Callable[[list[dict]], list[dict]]) -> Callable[[Path], None]:
+    def edit(kept: Path) -> None:
+        path = kept / runs.WORKSPACE / tasks.OUT / "decisions.jsonl"
+        lines = [json.loads(line) for line in path.read_text(encoding="ascii").splitlines()
+                 if line.strip()]
+        path.write_text("".join(json.dumps(line, sort_keys=True) + "\n"
+                                for line in change(lines)), encoding="ascii", newline="\n")
+    return edit
+
+
+def _other_percent_format(lines: list[dict]) -> list[dict]:
+    changed = copy.deepcopy(lines)
+    for line in changed:
+        if line.get("id") == "tfl.percent.format":
+            rule = line["value"]["rule"]
+            line["value"]["rule"] = ("one_decimal_always" if rule != "one_decimal_always"
+                                     else "one_decimal_zero_blank")
+    return changed
+
+
+def bound_plants(root: Path, out: Out, kept: Path, kit_dir: Path,
+                 seed: str | None = SEED) -> list[bool]:
+    """The plants of ADR-017, decision 7, on the stub run kept into a scratch store: each
+    change the binding binds fails the check, each change it does not bind passes."""
+    where = _scratch() / "tasks-bound"
+
+    def check(kept_: Path = kept, kit_: Path = kit_dir,
+              task: tasks.Task | None = None) -> list[str]:
+        found, hits = runs.held(root, kept_, kit_, task or tasks.build(root, kit_, where),
+                                seed)
+        return found + [hit.line() for hit in hits]
+
+    def reached_changed(data: dict) -> None:
+        data["methods"]["count.subjects"]["title"] += " (planted)"
+
+    def model_added(data: dict) -> None:
+        added = copy.deepcopy(data["methods"]["model.ancova.lsmeans"])
+        added["id"] = "model.planted"
+        data["methods"]["model.planted"] = added
+
+    def kit_file(folder: Path, manifest: dict) -> None:
+        path = folder / "gold" / "design.yaml"
+        path.write_text(path.read_text(encoding="ascii") + "# planted\n", encoding="ascii",
+                        newline="\n")
+        manifest["files"]["gold/design.yaml"] = sha256_file(path)
+
+    def engines(folder: Path, manifest: dict) -> None:
+        manifest["pins"]["engines"] = {name: f"{version}-planted" for name, version in
+                                       manifest["pins"]["engines"].items()}
+
+    added = _registry_changed(root, kit_dir, _scratch() / "tasks-added", model_added)
+
+    def registry_pin(folder: Path, manifest: dict) -> None:
+        manifest["pins"]["registry_sha256"] = added.manifest[binding.REGISTRY]
+
+    def without_entry(folder: Path) -> None:
+        made = binding.read(folder) or {}
+        del made["registry"]["reached"]["count.subjects"]
+        binding.save(folder, made)
+
+    def private_leak(folder: Path) -> None:
+        made = json.loads((folder / runs.RUN_JSON).read_text(encoding="ascii"))
+        with open(folder / adapter.TRANSCRIPT, "a", encoding="ascii") as handle:
+            handle.write(json.dumps({"type": "user", "message": {"content": [{
+                "type": "tool_result", "content": canary.planted(
+                    made["kit"]["kit_yaml_sha256"], oracle.ORACLE)}]}}) + "\n")
+
+    other_engines = _kit_changed(kit_dir, "engines", engines)
+    return [
+        _holds(out, "an entry the slice reaches, changed (count.subjects)", check(
+            task=_registry_changed(root, kit_dir, _scratch() / "tasks-reached",
+                                   reached_changed))),
+        _holds(out, "a file of the kit changed (gold/design.yaml, and its line in kit.yaml)",
+               check(kit_=_kit_changed(kit_dir, "file", kit_file))),
+        _holds(out, "a kept run without binding.json", check(kept_=_kept_changed(
+            kept, "unbound", lambda folder: (folder / binding.BINDING).unlink(),
+            rebind=False))),
+        _holds(out, "a binding file whose entries lack count.subjects, which the slice "
+               "reaches", check(kept_=_kept_changed(kept, "lacking", without_entry,
+                                                    rebind=False))),
+        _holds(out, "a kept decisions.jsonl with one record left out (K4), its binding file "
+               "made again", check(kept_=_kept_changed(kept, "left-out", _decisions_changed(
+                   lambda lines: lines[:-1])))),
+        _holds(out, "a kept decisions.jsonl with tfl.percent.format changed to the other "
+               "valid value (K4), its binding file made again", check(kept_=_kept_changed(
+                   kept, "percent", _decisions_changed(_other_percent_format)))),
+        _passes(out, "an entry of kind model added to the registry, and registry_sha256 of "
+                "kit.yaml with it", check(kit_=_kit_changed(kit_dir, "registry", registry_pin),
+                                          task=added)),
+        _passes(out, "the versions of the engines changed in kit.yaml",
+                check(kit_=other_engines)),
+        _holds(out, "the versions of the engines changed in kit.yaml, and a kept transcript "
+               "that holds the canary of the run's private/oracle.json", check(
+                   kept_=_kept_changed(kept, "private", private_leak), kit_=other_engines)),
+    ]
 
 
 def kept_runs() -> list[Path]:
@@ -701,7 +850,11 @@ def arm_r(root: Path, out: Out) -> bool:
         out(f"kept run {path.name}: arm {made['arm']}, reader {made['reader']['adapter']}, "
             f"model {made['reader']['model']}, used {made['reader']['models_used']}, "
             f"CLI {made['reader']['cli_version']}")
-        out(f"  task {made['task']['id']}, built again now: {rebuilt.id}")
+        bound = not any(line.startswith(("task:", "registry:", "kit:", "binding:", "kept:"))
+                        for line in found)
+        out(f"  task {made['task']['id']}, built again now: {rebuilt.id}"
+            + (", the same on every bound part (ADR-017)" if bound else
+               ", NOT the same on every bound part"))
         out(f"  cost: {spent['turns']} turns, {spent['wall_seconds']} s, tokens "
             f"{spent['tokens']}, USD {spent['usd']:.4f} (CLI {spent['usd_cli']}); budget "
             f"{made['budget']}")
@@ -709,9 +862,9 @@ def arm_r(root: Path, out: Out) -> bool:
         out(f"  permission denials: {len(made['end']['permission_denials'])}")
         for line in found + [hit.line() for hit in hits]:
             out(f"  {line}")
-        out("  the task it read, within budget, valid output files, canary scan clean "
-            "against the canaries of the kit written now: "
-            + ("yes" if not (found or hits) else "NO"))
+        out("  a task that agrees with the task it read on every bound part, within budget, "
+            "valid output files that are the run's own, canary scan clean against the "
+            "canaries of the kit written now: " + ("yes" if not (found or hits) else "NO"))
         out("  score (report only):")
         for line in runs.score(root, folder, path):
             out(f"    {line}")

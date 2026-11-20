@@ -81,9 +81,11 @@ first for the slice "adverse event summary first" (ADR-005).
 skills/), `oracle` (`specfirst ask`), `outputs` (the validity of out/),
 `canary` (the scan), `record` (cost and budget), `adapter` and `stub` (the
 CLI and its stand-in), `runs` (a run of an arm, the probe, a kept run and
-its check), `gate`, `command` (`specfirst run ...`), `pilot` (the pilot as a
-task of stage T, ADR-016); `kept/` holds the dry run of arm R and the
-probe.
+its check), `binding` (what a kept run is bound to, by bytes and by
+version, and its outputs written again from the transcript; ADR-017),
+`gate`, `command` (`specfirst run ...`), `pilot` (the pilot as a task of
+stage T, ADR-016); `kept/` holds the dry run of arm R with its
+binding.json, and the probe.
 
 ## How to score a candidate on a kit (for read-2a)
 
@@ -165,36 +167,9 @@ Numbers are in docs/reports/read-1a.md. In short:
 ## Open
 
 For the read track, from the owner (2026-11-19, relayed by the base session
-in real-5a):
+in real-5a). The binding of a kept run to versions (K5, the owner's choices
+item 1) and K4 are settled by ADR-017 and the part adr-017 ("Passed").
 
-- A kept run is tied to the bytes of the method registry, the catalog and
-  the generator (ADR-010, decision 9): the task folder copies
-  `standard/methods/registry.json` and the catalog, and the kit's kit.yaml
-  pins `registry_sha256` and the generator. A change of any of them gives
-  another task and another kit.yaml, and the check "arm R, kept dry run" of
-  the gate read-2a fails until the dry run is made again. real-5a (three
-  entries of the registry) made it again before its merge, at the owner's
-  answer (docs/reports/real-5a.md, "For the base session"); the old run
-  R-task-50024a8d7ca2 is replaced by R-task-04119188ff71 (USD 0.58,
-  computed from the tokens). The read track is to tie a
-  kept run to their versions instead (the registry's, `catalog@N`, the
-  generator's), so that a kept run no longer goes stale on every change.
-  The bytes it is tied to are more than those three (review of real-5a,
-  K5): TASK.md, the skills, the house standard, the record schema, the
-  data, documents and gold of the kit. Binding to versions changes ADR-010,
-  decision 9: an ADR the owner approves, best before real-5b changes the
-  registry again (else real-5b makes the run again, about USD 0.6). The
-  isolation probe kept beside it (probe-task-50024a8d7ca2) is of the old
-  task; the gate does not check it. Drafted as docs/decisions/ADR-017.md
-  (proposed 2026-11-19, with the owner through the base session): bytes
-  where the slice reaches, version where it does not; it covers K4 below
-  as well. real-5b's merge waits for the part that carries it out.
-- Review of real-5a, K4 (since read-2a): the check of a kept run does not
-  tie its kept output files to what the run wrote. A kept decisions.jsonl
-  with one record removed, or one value changed to another valid one,
-  still passes. What settles it: the check compares the kept files with
-  the SHA-256 the record holds for each (`outputs`), and with what the
-  transcript's writes give, since the record can be edited too.
 - Review of real-5a, K3: the kept transcripts hold the CLI's
   `rate_limit_event` (the subscription's usage, no credential). The owner
   keeps it as it is (2026-11-19, relayed by the base session): `runs.keep`

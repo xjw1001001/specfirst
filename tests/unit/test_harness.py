@@ -18,7 +18,17 @@ import pytest
 from specfirst.compile import catalog as catalogs
 from specfirst.gen import kits as genkits
 from specfirst.gen import natural
-from specfirst.harness import adapter, canary, gate, knowledge, oracle, outputs, record, runs
+from specfirst.harness import (
+    adapter,
+    binding,
+    canary,
+    gate,
+    knowledge,
+    oracle,
+    outputs,
+    record,
+    runs,
+)
 from specfirst.harness import task as tasks
 
 SEED = "unit-harness"
@@ -467,6 +477,122 @@ def test_a_kept_run_is_held_against_its_transcript(root, kit_dir, scratch):
             "input": {"file_path": "<task>/bin/ask"}}]}}) + "\n")
     assert any(p.startswith("tools:") for p in runs.kept_problems(
         json.loads((kept / runs.RUN_JSON).read_text()), kept))
+
+
+def _stub_kept(root, kit_dir, scratch, name):
+    seed = genkits.kit_seed(SEED, NUMBER)
+    keys = tasks.build(root, kit_dir, scratch / "tasks").keys
+    plan = gate.stub_plan(kit_dir, keys, scratch / f"stub-{name}")
+    made = runs.run(root, kit_dir, "R", scratch / "tasks", scratch / "runs",
+                    reader=adapter.stub_reader(), seed=seed,
+                    env={"SPECFIRST_STUB_PLAN": str(plan)}, name=f"R-{name}")
+    assert made.passed, runs.lines(made)
+    return runs.keep(made, scratch / "tasks" / made.record["task"]["id"], kit_dir, root,
+                     scratch / f"kept-{name}"), seed
+
+
+def test_a_kept_run_is_bound_as_adr_017_says(root, kit_dir, scratch):
+    """ADR-017: keep writes binding.json; the slice reaches the entries of its gold and of
+    its cells, no model; every plant of decision 7 fails or passes as it should."""
+    kept, seed = _stub_kept(root, kit_dir, scratch, "bound")
+    bound = binding.read(kept)
+    reached = set(bound["registry"]["reached"])
+    assert {"count.subjects", "percent.subjects", "display.pattern"} <= reached
+    assert any(name.startswith("display.round.") for name in reached)
+    assert not any(name.startswith(("model.", "test.")) for name in reached)
+    assert bound["files"] == binding.kept_files(kept) and binding.BINDING not in bound["files"]
+    assert binding.REGISTRY not in json.dumps(bound["task"])
+    assert runs.check(root, kept, kit_dir, scratch / "tasks-bound", seed)[:2] == ([], [])
+    said: list[str] = []
+    try:
+        planted = gate.bound_plants(root, said.append, kept, kit_dir, seed)
+    finally:
+        gate.cleanup()
+    assert len(planted) == 9 and all(planted), said
+
+
+def _event(kind: str, block: dict) -> str:
+    return json.dumps({"type": kind, "message": {"content": [block]}}) + "\n"
+
+
+def test_out_is_written_again_from_the_transcript(tmp_path):
+    """K4: Write, Edit and MultiEdit of out/ without an error, in order; a use with an
+    error result is not carried out; bin/ask appends the ask of the log where its answer
+    is shown; an edit that does not apply, or an ask the transcript does not show, is
+    named."""
+    asks = [{"n": 1, "decision": "pop.efficacy.rule", "unit": "mod-populations",
+             "question": "Which?", "answered": True}]
+    texts = binding.ask_texts(asks, [{"decision": "pop.efficacy.rule",
+                                      "unit": "mod-populations", "answer": "All."}], set())
+    assert texts == ["Answer: All."]
+    lines = [
+        _event("assistant", {"type": "tool_use", "id": "a", "name": "Bash",
+                             "input": {"command": "bin/ask ..."}}),
+        _event("user", {"type": "tool_result", "tool_use_id": "a",
+                        "content": "Answer: All.\n"}),
+        _event("assistant", {"type": "tool_use", "id": "w", "name": "Write", "input": {
+            "file_path": "<task>\\out\\decisions.jsonl", "content": "{\"a\": 1}\n"}}),
+        _event("user", {"type": "tool_result", "tool_use_id": "w", "content": "ok"}),
+        _event("assistant", {"type": "tool_use", "id": "x", "name": "Write", "input": {
+            "file_path": "<task>/out/unmapped.jsonl", "content": "{\"b\": 2}\n"}}),
+        _event("user", {"type": "tool_result", "tool_use_id": "x", "content": "denied",
+                        "is_error": True}),
+        _event("assistant", {"type": "tool_use", "id": "e", "name": "Edit", "input": {
+            "file_path": "out/decisions.jsonl", "old_string": "1", "new_string": "3"}}),
+        _event("user", {"type": "tool_result", "tool_use_id": "e", "content": [
+            {"type": "text", "text": "ok"}]}),
+        _event("assistant", {"type": "tool_use", "id": "m", "name": "MultiEdit", "input": {
+            "file_path": "<task>/out/decisions.jsonl", "edits": [
+                {"old_string": "a", "new_string": "c"}, {"old_string": "3", "new_string": "4"}]}}),
+        _event("user", {"type": "tool_result", "tool_use_id": "m", "content": "ok"}),
+        _event("assistant", {"type": "tool_use", "id": "o", "name": "Write", "input": {
+            "file_path": "<task>/notes.md", "content": "x"}}),
+        _event("user", {"type": "tool_result", "tool_use_id": "o", "content": "ok"}),
+    ]
+    transcript = tmp_path / "transcript.jsonl"
+    transcript.write_text("".join(lines), encoding="ascii")
+    files, problems = binding.replay(transcript, asks, texts)
+    assert problems == []
+    assert files == {"out/decisions.jsonl": "{\"c\": 4}\n", "out/questions.jsonl": json.dumps(
+        {"decision": "pop.efficacy.rule", "question": "Which?", "unit": "mod-populations"},
+        sort_keys=True) + "\n"}
+    transcript.write_text("".join(lines[2:4] + [_event("assistant", {
+        "type": "tool_use", "id": "f", "name": "Edit", "input": {
+            "file_path": "<task>/out/decisions.jsonl", "old_string": "zz", "new_string": "y"}}),
+        _event("user", {"type": "tool_result", "tool_use_id": "f", "content": "ok"})]),
+        encoding="ascii")
+    files, problems = binding.replay(transcript, asks, texts)
+    assert any("does not apply" in p for p in problems)
+    assert any(p.startswith("asks: ask 1") for p in problems)
+    assert any("show 0 answers" in p for p in problems)
+    # An ask the log leaves out, which the transcript shows, is named too.
+    transcript.write_text("".join(lines), encoding="ascii")
+    assert binding.replay(transcript, [], [])[1] == [
+        "asks: the Bash results of the transcript show 1 answers of `specfirst ask`, the ask "
+        "log 0"]
+    assert binding.out_path("<task>/out/../bin/check") is None
+    assert binding.out_path("C:\\elsewhere\\out\\x") is None
+
+
+def test_a_run_kept_before_adr_017_is_bound_once_and_only_as_it_was(root, kit_dir, scratch):
+    """Decision 6: `runs.bind` writes the binding file of a kept run that has none, the
+    same file `keep` writes; it refuses a run that has one, and a run whose kept outputs
+    are not what its transcript wrote."""
+    kept, seed = _stub_kept(root, kit_dir, scratch, "before")
+    written = (kept / binding.BINDING).read_text(encoding="ascii")
+    (kept / binding.BINDING).unlink()
+    assert runs.check(root, kept, kit_dir, scratch / "tasks-bind", seed)[0][0].startswith(
+        "binding: no binding.json")
+    path, refused = runs.bind(root, kept, kit_dir, scratch / "tasks-bind")
+    assert refused == [] and path.read_text(encoding="ascii") == written
+    assert runs.bind(root, kept, kit_dir, scratch / "tasks-bind")[1][0].endswith(
+        "already")
+    (kept / binding.BINDING).unlink()
+    out = kept / runs.WORKSPACE / tasks.OUT / "decisions.jsonl"
+    out.write_text("".join(out.read_text(encoding="ascii").splitlines(keepends=True)[:-1]),
+                   encoding="ascii", newline="\n")
+    path, refused = runs.bind(root, kept, kit_dir, scratch / "tasks-bind")
+    assert path is None and any("decisions.jsonl" in line for line in refused)
 
 
 def test_cache_writes_are_priced_as_the_model_usage_splits_them():
