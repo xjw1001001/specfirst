@@ -42,6 +42,12 @@ vector_result <- function(method, input, options) {
   if (method == "test.anova.oneway") {
     return(list(p_value = m_anova_oneway_p(lapply(input$groups, values_of))))
   }
+  if (method == "test.cmh") {
+    values <- if (is.null(input$values)) NULL else values_of(input$values)
+    return(list(p_value = m_cmh_p(lapply(input$strata, table_of), values,
+                                  options$statistic %||% "general_association",
+                                  options$scores %||% "table")))
+  }
   if (method %in% MODEL_METHODS) return(model_vector(method, input, options))
   fail("the R engine does not implement ", method)
 }
@@ -58,8 +64,30 @@ model_vector <- function(method, input, options) {
   groups <- unlist(input$groups)
   factors <- columns("factors")
   covariates <- columns("covariates")
-  df <- options$df %||% "residual"
   level <- as.numeric(options$confidence_level %||% 95)
+  if (method %in% c("model.mmrm.lsmeans", "model.mmrm.pairwise")) {
+    visit <- values_of(input$visit)
+    subject <- values_of(input$subject)
+    settings <- list(by_visit = as.character(unlist(options$by_visit)),
+                     treatment_by_visit = options$treatment_by_visit %||% "yes",
+                     covariance = options$covariance %||% "unstructured",
+                     df = options$df %||% "kenward_roger_linear",
+                     at = options$at %||% "last", confidence_level = level)
+    by_group <- if (method == "model.mmrm.lsmeans") {
+      do.call(m_mmrm_lsmeans, c(list(y, group, groups, visit, subject, factors, covariates),
+                                settings))
+    } else {
+      do.call(m_mmrm_pairwise, c(list(y, group, groups, visit, subject, options$reference,
+                                      factors, covariates), settings))
+    }
+    operations <- names(by_group[[1]])
+    out <- list()
+    for (operation in operations) {
+      out[[operation]] <- lapply(by_group, function(values) values[[operation]])
+    }
+    return(out)
+  }
+  df <- options$df %||% "residual"
   if (method == "model.ancova.lsmeans") {
     by_group <- m_ancova_lsmeans(y, group, groups, factors, covariates,
                                  options$weights %||% "equal", df, level)

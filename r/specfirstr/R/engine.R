@@ -258,6 +258,52 @@ population <- function(eng, analysis, grouping) {
   eng$populations[[analysis$id]]
 }
 
+# The tables of a stratified test on the records of one cell (rule I12d): one per
+# stratum that occurs, rows the groups of the one compared grouping, columns the
+# distinct values of the analysis variable, increasing; counts of subjects. A record
+# with a missing stratum value is left out; a subject with two records is an error.
+strata_tables <- function(eng, analysis, rows, compared, strata) {
+  dataset <- analysis$dataset
+  variable <- analysis$variable
+  where <- paste0("analysis '", analysis$id, "'")
+  if (length(compared) != 1) {
+    fail(where, ": a stratified test compares one grouping, found ", length(compared))
+  }
+  kind <- eng_column(eng, dataset, variable)$kind
+  texts <- eng_text(eng, dataset, variable)[rows]
+  present <- !is.na(texts) & texts != ""
+  keys <- rep("", length(rows))
+  for (name in strata) {
+    values <- eng_text(eng, dataset, name)[rows]
+    present <- present & !is.na(values) & values != ""
+    keys <- paste0(keys, "\x1f", values)
+  }
+  subjects <- eng_text(eng, dataset, eng$subject_key)[rows][present]
+  if (anyDuplicated(subjects) > 0) {
+    fail(where, ": a subject has two records in a cell of a stratified test")
+  }
+  if (kind == "number") {
+    numbers <- eng_numbers(eng, dataset, variable)[rows]
+    values <- sort(unique(numbers[present]))
+    column <- match(numbers, values)
+  } else {
+    values <- sort(unique(texts[present]), method = "radix")
+    column <- match(texts, values)
+  }
+  groups <- members(eng, dataset, compared[[1]], rows)
+  tables <- list()
+  for (stratum in sort(unique(keys[present]), method = "radix")) {
+    table <- matrix(0, nrow = length(groups), ncol = length(values))
+    here <- present & keys == stratum
+    for (g in seq_along(groups)) {
+      counts <- tabulate(column[here & groups[[g]]$mask], nbins = length(values))
+      table[g, ] <- counts
+    }
+    tables[[length(tables) + 1]] <- table
+  }
+  list(tables = tables, values = if (kind == "number") as.numeric(values) else NULL)
+}
+
 # The table of a chi-square or Fisher test on the records of one cell (rule I12).
 test_table <- function(eng, analysis, rows, compared) {
   dataset <- analysis$dataset
@@ -436,6 +482,14 @@ run_analysis <- function(eng, analysis) {
         table <- test_table(eng, analysis, cell$rows, compared)
         value <- if (method == "test.chisq") m_chisq_p(table) else m_fisher_p(table)
         groups <- c(groups, compared_labels)
+      } else if (method == "test.cmh") {
+        chosen <- options[[method]]
+        found_tables <- strata_tables(eng, analysis, cell$rows, compared,
+                                      unlist(chosen$strata))
+        value <- m_cmh_p(found_tables$tables, found_tables$values,
+                         chosen$statistic %||% "general_association",
+                         chosen$scores %||% "table")
+        groups <- c(groups, compared_labels)
       } else if (method == "test.anova.oneway") {
         if (length(compared) != 1) {
           fail(where, ": the analysis of variance compares one grouping, found ",
@@ -547,6 +601,39 @@ run_model <- function(eng, analysis, rows, ordered, bound, options) {
     }
     result <- m_ancova_pairwise(y, group, ids, options$reference, factors, covariates, df,
                                 level)
+    for (g in groups) {
+      if (g$key == options$reference) next
+      add(list(label(g)), function(name) result[[g$key]][[name]])
+    }
+    return(found)
+  }
+  if (method %in% c("model.mmrm.lsmeans", "model.mmrm.pairwise")) {
+    # Rule I19: the visit column and the subject key, read like the analysis variable.
+    visit_name <- unlist(options$visit)
+    if (length(visit_name) != 1) fail(where, ": the option visit names one column")
+    visit <- if (eng_column(eng, dataset, visit_name)$kind == "number") {
+      eng_numbers(eng, dataset, visit_name)[rows]
+    } else {
+      eng_text(eng, dataset, visit_name)[rows]
+    }
+    subject <- eng_text(eng, dataset, eng$subject_key)[rows]
+    settings <- list(by_visit = as.character(unlist(options$by_visit)),
+                     treatment_by_visit = options$treatment_by_visit %||% "yes",
+                     covariance = options$covariance %||% "unstructured",
+                     df = options$df %||% "kenward_roger_linear",
+                     at = options$at %||% "last", confidence_level = level)
+    if (method == "model.mmrm.lsmeans") {
+      result <- do.call(m_mmrm_lsmeans, c(list(y, group, ids, visit, subject, factors,
+                                               covariates), settings))
+      for (g in groups) add(list(label(g)), function(name) result[[g$key]][[name]])
+      return(found)
+    }
+    if (!options$reference %in% ids) {
+      fail(where, ": the reference group ", options$reference, " is not a group of ",
+           grouping$id)
+    }
+    result <- do.call(m_mmrm_pairwise, c(list(y, group, ids, visit, subject, options$reference,
+                                              factors, covariates), settings))
     for (g in groups) {
       if (g$key == options$reference) next
       add(list(label(g)), function(name) result[[g$key]][[name]])

@@ -10,6 +10,9 @@
     fisher-limit      the R implementation refuses more tables than its limit
 
 Numbers must agree within a relative 1e-12, well inside the 1e-9 of rule R11.
+The mixed model for repeated measures is the exception: its expected values
+come from a second optimization (oracle_mmrm), and the two maxima of the
+restricted likelihood agree to about 1e-8; there the tolerance is 1e-6.
 A test that needs R is skipped where R is not installed, except under
 SPECFIRST_STRICT=1 (set by the gate), where it fails: a gate never passes by
 skipping.
@@ -29,6 +32,8 @@ from specfirst.machine import methods, registry, rengine
 from specfirst.paths import repo_root
 
 TOLERANCE = 1e-12
+# model.mmrm.*: two optimizations of the restricted likelihood (oracle_mmrm, mmrm).
+MMRM_TOLERANCE = 1e-6
 ROOT = repo_root(Path(__file__).resolve().parent)
 
 
@@ -57,6 +62,8 @@ def python_result(method: str, case: dict) -> dict:
         return {"p_value": methods.anova_oneway_p(given["groups"])}
     if method == "test.fisher.exact":
         return {"p_value": methods.fisher_exact_p(given["table"])}
+    if method == "test.cmh":
+        return {"p_value": methods.cmh_p(given["strata"], given.get("values"), **options)}
     if method == "display.round.half_away_from_zero":
         return {"text": methods.round_half_away(given["value"], given["decimals"])}
     if method == "display.round.half_even":
@@ -67,7 +74,7 @@ def python_result(method: str, case: dict) -> dict:
     raise AssertionError(f"no Python implementation of {method}")
 
 
-def differences(expected: dict, found: dict) -> list[str]:
+def differences(expected: dict, found: dict, tolerance: float = TOLERANCE) -> list[str]:
     """What differs. A model-based method gives one value per group: a mapping."""
     problems = []
     if set(expected) != set(found):
@@ -78,12 +85,13 @@ def differences(expected: dict, found: dict) -> list[str]:
             if not isinstance(want, dict) or not isinstance(got, dict):
                 problems.append(f"{name}: {got!r}, expected {want!r}")
             else:
-                problems += [f"{name}, {problem}" for problem in differences(want, got)]
+                problems += [f"{name}, {problem}"
+                             for problem in differences(want, got, tolerance)]
             continue
         if want is None or got is None or isinstance(want, str):
             if want != got:
                 problems.append(f"{name}: {got!r}, expected {want!r}")
-        elif abs(got - want) > TOLERANCE * max(abs(got), abs(want)):
+        elif abs(got - want) > tolerance * max(abs(got), abs(want)):
             problems.append(f"{name}: {got!r}, expected {want!r}")
     return problems
 
@@ -121,7 +129,8 @@ def r_vectors(tmp_path) -> list[str]:
         for index, case in enumerate(file["cases"]):
             count += 1
             problems += [f"{file['method']}, {case['name']}: {problem}" for problem in
-                         differences(case["expected"], found[(file["method"], index)])]
+                         differences(case["expected"], found[(file["method"], index)],
+                                     model_tolerance(file["method"]))]
     print(f"R implementations: {count} cases of {len(files)} methods, {len(problems)} "
           "differences")
     return problems
@@ -137,27 +146,36 @@ def exact_arithmetic(tmp_path) -> list[str]:
                 by_hand += 1
                 continue
             covered += 1
+            tolerance = 1e-9 if file["method"].startswith("model.mmrm.") else TOLERANCE
             problems += [f"{file['method']}, {case['name']}: the file says {problem}"
-                         for problem in differences(expected, case["expected"])]
+                         for problem in differences(expected, case["expected"], tolerance)]
     print(f"expected values computed again in exact arithmetic: {covered} cases, {len(problems)} "
           f"differences; written by hand: {by_hand} cases (the display rules)")
     return problems
 
 
-MODEL_METHODS = ("model.ancova.lsmeans", "model.ancova.pairwise", "model.ancova.dose_response")
+MODEL_METHODS = ("model.ancova.lsmeans", "model.ancova.pairwise", "model.ancova.dose_response",
+                 "model.mmrm.lsmeans", "model.mmrm.pairwise")
+
+
+def model_tolerance(method: str) -> float:
+    return MMRM_TOLERANCE if method.startswith("model.mmrm.") else TOLERANCE
 
 
 def model_vectors(tmp_path) -> list[str]:
     """The model-based methods (R only): every vector, and every option seen to matter.
 
     The expected values come from oracle_models (exact fractions and the
-    closed form of the t distribution), which shares nothing with the R
+    closed form of the t distribution) and oracle_mmrm (a restricted
+    likelihood maximized in numpy), which share nothing with the R
     implementation. A vector file whose cases leave an option at one value
     proves nothing about it; and what an implementation that ignored an
     option would compute (the LS means always with equal weights, the
     comparisons always with residual degrees of freedom, the dose always by
-    its rank), planted by fixing the option in the inputs, not in the R code,
-    must be seen by the vectors (rule R5).
+    its rank, the LS means of the mixed model always at the last visit, its
+    comparisons always with the Kenward-Roger standard errors), planted by
+    fixing the option in the inputs, not in the R code, must be seen by the
+    vectors (rule R5).
     """
     need_r()
     files = [file for file in vector_files() if file["method"] in MODEL_METHODS]
@@ -169,7 +187,8 @@ def model_vectors(tmp_path) -> list[str]:
         for index, case in enumerate(file["cases"]):
             count += 1
             problems += [f"{file['method']}, {case['name']}: {problem}" for problem in
-                         differences(case["expected"], found[(file["method"], index)])]
+                         differences(case["expected"], found[(file["method"], index)],
+                                     model_tolerance(file["method"]))]
     known = registry.load(ROOT).methods
     for file in files:
         for name, option in known[file["method"]].options.items():
@@ -184,14 +203,17 @@ def model_vectors(tmp_path) -> list[str]:
           "differences")
     planted = {"model.ancova.lsmeans": ("weights", "equal"),
                "model.ancova.pairwise": ("df", "residual"),
-               "model.ancova.dose_response": ("dose", "group_rank")}
+               "model.ancova.dose_response": ("dose", "group_rank"),
+               "model.mmrm.lsmeans": ("at", "last"),
+               "model.mmrm.pairwise": ("df", "kenward_roger_linear")}
     for file in files:
         option, fixed = planted[file["method"]]
         changed = [dict(case, options={**(case.get("options") or {}), option: fixed})
                    for case in file["cases"]]
         wrong = rengine.run_vectors(ROOT, tmp_path / f"planted-{option}",
                                     [dict(file, cases=changed)])
-        seen = sum(bool(differences(case["expected"], wrong[(file["method"], index)]))
+        seen = sum(bool(differences(case["expected"], wrong[(file["method"], index)],
+                                    model_tolerance(file["method"])))
                    for index, case in enumerate(file["cases"]))
         print(f"planted: {file['method']} always with {option} = {fixed}: {seen} cases differ")
         if not seen:

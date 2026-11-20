@@ -1,0 +1,69 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+# Python and R, like the simple tests (PLAN.md decision 21; ADR-015, amendment of real-5b).
+id: test.cmh
+kind: test
+title: Cochran-Mantel-Haenszel test of the groups against the values, controlling for strata
+takes: >-
+  per stratum, a table of counts with one row per compared group and one
+  column per value of the analysis variable; the values themselves when the
+  scores are the values
+operations:
+  p_value:
+    result: number
+    ars_names: ["P-value"]
+semantics:
+  - >-
+    The input is one table per stratum. Every table has the same r rows, the
+    compared groups in their order, and the same c columns, the distinct
+    values of the analysis variable in increasing order. A stratum is one
+    combination of values of the strata columns (rule I12d).
+  - >-
+    A row or a column whose total over all strata is 0 is left out, and so
+    is its score. A stratum with fewer than 2 subjects adds nothing. With
+    fewer than 2 rows or fewer than 2 columns left, or no stratum left, the
+    result is missing.
+  - >-
+    In a stratum with n subjects, let p be the vector of its row totals and
+    q that of its column totals, each divided by n, and x its counts, row by
+    row. Under the null hypothesis x has the mean m = n (p kron q) and the
+    covariance V = n^2 / (n - 1) (diag(p) - p p') kron (diag(q) - q q').
+  - >-
+    With a matrix B per stratum (statement 5), G is the sum over the strata
+    of B (x - m) and W the sum of B V B'. The statistic is G' W+ G, where W+
+    is the Moore-Penrose inverse of W, and its degrees of freedom are the
+    rank of W. A singular value of W that is at most the largest one times
+    the larger dimension of W times 2^-52 counts as 0 for both.
+  - >-
+    The option statistic chooses B. general_association: the Kronecker
+    product of [I(r-1), 0] and [I(c-1), 0], so that the statistic compares
+    every row with every column, with (r - 1)(c - 1) degrees of freedom when
+    W has full rank. row_mean_scores: the Kronecker product of [I(r-1), 0]
+    and the row vector a' of the column scores of the stratum, so that it
+    compares the mean score of the rows, with r - 1 degrees of freedom when
+    W has full rank.
+  - >-
+    The option scores gives the column scores of row_mean_scores. table: the
+    values of the analysis variable, which must then be numbers. rank: in
+    each stratum, the midrank of the column among the stratum's subjects,
+    the sum of the column totals before it plus (its total + 1) / 2. With
+    general_association the scores change nothing.
+  - >-
+    p_value: the probability that a chi-square variable with the degrees of
+    freedom of statement 4 is at least the statistic. With 0 degrees of
+    freedom the result is missing.
+options:
+  statistic:
+    values: [general_association, row_mean_scores]
+    default: general_association
+  scores:
+    values: [table, rank]
+    default: table
+  strata:
+    takes: columns
+    default: []
+implementations: [python, r]
+vectors: tests/methods/test_cmh.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

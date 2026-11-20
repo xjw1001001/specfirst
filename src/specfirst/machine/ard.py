@@ -417,6 +417,58 @@ class Engine:
             table.append([occurred, size - occurred])
         return table
 
+    def strata_tables(self, analysis: dict, rows: np.ndarray, compared: list[dict],
+                      strata: list[str]) -> tuple[list[list[list[int]]], list[float] | None]:
+        """The tables of a stratified test on the records of one cell (rule I12d).
+
+        One table per stratum, a combination of values of the strata columns that
+        occurs; a record with a missing stratum value is left out. Rows: the groups
+        of the one compared grouping; columns: the distinct values of the analysis
+        variable, in increasing order; a count is a number of subjects, and a
+        subject with two records in the cell is an error. The values are returned
+        as numbers when the variable holds numbers, else None.
+        """
+        dataset, variable = analysis["dataset"], analysis["variable"]
+        where = f"analysis '{analysis['id']}'"
+        if len(compared) != 1:
+            raise EngineError(f"{where}: a stratified test compares one grouping, found "
+                              f"{len(compared)}")
+        _, kind = self.column(dataset, variable)
+        texts = self.text(dataset, variable)[rows]
+        present = texts != ""
+        for name in strata:
+            present &= self.text(dataset, name)[rows] != ""
+        subjects = self.text(dataset, self.subject_key)[rows]
+        chosen = subjects[present].tolist()
+        if len(set(chosen)) != len(chosen):
+            raise EngineError(f"{where}: a subject has two records in a cell of a stratified "
+                              "test")
+        if kind == "number":
+            numbers = self.numbers(dataset, variable)[rows]
+            values = sorted(set(numbers[present].tolist()))
+            column_of = {value: j for j, value in enumerate(values)}
+            columns = [column_of.get(value, -1) for value in numbers.tolist()]
+        else:
+            values = sorted(set(texts[present].tolist()))
+            column_of = {value: j for j, value in enumerate(values)}
+            columns = [column_of.get(value, -1) for value in texts.tolist()]
+        columns_of_strata = [self.text(dataset, name)[rows].tolist() for name in strata]
+        keys = (list(zip(*columns_of_strata, strict=True)) if strata
+                else [()] * len(rows))
+        stratum_keys = sorted({keys[i] for i in np.flatnonzero(present).tolist()})
+        groups = self.members(dataset, compared[0], rows)
+        tables = []
+        for stratum in stratum_keys:
+            table = [[0] * len(values) for _ in groups]
+            for i in np.flatnonzero(present).tolist():
+                if keys[i] != stratum:
+                    continue
+                for g, (_, _, member) in enumerate(groups):
+                    if member[i]:
+                        table[g][columns[i]] += 1
+            tables.append(table)
+        return tables, ([float(v) for v in values] if kind == "number" else None)
+
     # ---- analyses ------------------------------------------------------------------
 
     def r_only(self, analysis_id: str) -> bool:
@@ -496,6 +548,12 @@ class Engine:
                     table = self.counts(analysis, cell, compared)
                     test = methods.chisq_p if method_id == "test.chisq" else methods.fisher_exact_p
                     value = test(table)
+                    groups = tuple(sorted([*labels, *compared_labels]))
+                elif method_id == "test.cmh":
+                    chosen = dict(options[method_id])
+                    strata = chosen.pop("strata")
+                    tables, values = self.strata_tables(analysis, cell, compared, strata)
+                    value = methods.cmh_p(tables, values, **chosen)
                     groups = tuple(sorted([*labels, *compared_labels]))
                 elif method_id == "test.anova.oneway":
                     if len(compared) != 1:

@@ -56,6 +56,76 @@ reduced_table <- function(table) {
   table[rowSums(table) > 0, colSums(table) > 0, drop = FALSE]
 }
 
+# test.cmh (statements of standard/methods/test.cmh.yaml)
+#
+#   strata: a list of count matrices, one per stratum, the same rows (the compared
+#   groups) and columns (the values of the analysis variable, increasing)
+#   values: those values, for table scores
+#
+# The algebra is written out here, as the statements give it: the base R
+# mantelhaen.test gives the general association only.
+m_cmh_p <- function(strata, values = NULL, statistic = "general_association",
+                    scores = "table") {
+  if (!statistic %in% c("general_association", "row_mean_scores")) {
+    fail("test.cmh: unknown statistic '", statistic, "'")
+  }
+  if (!scores %in% c("table", "rank")) fail("test.cmh: unknown scores '", scores, "'")
+  if (length(strata) == 0) return(NA_real_)
+  shape <- dim(strata[[1]])
+  for (table in strata) {
+    if (!identical(dim(table), shape)) fail("test.cmh: the tables of the strata must have the same shape")
+    if (any(is.na(table)) || any(table < 0) || any(table != round(table))) fail("test.cmh: a table holds counts")
+  }
+  if (statistic == "row_mean_scores" && scores == "table") {
+    if (is.null(values) || length(values) != shape[2] || anyNA(values) || !all(is.finite(values))) {
+      fail("test.cmh: table scores need one value per column, a number")
+    }
+  }
+  total <- Reduce(`+`, strata)
+  rows <- which(rowSums(total) > 0)
+  columns <- which(colSums(total) > 0)
+  r <- length(rows)
+  k <- length(columns)
+  if (r < 2 || k < 2) return(NA_real_)
+  picked <- cbind(diag(r - 1), 0)
+  g_sum <- NULL
+  w_sum <- NULL
+  for (table in strata) {
+    x <- table[rows, columns, drop = FALSE]
+    n <- sum(x)
+    if (n < 2) next
+    p <- rowSums(x) / n
+    q <- colSums(x) / n
+    mean <- n * kronecker(p, q)
+    cov <- n * n / (n - 1) * kronecker(diag(p, r) - outer(p, p), diag(q, k) - outer(q, q))
+    if (statistic == "general_association") {
+      b <- kronecker(picked, cbind(diag(k - 1), 0))
+    } else {
+      if (scores == "table") {
+        a <- as.numeric(values[columns])
+      } else {
+        totals <- colSums(x)
+        a <- cumsum(totals) - totals + (totals + 1) / 2
+      }
+      b <- kronecker(picked, matrix(a, nrow = 1))
+    }
+    g <- b %*% (as.numeric(t(x)) - mean)  # the counts row by row (statement 3)
+    w <- b %*% cov %*% t(b)
+    g_sum <- if (is.null(g_sum)) g else g_sum + g
+    w_sum <- if (is.null(w_sum)) w else w_sum + w
+  }
+  if (is.null(g_sum)) return(NA_real_)
+  # Statement 4: the rank and the Moore-Penrose inverse with one tolerance.
+  s <- svd(w_sum)
+  tolerance <- max(s$d) * max(dim(w_sum)) * 2^-52
+  kept <- s$d > tolerance
+  df <- sum(kept)
+  if (df == 0) return(NA_real_)
+  inverse <- s$v[, kept, drop = FALSE] %*% (t(s$u[, kept, drop = FALSE]) / s$d[kept])
+  statistic_value <- as.numeric(t(g_sum) %*% inverse %*% g_sum)
+  stats::pchisq(statistic_value, df, lower.tail = FALSE)
+}
+
 # test.chisq
 m_chisq_p <- function(table) {
   t <- reduced_table(table)

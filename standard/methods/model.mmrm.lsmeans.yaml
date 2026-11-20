@@ -1,0 +1,116 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+# A model-based method: R only (section 7.3; ADR-015, amendment of real-5b).
+id: model.mmrm.lsmeans
+kind: model
+title: Mixed model for repeated measures, least-squares means by treatment group
+takes: >-
+  the analysis records, one per subject and visit; the one grouping of the
+  analysis, the treatment, with results by group; the visit, the factors and
+  the covariates the analysis names
+operations:
+  lsmean:
+    result: number
+    ars_names: ["LS mean"]
+  se:
+    result: number
+    ars_names: ["Standard error"]
+  lower_cl:
+    result: number
+    ars_names: ["Lower confidence limit"]
+  upper_cl:
+    result: number
+    ars_names: ["Upper confidence limit"]
+semantics:
+  - >-
+    The model records are the analysis records that belong to a group of the
+    treatment grouping and have a value of the analysis variable, of the visit
+    column (the option visit names exactly one), of the subject key, of every
+    factor and of every covariate (missing as in rule I1). Two model records of
+    one subject at one visit are an error.
+  - >-
+    The visits are the distinct values of the visit column on the model
+    records, in increasing order: numbers by value, text by its characters.
+    The last visit is the last of them.
+  - >-
+    The mean of a record is mu + tau[group] + alpha[visit] + (tau alpha)[group,
+    visit] when the option treatment_by_visit is yes + the sum over the factors
+    of beta[factor, level] + the sum over the covariates of gamma[covariate] *
+    covariate. A column the option by_visit names, which must be a factor or a
+    covariate, has an effect of its own at each visit: (beta alpha)[factor,
+    level, visit] or delta[covariate, visit] * covariate is added. The levels
+    of a factor are its distinct values on the model records, as text; a factor
+    with one level is left out. A design matrix without full column rank gives
+    missing results.
+  - >-
+    The records of one subject are normal with the covariance matrix Sigma of
+    the visits, restricted to the subject's visits; subjects are independent.
+    The option covariance: unstructured, every variance and covariance of the
+    visits its own parameter; toeplitz, Sigma[j, k] = s[|j - k|], one parameter
+    per distance between the positions j and k of two visits in the order of
+    statement 2. In both, Sigma is linear in its parameters.
+  - >-
+    The parameters of Sigma are estimated by restricted maximum likelihood
+    (REML) and the coefficients by generalized least squares with that Sigma;
+    V = (X' Sigma^-1 X)^-1 over all records is the covariance matrix of the
+    coefficients. A fit whose Sigma is not positive definite at the maximum, or
+    that does not reach it, gives missing results.
+  - >-
+    lsmean of a group: the mean of statement 3 for that group with every
+    covariate at its mean over the model records and every factor averaged
+    over its levels with equal weights, at the last visit when the option at is
+    last, or averaged over the visits with equal weights when it is average.
+    It is l' b for a vector l of coefficients.
+  - >-
+    se: the square root of l' V l when the option df is satterthwaite, and of
+    l' V_A l when it is kenward_roger_linear, where V_A = V + 2 V (the sum over
+    i and j of W[i, j] (Q_ij - P_i V P_j)) V is the adjusted covariance of
+    Kenward and Roger (1997) for parameters that Sigma is linear in: P_i = -X'
+    S^-1 G_i S^-1 X and Q_ij = X' S^-1 G_i S^-1 G_j S^-1 X, with S the
+    covariance of all records and G_i its derivative in parameter i.
+  - >-
+    The degrees of freedom of l: 2 (l' V l)^2 / (g' W g), where g is the
+    gradient of l' V l in the parameters of Sigma and W is the inverse of the
+    observed information of the restricted likelihood (minus its matrix of
+    second derivatives) at the maximum. For one contrast this is the
+    denominator degrees of freedom of Kenward and Roger and of Satterthwaite
+    alike; the two options differ in se.
+  - >-
+    lower_cl and upper_cl: lsmean minus and plus q * se, where q is the quantile
+    at 1 - (1 - level / 100) / 2, level the option confidence_level, of the t
+    distribution with the degrees of freedom of statement 8.
+  - >-
+    A group without model records gives missing results.
+options:
+  factors:
+    takes: columns
+    default: []
+  covariates:
+    takes: columns
+    default: []
+  visit:
+    takes: columns
+    default: []
+  by_visit:
+    takes: columns
+    default: []
+  treatment_by_visit:
+    values: ["yes", "no"]
+    default: "yes"
+  covariance:
+    values: [unstructured, toeplitz]
+    default: unstructured
+  df:
+    values: [kenward_roger_linear, satterthwaite]
+    default: kenward_roger_linear
+  at:
+    values: [last, average]
+    default: last
+  confidence_level:
+    values: [90, 95, 99]
+    default: 95
+implementations: [r]
+vectors: tests/methods/model_mmrm_lsmeans.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

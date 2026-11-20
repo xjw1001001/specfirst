@@ -13,15 +13,20 @@ Version 0, started by real-2 (ADR-002).
 | `test.chisq` | test | p_value |
 | `test.anova.oneway` | test | p_value |
 | `test.fisher.exact` | test | p_value |
+| `test.cmh` | test | p_value |
 | `display.round.half_away_from_zero` | display | text |
 | `display.round.half_even` | display | text |
 | `display.pattern` | display | text |
 | `model.ancova.lsmeans` | model | lsmean, se, lower_cl, upper_cl |
 | `model.ancova.pairwise` | model | estimate, se, lower_cl, upper_cl, p_value |
 | `model.ancova.dose_response` | model | p_value, estimate |
+| `model.mmrm.lsmeans` | model | lsmean, se, lower_cl, upper_cl |
+| `model.mmrm.pairwise` | model | estimate, se, lower_cl, upper_cl, p_value |
 
 The three `model` entries are real-5a's (ADR-015): ANCOVA with LS means, its
-pairwise comparisons and its dose-response test. A model-based method is R
+pairwise comparisons and its dose-response test. real-5b adds the mixed model
+for repeated measures (`model.mmrm.*`, R only) and the Cochran-Mantel-Haenszel
+test (`test.cmh`, Python and R, PLAN.md decision 21). A model-based method is R
 only (PLAN.md section 7.3).
 
 `specfirst methods` lists the entries and checks `registry.json`.
@@ -36,7 +41,7 @@ One YAML file per entry, named `<id>.yaml`.
 | `takes` | What the method is given, in words. |
 | `operations` | Per operation: `result` (`integer`, `number` or `text`) and `ars_names`, the names an ARS operation may have to be this one. |
 | `semantics` | The statements that fix the arithmetic. Statement k is cited as "statement k" of the entry; their order is part of the contract. |
-| `options` | Per option: its `values` and its `default`. A value is text, a whole number, or true or false. A model-based method may also have an option `{takes: columns, default: []}`, the names of columns of the analysis dataset (only `factors` and `covariates`, which the ARS reader knows), and `{takes: group, default: null}`, the ID of a group of the analysis's grouping; the analysis states both (ADR-015). |
+| `options` | Per option: its `values` and its `default`. A value is text, a whole number, or true or false. A model-based method may also have an option `{takes: columns, default: []}`, the names of columns of the analysis dataset (only `factors`, `covariates`, `visit`, `by_visit` and `strata`, which the ARS reader knows), and `{takes: group, default: null}`, the ID of a group of the analysis's grouping; the analysis states both (ADR-015). A test may have the columns option `strata` (amendment of real-5b). |
 | `implementations` | `python`, `r` or both. A descriptive method or a test needs both (rule R11); a model-based method is `r` only. |
 | `vectors` | The file of test vectors in `tests/methods/`. |
 | `xref` | `ars_example`: operation IDs of CDISC's ARS example. `siera`: method templates of siera. `acdc`: the AC/DC method ID, null until M2 (E11). |
@@ -91,14 +96,14 @@ Both engines follow these rules. They are the choices ARS leaves to code.
 | I9 | A data-driven grouping has one group per distinct non-missing value of its variable on the analysis records. The variable is read from the grouping's dataset; when that is not the analysis dataset, by the subject key, and the grouping's dataset must then hold one value per subject. Several data-driven groupings give the combinations of values that occur together on a record, not every combination. A number as a group value is written by one rule: zero is `0`, with no sign; any other whole number has all its digits and neither a decimal point nor an exponent (`8`, `1000000000000000`); any other number is the shortest decimal that reads back as the same number, with an exponent of at least two digits when it is below 0.0001 (`0.1`, `1.5e-07`). A number that is not finite cannot be a group value. |
 | I10 | The cells of an analysis: every combination of one group per grouping with defined groups, with every occurring combination of the data-driven groupings. |
 | I11 | A descriptive operation gives one result per cell. A cell without records gives a count of 0 and missing statistics, not no result. |
-| I12 | A test gives one result per cell, from the groupings that are compared. (a) A chi-square or Fisher test with two compared groupings: the table of the distinct values of the analysis variable, by group of the first and group of the second. (b) With one compared grouping: an occurrence table. One row per group that has subjects in the population; two columns: the subjects with at least one record in the cell, and the other subjects of the population in that group. The analysis variable must be the subject key. (c) An analysis of variance: one compared grouping; the values of the analysis variable per group. |
+| I12 | A test gives one result per cell, from the groupings that are compared. (a) A chi-square or Fisher test with two compared groupings: the table of the distinct values of the analysis variable, by group of the first and group of the second. (b) With one compared grouping: an occurrence table. One row per group that has subjects in the population; two columns: the subjects with at least one record in the cell, and the other subjects of the population in that group. The analysis variable must be the subject key. (c) An analysis of variance: one compared grouping; the values of the analysis variable per group. (d) A stratified test (`test.cmh`): one compared grouping and the columns its option `strata` names on the analysis dataset (read like a variable, role `model`). One table per stratum, a combination of values of the strata columns that occurs on the records of the cell; a record with a missing value of a stratum column or of the analysis variable is left out. Rows: the groups of the compared grouping; columns: the distinct values of the analysis variable, in increasing order (numbers by value, text by its characters). A count is a number of subjects; a subject with two such records in the cell is an error (amendment of real-5b). |
 | I13 | The population of rule I12b: the subjects of the analysis set, in the one dataset its conditions name, restricted by those parts of the data subset that are joined by AND at its top and whose conditions are all on that dataset. "Treatment-emergent and arm in (placebo, low dose)" restricts the population to the two arms; "treatment-emergent" alone does not restrict it. |
 | I14 | A result is identified by its analysis, its ARS operation and, per grouping, the group's ID (defined group), the value (data-driven group) or nothing (compared grouping). |
 | I15 | The percent of a cell follows `percent.subjects`: the numerator in the same cell, the denominator from the one result of the referenced analysis whose groups are all groups of the cell. |
 | I16 | A model-based method (kind `model`) is run by the R engine alone. The Python engine gives no row for its analysis; the gold ARD takes the R engine's rows (ADR-015). An analysis binds the operations of one model-based method and of nothing else. |
 | I17 | A model-based analysis has exactly one grouping, the treatment. Its model is fitted once, to the analysis records (rule I6). The group of a record is the group whose where clause it fulfils (rule I8, rule I4 across datasets) or its value (rule I9); a record in two groups is an error. |
 | I18 | Its results: one per group of the grouping and operation when the grouping has results by group (LS means; a comparison with a reference group, where the reference itself gives none); one per operation when the grouping is compared (the dose-response test), identified with `*` for the grouping (rule I14). |
-| I19 | The factors and covariates of the model are the columns its `factors` and `covariates` parameters name, read on the analysis dataset; they are read like the analysis variable (`ars.reads`, role `model`). The dose of a group is the value of the grouping variable, which must be a number column, read across datasets by the subject key as in rule I9. |
+| I19 | The factors and covariates of the model are the columns its `factors` and `covariates` parameters name, read on the analysis dataset; they are read like the analysis variable (`ars.reads`, role `model`). So are the `visit` of a model for repeated measures and its `by_visit` columns; its subject is the subject key (amendment of real-5b). The dose of a group is the value of the grouping variable, which must be a number column, read across datasets by the subject key as in rule I9. |
 
 ## An ARD row
 

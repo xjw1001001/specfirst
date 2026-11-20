@@ -116,9 +116,10 @@ def parse_method(data: object, where: str) -> Method:
             elif option["takes"] == "group" and option["default"] is not None:
                 problems.append(f"option '{name}': a group has no default (null); the "
                                 "analysis names it")
-            if data.get("kind") != "model":
+            if data.get("kind") != "model" and not (data.get("kind") == "test"
+                                                    and option["takes"] == "columns"):
                 problems.append(f"option '{name}': only a model-based method takes columns "
-                                "or a group")
+                                "or a group, and a test columns (its strata)")
             continue
         if not isinstance(option, dict) or set(option) != {"values", "default"}:
             problems.append(f"option '{name}': needs exactly 'values' and 'default', or "

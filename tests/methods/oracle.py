@@ -166,6 +166,111 @@ def fisher_just_above(table, low: Fraction, high: Fraction) -> list[float]:
                   if observed * (1 + low) < p <= observed * (1 + high))
 
 
+def _kron(a, b):
+    """The Kronecker product of two matrices given as lists of rows."""
+    return [[x * y for x in row_a for y in row_b] for row_a in a for row_b in b]
+
+
+def _matmul(a, b):
+    return [[sum((a[i][k] * b[k][j] for k in range(len(b))), Fraction(0))
+             for j in range(len(b[0]))] for i in range(len(a))]
+
+
+def _quadratic_form(w, g):
+    """g' W- g and the rank of W, for a symmetric W with g in its range, exactly.
+
+    The pivot columns of W (Gauss-Jordan in fractions) give a nonsingular
+    block W_SS of the size of the rank; with g in the range of W, g' W- g is
+    the same for every generalized inverse, so it is g_S' W_SS^-1 g_S.
+    """
+    size = len(w)
+    work = [row[:] for row in w]
+    pivots, row = [], 0
+    for column in range(size):
+        found = next((i for i in range(row, size) if work[i][column] != 0), None)
+        if found is None:
+            continue
+        work[row], work[found] = work[found], work[row]
+        for i in range(size):
+            if i != row and work[i][column] != 0:
+                factor = work[i][column] / work[row][column]
+                work[i] = [x - factor * y for x, y in zip(work[i], work[row], strict=True)]
+        pivots.append(column)
+        row += 1
+    rank = len(pivots)
+    if rank == 0:
+        return Fraction(0), 0
+    block = [[w[i][j] for j in pivots] for i in pivots]
+    right = [g[i] for i in pivots]
+    # Solve block * x = right exactly.
+    augmented = [block[i][:] + [right[i]] for i in range(rank)]
+    for column in range(rank):
+        found = next(i for i in range(column, rank) if augmented[i][column] != 0)
+        augmented[column], augmented[found] = augmented[found], augmented[column]
+        for i in range(rank):
+            if i != column and augmented[i][column] != 0:
+                factor = augmented[i][column] / augmented[column][column]
+                augmented[i] = [x - factor * y
+                                for x, y in zip(augmented[i], augmented[column], strict=True)]
+    x = [augmented[i][rank] / augmented[i][i] for i in range(rank)]
+    # g must be in the range of W: W[:, S] x = g.
+    for i in range(size):
+        if sum((w[i][j] * x[k] for k, j in enumerate(pivots)), Fraction(0)) != g[i]:
+            raise NotCovered("test.cmh: G is not in the range of W")
+    return sum((right[k] * x[k] for k in range(rank)), Fraction(0)), rank
+
+
+def cmh_p(strata, values=None, statistic="general_association", scores="table"):
+    """test.cmh in fractions: the statistic exactly, the tail by its finite series."""
+    tables = [[[Fraction(count) for count in row] for row in table] for table in strata]
+    if not tables:
+        return None
+    r_all, c_all = len(tables[0]), len(tables[0][0])
+    rows = [i for i in range(r_all) if sum(sum(t[i]) for t in tables) > 0]
+    columns = [j for j in range(c_all) if sum(t[i][j] for t in tables for i in range(r_all)) > 0]
+    if len(rows) < 2 or len(columns) < 2:
+        return None
+    r, c = len(rows), len(columns)
+    picked = [[Fraction(int(i == j)) for j in range(r)] for i in range(r - 1)]
+    g_sum, w_sum, used = None, None, 0
+    for table in tables:
+        x = [[table[i][j] for j in columns] for i in rows]
+        n = sum(sum(row) for row in x)
+        if n < 2:
+            continue
+        used += 1
+        p = [sum(row) / n for row in x]
+        q = [sum(x[i][j] for i in range(r)) / n for j in range(c)]
+        mean = [n * pi * qj for pi in p for qj in q]
+        dp = [[(p[i] if i == j else 0) - p[i] * p[j] for j in range(r)] for i in range(r)]
+        dq = [[(q[i] if i == j else 0) - q[i] * q[j] for j in range(c)] for i in range(c)]
+        cov = [[n * n / (n - 1) * v for v in row] for row in _kron(dp, dq)]
+        if statistic == "general_association":
+            right = [[Fraction(int(i == j)) for j in range(c)] for i in range(c - 1)]
+        else:
+            if scores == "table":
+                a = [Fraction(str(values[j])) for j in columns]
+            else:
+                totals = [sum(x[i][j] for i in range(r)) for j in range(c)]
+                a = [sum(totals[:j], Fraction(0)) + (totals[j] + 1) / 2 for j in range(c)]
+            right = [a]
+        b = _kron(picked, right)
+        flat = [x[i][j] for i in range(r) for j in range(c)]
+        g = [sum((b[k][m] * (flat[m] - mean[m]) for m in range(len(flat))), Fraction(0))
+             for k in range(len(b))]
+        bt = [list(column) for column in zip(*b, strict=True)]
+        w = _matmul(_matmul(b, cov), bt)
+        g_sum = g if g_sum is None else [u + v for u, v in zip(g_sum, g, strict=True)]
+        w_sum = w if w_sum is None else [[u + v for u, v in zip(ru, rv, strict=True)]
+                                         for ru, rv in zip(w_sum, w, strict=True)]
+    if not used:
+        return None
+    statistic_value, df = _quadratic_form(w_sum, g_sum)
+    if df == 0:
+        return None
+    return chisq_sf(_float(statistic_value), df)
+
+
 def expected(method: str, case: dict) -> dict:
     """What a vector's case should give, by this module."""
     given, options = case["input"], case.get("options") or {}
@@ -185,6 +290,12 @@ def expected(method: str, case: dict) -> dict:
         return {"p_value": anova_oneway_p(given["groups"])}
     if method == "test.fisher.exact":
         return {"p_value": fisher_exact_p(given["table"])}
+    if method == "test.cmh":
+        return {"p_value": cmh_p(given["strata"], given.get("values"), **options)}
+    if method.startswith("model.mmrm."):
+        import oracle_mmrm
+
+        return oracle_mmrm.expected(method, case)
     if method.startswith("model."):
         import oracle_models
 

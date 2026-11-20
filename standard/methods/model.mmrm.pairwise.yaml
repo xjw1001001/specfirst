@@ -1,0 +1,86 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+# A model-based method: R only (section 7.3; ADR-015, amendment of real-5b).
+id: model.mmrm.pairwise
+kind: model
+title: Mixed model for repeated measures, each treatment group against a reference group
+takes: >-
+  the analysis records, one per subject and visit; the one grouping of the
+  analysis, the treatment, with results by group; the reference group, the
+  visit, the factors and the covariates the analysis names
+operations:
+  estimate:
+    result: number
+    ars_names: ["Difference of LS means"]
+  se:
+    result: number
+    ars_names: ["Standard error"]
+  lower_cl:
+    result: number
+    ars_names: ["Lower confidence limit"]
+  upper_cl:
+    result: number
+    ars_names: ["Upper confidence limit"]
+  p_value:
+    result: number
+    ars_names: ["P-value"]
+semantics:
+  - >-
+    The model records, the model, its fit and the LS means are those of
+    model.mmrm.lsmeans, statements 1 to 6, with the same options.
+  - >-
+    The option reference names one group of the treatment grouping. Every
+    other group gives one result per operation, the comparison of that group
+    with the reference. The reference itself gives no result.
+  - >-
+    estimate: the lsmean of the group minus the lsmean of the reference, l' b
+    with l the difference of their vectors of coefficients.
+  - >-
+    se and the degrees of freedom: those of model.mmrm.lsmeans, statements 7
+    and 8, for this l.
+  - >-
+    p_value: the probability that |T| is at least |estimate / se|, two-sided,
+    where T has the t distribution with those degrees of freedom. It is not
+    adjusted for multiple comparisons.
+  - >-
+    lower_cl and upper_cl: estimate minus and plus q * se, with q of
+    model.mmrm.lsmeans, statement 9.
+  - >-
+    A group or a reference without model records, or a fit that gives missing
+    results (model.mmrm.lsmeans, statements 3 and 5), gives missing results.
+options:
+  factors:
+    takes: columns
+    default: []
+  covariates:
+    takes: columns
+    default: []
+  visit:
+    takes: columns
+    default: []
+  by_visit:
+    takes: columns
+    default: []
+  treatment_by_visit:
+    values: ["yes", "no"]
+    default: "yes"
+  covariance:
+    values: [unstructured, toeplitz]
+    default: unstructured
+  df:
+    values: [kenward_roger_linear, satterthwaite]
+    default: kenward_roger_linear
+  at:
+    values: [last, average]
+    default: last
+  reference:
+    takes: group
+    default: null
+  confidence_level:
+    values: [90, 95, 99]
+    default: 95
+implementations: [r]
+vectors: tests/methods/model_mmrm_pairwise.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null
