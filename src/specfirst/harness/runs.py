@@ -22,7 +22,9 @@ The arms of ADR-005, decision 3, on the same task and the same record:
 A run is checked when it ends: the task folder holds nothing a reader may
 not see, the reader ended within its budget, the output files are valid,
 and no canary is in the transcript or the workspace. `check` does the same
-for a run kept in the repository, against a task built again now.
+for a run kept in the repository, against a task built again now; the kept
+run's binding.json says which parts of the task and the kit it is bound to
+by bytes and which by version (specfirst.harness.binding, ADR-017).
 """
 
 from __future__ import annotations
@@ -40,7 +42,7 @@ from specfirst.compile import catalog as catalogs
 from specfirst.gen import documents as gendocs
 from specfirst.gen import kits as genkits
 from specfirst.gen import natural
-from specfirst.harness import adapter, canary, oracle, outputs, record
+from specfirst.harness import adapter, binding, canary, oracle, outputs, record
 from specfirst.harness import task as tasks
 from specfirst.machine.canonical import content_hash, json_text, sha256_file
 
@@ -261,6 +263,9 @@ def kit_canaries(root: Path, kit_dir: Path, texts: list[str], arm: str, kit_sha:
         allowed += canary.reader_views(own, tuple(tasks.DOCUMENTS))
         atoms += [r["statement"] for r in own]
     always = [(f"planted:{name}", canary.planted(kit_sha, name)) for name in PRIVATE]
+    # Every planted canary begins so, whatever kit.yaml it was drawn from (review of
+    # adr-017, F5): a kept record whose kit.yaml SHA-256 is edited hides none of them.
+    always.append(("planted:any private file", canary.PREFIX))
     if seed:
         always.append(("seed", seed))
     return canary.build(sources, allowed, atoms, always)
@@ -637,7 +642,15 @@ def slug(windows: str) -> str:
 
 def keep(made: Run, task_dir: Path, kit_dir: Path, root: Path, store: Path = STORE) -> Path:
     """Copy a run into the store of kept runs: its record, task, ask log, transcript and
-    workspace, in ASCII, with the local paths replaced."""
+    workspace, in ASCII, with the local paths replaced; and beside them binding.json, the
+    parts of the task and the kit the kept run is bound to (ADR-017, decision 4)."""
+    told = json.loads((made.folder / TASK_JSON).read_text(encoding="ascii"))
+    registry = task_dir / binding.REGISTRY
+    if not registry.is_file() or sha256_file(registry) != told["manifest"].get(
+            binding.REGISTRY):
+        raise RunError(f"{task_dir} does not hold the {binding.REGISTRY} the run read")
+    if sha256_file(kit_dir / genkits.MANIFEST) != made.record["kit"]["kit_yaml_sha256"]:
+        raise RunError(f"the kit.yaml of {kit_dir} is not the one the run read")
     pairs = redactions(task_dir, made.folder, kit_dir, root)
     target = store / made.folder.name
     shutil.rmtree(target, ignore_errors=True)
@@ -646,54 +659,65 @@ def keep(made: Run, task_dir: Path, kit_dir: Path, root: Path, store: Path = STO
     names += [path.relative_to(made.folder).as_posix() for path in sorted(
         (made.folder / WORKSPACE).rglob("*")) if path.is_file()]
     for name in names:
-        source = made.folder / name
-        text = source.read_bytes().decode("utf-8", errors="replace")
-        if name.endswith(".jsonl"):
-            kept = "".join(json.dumps(_redact(json.loads(line), pairs), sort_keys=True,
-                                      ensure_ascii=True) + "\n"
-                           for line in text.splitlines() if line.strip())
-        elif name.endswith(".json"):
-            kept = json.dumps(_redact(json.loads(text), pairs), indent=1, sort_keys=True,
-                              ensure_ascii=True) + "\n"
-        else:
-            kept = str(_redact(text, pairs))
-            kept = kept.encode("ascii", errors="backslashreplace").decode("ascii")
+        text = (made.folder / name).read_bytes().decode("utf-8", errors="replace")
+        kept = binding.kept_form(name, text, lambda value: _redact(value, pairs))
         (target / name).parent.mkdir(parents=True, exist_ok=True)
         (target / name).write_text(kept, encoding="ascii", newline="\n")
+    binding.save(target, binding.make(kit_dir, task_dir, told["manifest"], target))
     return target
 
 
 def check(root: Path, kept: Path, kit_dir: Path, tasks_dir: Path,
           seed: str | None = None) -> tuple[list[str], list[canary.Hit], tasks.Task]:
-    """Hold a kept run against a task built again now from the same kit: the task is the
-    one the run read; the run ended within budget; its output files are valid; no
-    canary of the kit as written now is in its transcript or workspace."""
+    """Hold a kept run against a task built again now from the same kit (`held`)."""
+    made = json.loads((kept / RUN_JSON).read_text(encoding="ascii"))
+    task = tasks.build(root, kit_dir, tasks_dir, made["stage"], made["condition"])
+    found, hits = held(root, kept, kit_dir, task, seed)
+    return found, hits, task
+
+
+def held(root: Path, kept: Path, kit_dir: Path, task: tasks.Task,
+         seed: str | None = None) -> tuple[list[str], list[canary.Hit]]:
+    """Hold a kept run against a task built now from the same kit (ADR-010, decision 9,
+    as ADR-017 changes it for the slice): the task agrees with the task the run read on
+    every bound part (`binding.problems`); the run ended within budget; its output files
+    are valid and are the run's own, written again from its transcript; no canary of the
+    kit as written now is in its transcript or workspace."""
     made = json.loads((kept / RUN_JSON).read_text(encoding="ascii"))
     told = json.loads((kept / TASK_JSON).read_text(encoding="ascii"))
     catalog = catalogs.load(catalogs.default_dir(root))
-    task = tasks.build(root, kit_dir, tasks_dir, made["stage"], made["condition"])
-    found = []
-    if task.manifest != told["manifest"]:
-        differ = sorted(set(task.manifest) ^ set(told["manifest"]) | {
-            path for path in set(task.manifest) & set(told["manifest"])
-            if task.manifest[path] != told["manifest"][path]})
-        found.append(f"task: built again, {len(differ)} files differ from the task the run "
-                     f"read, for example {', '.join(differ[:3])}")
-    kit_sha = sha256_file(kit_dir / genkits.MANIFEST)
-    if made["kit"]["kit_yaml_sha256"] != kit_sha:
-        found.append("kit: kit.yaml is not the one the run read")
+    found = binding.problems(binding.read(kept), made, told, task, kit_dir, kept)
     found += kept_problems(made, kept)
     asks = oracle.read_asks(kept)
     found += [f"outputs: {problem}" for problem in outputs.problems(
         kept / WORKSPACE / tasks.OUT, catalog, task.keys, outputs.task_documents(task.folder),
         asks)]
-    canaries = kit_canaries(root, kit_dir, task_texts(task), made["arm"], kit_sha, seed,
+    found += binding.output_problems(made, kept, WORKSPACE, adapter.TRANSCRIPT,
+                                     gendocs.read_oracle(kit_dir).get("answers") or [],
+                                     set(catalog.entries))
+    # The canaries planted in the run's private files are those of the kit.yaml the run
+    # read: the versions of the engines in it are bound by nothing (ADR-017, decision 3).
+    canaries = kit_canaries(root, kit_dir, task_texts(task), made["arm"],
+                            made["kit"]["kit_yaml_sha256"], seed,
                             outputs.read(kept / WORKSPACE / tasks.OUT, "decisions.jsonl"))
     names = [path.relative_to(kept / WORKSPACE).as_posix()
              for path in sorted((kept / WORKSPACE).rglob("*")) if path.is_file()]
     hits = (canary.scan_transcript(canaries, kept / adapter.TRANSCRIPT)
             + canary.scan_files(canaries, kept / WORKSPACE, names))
-    return found, hits, task
+    return found, hits
+
+
+def bind(root: Path, kept: Path, kit_dir: Path, tasks_dir: Path) -> tuple[Path | None,
+                                                                          list[str]]:
+    """Give a run kept before ADR-017 its binding file, without a model run (decision 6):
+    `binding.write` on the task built now from the kit."""
+    made = json.loads((kept / RUN_JSON).read_text(encoding="ascii"))
+    told = json.loads((kept / TASK_JSON).read_text(encoding="ascii"))
+    catalog = catalogs.load(catalogs.default_dir(root))
+    task = tasks.build(root, kit_dir, tasks_dir, made["stage"], made["condition"])
+    return binding.write(made, told, task, kit_dir, kept,
+                         gendocs.read_oracle(kit_dir).get("answers") or [],
+                         set(catalog.entries), WORKSPACE, adapter.TRANSCRIPT)
 
 
 def transcript_events(transcript: Path) -> tuple[dict, dict | None]:
