@@ -11,7 +11,9 @@ decimal arithmetic with 60 digits. A quantile is found by bisection on that
 closed form. The normal distribution comes from the series of erf.
 
 The vectors use designs of full rank, apart from groups without model records,
-which this module leaves out of the design as the statements say.
+which this module leaves out of the design as the statements say, and one
+design with a factor nested in the groups (review of real-5a, F5), where
+every result asked for must be found not estimable: missing.
 
 Nothing here is used by an engine.
 """
@@ -241,9 +243,38 @@ def _model(case: dict, lead: str) -> dict | None:
     rows = [row(i, given["group"][i],
                 doses.get(given["group"][i]) if lead == "dose" else None) for i in keep]
     y = [_number(given["y"][i]) for i in keep]
-    beta, covariance, df = _fit(rows, y)
+    try:
+        beta, covariance, df = _fit(rows, y)
+    except NotFullRank:
+        # Statement 7 of model.ancova.lsmeans: what is not estimable is missing. The
+        # vectors use such a design only where nothing asked for is estimable.
+        return {"groups": groups, "row": row, "rows": rows, "singular": True, "df": 1,
+                "doses": doses, "lead": lead}
     return {"groups": groups, "row": row, "beta": beta, "covariance": covariance, "df": df,
             "doses": doses, "lead": lead}
+
+
+def _rank(rows: list[list[Fraction]]) -> int:
+    """The rank of a matrix, by elimination in fractions."""
+    work = [row[:] for row in rows]
+    rank = 0
+    for column in range(len(work[0]) if work else 0):
+        found = next((i for i in range(rank, len(work)) if work[i][column] != 0), None)
+        if found is None:
+            continue
+        work[rank], work[found] = work[found], work[rank]
+        for i in range(len(work)):
+            if i != rank and work[i][column] != 0:
+                factor = work[i][column] / work[rank][column]
+                work[i] = [a - factor * b for a, b in zip(work[i], work[rank], strict=True)]
+        rank += 1
+    return rank
+
+
+def _not_estimable(model: dict, vector: list[Fraction]) -> None:
+    """In a design without full rank, a vector asked for must not be estimable."""
+    if _rank(model["rows"] + [vector]) == _rank(model["rows"]):
+        raise NotFullRank("an estimable result in a design without full rank: not covered")
 
 
 def _df(model: dict, options: dict) -> int | None:
@@ -275,6 +306,9 @@ def lsmeans(case: dict) -> dict:
         return out
     for g in model["groups"]:
         vector = model["row"](None, g, None, options.get("weights", "equal"))
+        if model.get("singular"):
+            _not_estimable(model, vector)
+            continue
         found = _inference(vector, model, options, options.get("confidence_level", 95))
         out["lsmean"][g] = found["estimate"]
         for name in ("se", "lower_cl", "upper_cl"):
@@ -296,6 +330,9 @@ def pairwise(case: dict) -> dict:
         if g not in model["groups"]:
             continue
         vector = [a - b for a, b in zip(model["row"](None, g, None), base, strict=True)]
+        if model.get("singular"):
+            _not_estimable(model, vector)
+            continue
         found = _inference(vector, model, options, options.get("confidence_level", 95))
         for name in names:
             out[name][g] = found[name]
@@ -309,6 +346,8 @@ def dose_response(case: dict) -> dict:
     model = _model(case, "groups" if contrast else "dose")
     if model is None or len(model["groups"]) < 2 or model["df"] < 1:
         return missing
+    if model.get("singular"):
+        raise NotFullRank("the dose-response vectors use designs of full rank")
     doses = model["doses"]
     if len(set(doses.values())) < 2:
         return missing

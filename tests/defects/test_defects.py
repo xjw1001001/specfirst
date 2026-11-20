@@ -23,6 +23,13 @@ the kit's exceptions, `results.agreement` for rule R11).
     D8-trace     the trace of its cells: the shows edges against the grid
                  builder, the reads edges against the engine, and gaps
                  planted in the graph files (real-3a)
+    D9-efficacy  Tables 14-3.01, 14-3.03 and 14-3.05 against the CSR (real-5a)
+    D10-trace-model  the reads edges of the model-based analyses (real-5a)
+    D11-efficacy-5b  Tables 14-3.11 and 14-3.13 against the CSR: the mixed
+                 model, the CMH test, the categories, the proofs and the
+                 decision records (real-5b)
+    D12-cmh-engines  the CMH test planted in the R engine's input alone: the
+                 two engines must be seen to disagree (rule R11, real-5b)
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -780,7 +787,7 @@ class Efficacy:
     layouts: dict[str, layouts.Layout]  # output -> layout
     tables: dict[str, dict]  # output -> its CSR table, parsed from the page of the build's CSR
     entries: dict[str, list[dict]]  # output -> the kit's exceptions for its cells
-    decisions: set[str]
+    decisions: dict[str, dict]  # the kit's decision records by ID
     gold: results.Rows  # the gold ARD of the build
 
 
@@ -800,7 +807,7 @@ def efficacy(pilot: Pilot) -> Efficacy:
             spec, inputs.event, {key: value[0] for key, value in found.items()},
             {key: value[1] for key, value in found.items()},
             csr.load_exceptions(pilot.folder / kit.exceptions),
-            {record["id"] for record in results_jsonl(pilot.folder / kit.decisions)},
+            {record["id"]: record for record in results_jsonl(pilot.folder / kit.decisions)},
             results.by_id(results_jsonl(pilot.folder / build.ARD / f"{EFFICACY}.jsonl")))
     return _EFFICACY[id(pilot)]
 
@@ -843,10 +850,12 @@ def efficacy_problems(eff: Efficacy, rows: results.Rows, event: ars.Event | None
     return problems
 
 
-def _parameters(data: dict, suffixes: tuple[str, ...], change) -> dict:
-    """The event with the programmingCode parameters of some analyses of every week changed."""
+def _parameters(data: dict, suffixes: tuple[str, ...], change,
+                prefix: str = "An_ADAS_W") -> dict:
+    """The event with the programmingCode parameters of some analyses changed: by default
+    those of the ANCOVA of every week (real-5a), whose IDs start with An_ADAS_W."""
     for analysis in data["analyses"]:
-        if analysis["id"].rsplit("_", 1)[-1] in suffixes:
+        if analysis["id"].startswith(prefix) and analysis["id"].rsplit("_", 1)[-1] in suffixes:
             code = analysis["programmingCode"]
             code["parameters"] = change([dict(p) for p in code["parameters"]])
     return data
@@ -926,12 +935,15 @@ def d9_efficacy(pilot: Pilot, tmp_path) -> list[str]:
     from specfirst.machine import decisions
 
     records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
+    cibic = efficacy_5b(pilot)[CIBIC]  # the records of real-5b bind its analyses
+    other = (ars.index(cibic.event.data), cibic.spec.binding)
     for name, value in (("unchanged", data()),
                         ("the ANCOVA without the baseline covariate",
                          in_event["the ANCOVA without the baseline covariate"])):
         event = ars.index(value)
         _, found = decisions.problems(
-            pilot.root, records, [(event, ars.bind(event, pilot.registry, eff.spec.binding))],
+            pilot.root, records, [(event, ars.bind(event, pilot.registry, eff.spec.binding)),
+                                  (other[0], ars.bind(other[0], pilot.registry, other[1]))],
             pilot.registry)
         print(f"decision records, {name}: {len(found)} problems"
               + (f", for example: {found[0][:160]}" if found else ""))
@@ -1073,10 +1085,311 @@ def d10_trace_model(pilot: Pilot, tmp_path) -> list[str]:
     return problems
 
 
+# ---- real-5b: Tables 14-3.11 and 14-3.13 against the CSR (amendment of real-5b) --------
+
+CIBIC = "efficacy-cibic"
+MMRM = "An_ADAS_MMRM"
+_EFFICACY_5B: dict[int, dict[str, Efficacy]] = {}
+
+
+def efficacy_5b(pilot: Pilot) -> dict[str, Efficacy]:
+    """The two result sets of real-5b, each with the outputs of real-5b only."""
+    if id(pilot) not in _EFFICACY_5B:
+        from specfirst.machine import csr
+
+        kit = kits.load_kit(pilot.root, KIT)
+        made = {}
+        for set_id, outputs in ((EFFICACY, ("Out14-3-11",)), (CIBIC, ("Out14-3-13",))):
+            spec = next(s for s in kit.results if s.id == set_id)
+            inputs = build.result_inputs(pilot.root, pilot.folder, spec)
+            displays = [d for d in spec.displays if d.output in outputs]
+            made[set_id] = Efficacy(
+                spec, inputs.event,
+                {d.output: layouts.read(pilot.folder / d.layout) for d in displays},
+                {d.output: csr.read_table(pilot.folder / d.reference.file, d.reference.page,
+                                          d.reference.table) for d in displays},
+                csr.load_exceptions(pilot.folder / kit.exceptions),
+                {record["id"]: record for record in results_jsonl(pilot.folder / kit.decisions)},
+                results.by_id(results_jsonl(pilot.folder / build.ARD / f"{set_id}.jsonl")))
+        _EFFICACY_5B[id(pilot)] = made
+    return _EFFICACY_5B[id(pilot)]
+
+
+def _with_subset(data: dict, subset_id: str, change) -> dict:
+    subset = next(s for s in data["dataSubsets"] if s["id"] == subset_id)
+    subset["compoundExpression"]["whereClauses"] = change(
+        subset["compoundExpression"]["whereClauses"])
+    return data
+
+
+def _seen(name: str, found: list[str], problems: list[str]) -> None:
+    print(f"planted, {name}: {len(found)} problems"
+          + (f", for example: {found[0][:170]}" if found else ""))
+    if not found:
+        problems.append(f"{name}: not seen")
+
+
+def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
+    """Defects planted in Tables 14-3.11 and 14-3.13: each must fail the check of the gate.
+
+    In the reporting events, run by both engines: a decision the CSR's numbers
+    rest on taken another way, among them gold taking the LS means averaged
+    over the weeks, as the CSR does, where the SAP says Week 24 (the 12
+    exceptions are then stale). In the references and in the exceptions: a
+    changed cell of the CSR, and proofs that prove nothing. Against the
+    decision records: an event that the records do not describe.
+    """
+    sets = efficacy_5b(pilot)
+    adas, cibic = sets[EFFICACY], sets[CIBIC]
+    problems = []
+    for name, eff in sets.items():
+        found = efficacy_problems(eff, eff.gold)
+        print(f"unchanged, {name}: {len(found)} problems")
+        if found:
+            return [f"the unchanged inputs of {name} do not pass the check", *found[:5]]
+
+    def mmrm(change, suffixes=("LSM", "PwPbo", "PwLow"), averaged=True) -> dict:
+        value = copy.deepcopy(adas.event.data)
+        value = _parameters(value, suffixes, change, prefix=MMRM)
+        if averaged:  # the averaged analyses, which the proofs read, change alike
+            value = _parameters(value, ("Avg",), change, prefix=MMRM)
+        return value
+
+    def option(name, given):
+        return lambda ps: [dict(p, value=given) if p["name"] == name else p for p in ps]
+
+    def cmh(change) -> dict:
+        return _parameters(copy.deepcopy(cibic.event.data), ("Cmh",), change, prefix="An_CIBIC")
+
+    def locf_too(clauses):
+        return [c for c in clauses if c["condition"]["variable"] != "DTYPE"]
+
+    def observed_only(clauses):
+        return [*clauses, {"level": 2, "order": len(clauses) + 1, "condition": {
+            "dataset": "ADQSCIBC", "variable": "DTYPE", "comparator": "EQ", "value": [""]}}]
+
+    def population_percent(value: dict) -> dict:
+        for analysis in value["analyses"]:
+            for item in analysis.get("referencedAnalysisOperations") or []:
+                if item["referencedOperationRelationshipId"].endswith("_DEN"):
+                    item["analysisId"] = "An_CIBIC_EFF_N"
+        return value
+
+    def week24_alone_on_locf(value: dict) -> dict:
+        """Gold's analyses on the records LOCF adds; the averaged ones as they are."""
+        subset = copy.deepcopy(next(s for s in value["dataSubsets"]
+                                    if s["id"] == "DS_ADAS_MMRM"))
+        subset["id"] = "DS_ADAS_MMRM_LOCF"
+        subset["compoundExpression"]["whereClauses"] = locf_too(
+            subset["compoundExpression"]["whereClauses"])
+        value["dataSubsets"].append(subset)
+        for analysis in value["analyses"]:
+            if analysis["id"] in (f"{MMRM}_LSM", f"{MMRM}_PwPbo", f"{MMRM}_PwLow"):
+                analysis["dataSubsetId"] = "DS_ADAS_MMRM_LOCF"
+        return value
+
+    in_adas = {
+        # Gold's analyses alone, the averaged ones the proofs read as they are (review of
+        # real-5b, F1): the proofs must not stand in for gold.
+        "gold's analyses alone at 90% confidence": mmrm(
+            lambda ps: [*ps, {"name": "confidence_level", "value": ["90"]}], averaged=False),
+        "gold's analyses alone on the records LOCF adds":
+            week24_alone_on_locf(copy.deepcopy(adas.event.data)),
+        "the mixed model with the records LOCF adds":
+            _with_subset(copy.deepcopy(adas.event.data), "DS_ADAS_MMRM", locf_too),
+        "Satterthwaite in place of Kenward-Roger": mmrm(option("df", ["satterthwaite"])),
+        "a Toeplitz covariance": mmrm(option("covariance", ["toeplitz"])),
+        "no baseline by week": mmrm(option("by_visit", [])),
+        "the site in place of the pooled site group": mmrm(option("factors", ["SITEID"])),
+        "gold takes the LS means averaged over the weeks, as the CSR does":
+            mmrm(option("at", ["average"]), averaged=False),
+    }
+    in_cibic = {
+        "the CMH test of general association": cmh(option("statistic",
+                                                          ["general_association"])),
+        "the CMH test without strata": cmh(lambda ps: [p for p in ps if p["name"] != "strata"]),
+        "the CMH test with rank scores": cmh(option("scores", ["rank"])),
+        # At week 8 LOCF adds no record: nothing comes before it to carry forward.
+        "week 24 with the observed records only, without LOCF": _with_subset(
+            copy.deepcopy(cibic.event.data), "DS_CIBIC_W24", observed_only),
+        "the percent of the efficacy population in place of the subjects of the week":
+            population_percent(copy.deepcopy(cibic.event.data)),
+    }
+    number = 0
+    for eff, planted in ((adas, in_adas), (cibic, in_cibic)):
+        for name, value in planted.items():
+            number += 1
+            rows = efficacy_rows(pilot, eff, value, tmp_path / f"event-{number}")
+            _seen(name, efficacy_problems(eff, rows, ars.index(value)), problems)
+    # The decision records against the events (gate check `decisions`).
+    from specfirst.machine import decisions
+
+    records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
+    for name, eff, value in (
+            ("unchanged", None, None),
+            ("gold takes the LS means averaged over the weeks", adas,
+             in_adas["gold takes the LS means averaged over the weeks, as the CSR does"]),
+            ("the CMH test of general association", cibic,
+             in_cibic["the CMH test of general association"])):
+        events = []
+        for each in (adas, cibic):
+            event = ars.index(value if each is eff else each.event.data)
+            events.append((event, ars.bind(event, pilot.registry, each.spec.binding)))
+        _, found = decisions.problems(pilot.root, records, events, pilot.registry)
+        print(f"decision records, {name}: {len(found)} problems"
+              + (f", for example: {found[0][:160]}" if found else ""))
+        if (name == "unchanged") == bool(found):
+            problems.append(f"decision records, {name}: {len(found)} problems")
+    # In the references and in the exceptions.
+    tables = copy.deepcopy(cibic.tables)
+    line = next(line for line in tables["Out14-3-13"]["lines"] if line["cells"] and
+                line["cells"][3] == "0.2727")
+    line["cells"][3] = "0.2737"
+    entries_11 = adas.entries["Out14-3-11"]
+    signed = next(n for n, e in enumerate(entries_11) if "display" in e["proof"])
+    zero = next(n for n, e in enumerate(cibic.entries["Out14-3-13"]) if e["csr"] == "0")
+
+    def replaced(eff, output, number, entry):
+        listed = list(eff.entries[output])
+        listed[number] = entry
+        return {**eff.entries, output: listed}
+
+    # Review of real-5b, G1: a pattern that carries the CSR's text around its mask.
+    entries_13 = cibic.entries["Out14-3-13"]
+    week8 = next(n for n, e in enumerate(entries_13) if e["cell"] == "cell:Out14-3-13/r2/c4")
+    carried = {"p": "X.2727"}  # mask X: the p-value rounded to 0, then the CSR's ".2727"
+    shown_13 = next(d for d in cibic.spec.displays if d.output == "Out14-3-13")
+    text_13 = (pilot.folder / shown_13.layout).read_text(encoding="ascii")
+    wrong_13 = text_13.replace("p: {analysis: An_CIBIC_W08_Cmh",
+                               "p: {analysis: An_CIBIC_W16_Cmh", 1)
+    assert wrong_13 != text_13
+    week16 = Efficacy(**{**cibic.__dict__, "layouts": {
+        **cibic.layouts, "Out14-3-13": layouts.parse(yaml.safe_load(wrong_13), "Out14-3-13")}})
+
+    def spelled(name: str, text: str) -> str:
+        """H1: a template whose format specs give `text` for any value of the part."""
+        return "".join("{" + name + ":" + character + "<1.0}" for character in text)
+
+    planted = {
+        "a p-value of the CSR changed (0.2727 to 0.2737)":
+            lambda: efficacy_problems(cibic, cibic.gold, tables=tables),
+        "an other_build proof that names the analysis at Week 24 itself":
+            lambda: efficacy_problems(adas, adas.gold, entries=replaced(
+                adas, "Out14-3-11", 0, dict(entries_11[0], proof={
+                    "kind": "other_build", "analyses": {
+                        "An_ADAS_MMRM_LSM": "An_ADAS_MMRM_LSM"}}))),
+        "the proof of '-0.0' without the sign kept":
+            lambda: efficacy_problems(adas, adas.gold, entries=replaced(
+                adas, "Out14-3-11", signed, dict(entries_11[signed], proof={
+                    k: v for k, v in entries_11[signed]["proof"].items() if k != "display"}))),
+        "a count of 0 proved by another pattern, not by the template":
+            lambda: efficacy_problems(cibic, cibic.gold, entries=replaced(
+                cibic, "Out14-3-13", zero, dict(cibic.entries["Out14-3-13"][zero], proof={
+                    "kind": "other_pattern", "patterns": {"n": "X"}}))),
+        "an exception of 14-3.13 left out":
+            lambda: efficacy_problems(cibic, cibic.gold, entries={
+                **cibic.entries, "Out14-3-13": cibic.entries["Out14-3-13"][1:]}),
+        "a proof whose template is the CSR's text": lambda: efficacy_problems(
+            adas, adas.gold, entries=replaced(adas, "Out14-3-11", 0, dict(
+                entries_11[0], proof={"kind": "other_build",
+                                      "template": entries_11[0]["csr"]}))),
+        "a proof whose template adds text ('{lsm} (0.49)')": lambda: efficacy_problems(
+            adas, adas.gold, entries=replaced(adas, "Out14-3-11", 0, dict(
+                entries_11[0], proof={"kind": "other_build", "template": "{lsm} (0.49)",
+                                      "analyses": entries_11[0]["proof"]["analyses"]}))),
+        "an entry that names an unrelated decision (custom:eff-cmh)": lambda: efficacy_problems(
+            adas, adas.gold, entries=replaced(adas, "Out14-3-11", 0, dict(
+                entries_11[0], decision="custom:eff-cmh"))),
+        "a proof whose pattern carries the CSR's text ('X.2727', other_pattern)":
+            lambda: efficacy_problems(cibic, cibic.gold, entries=replaced(
+                cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                    "kind": "other_pattern", "patterns": carried}))),
+        "a proof whose pattern carries the CSR's text ('X.2727', other_build)":
+            lambda: efficacy_problems(cibic, cibic.gold, entries=replaced(
+                cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                    "kind": "other_build", "patterns": carried}))),
+        "gold's week 8 p-value is week 16's, proved by a pattern that carries the CSR's text":
+            lambda: efficacy_problems(week16, cibic.gold, entries=replaced(
+                cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                    "kind": "other_pattern", "patterns": carried}))),
+        "a proof of 14-3.11 whose pattern carries the CSR's text ('X.X (0.49)')":
+            lambda: efficacy_problems(adas, adas.gold, entries=replaced(
+                adas, "Out14-3-11", 0, dict(entries_11[0], proof={
+                    "kind": "other_build", "template": "{lsm}",
+                    "analyses": entries_11[0]["proof"]["analyses"],
+                    "patterns": {"lsm": "X.X (0.49)"}}))),
+        "gold's week 8 p-value is week 16's, proved by a template whose format specs spell "
+        "the CSR's text": lambda: efficacy_problems(week16, cibic.gold, entries=replaced(
+            cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                "kind": "other_build", "template": spelled("p", entries_13[week8]["csr"])}))),
+        "a proof of 14-3.11 whose template's format specs spell the CSR's text":
+            lambda: efficacy_problems(adas, adas.gold, entries=replaced(
+                adas, "Out14-3-11", 0, dict(entries_11[0], proof={
+                    "kind": "other_build",
+                    "template": spelled("lsm", entries_11[0]["csr"])}))),
+    }
+    for name, check in planted.items():
+        _seen(name, check(), problems)
+    return problems
+
+
+def d12_cmh_engines(pilot: Pilot, tmp_path) -> list[str]:
+    """Rule R11 for CMH: a defect in the R engine's input alone must show as a disagreement."""
+    eff = efficacy_5b(pilot)[CIBIC]
+
+    def engines(data: dict, r_data: dict, work: Path) -> tuple[list[str], list]:
+        event, r_event = ars.index(data), ars.index(r_data)
+        bound = ars.bind(event, pilot.registry, eff.spec.binding)
+        r_bound = ars.bind(r_event, pilot.registry, eff.spec.binding)
+        wanted = ars.columns(event, eff.spec.subject_key)
+        for dataset, names in ars.columns(r_event, eff.spec.subject_key).items():
+            wanted[dataset] = sorted({*wanted.get(dataset, []), *names})
+        tables = ard.load_tables(pilot.folder / build.ADAM, wanted)
+        python = ard.run(event, pilot.registry, bound, tables, eff.spec.subject_key)
+        work.mkdir(parents=True, exist_ok=True)
+        path = work / "event.json"
+        path.write_text(json.dumps(r_data), encoding="ascii")
+        other, _, _ = rengine.run(pilot.root, work, path, registry.json_path(pilot.root),
+                                  r_bound, tables, eff.spec.subject_key)
+        lines, disagreements = results.agreement(results.by_id(python), results.by_id(other))
+        cmh = [d for d in disagreements if "_Cmh/" in str(d)]
+        return lines, cmh
+
+    data = copy.deepcopy(eff.event.data)
+    lines, found = engines(data, data, tmp_path / "control")
+    print(f"unchanged: {lines[0]}")
+    problems = [f"the engines disagree on the unchanged inputs: {found[:3]}"] if found else []
+
+    def cmh(change):
+        return _parameters(copy.deepcopy(eff.event.data), ("Cmh",), change, prefix="An_CIBIC")
+
+    planted = {
+        "general association": cmh(lambda ps: [dict(p, value=["general_association"])
+                                               if p["name"] == "statistic" else p
+                                               for p in ps]),
+        "no strata": cmh(lambda ps: [p for p in ps if p["name"] != "strata"]),
+        "rank scores": cmh(lambda ps: [dict(p, value=["rank"]) if p["name"] == "scores" else p
+                                       for p in ps]),
+        # Not an option of the test, so the stamps stay the same and the values differ.
+        "week 24 with the observed records only, without LOCF": _with_subset(
+            copy.deepcopy(eff.event.data), "DS_CIBIC_W24", lambda clauses: [
+                *clauses, {"level": 2, "order": len(clauses) + 1, "condition": {
+                    "dataset": "ADQSCIBC", "variable": "DTYPE", "comparator": "EQ",
+                    "value": [""]}}]),
+    }
+    for number, (name, r_data) in enumerate(planted.items(), start=1):
+        _, found = engines(data, r_data, tmp_path / f"planted{number}")
+        print(f"R engine alone, {name}: {len(found)} CMH results disagree")
+        if not found:
+            problems.append(f"{name}, in the R engine alone: the engines are said to agree")
+    return problems
+
+
 CASES = {"D1-arms": d1_arms, "D2-set": d2_set, "D3-quantile": d3_quantile,
          "D4-subset": d4_subset, "D5-engines": d5_engines, "D6-proofs": d6_proofs,
          "D7-display": d7_display, "D8-trace": d8_trace, "D9-efficacy": d9_efficacy,
-         "D10-trace-model": d10_trace_model}
+         "D10-trace-model": d10_trace_model, "D11-efficacy-5b": d11_efficacy_5b,
+         "D12-cmh-engines": d12_cmh_engines}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

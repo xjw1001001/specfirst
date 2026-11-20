@@ -35,9 +35,11 @@ from specfirst.machine.registry import Registry, RegistryError
 REGISTRY_CONTEXT = "specfirst method registry"
 DESCRIPTION_PREFIX = "Method registry: "
 # The parameters of `programmingCode` (context REGISTRY_CONTEXT) that name columns
-# of the analysis dataset: the terms of a model (ADR-015). They are read like a
-# variable: `reads` gives them the role "model".
-MODEL_TERMS = ("factors", "covariates")
+# of the analysis dataset: the terms of a model (ADR-015), with the visit of a model
+# for repeated measures and the columns whose effect differs by visit, and the strata
+# of a stratified test (amendment of real-5b). They are read like a variable: `reads`
+# gives them the role "model".
+MODEL_TERMS = ("factors", "covariates", "visit", "by_visit", "strata")
 COMPARATORS = ("EQ", "NE", "IN", "NOTIN", "GT", "GE", "LT", "LE")
 LOGICAL = ("AND", "OR", "NOT")
 ROLES = ("NUMERATOR", "DENOMINATOR")

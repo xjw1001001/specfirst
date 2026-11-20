@@ -1,0 +1,33 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+# A display rule of real-5b (amendment of real-5b to ADR-015): display.pattern, but a
+# negative number that rounds to zero keeps its sign, as CSR Table 14-3.11 prints
+# "-0.0". An entry of its own, not an option of display.pattern: a kept reader run is
+# tied to the entries of the registry its slice reaches, display.pattern among them
+# (ADR-017).
+id: display.pattern.signed
+kind: display
+title: A number shown by a result pattern, a negative number that rounds to zero keeping its sign
+takes: one number and a pattern, such as "X.X"
+operations:
+  text:
+    result: text
+    ars_names: []
+semantics:
+  - >-
+    The text is that of display.pattern, statements 1 to 8, with its option
+    rounding, except the last sentence of its statement 5: a negative
+    number that rounds to zero keeps its minus sign, before the padding.
+    -0.04 under "X.X" is "-0.0"; under "XX.X" it is "- 0.0".
+  - >-
+    A number that is 0 has no sign, and a positive number none: 0 and 0.04
+    under "X.X" are "0.0".
+options:
+  rounding: {values: [half_away_from_zero, half_even], default: half_away_from_zero}
+# No ARS operation is shown by this rule: it is named by a proof of the kit's
+# exceptions (other_build), to show the CSR's reading of a cell.
+implementations: [python]
+vectors: tests/methods/display_pattern_signed.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

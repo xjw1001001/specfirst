@@ -6,7 +6,11 @@ page is turned into text by poppler's pdftotext with -layout, as evidence
 E24 and E25 did, and that text is parsed into a reference grid: the titles,
 the column labels with the count under each, and the lines of the body,
 each a label with one cell per column (a line without cells is a section
-heading). Footnotes are kept as lines of text.
+heading). Footnotes are kept as lines of text. Since real-5b a page may have
+a column without a count to the right of the counted ones (CSR Table 14-3.13:
+"p-value [1]"), a text left of the counts on their line (the header of the
+row labels, "Assessment"), and a line with two labels, the section heading
+and the row label ("Week 8" and "n"), read as a heading line and a row.
 
 CSR content is CDISC material (rule 4 of section 2.1). A reference grid is
 written into an ignored folder of the checkout (build/csr/<kit>/), never
@@ -29,13 +33,27 @@ The comparison (`compare`) holds a built grid against a reference grid:
 A cell whose text differs is a difference. Section 4.8 asks for exactly one
 class and a proof per difference: the `cells` section of the kit's
 exceptions file (`load_exceptions`), one entry per cell, checked by `judge`.
-The one proof kind so far is `other_pattern` (class `rule_choice`): the
-cell's own results, shown by other patterns, give the CSR's text. It is the
-first real case of a difference of display (ADR-003, decision 5): SAP
-template 5 shows the limits of a confidence interval with 2 decimals, the
-CSR with 1 (ADR-015). The titles are compared like labels. The footnotes
-are not compared: the layouts state the methods in words of their own, and
-the CSR's footnotes are not copied into git.
+Two proof kinds, both for the class `rule_choice` (section 4.8: a build with
+the other alternative, in which the cell equals the reference).
+`other_pattern`: the cell's own results, shown by other patterns, give the
+CSR's text. It is the first real case of a difference of display (ADR-003,
+decision 5): SAP template 5 shows the limits of a confidence interval with 2
+decimals, the CSR with 1 (ADR-015). `other_build` (real-5b): the cell built
+again with any of the results of other analyses of the same event, other
+patterns, another cell template and another display rule gives the CSR's
+text. It is held to "a build with that alternative" (review of real-5b, F1):
+an other analysis is the cell's analysis but for the options its decision
+records set (`decisions.PARAMETERS`; its ARD rows are those of the cell with
+the analysis's ID replaced); another template is a cell template of the
+layout (each part written {name}, no format spec, no conversion: H1), shows
+parts of the cell and adds no text the cell's template has not; an other
+pattern, in either proof,
+changes only the mask of the part's pattern and keeps the text before and
+after it (G1); and with the kit's records at hand
+every decision an entry names binds an analysis of the cell or its method.
+The titles are compared like labels. The footnotes are not compared: the
+layouts state the methods in words of their own, and the CSR's footnotes
+are not copied into git.
 """
 
 from __future__ import annotations
@@ -46,12 +64,14 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from specfirst.machine import layout as layouts
 from specfirst.machine.layout import HEADER_SECTION
 
 FORMAT = 0
 _COUNT = re.compile(r"\(N=\s*\d+\)")
 _TOKEN = re.compile(r"\S+(?: \S+)*")  # words joined by single blanks
-_FOOTNOTE = re.compile(r"^\[\d+\]")
+# A footnote, or a note in the place of footnotes (CSR Table 14-3.11).
+_FOOTNOTE = re.compile(r"^(\[\d+\]|Note:)")
 
 
 class CsrError(ValueError):
@@ -97,19 +117,35 @@ def parse(text: str, table: str) -> dict:
         raise CsrError(f"{heading}: no line with the counts of the columns, (N=...)")
     counts = [(match.start(), match.end(), match.group()) for match in
               _COUNT.finditer(lines[counts_at])]
-    centres = [(start + end) / 2 for start, end, _ in counts]
+    # The other texts of the line of counts: left of the counts, the header of the row
+    # labels; right of them, a column without a count, the text its label ends with.
+    first_count, last_count = counts[0][0], counts[-1][1]
+    stub, extra = [], []
+    for start, end, token in _tokens(lines[counts_at]):
+        if _COUNT.fullmatch(token):
+            continue
+        if end <= first_count:
+            stub.append(token)
+        elif start >= last_count:
+            extra.append((start, end, token))
+        else:
+            raise CsrError(f"{heading}: the line of counts has {token!r} between two counts")
+    centres = [(start + end) / 2 for start, end, _ in counts + extra]
     # The titles: the table's own line and the lines under it, up to the first empty
     # line; the column labels: the lines from there to the counts.
     first_label = next((n for n in range(at + 1, counts_at) if not lines[n].strip()), counts_at)
     titles = [heading] + [" ".join(lines[n].split()) for n in range(at + 1, first_label)]
-    labels: list[list[str]] = [[] for _ in counts]
+    labels: list[list[str]] = [[] for _ in centres]
     for n in range(first_label, counts_at):
         for start, end, token in _tokens(lines[n]):
             labels[_nearest(centres, start, end)].append(token)
+    for number, (_, _, token) in enumerate(extra, start=len(counts)):
+        labels[number].append(token)
     columns = [{"label": " ".join(parts), "count": count}
-               for parts, (_, _, count) in zip(labels, counts, strict=True)]
+               for parts, count in zip(labels, [count for _, _, count in counts]
+                                       + [None] * len(extra), strict=True)]
     body, footnotes = [], []
-    margin = min(start for start, _, _ in counts) - 4
+    margin = first_count - 4
     for n in range(counts_at + 1, len(lines)):
         line = lines[n]
         if not line.strip():
@@ -123,11 +159,16 @@ def parse(text: str, table: str) -> dict:
                 footnotes[-1] += " " + " ".join(line.split())
             continue
         tokens = _tokens(line)
-        label, cells = "", [None] * len(counts)
-        if not tokens or tokens[0][0] >= margin:
+        cells: list[str | None] = [None] * len(centres)
+        named = [token for start, _, token in tokens if start < margin]
+        if not named:
             raise CsrError(f"{heading}, line {n + 1}: no row label: {line.strip()!r}")
-        label = tokens.pop(0)[2]
-        for start, end, token in tokens:
+        if len(named) > 2:
+            raise CsrError(f"{heading}, line {n + 1}: more than two labels: {named}")
+        if len(named) == 2:  # a section heading on the line of its first row
+            body.append({"label": named[0], "cells": None})
+        label = named[-1]
+        for start, end, token in tokens[len(named):]:
             column = _nearest(centres, start, end)
             if cells[column] is not None:
                 raise CsrError(f"{heading}, line {n + 1}: two texts in column {column + 1}")
@@ -140,7 +181,8 @@ def parse(text: str, table: str) -> dict:
     population = next((" ".join(line.split()[1:]) for line in lines[:at]
                        if line.strip().startswith("Population:")), None)
     return {"reference": FORMAT, "table": table, "titles": titles, "population": population,
-            "columns": columns, "lines": body, "footnotes": footnotes}
+            "stub": " ".join(stub) or None, "columns": columns, "lines": body,
+            "footnotes": footnotes}
 
 
 def read_table(pdf: Path, page: int, table: str) -> dict:
@@ -178,7 +220,14 @@ class Comparison:
 # ---- the classified differences of cells (section 4.8) ---------------------------------
 
 CLASSES = ("rule_choice", "reference_error", "data_difference")
-PROOFS = ("other_pattern",)
+PROOFS = ("other_pattern", "other_build")
+# The keys of an other_build proof besides its kind; at least one is given.
+BUILD_KEYS = ("analyses", "patterns", "template", "display")
+# The display rules an other_build may show a cell by: the registry entry and what
+# methods.pattern_text needs for it.
+DISPLAYS = {"display.pattern": {}, "display.pattern.signed": {"zero_sign": "kept"}}
+# What an other analysis may differ in besides the options its decisions set.
+_NAMING = ("id", "name", "reason", "purpose")
 
 
 def load_exceptions(path: Path) -> dict[str, list[dict]]:
@@ -208,6 +257,10 @@ def load_exceptions(path: Path) -> dict[str, list[dict]]:
                 problems.append(f"{where}: an entry has exactly cell, csr, class, decision and "
                                 "proof")
                 continue
+            named = entry["decision"]
+            if not (isinstance(named, str) or (isinstance(named, list) and named and all(
+                    isinstance(item, str) for item in named))):
+                problems.append(f"{where}: 'decision' is a record's ID or a list of them")
             if not isinstance(entry["cell"], str) or not entry["cell"].startswith(
                     f"cell:{output}/"):
                 problems.append(f"{where}: 'cell' must be the ID of a cell of {output}")
@@ -224,13 +277,23 @@ def load_exceptions(path: Path) -> dict[str, list[dict]]:
     return {str(output): list(entries) for output, entries in sets.items()}
 
 
+def names_of(entry: dict) -> list[str]:
+    """The decision records an entry names: one ID or a list of them (real-5b)."""
+    named = entry["decision"]
+    return [named] if isinstance(named, str) else list(named)
+
+
 def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, tuple]],
-          ours: dict[str, float | int | None], decisions: set[str]) -> None:
+          ours: dict[str, float | int | None], decisions: set[str] | dict[str, dict],
+          analyses: dict[str, dict] | None = None) -> None:
     """Hold every differing cell of a comparison against its one entry; record the classes.
 
     `planned`: cell ID -> (template, shown parts), from the plan of the grid;
     `ours`: ARD row ID -> raw value; `decisions`: the IDs of the kit's
-    decision records. A differing cell without an entry, an entry whose proof
+    decision records, or the records by ID; `analyses`: the analyses of the
+    event by ID. With records and analyses, every decision an entry names must
+    bind an analysis of the cell or its method, and an other_build may name
+    other analyses. A differing cell without an entry, an entry whose proof
     does not hold, and an entry for a cell that does not differ are problems.
     """
     from specfirst.machine import methods
@@ -248,10 +311,18 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
         reasons = []
         if squeeze(str(entry["csr"])) != squeeze(theirs):
             reasons.append(f"the entry says the CSR prints {entry['csr']!r}")
-        if entry["decision"] not in decisions:
-            reasons.append(f"no decision record {entry['decision']}")
         proof = entry["proof"]
         template, shown = planned.get(cell_id, ("", ()))
+        for name in names_of(entry):
+            if name not in decisions:
+                reasons.append(f"no decision record {name}")
+            elif isinstance(decisions, dict) and analyses is not None:
+                bound = set(decisions[name].get("binds") or [])
+                own = {f"ars:{item.analysis}" for item in shown} | {
+                    f"ars:{analyses[item.analysis].get('methodId')}" for item in shown
+                    if item.analysis in analyses}
+                if not bound & own:
+                    reasons.append(f"{name} binds no analysis of the cell nor its method")
         if proof["kind"] == "other_pattern":
             patterns = proof.get("patterns")
             names = {item.name for item in shown}
@@ -260,6 +331,8 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
             if not isinstance(patterns, dict) or not patterns or set(patterns) - names:
                 reasons.append("'patterns' must give parts of the cell "
                                f"({', '.join(sorted(names))})")
+            elif masked := _pattern_problems(patterns, shown):
+                reasons += masked
             else:
                 try:
                     texts = {item.name: methods.pattern_text(
@@ -273,10 +346,144 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
                         reasons.append(f"with the other patterns the cell is {other!r}")
                     if squeeze(other) == squeeze(text):
                         reasons.append("the other patterns change nothing")
+        elif proof["kind"] == "other_build":
+            reasons += _other_build(entry, proof, template, shown, ours, text, theirs,
+                                    decisions if isinstance(decisions, dict) else None,
+                                    analyses)
         if reasons:
             found.problems.append(f"{where}: the proof does not hold: " + "; ".join(reasons))
         else:
             found.classified[cell_id] = entry["class"]
+
+
+def _pattern_problems(patterns: dict, shown: tuple) -> list[str]:
+    """Why the other patterns of a proof are no patterns of the cell's parts.
+
+    An other pattern changes only the mask: the text before and after it is
+    the cell's own (review of real-5b, G1); otherwise a pattern could carry the
+    CSR's text itself and prove nothing.
+    """
+    from specfirst.machine import methods
+
+    reasons = []
+    own = {item.name: item.pattern for item in shown}
+    for name, pattern in sorted(patterns.items()):
+        try:
+            before, _, after = methods.pattern_mask(pattern)
+            mine_before, _, mine_after = methods.pattern_mask(own[name])
+        except methods.MethodError as error:
+            reasons.append(f"the other pattern of {name} is no pattern: {error}")
+            continue
+        if (before, after) != (mine_before, mine_after):
+            reasons.append(f"the other pattern {pattern!r} of {name} changes more than the mask "
+                           f"of {own[name]!r}")
+    return reasons
+
+
+def _stripped(analysis: dict, options: set[str]) -> dict:
+    """An analysis without its naming and without the parameters `options` names."""
+    kept = {key: value for key, value in analysis.items() if key not in _NAMING}
+    code = kept.get("programmingCode")
+    if isinstance(code, dict):
+        kept["programmingCode"] = dict(code, parameters=[
+            parameter for parameter in code.get("parameters") or []
+            if parameter.get("name") not in options])
+    return kept
+
+
+def _literal(template: str) -> str:
+    """The text of a cell template without its parts."""
+    from string import Formatter
+
+    return "".join(text for text, _, _, _ in Formatter().parse(template))
+
+
+def _subsequence(short: str, long: str) -> bool:
+    left = iter(long)
+    return all(character in left for character in short)
+
+
+def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
+                 ours: dict[str, float | int | None], text: str, theirs: str,
+                 records: dict[str, dict] | None = None,
+                 events: dict[str, dict] | None = None) -> list[str]:
+    """Why an other_build proof does not hold; nothing when it does."""
+    from specfirst.machine import decisions as records_module
+    from specfirst.machine import methods
+
+    reasons = []
+    if entry["class"] != "rule_choice":
+        reasons.append("other_build proves a rule_choice")
+    unknown = set(proof) - {"kind", *BUILD_KEYS}
+    if unknown or not set(proof) & set(BUILD_KEYS):
+        return reasons + [f"other_build takes {', '.join(BUILD_KEYS)}, at least one"]
+    analyses = proof.get("analyses") or {}
+    patterns = proof.get("patterns") or {}
+    display = proof.get("display", "display.pattern")
+    names = {item.name for item in shown}
+    if not isinstance(analyses, dict) or set(analyses) - {item.analysis for item in shown}:
+        reasons.append("'analyses' must map analyses of the cell to other analyses")
+    if not isinstance(patterns, dict) or set(patterns) - names:
+        reasons.append(f"'patterns' must give parts of the cell ({', '.join(sorted(names))})")
+    else:
+        reasons += _pattern_problems(patterns, shown)
+    if display not in DISPLAYS:
+        reasons.append(f"'display' must be a display rule of the registry: "
+                       f"{', '.join(sorted(DISPLAYS))}")
+    if "template" in proof:
+        other_template = proof["template"]
+        # A cell template of the layout: parts as {name}, no format spec and no conversion,
+        # which could carry text of their own (review of real-5b, H1).
+        try:
+            other_names = set(layouts.template_names(str(other_template)))
+            literal = _literal(str(other_template))
+        except (layouts.LayoutError, ValueError) as error:
+            return reasons + [f"the other template is no cell template: {error}"]
+        if not other_names or other_names - names or not _subsequence(literal,
+                                                                     _literal(template)):
+            reasons.append("the other template must show parts of the cell and add no text "
+                           "the cell's template has not")
+    if reasons:
+        return reasons
+    # "A build with that alternative": an other analysis differs from the cell's only in
+    # the options the entry's decisions set (review of real-5b, F1).
+    if analyses:
+        if records is None or events is None:
+            return ["an other analysis is held against the event and the decision records, "
+                    "which the check was not given"]
+        options = {option for name in names_of(entry)
+                   for option in records_module.PARAMETERS.get(name, {}).values()}
+        if not options:
+            return [f"{', '.join(names_of(entry))} set no option of an analysis, so no other "
+                    "analysis follows their other alternative"]
+        for mine, other in analyses.items():
+            if other not in events or mine not in events:
+                return [f"no analysis {other} in the event"]
+            if _stripped(events[mine], options) != _stripped(events[other], options):
+                return [f"{other} differs from {mine} in more than the options "
+                        f"{', '.join(sorted(options))} of {', '.join(names_of(entry))}"]
+    texts = {}
+    for item in shown:
+        ard = item.ard
+        if item.analysis in analyses:
+            head = "ard:" + item.analysis + "/"
+            ard = "ard:" + str(analyses[item.analysis]) + "/" + ard[len(head):]
+            if ard not in ours:
+                return [f"no result {ard} of the other analysis"]
+        try:
+            texts[item.name] = methods.pattern_text(
+                ours.get(ard), patterns.get(item.name, item.pattern), **DISPLAYS[display]) or ""
+        except (methods.MethodError, TypeError) as error:
+            return [f"the other build cannot be shown: {error}"]
+    try:
+        other = str(proof.get("template", template)).format(**texts)
+    except (KeyError, ValueError, IndexError) as error:
+        return [f"the other template cannot be filled: {error}"]
+    if squeeze(other) != squeeze(theirs):
+        reasons.append(f"with the other build the cell is {other!r}")
+    if squeeze(other) == squeeze(text):
+        reasons.append("the other build changes nothing")
+    return reasons
 
 
 def _body(grid: dict) -> list[tuple[str, object]]:

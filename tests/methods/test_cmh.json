@@ -1,0 +1,17 @@
+{
+  "method": "test.cmh",
+  "cases": [
+    {"name": "2 x 2, one stratum: the Mantel-Haenszel statistic without correction", "statements": [1, 3, 4, 5, 7], "input": {"strata": [[[12, 8], [5, 15]]]}, "expected": {"p_value": 0.027052331815597293}},
+    {"name": "3 x 4, two strata, general association", "statements": [1, 3, 4, 5, 7], "input": {"strata": [[[4, 6, 3, 2], [2, 5, 6, 4], [1, 3, 5, 7]], [[3, 4, 2, 1], [2, 2, 4, 3], [1, 2, 3, 5]]], "values": [1, 2, 3, 4]}, "expected": {"p_value": 0.06964940406485981}},
+    {"name": "3 x 4, two strata, row mean scores with the values as scores", "statements": [1, 3, 4, 5, 6, 7], "input": {"strata": [[[4, 6, 3, 2], [2, 5, 6, 4], [1, 3, 5, 7]], [[3, 4, 2, 1], [2, 2, 4, 3], [1, 2, 3, 5]]], "values": [1, 2, 3, 4]}, "options": {"statistic": "row_mean_scores"}, "expected": {"p_value": 0.005193075204497002}},
+    {"name": "3 x 4, two strata, row mean scores with midranks", "statements": [1, 3, 4, 5, 6, 7], "input": {"strata": [[[4, 6, 3, 2], [2, 5, 6, 4], [1, 3, 5, 7]], [[3, 4, 2, 1], [2, 2, 4, 3], [1, 2, 3, 5]]]}, "options": {"statistic": "row_mean_scores", "scores": "rank"}, "expected": {"p_value": 0.006001095324872839}},
+    {"name": "row mean scores, values that are not whole and not evenly spaced", "statements": [5, 6, 7], "input": {"strata": [[[5, 2, 1], [1, 3, 4]], [[2, 2, 0], [0, 1, 3]], [[3, 1, 1], [1, 1, 2]]], "values": [-1.5, 0.25, 10]}, "options": {"statistic": "row_mean_scores"}, "expected": {"p_value": 0.005635070344379287}},
+    {"name": "general association: the values change nothing", "statements": [6], "input": {"strata": [[[5, 2, 1], [1, 3, 4]], [[2, 2, 0], [0, 1, 3]], [[3, 1, 1], [1, 1, 2]]], "values": [-1.5, 0.25, 10]}, "options": {"statistic": "general_association", "scores": "table"}, "expected": {"p_value": 0.01163323573949579}},
+    {"name": "a stratum with one subject adds nothing", "statements": [2], "input": {"strata": [[[6, 2], [3, 7]], [[0, 1], [0, 0]], [[4, 4], [2, 6]]]}, "expected": {"p_value": 0.0420017138138418}},
+    {"name": "a row and a column empty over all strata are left out, with the score", "statements": [2, 5, 6], "input": {"strata": [[[3, 0, 2, 4], [0, 0, 0, 0], [1, 0, 5, 2]], [[2, 0, 3, 1], [0, 0, 0, 0], [4, 0, 1, 3]]], "values": [1, 2, 3, 5]}, "options": {"statistic": "row_mean_scores"}, "expected": {"p_value": 0.9291622739226375}},
+    {"name": "one column left: missing", "statements": [2], "input": {"strata": [[[3, 0], [4, 0]], [[2, 0], [5, 0]]]}, "expected": {"p_value": null}},
+    {"name": "no stratum with 2 subjects: missing", "statements": [2], "input": {"strata": [[[1, 0], [0, 0]], [[0, 0], [0, 1]]]}, "expected": {"p_value": null}},
+    {"name": "W of lower rank: a row only in a stratum with one column", "statements": [4], "input": {"strata": [[[2, 0], [0, 0], [0, 0]], [[0, 0], [3, 2], [1, 4]], [[0, 0], [2, 2], [3, 1]]]}, "expected": {"p_value": 0.6484019696717342}},
+    {"name": "W of rank 0: every stratum has one row: missing", "statements": [4, 7], "input": {"strata": [[[3, 2], [0, 0]], [[0, 0], [1, 4]]]}, "expected": {"p_value": null}}
+  ]
+}

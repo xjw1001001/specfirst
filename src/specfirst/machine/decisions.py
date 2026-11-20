@@ -19,12 +19,19 @@ A changed parameter in the reporting event, or a changed value in a record,
 is seen by the last rule; tests/unit/test_efficacy.py plants both, and
 tests/defects (D9-efficacy) plants the first on the pilot.
 
-What it does not hold (review of real-5a, F4): the values of the records
-that set no registry option (the analysis set, the visit record, the
-baseline rows, the decimals) are held against nothing here, nor
-elsewhere: the proofs of the CSR's exceptions ask only that the decision
-they name exists (review of real-5a, G3). A record in
-conflict keeps the value the build uses until a person decides.
+What it does not hold (review of real-5a, F4; review of real-5b, F5): the
+values of the records that set no registry option are held against
+nothing here: of real-5a the analysis set, the visit record, the baseline
+rows and the decimals; of real-5b the records of the mixed model
+(custom:eff-mmrm-records) and of CIBIC+ (custom:eff-cibic-records), the
+categories and their denominator (custom:eff-cibic-categories) and the
+two display records (custom:eff-mmrm-display, custom:eff-cibic-display);
+and a record's binds are held only for existence and for the options it
+sets. Since real-5b the proofs of the CSR's exceptions ask that every
+decision an entry names binds an analysis of the cell or its method, and
+an other analysis of a proof may differ only in the options its decisions
+set (specfirst.machine.csr). A record in conflict keeps the value the
+build uses until a person decides.
 """
 
 from __future__ import annotations
@@ -37,12 +44,20 @@ from specfirst.machine import ars
 from specfirst.machine.registry import Registry
 
 # Decision -> {key of its value: the registry option it sets}. The custom
-# decisions of real-5a that the method registry reads (ADR-015).
+# decisions of real-5a and real-5b that the method registry reads (ADR-015 and its
+# amendment of real-5b).
 PARAMETERS: dict[str, dict[str, str]] = {
     "custom:eff-model-terms": {"factors": "factors", "covariates": "covariates"},
     "custom:eff-dose-response": {"rule": "model", "dose": "dose"},
     "custom:eff-pairwise": {"df": "df", "confidence_level": "confidence_level"},
     "custom:eff-lsmeans-weights": {"rule": "weights"},
+    "custom:eff-mmrm-terms": {"factors": "factors", "covariates": "covariates",
+                              "visit": "visit", "by_visit": "by_visit",
+                              "treatment_by_visit": "treatment_by_visit"},
+    "custom:eff-mmrm-covariance": {"rule": "covariance"},
+    "custom:eff-mmrm-df": {"rule": "df"},
+    "custom:eff-mmrm-visit": {"rule": "at"},
+    "custom:eff-cmh": {"rule": "statistic", "scores": "scores", "strata": "strata"},
 }
 
 

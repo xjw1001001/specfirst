@@ -220,6 +220,86 @@ def fisher_exact_p(table: Sequence[Sequence[int]]) -> float | None:
     return min(1.0, math.fsum(terms))
 
 
+# ---- test.cmh --------------------------------------------------------------------
+
+CMH_STATISTICS = ("general_association", "row_mean_scores")
+CMH_SCORES = ("table", "rank")
+
+
+def cmh_p(strata: Sequence[Sequence[Sequence[int]]], values: Sequence[float] | None = None,
+          statistic: str = "general_association", scores: str = "table") -> float | None:
+    """test.cmh: the p-value of the Cochran-Mantel-Haenszel test over strata.
+
+    `strata` holds one table per stratum, all with the same rows (the compared
+    groups) and columns (the values of the analysis variable, in increasing
+    order); `values` are those values, needed for table scores.
+    """
+    import numpy as np
+    from scipy.special import chdtrc
+
+    if statistic not in CMH_STATISTICS or scores not in CMH_SCORES:
+        raise MethodError(f"test.cmh: unknown statistic {statistic!r} or scores {scores!r}")
+    tables = [[list(row) for row in table] for table in strata]
+    if not tables:
+        return None
+    shape = (len(tables[0]), len(tables[0][0]) if tables[0] else 0)
+    for table in tables:
+        if len(table) != shape[0] or any(len(row) != shape[1] for row in table):
+            raise MethodError("test.cmh: the tables of the strata must have the same shape")
+        for row in table:
+            for count in row:
+                if isinstance(count, bool) or count != int(count) or count < 0:
+                    raise MethodError(f"test.cmh: a table holds counts, not {count!r}")
+    if statistic == "row_mean_scores" and scores == "table":
+        if values is None or len(values) != shape[1]:
+            raise MethodError("test.cmh: table scores need one value per column")
+        if any(not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v)
+               for v in values):
+            raise MethodError("test.cmh: table scores need values that are numbers")
+    # Statement 2: rows and columns empty over all strata are left out.
+    counts = np.array(tables, dtype=float)
+    rows = [i for i in range(shape[0]) if counts[:, i, :].sum() > 0]
+    columns = [j for j in range(shape[1]) if counts[:, :, j].sum() > 0]
+    if len(rows) < 2 or len(columns) < 2:
+        return None
+    counts = counts[:, rows, :][:, :, columns]
+    r, c = len(rows), len(columns)
+    picked = np.hstack([np.eye(r - 1), np.zeros((r - 1, 1))])
+    g_sum, w_sum, used = None, None, 0
+    for table in counts:
+        n = table.sum()
+        if n < 2:
+            continue
+        used += 1
+        p, q = table.sum(axis=1) / n, table.sum(axis=0) / n
+        mean = n * np.kron(p, q)
+        cov = n * n / (n - 1) * np.kron(np.diag(p) - np.outer(p, p), np.diag(q) - np.outer(q, q))
+        if statistic == "general_association":
+            b = np.kron(picked, np.hstack([np.eye(c - 1), np.zeros((c - 1, 1))]))
+        else:
+            if scores == "table":
+                a = np.array([float(values[j]) for j in columns])
+            else:  # statement 6: midranks among the stratum's subjects
+                totals = table.sum(axis=0)
+                a = np.cumsum(totals) - totals + (totals + 1) / 2
+            b = np.kron(picked, a[None, :])
+        g = b @ (table.reshape(-1) - mean)
+        w = b @ cov @ b.T
+        g_sum = g if g_sum is None else g_sum + g
+        w_sum = w if w_sum is None else w_sum + w
+    if not used:
+        return None
+    # Statement 4: rank and Moore-Penrose inverse with one tolerance.
+    singular = np.linalg.svd(w_sum, compute_uv=False)
+    tolerance = singular.max() * max(w_sum.shape) * 2.0 ** -52 if singular.size else 0.0
+    df = int((singular > tolerance).sum())
+    if df == 0:
+        return None
+    inverse = np.linalg.pinv(w_sum, rcond=max(w_sum.shape) * 2.0 ** -52, hermitian=True)
+    q_value = float(g_sum @ inverse @ g_sum)
+    return float(chdtrc(df, q_value))
+
+
 # ---- display.round.half_away_from_zero, display.round.half_even ------------------
 
 ROUNDING_RULES = {"half_away_from_zero": ROUND_HALF_UP, "half_even": ROUND_HALF_EVEN}
@@ -272,22 +352,31 @@ def pattern_mask(pattern: object) -> tuple[str, str, str]:
     return pattern[:found[0].start()], found[0].group(), pattern[found[0].end():]
 
 
+ZERO_SIGNS = ("dropped", "kept")
+
+
 def pattern_text(value: float | int | None, pattern: str, mock: bool = False,
-                 rounding: str = "half_away_from_zero") -> str | None:
+                 rounding: str = "half_away_from_zero", zero_sign: str = "dropped") -> str | None:
     """display.pattern: a number as the text a result pattern asks for.
 
     With `mock` the mask itself is shown, in lower case, in place of the
-    number: the text of a mock shell. `rounding` is the option of that name.
+    number: the text of a mock shell. `rounding` is the option of
+    display.pattern; zero_sign "kept" gives display.pattern.signed (real-5b), an
+    entry of its own, not an option of display.pattern.
     """
     before, mask, after = pattern_mask(pattern)
     if rounding not in ROUNDING_RULES:
         raise MethodError(f"unknown rounding rule '{rounding}'")
+    if zero_sign not in ZERO_SIGNS:
+        raise MethodError(f"unknown zero_sign '{zero_sign}'")
     if mock:
         return before + mask.lower() + after
     if value is None:
         return None
     rounded = _rounded(value, len(mask.partition(".")[2]), rounding)
     sign = "-" if rounded.startswith("-") else ""
+    if zero_sign == "kept" and value < 0 and not sign:  # display.pattern.signed, statement 1
+        sign = "-"
     digits = rounded.removeprefix("-")
     if "." in mask:
         digits = digits.rjust(len(mask))

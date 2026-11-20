@@ -91,6 +91,22 @@ results:
       - id: Out14-3-05
         layout: gold/layout/Out14-3-05.yaml
         reference: {csr: gold/reference/csr/CSR.pdf, page: 53, table: "14-3.05"}
+      # real-5b: the mixed model for repeated measures, weeks 8, 16 and 24 (ADR-015,
+      # amendment of real-5b).
+      - id: Out14-3-11
+        layout: gold/layout/Out14-3-11.yaml
+        reference: {csr: gold/reference/csr/CSR.pdf, page: 59, table: "14-3.11"}
+  # real-5b (ADR-012, ADR-015 and its amendment of real-5b): CIBIC+ by category at weeks
+  # 8, 16 and 24, LOCF, with the CMH test controlling for the pooled site group. Our own
+  # event, written from the SAP and the CSR's shell; it embeds no result.
+  - id: efficacy-cibic
+    ars: gold/events/efficacy-cibic.json
+    schema: gold/spec/ars/ars_ldm.schema.json
+    subject_key: USUBJID
+    outputs:
+      - id: Out14-3-13
+        layout: gold/layout/Out14-3-13.yaml
+        reference: {csr: gold/reference/csr/CSR.pdf, page: 61, table: "14-3.13"}
 
 # The documents of the kit. `cited_as` is how Pilot 7's claims name them.
 documents:

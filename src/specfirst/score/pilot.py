@@ -179,7 +179,7 @@ def key_grid(event: ars.Event, layout: layouts.Layout, names: dict[str, str]) ->
                        if item.ard not in embedded or embedded[item.ard].formatted is None]
             if lacking:
                 raise PilotError(f"the example formats no value for {lacking[0]}")
-            text = grids.cell_text(row.template, cell.shown, {
+            text = grids.cell_text(grids.template_of(row, cell), cell.shown, {
                 (item.ard, item.pattern): embedded[item.ard].formatted for item in cell.shown})
             cells.append({"id": f"cell:{OUR_OUTPUT}/r{number}/{cell.column}",
                           "column": cell.column, "text": text, "ard": grids.cell_rows(cell.shown)})

@@ -16,6 +16,9 @@ the pattern each result is shown by. It holds rules, no numbers (rule R6).
                                      the results have, sorted
       labels: {<group>: text}        optional; default: the name of a defined
                                      group, the value of a data-driven one
+      extra:                         optional (amendment of real-5b): columns after
+        - {id: <name>, label: text}  those of the groups, which are no group; their
+                                     cells are empty unless a row fills them
     rows:                     blocks, from the top
       - kind: header          one row, shown in the table header under the column labels
         label: text           optional; default: the Rowlabel Header section of the display
@@ -48,6 +51,19 @@ the pattern each result is shown by. It holds rules, no numbers (rule R6).
             parts:
               mean: {operation: <operation ID>, pattern: "X.X"}
               sd: {operation: <operation ID>, pattern: "X.XX"}
+            extra:            optional: the cells of extra columns in this row
+              <name>: {cell: "{p}", parts: {p: {analysis: <ID>, operation: <ID>}}}
+
+      - kind: groups          one row per group of a row grouping (amendment of real-5b)
+        analysis: <analysis ID>   its groupings: the column grouping and the row
+                              grouping, both with results by group
+        grouping: <ARS grouping ID>   the row grouping, with defined groups
+        section: text         optional
+        indent: 0             optional
+        labels: {<group>: text}   optional; default: the name of the group
+        cell: "{n} ({pct})"
+        parts:
+          n: {operation: <operation ID>, pattern: "XX"}
 
 A cell template is text with `{name}` where the part of that name goes. A
 part is one result: an ARS operation of the row's analysis (in a header
@@ -62,9 +78,16 @@ does): its one result per operation is then shown in the one column its
 `columns` lists. Columns that compare two arms are statistics blocks of
 this kind: a comparison of each arm with a reference arm stands in the
 columns of the arms that are compared (`columns`), and the reference's
-column stays empty. The blocks the other table families need (one row per
-group of a row grouping, a total column) are added by the rest of real-3,
-as kinds of this list.
+column stays empty.
+
+An extra column (real-5b) holds what belongs to no group, such as the
+p-value of a test that compares all the groups (CSR Table 14-3.13). A row
+of a statistics block fills it with a part of another analysis that
+compares the column grouping, with its own cell template. A groups block
+has one row per group of a row grouping, in the grouping's order, for an
+analysis split by both groupings. The blocks the other table families need
+(a data-driven row grouping, a total column) are added later, as kinds of
+this list.
 """
 
 from __future__ import annotations
@@ -78,15 +101,17 @@ import yaml
 from specfirst.machine import ars, methods
 
 FORMAT = 0
-KINDS = ("header", "analyses", "statistics")
+KINDS = ("header", "analyses", "statistics", "groups")
 # The section of a grid row that is shown in the table header (ADR-003, decision 4).
 HEADER_SECTION = "@header"
 _KEYS = {"layout", "output", "titles", "footnotes", "missing", "columns", "rows"}
-_COLUMN_KEYS = {"grouping", "values", "labels"}
+_COLUMN_KEYS = {"grouping", "values", "labels", "extra"}
 _BLOCK_KEYS = {"header": {"kind", "label", "cell", "parts"},
                "analyses": {"kind", "section", "indent", "cell", "parts", "analyses"},
-               "statistics": {"kind", "analysis", "section", "indent", "columns", "rows"}}
-_ROW_KEYS = {"label", "indent", "cell", "parts"}
+               "statistics": {"kind", "analysis", "section", "indent", "columns", "rows"},
+               "groups": {"kind", "analysis", "grouping", "section", "indent", "labels", "cell",
+                          "parts"}}
+_ROW_KEYS = {"label", "indent", "cell", "parts", "extra"}
 _PART_KEYS = {"analysis", "operation", "pattern"}
 
 
@@ -103,6 +128,15 @@ class Part:
 
 
 @dataclass(frozen=True)
+class ExtraCell:
+    """The cell of an extra column in a row: its column, template and parts."""
+
+    column: str
+    cell: str
+    parts: tuple[Part, ...]
+
+
+@dataclass(frozen=True)
 class StatisticRow:
     """One row of a statistics block: its label, its cell template and its parts."""
 
@@ -110,6 +144,7 @@ class StatisticRow:
     cell: str
     parts: tuple[Part, ...]
     indent: int
+    extra: tuple[ExtraCell, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -124,6 +159,8 @@ class Block:
     analysis: str | None = None  # statistics
     statistics: tuple[StatisticRow, ...] = ()  # statistics
     columns: tuple[str, ...] | None = None  # statistics: the groups whose columns show results
+    grouping: str | None = None  # groups: the row grouping
+    labels: tuple[tuple[str, str], ...] = ()  # groups: row labels by group
 
 
 @dataclass(frozen=True)
@@ -136,6 +173,7 @@ class Layout:
     titles: tuple[str, ...] | None = None
     footnotes: tuple[str, ...] | None = None
     missing: str = ""
+    extra: tuple[tuple[str, str], ...] = ()  # extra columns: (name, label)
 
 
 def template_names(template: str) -> list[str]:
@@ -201,8 +239,22 @@ def _statistics(data: dict, where: str, problems: list[str]) -> Block | None:
         if any(part.analysis not in (None, analysis) for part in parts):
             problems.append(f"{at}: a part of a statistics block shows a result of the "
                             "block's analysis")
+        extra = []
+        given = item.get("extra") or {}
+        if not isinstance(given, dict):
+            problems.append(f"{at}: 'extra' maps an extra column to its cell")
+            given = {}
+        for column, cell in given.items():
+            here = f"{at}, extra '{column}'"
+            if not isinstance(cell, dict) or set(cell) != {"cell", "parts"}:
+                problems.append(f"{here}: needs a 'cell' template and its 'parts'")
+                continue
+            cell_parts = _parts(cell["cell"], cell["parts"], "header", here, problems)
+            if cell_parts is not None:
+                extra.append(ExtraCell(str(column), cell["cell"], cell_parts))
         rows.append(StatisticRow(item["label"], item["cell"], parts,
-                                 _indent(item.get("indent", indent), at, problems)))
+                                 _indent(item.get("indent", indent), at, problems),
+                                 tuple(extra)))
     return Block("statistics", "", (), section=section, indent=indent, analysis=analysis,
                  statistics=tuple(rows), columns=columns)
 
@@ -245,6 +297,32 @@ def _parts(template: object, given: object, kind: str, where: str,
     return tuple(parts)
 
 
+def _groups(data: dict, where: str, problems: list[str]) -> Block | None:
+    """A groups block: one row per group of a row grouping (amendment of real-5b)."""
+    analysis, grouping, section = data.get("analysis"), data.get("grouping"), data.get("section")
+    if not isinstance(analysis, str) or not analysis or not isinstance(grouping, str):
+        problems.append(f"{where}: a groups block names its 'analysis' and its row 'grouping'")
+        return None
+    if section is not None and not isinstance(section, str):
+        problems.append(f"{where}: 'section' must be text")
+    if section == HEADER_SECTION:
+        problems.append(f"{where}: the section name {HEADER_SECTION} is that of a header block")
+    labels = data.get("labels") or {}
+    if not isinstance(labels, dict) or not all(
+            isinstance(key, str) and isinstance(text, str) for key, text in labels.items()):
+        problems.append(f"{where}: 'labels' must map a group to its text")
+        labels = {}
+    parts = _parts(data.get("cell"), data.get("parts"), "groups", where, problems)
+    if parts is None:
+        return None
+    if any(part.analysis not in (None, analysis) for part in parts):
+        problems.append(f"{where}: a part of a groups block shows a result of the block's "
+                        "analysis")
+    return Block("groups", data["cell"], parts, section=section,
+                 indent=_indent(data.get("indent", 0), where, problems), analysis=analysis,
+                 grouping=grouping, labels=tuple(sorted(labels.items())))
+
+
 def _block(data: object, where: str, problems: list[str]) -> Block | None:
     if not isinstance(data, dict) or data.get("kind") not in KINDS:
         problems.append(f"{where}: needs a 'kind' out of {', '.join(KINDS)}")
@@ -253,6 +331,8 @@ def _block(data: object, where: str, problems: list[str]) -> Block | None:
     problems += [f"{where}: unknown key '{key}'" for key in sorted(set(data) - _BLOCK_KEYS[kind])]
     if kind == "statistics":
         return _statistics(data, where, problems)
+    if kind == "groups":
+        return _groups(data, where, problems)
     template = data.get("cell")
     parts = _parts(template, data.get("parts"), kind, where, problems)
     if parts is None:
@@ -308,6 +388,17 @@ def parse(data: object, where: str = "layout") -> Layout:
             isinstance(key, str) and isinstance(text, str) for key, text in labels.items()):
         problems.append("columns.labels: must map a group to its text")
         labels = {}
+    extra = []
+    for number, item in enumerate(columns.get("extra") or []):
+        if (not isinstance(item, dict) or set(item) != {"id", "label"}
+                or not isinstance(item["id"], str) or not item["id"].isidentifier()
+                or not isinstance(item["label"], str)):
+            problems.append(f"columns.extra[{number}]: an extra column has an 'id' (a name) "
+                            "and a 'label'")
+            continue
+        extra.append((item["id"], item["label"]))
+    if len({name for name, _ in extra}) != len(extra):
+        problems.append("columns.extra: an id is listed twice")
     missing = data.get("missing", "")
     if not isinstance(missing, str):
         problems.append("'missing' must be text")
@@ -324,7 +415,7 @@ def parse(data: object, where: str = "layout") -> Layout:
     return Layout(output=output, grouping=columns["grouping"],
                   blocks=tuple(block for block in blocks if block is not None), values=values,
                   labels=tuple(sorted(labels.items())), titles=titles, footnotes=footnotes,
-                  missing=missing)
+                  missing=missing, extra=tuple(extra))
 
 
 def read(path: Path) -> Layout:
@@ -364,10 +455,15 @@ def problems(layout: Layout, event: ars.Event) -> list[str]:
     if known is not None:
         found += [f"columns.labels: '{key}' is not a group of {layout.grouping}"
                   for key, _ in layout.labels if key not in known]
+        found += [f"columns.extra: '{name}' is the ID of a group of {layout.grouping}"
+                  for name, _ in layout.extra if name in known]
     for number, block in enumerate(layout.blocks):
         where = f"rows[{number}]"
         if block.kind == "statistics":
             found += _statistics_problems(layout, event, block, where, known)
+            continue
+        if block.kind == "groups":
+            found += _groups_problems(layout, event, block, where)
             continue
         rows = block.analyses or ((None, None),)
         for analysis_id, _ in rows:
@@ -434,8 +530,49 @@ def _statistics_problems(layout: Layout, event: ars.Event, block: Block, where: 
     if block.columns is not None and allowed is not None:
         found += [f"{at}: columns: '{key}' is not a group of {layout.grouping}"
                   for key in block.columns if key not in allowed]
+    extra = {name for name, _ in layout.extra}
     for row in block.statistics:
         for part in row.parts:
             found += _part_problems(event, analysis, part,
                                     f"{at}, row '{row.label}', part '{part.name}'")
+        for cell in row.extra:
+            here = f"{at}, row '{row.label}', extra '{cell.column}'"
+            if cell.column not in extra:
+                found.append(f"{here}: not an extra column of the layout")
+            for part in cell.parts:
+                other = event.analyses.get(part.analysis or "")
+                if other is None:
+                    found.append(f"{here}, part '{part.name}': the analysis '{part.analysis}' "
+                                 "is not in the reporting event")
+                    continue
+                compared = [(entry["groupingId"], bool(entry.get("resultsByGroup")))
+                            for entry in event.groupings_of(other)]
+                if compared != [(layout.grouping, False)]:
+                    found.append(f"{here}, part '{part.name}': an extra cell shows an analysis "
+                                 f"that compares the column grouping {layout.grouping} alone")
+                found += _part_problems(event, other, part, f"{here}, part '{part.name}'")
+    return found
+
+
+def _groups_problems(layout: Layout, event: ars.Event, block: Block, where: str) -> list[str]:
+    """Why a groups block does not fit its reporting event."""
+    analysis = event.analyses.get(block.analysis or "")
+    if analysis is None:
+        return [f"{where}: the analysis '{block.analysis}' is not in the reporting event"]
+    at = f"{where}, analysis '{block.analysis}'"
+    found = []
+    rows = event.groupings.get(block.grouping or "")
+    if rows is None or rows.get("dataDriven"):
+        return [f"{at}: the row grouping '{block.grouping}' is not a grouping of the event with "
+                "defined groups"]
+    groupings = sorted((entry["groupingId"], bool(entry.get("resultsByGroup")))
+                       for entry in event.groupings_of(analysis))
+    if groupings != sorted([(layout.grouping, True), (block.grouping, True)]):
+        found.append(f"{at}: a groups block shows an analysis split by the column grouping "
+                     f"{layout.grouping} and the row grouping {block.grouping}, nothing else")
+    known = {group["id"] for group in rows["groups"]}
+    found += [f"{at}: labels: '{key}' is not a group of {block.grouping}"
+              for key, _ in block.labels if key not in known]
+    for part in block.parts:
+        found += _part_problems(event, analysis, part, f"{at}, part '{part.name}'")
     return found

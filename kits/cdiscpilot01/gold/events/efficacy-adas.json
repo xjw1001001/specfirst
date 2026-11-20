@@ -4,7 +4,7 @@
   "description": "Written by specfirst (real-5a, ADR-012, ADR-015) from the SAP, the analysis results metadata of the pilot's Define-XML and the shells of the CSR. MIT license.",
   "version": 1,
   "mainListOfContents": {
-    "name": "Efficacy tables of real-5a",
+    "name": "Efficacy tables of real-5a and real-5b",
     "contentsList": {
       "listItems": [
         {
@@ -180,6 +180,40 @@
               }
             ]
           }
+        },
+        {
+          "name": "Table 14-3.11: ADAS Cog (11) - Repeated Measures Analysis of Change from Baseline to Week 24",
+          "level": 1,
+          "order": 4,
+          "outputId": "Out14-3-11",
+          "sublist": {
+            "listItems": [
+              {
+                "name": "Subjects",
+                "level": 2,
+                "order": 1,
+                "analysisId": "An_EFF_N"
+              },
+              {
+                "name": "LS means",
+                "level": 2,
+                "order": 2,
+                "analysisId": "An_ADAS_MMRM_LSM"
+              },
+              {
+                "name": "Each dose against placebo",
+                "level": 2,
+                "order": 3,
+                "analysisId": "An_ADAS_MMRM_PwPbo"
+              },
+              {
+                "name": "High dose against low dose",
+                "level": 2,
+                "order": 4,
+                "analysisId": "An_ADAS_MMRM_PwLow"
+              }
+            ]
+          }
         }
       ]
     }
@@ -336,6 +370,67 @@
               "comparator": "EQ",
               "value": [
                 "Y"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "DS_ADAS_MMRM",
+      "name": "ADAS-Cog (11) total score at weeks 8, 16 and 24, observed records",
+      "level": 1,
+      "order": 4,
+      "compoundExpression": {
+        "logicalOperator": "AND",
+        "whereClauses": [
+          {
+            "level": 2,
+            "order": 1,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "PARAMCD",
+              "comparator": "EQ",
+              "value": [
+                "ACTOT"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 2,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "AVISIT",
+              "comparator": "IN",
+              "value": [
+                "Week 8",
+                "Week 16",
+                "Week 24"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 3,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "ANL01FL",
+              "comparator": "EQ",
+              "value": [
+                "Y"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 4,
+            "condition": {
+              "dataset": "ADQSADAS",
+              "variable": "DTYPE",
+              "comparator": "EQ",
+              "value": [
+                ""
               ]
             }
           }
@@ -542,6 +637,76 @@
           "name": "Upper confidence limit",
           "order": 4,
           "resultPattern": "X.XX"
+        }
+      ]
+    },
+    {
+      "id": "Mth_MmrmLsm",
+      "name": "MMRM, least-squares means by group",
+      "label": "MMRM LS means",
+      "description": "Method registry: model.mmrm.lsmeans",
+      "operations": [
+        {
+          "id": "Mth_MmrmLsm_1_lsm",
+          "name": "LS mean",
+          "order": 1,
+          "resultPattern": "X.X"
+        },
+        {
+          "id": "Mth_MmrmLsm_2_se",
+          "name": "Standard error",
+          "order": 2,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_MmrmLsm_3_lcl",
+          "name": "Lower confidence limit",
+          "order": 3,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_MmrmLsm_4_ucl",
+          "name": "Upper confidence limit",
+          "order": 4,
+          "resultPattern": "X.XX"
+        }
+      ]
+    },
+    {
+      "id": "Mth_MmrmPw",
+      "name": "MMRM, each group against a reference group",
+      "label": "MMRM pairwise comparison",
+      "description": "Method registry: model.mmrm.pairwise",
+      "operations": [
+        {
+          "id": "Mth_MmrmPw_1_diff",
+          "name": "Difference of LS means",
+          "order": 1,
+          "resultPattern": "X.X"
+        },
+        {
+          "id": "Mth_MmrmPw_2_se",
+          "name": "Standard error",
+          "order": 2,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_MmrmPw_3_lcl",
+          "name": "Lower confidence limit",
+          "order": 3,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_MmrmPw_4_ucl",
+          "name": "Upper confidence limit",
+          "order": 4,
+          "resultPattern": "X.XX"
+        },
+        {
+          "id": "Mth_MmrmPw_5_pval",
+          "name": "P-value",
+          "order": 5,
+          "resultPattern": "X.XXX"
         }
       ]
     }
@@ -1345,6 +1510,486 @@
           }
         ]
       }
+    },
+    {
+      "id": "An_ADAS_MMRM_LSM",
+      "name": "ADAS-Cog (11), change from baseline by MMRM: LS means at Week 24",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_MMRM",
+      "methodId": "Mth_MmrmLsm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "visit",
+            "value": [
+              "AVISITN"
+            ]
+          },
+          {
+            "name": "by_visit",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "treatment_by_visit",
+            "value": [
+              "yes"
+            ]
+          },
+          {
+            "name": "covariance",
+            "value": [
+              "unstructured"
+            ]
+          },
+          {
+            "name": "df",
+            "value": [
+              "kenward_roger_linear"
+            ]
+          },
+          {
+            "name": "at",
+            "value": [
+              "last"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_MMRM_PwPbo",
+      "name": "ADAS-Cog (11), change from baseline by MMRM: each dose against placebo at Week 24",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_MMRM",
+      "methodId": "Mth_MmrmPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "visit",
+            "value": [
+              "AVISITN"
+            ]
+          },
+          {
+            "name": "by_visit",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "treatment_by_visit",
+            "value": [
+              "yes"
+            ]
+          },
+          {
+            "name": "covariance",
+            "value": [
+              "unstructured"
+            ]
+          },
+          {
+            "name": "df",
+            "value": [
+              "kenward_roger_linear"
+            ]
+          },
+          {
+            "name": "at",
+            "value": [
+              "last"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Pbo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_MMRM_PwLow",
+      "name": "ADAS-Cog (11), change from baseline by MMRM: high dose against low dose at Week 24",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_MMRM",
+      "methodId": "Mth_MmrmPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "visit",
+            "value": [
+              "AVISITN"
+            ]
+          },
+          {
+            "name": "by_visit",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "treatment_by_visit",
+            "value": [
+              "yes"
+            ]
+          },
+          {
+            "name": "covariance",
+            "value": [
+              "unstructured"
+            ]
+          },
+          {
+            "name": "df",
+            "value": [
+              "kenward_roger_linear"
+            ]
+          },
+          {
+            "name": "at",
+            "value": [
+              "last"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Low"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_MMRM_LSM_Avg",
+      "name": "ADAS-Cog (11), change from baseline by MMRM: LS means averaged over weeks 8, 16 and 24, as the CSR computed them (the other alternative of custom:eff-mmrm-visit, for the proof of the classified differences)",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "DATA DRIVEN"
+      },
+      "purpose": {
+        "controlledTerm": "EXPLORATORY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_MMRM",
+      "methodId": "Mth_MmrmLsm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "visit",
+            "value": [
+              "AVISITN"
+            ]
+          },
+          {
+            "name": "by_visit",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "treatment_by_visit",
+            "value": [
+              "yes"
+            ]
+          },
+          {
+            "name": "covariance",
+            "value": [
+              "unstructured"
+            ]
+          },
+          {
+            "name": "df",
+            "value": [
+              "kenward_roger_linear"
+            ]
+          },
+          {
+            "name": "at",
+            "value": [
+              "average"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_MMRM_PwPbo_Avg",
+      "name": "ADAS-Cog (11), change from baseline by MMRM: each dose against placebo averaged over weeks 8, 16 and 24, as the CSR computed them (the other alternative of custom:eff-mmrm-visit, for the proof of the classified differences)",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "DATA DRIVEN"
+      },
+      "purpose": {
+        "controlledTerm": "EXPLORATORY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_MMRM",
+      "methodId": "Mth_MmrmPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "visit",
+            "value": [
+              "AVISITN"
+            ]
+          },
+          {
+            "name": "by_visit",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "treatment_by_visit",
+            "value": [
+              "yes"
+            ]
+          },
+          {
+            "name": "covariance",
+            "value": [
+              "unstructured"
+            ]
+          },
+          {
+            "name": "df",
+            "value": [
+              "kenward_roger_linear"
+            ]
+          },
+          {
+            "name": "at",
+            "value": [
+              "average"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Pbo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_ADAS_MMRM_PwLow_Avg",
+      "name": "ADAS-Cog (11), change from baseline by MMRM: high dose against low dose averaged over weeks 8, 16 and 24, as the CSR computed them (the other alternative of custom:eff-mmrm-visit, for the proof of the classified differences)",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "DATA DRIVEN"
+      },
+      "purpose": {
+        "controlledTerm": "EXPLORATORY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSADAS",
+      "variable": "CHG",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_ADAS_MMRM",
+      "methodId": "Mth_MmrmPw",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "factors",
+            "value": [
+              "SITEGR1"
+            ]
+          },
+          {
+            "name": "covariates",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "visit",
+            "value": [
+              "AVISITN"
+            ]
+          },
+          {
+            "name": "by_visit",
+            "value": [
+              "BASE"
+            ]
+          },
+          {
+            "name": "treatment_by_visit",
+            "value": [
+              "yes"
+            ]
+          },
+          {
+            "name": "covariance",
+            "value": [
+              "unstructured"
+            ]
+          },
+          {
+            "name": "df",
+            "value": [
+              "kenward_roger_linear"
+            ]
+          },
+          {
+            "name": "at",
+            "value": [
+              "average"
+            ]
+          },
+          {
+            "name": "reference",
+            "value": [
+              "Grp_Low"
+            ]
+          }
+        ]
+      }
     }
   ],
   "globalDisplaySections": [
@@ -1362,6 +2007,10 @@
         {
           "id": "Fn_ANCOVA_3",
           "text": "[3] Pairwise: treatment as a categorical variable; differences of LS means with their standard errors and 95% confidence intervals; p-values not adjusted for multiplicity."
+        },
+        {
+          "id": "Fn_MMRM_1",
+          "text": "[1] Mixed model for repeated measures of the change from baseline at weeks 8, 16 and 24, observed records: treatment, pooled site group, week and treatment by week as factors; the baseline value and baseline by week as covariates; unstructured covariance; Kenward-Roger standard errors and degrees of freedom. LS means and their differences at Week 24; p-values not adjusted for multiplicity."
         }
       ]
     }
@@ -1521,6 +2170,52 @@
                   {
                     "order": 3,
                     "subSectionId": "Fn_ANCOVA_3"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "Out14-3-11",
+      "name": "Table 14-3.11",
+      "version": 1,
+      "displays": [
+        {
+          "order": 1,
+          "display": {
+            "id": "Disp14-3-11",
+            "name": "Table 14-3.11",
+            "version": 1,
+            "displayTitle": "ADAS Cog (11) - Repeated Measures Analysis of Change from Baseline to Week 24",
+            "displaySections": [
+              {
+                "sectionType": "Title",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSection": {
+                      "id": "Out14-3-11_T1",
+                      "text": "Table 14-3.11"
+                    }
+                  },
+                  {
+                    "order": 2,
+                    "subSection": {
+                      "id": "Out14-3-11_T2",
+                      "text": "ADAS Cog (11) - Repeated Measures Analysis of Change from Baseline to Week 24"
+                    }
+                  }
+                ]
+              },
+              {
+                "sectionType": "Footnote",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSectionId": "Fn_MMRM_1"
                   }
                 ]
               }
