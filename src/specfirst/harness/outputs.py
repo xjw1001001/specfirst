@@ -137,9 +137,10 @@ def problems(out_dir: Path, catalog: Catalog, keys: tuple[tuple[str, str], ...],
 
 
 def task_documents(task_dir: Path) -> Documents:
-    """The documents a reader cites, from a task folder."""
+    """The documents a reader cites, from a task folder (a task of a real study may lack
+    the protocol)."""
     return Documents({doc: (task_dir / path).read_text(encoding="ascii")
-                      for doc, path in tasks.DOCUMENTS.items()})
+                      for doc, path in tasks.DOCUMENTS.items() if (task_dir / path).is_file()})
 
 
 def read(out_dir: Path, name: str) -> list[dict]:

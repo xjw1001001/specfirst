@@ -20,6 +20,10 @@ names no kit, seed or split; the data and the documents name the study.
 
 `problems` holds a task folder against the allow list and against the
 files of the kit that a reader must not see (section 11.2).
+
+A real study (tier C) gives its task through a folder of the same shape
+(specfirst.harness.pilot): stage T only, the documents it has as text taken
+from their PDF, anchored by page and paragraph (`render_real`).
 """
 
 from __future__ import annotations
@@ -55,6 +59,10 @@ ENTRIES = "standard/catalog/entries"
 ALLOWED = (TASK_FILE, "inputs/docs/", "inputs/house/", f"{SDTM}/", f"{ADAM}/",
            *STANDARD, f"{ENTRIES}/", f"{KNOWLEDGE}/", f"{BIN}/", f"{OUT}/")
 EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+# A real study (PLAN.md section 6.1, tier C): its documents are text taken from a PDF, its
+# anchors are page and paragraph, and its task is stage T (specfirst.harness.pilot).
+REAL_TIER = "C"
+REAL_ANCHORS = ("12/p3", "14/p2")  # the anchors of the examples of TASK.md
 
 
 class TaskError(RuntimeError):
@@ -146,11 +154,19 @@ def build(root: Path, kit_dir: Path, tasks_dir: Path, stage: str = "C",
     kit_manifest = genkits.read_manifest(kit_dir)
     units = scope(catalog, tuple(kit_manifest["units"]), stage)
     keys = keys_of(catalog, units)
+    real = kit_manifest.get("tier") == REAL_TIER
+    docs = tuple(doc for doc in ("protocol", "sap") if (kit_dir / DOCUMENTS[doc]).is_file())
+    if not real and docs != ("protocol", "sap"):
+        raise TaskError(f"the kit {kit_dir} lacks a document: a generated kit has the natural "
+                        "protocol and SAP")
+    if real and (not docs or stage != "T"):
+        raise TaskError("a task of a real study has stage T and at least one document "
+                        "(ADR-005, decision 5)")
     tasks_dir.mkdir(parents=True, exist_ok=True)
     staging = tasks_dir / ".building"
     shutil.rmtree(staging, ignore_errors=True)
     staging.mkdir()
-    for doc in ("protocol", "sap"):
+    for doc in docs:
         _copy(kit_dir / DOCUMENTS[doc], staging / DOCUMENTS[doc])
     _copy_tree(kit_dir / kitgold.HOUSE, staging / kitgold.HOUSE)
     if stage == "C":
@@ -172,8 +188,9 @@ def build(root: Path, kit_dir: Path, tasks_dir: Path, stage: str = "C",
                             "(`specfirst run skills --write`)")
         _copy(source, staging / KNOWLEDGE / name / "SKILL.md")
     knowledge = [f"{KNOWLEDGE}/{name}/SKILL.md" for name in skills]
-    (staging / TASK_FILE).write_text(render(catalog, units, keys, stage, knowledge),
-                                     encoding="ascii", newline="\n")
+    text = (render_real(catalog, units, keys, docs, knowledge) if real
+            else render(catalog, units, keys, stage, knowledge))
+    (staging / TASK_FILE).write_text(text, encoding="ascii", newline="\n")
     (staging / OUT).mkdir()
     found = manifest(staging)
     ident = task_id(found)
@@ -285,6 +302,49 @@ def render(catalog: Catalog, units: tuple[str, ...], keys: tuple[tuple[str, str]
         "",
     ]
     return "\n".join(lines)
+
+
+def render_real(catalog: Catalog, units: tuple[str, ...], keys: tuple[tuple[str, str], ...],
+                docs: tuple[str, ...], knowledge: list[str]) -> str:
+    """TASK.md of a real study (tier C, stage T; specfirst.harness.pilot): its documents
+    are text taken from their PDF, with an anchor of page and paragraph before every
+    paragraph. Everything else is the text of `render` at stage T."""
+    text = render(catalog, units, keys, "T", knowledge)
+    names = {"protocol": "the protocol", "sap": "the statistical analysis plan"}
+    files = " and ".join(f"`{DOCUMENTS[doc]}` (document ID `{doc}`)" for doc in docs)
+    missing = [names[doc].removeprefix("the ") for doc in ("protocol", "sap") if doc not in docs]
+    swaps = [
+        ("You read the protocol and the statistical analysis plan of one clinical study and\n",
+         f"You read {' and '.join(names[doc] for doc in docs)} of one clinical study and\n"),
+        ("- `inputs/docs/protocol.md` (document ID `protocol`) and `inputs/docs/sap.md`\n"
+         "  (document ID `sap`): the documents of the study. Every paragraph starts with its\n"
+         "  anchor in brackets, for example `[4.1/p2]`.\n",
+         _wrap(f"- {files}: {' and '.join(names[doc] for doc in docs)} of the study, as text "
+               "taken from the PDF. Every paragraph starts with its anchor in brackets: the "
+               "page of the PDF and the number of the paragraph on that page, for example "
+               f"`[{REAL_ANCHORS[0]}]`."
+               + (f" The {' and the '.join(missing)} is not given." if missing else ""))),
+        ('"anchor": "4.1/p2"', f'"anchor": "{REAL_ANCHORS[0]}"'),
+        ('"anchor": "5/p1"', f'"anchor": "{REAL_ANCHORS[1]}"'),
+    ]
+    for old, new in swaps:
+        if text.count(old) != 1:
+            raise TaskError(f"TASK.md of a real study: the text of a kit task changed ({old!r})")
+        text = text.replace(old, new)
+    return text
+
+
+def _wrap(text: str, width: int = 86) -> str:
+    """A bullet of TASK.md, its lines at most `width` characters, the rest indented."""
+    lines, line = [], ""
+    for word in text.split():
+        if line and len(line) + 1 + len(word) > width:
+            lines.append(line)
+            line = "  " + word
+        else:
+            line = f"{line} {word}" if line else word
+    lines.append(line)
+    return "\n".join(lines) + "\n"
 
 
 def protected_hashes(kit_dir: Path) -> dict[str, str]:

@@ -1,7 +1,9 @@
-"""The pilot, report only (ADR-005, decision 5): arm S, stage T, on CDISCPILOT01.
+"""The pilot, report only (ADR-005, decision 5): arms S and R, stage T, on CDISCPILOT01.
 
-The adverse event summary is built from the house standard alone on the
-reference ADaM of the pilot, and held against the results that CDISC's ARS
+The adverse event summary is built from the house standard alone (arm S),
+or from the table decisions a reader wrote with the house default for the
+rest (arm R; the run is specfirst.harness.pilot's), on the reference ADaM
+of the pilot, and held against the results that CDISC's ARS
 example "Common Safety Displays" embeds for the analyses of its adverse
 event summary (output Out14-3-1-1). Nothing is tuned on the pilot (PLAN.md
 section 6.1): this module only reports.
@@ -43,6 +45,7 @@ label so that the counts under the column headers are compared.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -59,6 +62,7 @@ from specfirst.score.candidate import SUBJECT_KEY, Arms, Build, Data, Hooks, Key
 
 KIT = "cdiscpilot01"
 OUTPUT, UNIT, OUR_OUTPUT = "Out14-3-1-1", "tfl-ae-summary", "Out_AESUM"
+INCLUDE = "tfl.output.include"
 DATASETS = ("ADSL", "ADAE")
 # The analyses of the example's adverse event summary, and the row of the house
 # table that counts the same events (None: the catalog has no such row).
@@ -88,6 +92,9 @@ class Explained:
     state: str = "unexplained"  # one of STATES
     by: list[tuple[Key, dict]] = field(default_factory=list)  # (decision, the value that fits)
     note: str = ""
+    # The candidate built no output: the decision and value that build it, which `by` and
+    # the state add to (None: `by` alone explains the cell, or the output was built).
+    first: tuple[Key, dict] | None = None
 
 
 @dataclass
@@ -102,6 +109,12 @@ class Pilot:
     axes: dict[str, list[tuple[Key, dict]]]  # axis that differs -> what makes it equal
     vector: list[dict]
     reads: list[tuple[str, str, bool]] = field(default_factory=list)  # (dataset, variable, there)
+    arm: str = "S"  # S: the house standard alone; R: a reader's table decisions
+    # The candidate left the output out: the value of tfl.output.include that builds it, and
+    # against whose build every cell and axis is explained (its score and its grid).
+    first: tuple[Key, dict] | None = None
+    traced: build.BuildScore | None = None
+    traced_grid: dict | None = None
 
 
 def _pinned(root: Path, kit: kits.Kit, path: str) -> Path:
@@ -230,14 +243,24 @@ def _wrong(score: build.BuildScore) -> list[build.WrongCell]:
     return score.wrong()
 
 
-def run(machine: Machine) -> Pilot:
-    """Score arm S at stage T on the pilot and explain every difference."""
+def given_vector(machine: Machine, records: list[dict]) -> list[dict]:
+    """Arm R: the reader's value of each table decision of the unit, the vector of arm S
+    for the rest. A record of another decision is not used (stage T asks only these)."""
+    given = {(r.get("id"), r.get("unit")): r["value"] for r in records
+             if r.get("unit") == UNIT and isinstance(r.get("value"), dict)}
+    return [{**r, "value": given[(r["id"], r["unit"])]} if (r["id"], r["unit"]) in given
+            else r for r in standard_vector(machine)]
+
+
+def run(machine: Machine, records: list[dict] | None = None, arm: str = "S") -> Pilot:
+    """Score an arm at stage T on the pilot and explain every difference: arm S, or the
+    table decisions a reader wrote (`records`, arm R)."""
     data, event, layout = reference(machine.root)
     names = labels(machine)
     key = key_grid(event, layout, names)
     design = arms(data)
     hooks = without_unbuildable(data)
-    vector = standard_vector(machine)
+    vector = given_vector(machine, records) if records is not None else standard_vector(machine)
 
     def made(records: list[dict]) -> Build:
         return machine.build(records, data, design, hooks)
@@ -246,11 +269,30 @@ def run(machine: Machine) -> Pilot:
         return build.score("reference ADaM", {OUR_OUTPUT: key}, built.grids, built.ok,
                            built.failure, built.not_produced)
 
+    def other(vector: list[dict], key_of: Key, value: dict) -> list[dict]:
+        return [{**r, "value": value} if (r["id"], r["unit"]) == key_of else r for r in vector]
+
     base = made(vector)
     score = scored(base)
-    compiled = machine.compile(vector)
+    # A candidate that leaves the output out (tfl.output.include) builds nothing to compare.
+    # Its trace goes through the value of tfl.output.include that builds the output: every
+    # cell is then explained against that build (`first`), one more decision at a time.
+    first: tuple[Key, dict] | None = None
+    traced, work = vector, base
+    if not score.outputs[0].produced:
+        for record in vector:
+            if (record["id"], record["unit"]) != (INCLUDE, UNIT):
+                continue
+            for value in compiler.other_values(machine.catalog, INCLUDE, record["value"]):
+                built = made(other(vector, (INCLUDE, UNIT), value))
+                if scored(built).outputs[0].produced:
+                    first, traced, work = ((INCLUDE, UNIT), value), other(
+                        vector, (INCLUDE, UNIT), value), built
+                    break
+    lifted = scored(work)
+    compiled = machine.compile(traced)
     missing, reads = [], []
-    if not isinstance(compiled, str):
+    if not isinstance(compiled, str) and compiled.ars is not None:
         gone = set(lacking(compiled, data))
         reads = [(dataset, name, (dataset, name) not in gone)
                  for dataset, names in ars.columns(ars.index(compiled.ars), SUBJECT_KEY).items()
@@ -259,101 +301,140 @@ def run(machine: Machine) -> Pilot:
             writers = sorted(key[0] for key, bound in compiled.binds.items()
                              if f"adam:{dataset}.{name}" in bound)
             missing.append((dataset, name, writers))
-    our_rows = {row["label"] for row in (base.grids.get(OUR_OUTPUT) or {"rows": []})["rows"]}
+    our_rows = {row["label"] for row in (work.grids.get(OUR_OUTPUT) or {"rows": []})["rows"]}
     not_built = [code for code, label in names.items() if label not in our_rows]
     # Every other value of every table decision, each built once.
     trials: list[tuple[Key, dict, build.BuildScore]] = []
-    for record in vector:
+    for record in traced:
         if record["unit"] != UNIT:
             continue
         key_of = (record["id"], record["unit"])
         for value in compiler.other_values(machine.catalog, record["id"], record["value"]):
-            other = [{**r, "value": value} if (r["id"], r["unit"]) == key_of else r
-                     for r in vector]
-            trials.append((key_of, value, scored(made(other))))
+            trials.append((key_of, value, scored(made(other(traced, key_of, value)))))
     cells = []
+    right_once_lifted = {(w.row, w.column) for w in _wrong(score)} - {
+        (w.row, w.column) for w in _wrong(lifted)}
+    lifted_cells = {(w.row, w.column): w for w in _wrong(lifted)}
     for cell in _wrong(score):
-        item = Explained(cell)
-        for key_of, value, trial in trials:
-            still = {(w.row, w.column) for w in trial.wrong()}
-            if trial.produced and (cell.row, cell.column) not in still:
-                item.by.append((key_of, value))
+        item = Explained(cell, first=first)
+        here = lifted_cells.get((cell.row, cell.column), cell)
+        if first is not None and (cell.row, cell.column) in right_once_lifted:
+            item.by.append(first)
+            item.first = None
+        else:
+            for key_of, value, trial in trials:
+                still = {(w.row, w.column) for w in trial.wrong()}
+                if trial.produced and (cell.row, cell.column) not in still:
+                    item.by.append((key_of, value))
         code = next((c for c, label in names.items() if label == cell.row[1]), None)
         if item.by:
             item.state = "decision"
-        elif cell.reason == "no_row" and code in not_built:
+        elif here.reason == "no_row" and code in not_built:
             item.state = "open"
             item.note = "the row is not built: " + "; ".join(
                 f"the reference ADaM has no {d}.{n}, which the house standard writes by "
                 f"{', '.join(w) or 'its parent spec'}" for d, n, w in missing)
-        elif cell.reason == "no_row":
+        elif here.reason == "no_row":
             item.state = "no_row"
             item.note = "the catalog has no such row (tfl.ae.summary.rows)"
         else:
             item.note = "no other value of one table decision gives the key's text"
         cells.append(item)
     axes: dict[str, list[tuple[Key, dict]]] = {}
-    output = score.outputs[0]
+    output = lifted.outputs[0]
     for axis, equal in (("rows", output.rows_equal), ("columns", output.columns_equal)):
         if output.produced and not equal:
             axes[axis] = [(key_of, value) for key_of, value, trial in trials
                           if trial.produced and getattr(trial.outputs[0], f"{axis}_equal")]
     no_row = [analysis for analysis, code in ROWS.items() if code is None]
     return Pilot(score, key, base.grids.get(OUR_OUTPUT), missing, not_built, no_row, cells, axes,
-                 vector, reads)
+                 vector, reads, arm, first, lifted if first else None,
+                 work.grids.get(OUR_OUTPUT) if first else None)
 
 
 def _fits(by: list[tuple[Key, dict]]) -> str:
-    import json
-
     return "; ".join(f"{key[0]} = {json.dumps(value, sort_keys=True)}" for key, value in by)
 
 
 def lines(pilot: Pilot) -> list[str]:
     """The report on the pilot as text: the table, the scores, every difference."""
-    said = ["pilot CDISCPILOT01, arm S (the house standard alone), stage T (table decisions "
+    arm = f"arm {pilot.arm}"
+    what = ("the house standard alone" if pilot.arm == "S" else
+            "a reader's table decisions, the house default where it wrote none")
+    said = [f"pilot CDISCPILOT01, {arm} ({what}), stage T (table decisions "
             "on the reference ADaM); report only",
             "key: the results CDISC's ARS example embeds for its adverse event summary "
             f"({OUTPUT}), as the kit's layout places them"]
+    if pilot.arm != "S":
+        said.append("  the table decisions built: " + "; ".join(
+            f"{r['id']} = {json.dumps(r['value'], sort_keys=True)}" for r in pilot.vector
+            if r["unit"] == UNIT))
     theirs = build.table_of(pilot.key)
     ours = build.table_of(pilot.ours) if pilot.ours else None
+    first = pilot.first
+    traced = build.table_of(pilot.traced_grid) if pilot.traced_grid else ours
+    lifted = f"with {_fits([first])}" if first else ""
+    if first:
+        said.append(f"  {arm} built no output: its decisions leave it out. The trace sets "
+                    f"{_fits([first])} first and explains each cell against that build "
+                    f"(the column '{lifted}')")
     explained = {(item.cell.row, item.cell.column): item for item in pilot.cells}
-    said.append("  row | column | key | arm S | state")
+    said.append(f"  row | column | key | {arm} | " + (f"{lifted} | " if first else "")
+                + "state")
     for row in theirs.rows:
         for column in theirs.columns:
             want = theirs.cells[(row, column)]["text"]
             got = ours.cells.get((row, column)) if ours else None
+            seen = traced.cells.get((row, column)) if traced else None
             item = explained.get((row, column))
+            verb = "differs" if got is not None else "missing"
             if item is None:
                 state = "equal"
             elif item.state == "decision":
-                state = "differs; explained by " + _fits(item.by)
+                state = (f"{verb}; explained by "
+                         + (f"{_fits([item.first])} together with " if item.first else "")
+                         + _fits(item.by))
             elif item.state == "unexplained":
                 state = "UNEXPLAINED: " + item.note
             else:
-                state = item.note
+                state = (f"{verb}; {lifted}, " if item.first else "") + item.note
             said.append(f"  {row[1] or '(column header)'} | {column[0]} | {want} | "
-                        f"{'-' if got is None else got['text']} | {state}")
+                        f"{'-' if got is None else got['text']} | "
+                        + (f"{'-' if seen is None else seen['text']} | " if first else "")
+                        + state)
     said += ["  " + line for line in pilot.score.lines()]
     for axis, by in pilot.axes.items():
-        output = pilot.score.outputs[0]
+        output = (pilot.traced or pilot.score).outputs[0]
         extra = output.extra_rows if axis == "rows" else output.extra_columns
-        more = (" (arm S has more: " + ", ".join(str(key[-2]) for key in extra) + ")"
+        who = f"{arm} {lifted}" if first else arm
+        more = (f" ({who} has more: " + ", ".join(str(key[-2]) for key in extra) + ")"
                 if extra else "")
-        lacks = len([row for row in theirs.rows if ours and row not in ours.rows])
-        less = f" (the key has {lacks} rows that arm S lacks)" if axis == "rows" and lacks else ""
+        lacks = len([row for row in theirs.rows if traced and row not in traced.rows])
+        less = f" (the key has {lacks} rows that {who} lacks)" if axis == "rows" and lacks else ""
         said.append(f"  the {axis} are not the key's{more}{less}: "
                     + ("explained by " + _fits(by) if by else
                        "no other value of one table decision makes them equal"))
     count = {state: sum(1 for item in pilot.cells if item.state == state) for state in STATES}
-    shared = pilot.score.denominators()["shared_rows"]
-    said.append(f"  cells of the key that differ or are missing: {len(pilot.cells)}. Of the "
-                f"{shared} cells of the rows both tables have, {count['decision']} differ and "
-                f"are explained by another value of one table decision, and "
-                f"{count['unexplained']} are unexplained. {count['open'] + count['no_row']} "
-                f"are in rows that arm S does not build: {count['open']} for a variable the "
-                f"reference ADaM lacks, {count['no_row']} in rows the catalog does not have; "
-                "these are classed by the crosswalk of rows, not by a build")
+    if first:
+        alone = sum(1 for item in pilot.cells if item.by == [first] and item.first is None)
+        said.append(f"  cells of the key that differ or are missing: {len(pilot.cells)}, every "
+                    f"one missing: {arm} built no output. {lifted.capitalize()}, {alone} have "
+                    f"the key's text, {count['decision'] - alone} differ and are explained by "
+                    f"one more table decision, and {count['unexplained']} are unexplained. "
+                    f"{count['open'] + count['no_row']} are in rows that this build does not "
+                    f"have: {count['open']} for a variable the reference ADaM lacks, "
+                    f"{count['no_row']} in rows the catalog does not have; these are classed "
+                    "by the crosswalk of rows, not by a build")
+    else:
+        shared = pilot.score.denominators()["shared_rows"]
+        said.append(f"  cells of the key that differ or are missing: {len(pilot.cells)}. Of "
+                    f"the {shared} cells of the rows both tables have, {count['decision']} "
+                    "differ and are explained by another value of one table decision, and "
+                    f"{count['unexplained']} are unexplained. "
+                    f"{count['open'] + count['no_row']} are in rows that {arm} does not "
+                    f"build: {count['open']} for a variable the reference ADaM lacks, "
+                    f"{count['no_row']} in rows the catalog does not have; these are classed "
+                    "by the crosswalk of rows, not by a build")
     said.append(f"  variables the house template reads: {len(pilot.reads)}; in the reference "
                 "ADaM under the same name: "
                 + ", ".join(f"{d}.{n}" for d, n, there in pilot.reads if there))
