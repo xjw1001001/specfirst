@@ -5,6 +5,25 @@ first for the slice "adverse event summary first" (ADR-005).
 
 ## Passed
 
+- adr-017 (2026-11-20): carries out ADR-017, which the owner approved for
+  the slice only (2026-11-19). A kept dry run of arm R is bound by bytes to
+  everything the reader of the slice reads and the check scores or scans
+  against, and by version to the method registry (the entries the slice
+  reaches on kit 4 of the gate seed: `count.subjects`, `percent.subjects`,
+  `display.pattern`, `display.round.half_away_from_zero`) and to kit.yaml
+  without `pins`; its outputs are written again from its transcript and
+  tied to the record (K4 of the real-5a review). New: `harness/binding.py`,
+  binding.json beside every kept run (`runs.keep`), `runs.held`,
+  `specfirst run bind` (decision 6, no model call), the plants of decision
+  7 in the gate read-2a. R-task-04119188ff71 has its binding.json. A new R
+  or pyarrow still makes the run stale (ADR-017, "Found while carrying it
+  out"; with the owner, "Open"). Report: docs/reports/adr-017.md. Review:
+  docs/reports/adr-017.review.md (signed in pass 2; pass 1 found F1, the
+  engines, and F2, a check without a plant of its own, both fixed). The
+  gates read-2a (19 of 19) and read-1a (14 of 14) passed on clean clones
+  of `13b946e`. Model use: none. real-5b may merge once this is on `main`
+  (the owner's answer).
+
 - slice-ae-summary (2026-11-19): the report of ADR-005, decision 1, last
   paragraph: the first scores of the slice on four dev kits (kits 5, 6, 7
   and 15 of a dev seed whose file lies outside every checkout), arms S, R
