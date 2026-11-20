@@ -1,24 +1,24 @@
 clean clone gate real-5b
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     10c6bbc
-clone:      /tmp/specfirst-clean-T8gRUt/specfirst
-environment and cache: /tmp/specfirst-clean-T8gRUt/env
+commit:     2d7164c
+clone:      /tmp/specfirst-clean-JQqoZU/specfirst
+environment and cache: /tmp/specfirst-clean-JQqoZU/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-T8gRUt/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-JQqoZU/specfirst
 
-$ git -C /tmp/specfirst-clean-T8gRUt/specfirst checkout --quiet --detach 10c6bbc
+$ git -C /tmp/specfirst-clean-JQqoZU/specfirst checkout --quiet --detach 2d7164c
 
-$ git -C /tmp/specfirst-clean-T8gRUt/specfirst log -1 --format=%H %s
-10c6bbcfd1762d1766f6d422cc6c76d08f945a39 real-5b: the tests that name the registry, the kit and the gates; D9, D11, D12 fixed
+$ git -C /tmp/specfirst-clean-JQqoZU/specfirst log -1 --format=%H %s
+2d7164cdbc3dc3a18c3f1230e0fcf5be316d091d Merge main (7806105) into track/real: ADR-017 carried out
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-T8gRUt/env/venv-specfirst-813784063
-R library: /tmp/specfirst-clean-T8gRUt/env/r-lib
+python environment: /tmp/specfirst-clean-JQqoZU/env/venv-specfirst-1042329926
+R library: /tmp/specfirst-clean-JQqoZU/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-T8gRUt/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-T8gRUt/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-JQqoZU/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-JQqoZU/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-T8gRUt/env/venv-specfirst-813784063/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-JQqoZU/env/venv-specfirst-1042329926/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-T8gRUt/env/cache
+cache: /tmp/specfirst-clean-JQqoZU/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate real-5b --clean
-gate real-5b at commit 10c6bbcfd1762d1766f6d422cc6c76d08f945a39 (clean)
+gate real-5b at commit 2d7164cdbc3dc3a18c3f1230e0fcf5be316d091d (clean)
 
 == [1/19] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-T8gRUt/env/venv-specfirst-813784063/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-JQqoZU/env/venv-specfirst-1042329926/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.5 s)
+-- PASS environment (0.3 s)
 
 == [2/19] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-T8gRUt/env/cache
+cache: /tmp/specfirst-clean-JQqoZU/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,7 +84,7 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (1.4 s)
+-- PASS pins (0.7 s)
 
 == [3/19] lint: ruff check .
 All checks passed!
@@ -92,13 +92,14 @@ All checks passed!
 
 == [4/19] registry: specfirst methods
 count.subjects                     descriptive  4 statements  python+r operations: n; options: -
-display.pattern                    display      9 statements  python   operations: text; options: rounding=half_away_from_zero, zero_sign=dropped
+display.pattern.signed             display      2 statements  python   operations: text; options: rounding=half_away_from_zero
+display.pattern                    display      8 statements  python   operations: text; options: rounding=half_away_from_zero
 display.round.half_away_from_zero  display      5 statements  python   operations: text; options: -
 display.round.half_even            display      6 statements  python   operations: text; options: -
 model.ancova.dose_response         model        6 statements  r        operations: p_value, estimate; options: covariates=[], df=residual, dose=grouping_value, factors=[], model=continuous_dose
 model.ancova.lsmeans               model        8 statements  r        operations: lsmean, se, lower_cl, upper_cl; options: confidence_level=95, covariates=[], df=residual, factors=[], weights=equal
 model.ancova.pairwise              model        7 statements  r        operations: estimate, se, lower_cl, upper_cl, p_value; options: confidence_level=95, covariates=[], df=residual, factors=[], reference=None
-model.mmrm.lsmeans                 model       10 statements  r        operations: lsmean, se, lower_cl, upper_cl; options: at=last, by_visit=[], confidence_level=95, covariance=unstructured, covariates=[], df=kenward_roger_linear, factors=[], treatment_by_visit=yes, visit=[]
+model.mmrm.lsmeans                 model       11 statements  r        operations: lsmean, se, lower_cl, upper_cl; options: at=last, by_visit=[], confidence_level=95, covariance=unstructured, covariates=[], df=kenward_roger_linear, factors=[], treatment_by_visit=yes, visit=[]
 model.mmrm.pairwise                model        7 statements  r        operations: estimate, se, lower_cl, upper_cl, p_value; options: at=last, by_visit=[], confidence_level=95, covariance=unstructured, covariates=[], df=kenward_roger_linear, factors=[], reference=None, treatment_by_visit=yes, visit=[]
 percent.subjects                   descriptive  6 statements  python+r operations: pct; options: -
 summary.continuous                 descriptive 10 statements  python+r operations: n, mean, sd, median, q1, q3, min, max; options: quantile_definition=sas5, sd_denominator=n_minus_1
@@ -106,40 +107,40 @@ test.anova.oneway                  test         5 statements  python+r operation
 test.chisq                         test         6 statements  python+r operations: p_value; options: correction=none
 test.cmh                           test         7 statements  python+r operations: p_value; options: scores=table, statistic=general_association, strata=[]
 test.fisher.exact                  test         8 statements  python+r operations: p_value; options: alternative=two_sided
-methods: 15 entries
+methods: 16 entries
 -- PASS registry (0.1 s)
 
 == [5/19] unit tests: pytest -m "not evidence" -q
-........................................................................ [  6%]
-........................................................................ [ 12%]
-........................................................................ [ 18%]
-........................................................................ [ 24%]
-........................................................................ [ 30%]
-........................................................................ [ 36%]
-........................................................................ [ 42%]
-........................................................................ [ 48%]
-........................................................................ [ 54%]
-........................................................................ [ 60%]
-........................................................................ [ 66%]
-........................................................................ [ 72%]
-........................................................................ [ 78%]
-........................................................................ [ 84%]
-........................................................................ [ 90%]
-........................................................................ [ 96%]
-............................................                             [100%]
-1196 passed, 30 deselected in 486.69s (0:08:06)
--- PASS unit tests (487.4 s)
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 17%]
+........................................................................ [ 23%]
+........................................................................ [ 29%]
+........................................................................ [ 35%]
+........................................................................ [ 41%]
+........................................................................ [ 47%]
+........................................................................ [ 53%]
+........................................................................ [ 59%]
+........................................................................ [ 65%]
+........................................................................ [ 71%]
+........................................................................ [ 77%]
+........................................................................ [ 83%]
+........................................................................ [ 89%]
+........................................................................ [ 95%]
+........................................................                 [100%]
+1208 passed, 30 deselected in 346.89s (0:05:46)
+-- PASS unit tests (347.4 s)
 
 == [6/19] method vectors: SPECFIRST_STRICT=1 pytest tests/methods -s -q
 
 --- python-vectors
-Python implementations: 136 cases of 10 methods, 0 differences
+Python implementations: 139 cases of 11 methods, 0 differences
 .
 --- r-vectors
-R implementations: 131 cases of 12 methods, 0 differences
+R implementations: 134 cases of 12 methods, 0 differences
 .
 --- exact-arithmetic
-expected values computed again in exact arithmetic: 131 cases, 0 differences; written by hand: 60 cases (the display rules)
+expected values computed again in exact arithmetic: 134 cases, 0 differences; written by hand: 63 cases (the display rules)
 .
 --- fisher-r
 2 x 3 2 x 3                                                   Python 0.13419913419913376    R 0.13419913419913415    fisher.test 0.13419913419913387
@@ -158,24 +159,24 @@ tables larger than 2 x 2: 10; with a table just above the observed probability, 
 R, with a limit of 50 tables: the R vectors run exited 1: Error: test.fisher.exact: more than 50 tables to sum; the method does not approximate
 .
 --- model-vectors
-model-based methods in R: 55 cases of 5 methods, 0 differences
+model-based methods in R: 58 cases of 5 methods, 0 differences
 planted: model.ancova.dose_response always with dose = group_rank: 7 cases differ
 planted: model.ancova.lsmeans always with weights = equal: 1 cases differ
 planted: model.ancova.pairwise always with df = residual: 1 cases differ
 planted: model.mmrm.lsmeans always with at = last: 2 cases differ
 planted: model.mmrm.pairwise always with df = kenward_roger_linear: 1 cases differ
 ..
-7 passed in 14.92s
--- PASS method vectors (15.1 s)
+7 passed in 11.03s
+-- PASS method vectors (11.2 s)
 
 == [7/19] kit: specfirst kit assemble cdiscpilot01
-study data in git (E20): 585 maintained files checked, 0 problems
-kit cdiscpilot01: 67 files match their pinned SHA-256 (26 inputs, 41 gold) in /tmp/specfirst-clean-T8gRUt/specfirst/build/kits/cdiscpilot01
+study data in git (E20): 597 maintained files checked, 0 problems
+kit cdiscpilot01: 67 files match their pinned SHA-256 (26 inputs, 41 gold) in /tmp/specfirst-clean-JQqoZU/specfirst/build/kits/cdiscpilot01
 -- PASS kit (0.1 s)
 
 == [8/19] P1 determinism: specfirst check cdiscpilot01 --twice (its first part)
-build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 1576 nodes, 5251 edges, 56 files in /tmp/specfirst-clean-T8gRUt/specfirst/build/p1/cdiscpilot01/first)
-build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 1576 nodes, 5251 edges, 56 files in /tmp/specfirst-clean-T8gRUt/specfirst/build/p1/cdiscpilot01/second)
+build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 1576 nodes, 5251 edges, 56 files in /tmp/specfirst-clean-JQqoZU/specfirst/build/p1/cdiscpilot01/first)
+build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 1576 nodes, 5251 edges, 56 files in /tmp/specfirst-clean-JQqoZU/specfirst/build/p1/cdiscpilot01/second)
 same      76c528ce523c6a13 76c528ce523c6a13 gold/ard/common-safety-displays.jsonl
 same      de20ea90cae0946d de20ea90cae0946d gold/ard/common-safety-displays.r.jsonl
 same      141d770b91a8e526 141d770b91a8e526 gold/ard/efficacy-adas.jsonl
@@ -233,7 +234,7 @@ same      5b4ccf4019ca253e 5b4ccf4019ca253e gold/resolved/adsl.json
 same      2faaa1493e74c8c1 2faaa1493e74c8c1 gold/resolved/adtte.json
 same      b3c5b4f08f26ae5a b3c5b4f08f26ae5a gold/resolved/advs.json
 P1 determinism: 56 of 56 files have the same SHA-256 in both builds
--- PASS P1 determinism (56.8 s)
+-- PASS P1 determinism (39.1 s)
 
 == [9/19] P2 reproduction: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its second part)
 ADSL      rows=   254 cols= 48 cells=   12192 mismatched=     0 storage_type_diffs=28
@@ -250,7 +251,7 @@ TOTAL cells=9119605 mismatched=0
 numbers equal within the tolerance but not exactly: 1869 cells, largest difference 4.5e-13
 storage type only, same values (reference -> built): large_string -> string in 221 columns
 P2 reproduction: 10 of 10 datasets equal their reference (numeric tolerance 1e-10)
--- PASS P2 reproduction (0.6 s)
+-- PASS P2 reproduction (0.3 s)
 
 == [10/19] trace: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its third part)
 dataset   columns to SDTM by rows literal  gaps
@@ -294,7 +295,7 @@ grid Out14-3-11: 24 cells, 15 print a number; 15 of the 15 cells with results ha
 grid Out14-3-13: 100 cells, 78 print a number; 78 of the 78 cells with results have a complete path to SDTM columns
   through 141 ARD rows, 10 analyses, 22 ADaM columns, to 17 SDTM columns
 trace: complete
--- PASS trace (1.9 s)
+-- PASS trace (1.2 s)
 
 == [11/19] results: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its fourth part)
 ARS schema (gold/spec/ars/ars_ldm.schema.json): gold/spec/ars/common-safety-displays.json fits; gold/ars/common-safety-displays.json fits
@@ -345,7 +346,7 @@ results efficacy-cibic: 141 results of ours that the reference does not list: An
 results efficacy-cibic: gold/ars/efficacy-cibic.json carries the 141 results of the Python ARD as raw values
 results efficacy-cibic, engines: 141 results in both, 0 disagree; largest relative difference 9.7e-16 (allowed 1e-09)
 results: pass
--- PASS results (4.7 s)
+-- PASS results (3.2 s)
 
 == [12/19] efficacy: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its last part), CSR Tables 14-3.11 and 14-3.13
 grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
@@ -407,12 +408,12 @@ grid Out14-3-13 against CSR Table 14-3.13: 100 cells, 78 of them printed in the 
 grid Out14-3-13: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
 grids: 6 outputs, pass
 efficacy: 2 tables, 124 cells; 88 equal the CSR; classified differences: 36 rule_choice
--- PASS efficacy (3.7 s)
+-- PASS efficacy (2.4 s)
 
 == [13/19] E22 hint: the LS means of 14-3.11 against the CSR, at Week 24 and averaged
 E22: Table 14-3.11 prints 12 numbers of the model; at Week 24 0 of them equal the CSR; averaged over weeks 8, 16 and 24, 12 cells give the CSR's text (other_build proofs that hold: 12 of 12 differing cells)
 E22: the LS means of Table 14-3.11 are averages over the weeks: the hint holds
--- PASS E22 hint (3.8 s)
+-- PASS E22 hint (2.5 s)
 
 == [14/19] CMH: the test.cmh rows of build/p1/cdiscpilot01/first, Python against R
 CMH: ard:An_CIBIC_W08_Cmh/Mth_Cmh_1_pval/*: Python 0.2727284040371243, R 0.27272840403712434
@@ -425,7 +426,7 @@ CMH: 3 results in both engines; largest relative difference 9.7e-16 (allowed 1e-
 decisions: 18 records, 18 IDs; 99 options of analyses held against the decisions that set them; 0 problems
 decisions: by class: 12 document_rule, 2 gold_quirk, 3 no class (conflict), 1 study_input; by status: 3 asked, 3 conflict, 12 stated
 decisions: pass
--- PASS decisions (0.7 s)
+-- PASS decisions (0.5 s)
 
 == [16/19] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -s -q
 
@@ -475,16 +476,16 @@ ADaM datasets that changed: none
 --- A5-adapted
 recorded as adapted: src/specfirst/machine/lineage.py shares 73 lines with cached sources
 recorded as adapted: src/specfirst/machine/runner.py shares 3 lines with cached sources
-compared 158 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 2 (allowed: 2)
+compared 159 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 2 (allowed: 2)
 compared 6 R files of ours with 827 of 13 cached sources; the most lines a file that is not recorded shares: 2 (allowed: 2)
 .
 --- A6-engine
-Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.52 s (the spike: about 3 minutes; the target: under 10 seconds)
+Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.35 s (the spike: about 3 minutes; the target: under 10 seconds)
 embedded results: 3735; reproduced as printed: 3711
 rows per analysis: 31 analyses, 4238 rows; expected 31 analyses, 4238 rows
 .
-6 passed in 74.92s (0:01:14)
--- PASS pilot tests (75.3 s)
+6 passed in 49.13s
+-- PASS pilot tests (49.3 s)
 
 == [17/19] planted defects: SPECFIRST_STRICT=1 pytest tests/defects -s -q
 
@@ -603,6 +604,8 @@ planted, the reads edges to ADQSADAS.BASE left out (15 edges): 1 problems, for e
 --- D11-efficacy-5b
 unchanged, efficacy-adas: 0 problems
 unchanged, efficacy-cibic: 0 problems
+planted, gold's analyses alone at 90% confidence: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the optio
+planted, gold's analyses alone on the records LOCF adds: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.60)', CSR '1.6 (0.49)': the proof does not hold: An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the optio
 planted, the mixed model with the records LOCF adds: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.60)', CSR '1.6 (0.49)': the proof does not hold: with the other build the cell is '1.5 (0.48)'
 planted, Satterthwaite in place of Kenward-Roger: 2 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c3: ours '1.5 (0.83)', CSR '1.1 (0.56)': the proof does not hold: with the other build the cell is '1.1 (0.55)'
 planted, a Toeplitz covariance: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.60)', CSR '1.6 (0.49)': the proof does not hold: with the other build the cell is '1.6 (0.47)'
@@ -622,6 +625,15 @@ planted, an other_build proof that names the analysis at Week 24 itself: 1 probl
 planted, the proof of '-0.0' without the sign kept: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r4/c2: ours '-0.6 (1.02)', CSR '-0.0 (0.70)': the proof does not hold: with the other build the cell is '0.0 (0.70)'
 planted, a count of 0 proved by another pattern, not by the template: 1 problems, for example: Out14-3-13: cell:Out14-3-13/r3/c1: ours '0 (0%)', CSR '0': the proof does not hold: with the other patterns the cell is '0 (0%)'; the other patterns change nothing
 planted, an exception of 14-3.13 left out: 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727': a difference with no class
+planted, a proof whose template is the CSR's text: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other template must show parts of the cell and add no text the cell's
+planted, a proof whose template adds text ('{lsm} (0.49)'): 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other template must show parts of the cell and add no text the cell's
+planted, an entry that names an unrelated decision (custom:eff-cmh): 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: custom:eff-cmh binds no analysis of the cell nor its method; An_ADAS_MMRM
+planted, a proof whose pattern carries the CSR's text ('X.2727', other_pattern): 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727': the proof does not hold: the other pattern 'X.2727' of p changes more than the mask of 'X.XXX'
+planted, a proof whose pattern carries the CSR's text ('X.2727', other_build): 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727': the proof does not hold: the other pattern 'X.2727' of p changes more than the mask of 'X.XXX'
+planted, gold's week 8 p-value is week 16's, proved by a pattern that carries the CSR's text: 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.400', CSR '0.2727': the proof does not hold: the other pattern 'X.2727' of p changes more than the mask of 'X.XXX'
+planted, a proof of 14-3.11 whose pattern carries the CSR's text ('X.X (0.49)'): 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other pattern 'X.X (0.49)' of lsm changes more than the mask of 'X.X'
+planted, gold's week 8 p-value is week 16's, proved by a template whose format specs spell the CSR's text: 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.400', CSR '0.2727': the proof does not hold: the other template is no cell template: cell template '{p:0<1.0}{p:.<1.0}{p:2<1.0}
+planted, a proof of 14-3.11 whose template's format specs spell the CSR's text: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other template is no cell template: cell template '{lsm:1<1.0}{lsm:.<
 .
 --- D12-cmh-engines
 unchanged: engines: 141 results in both, 0 disagree; largest relative difference 9.7e-16 (allowed 1e-09)
@@ -630,11 +642,11 @@ R engine alone, no strata: 3 CMH results disagree
 R engine alone, rank scores: 3 CMH results disagree
 R engine alone, week 24 with the observed records only, without LOCF: 1 CMH results disagree
 ....................................................
-63 passed in 140.96s (0:02:20)
--- PASS planted defects (141.4 s)
+63 passed in 97.23s (0:01:37)
+-- PASS planted defects (97.5 s)
 
 == [18/19] cache untouched: specfirst fetch --verify
-cache: /tmp/specfirst-clean-T8gRUt/env/cache
+cache: /tmp/specfirst-clean-JQqoZU/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -655,31 +667,31 @@ fetch: every pin verified
 -- PASS cache untouched (0.1 s)
 
 == [19/19] ASCII: python -m specfirst.asciicheck
-ASCII check: 585 files checked, 0 with non-ASCII bytes
+ASCII check: 597 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.5 s
-PASS  pins                 1.4 s
+PASS  environment          0.3 s
+PASS  pins                 0.7 s
 PASS  lint                 0.1 s
 PASS  registry             0.1 s
-PASS  unit tests         487.4 s
-PASS  method vectors      15.1 s
+PASS  unit tests         347.4 s
+PASS  method vectors      11.2 s
 PASS  kit                  0.1 s
-PASS  P1 determinism      56.8 s
-PASS  P2 reproduction      0.6 s
-PASS  trace                1.9 s
-PASS  results              4.7 s
-PASS  efficacy             3.7 s
-PASS  E22 hint             3.8 s
+PASS  P1 determinism      39.1 s
+PASS  P2 reproduction      0.3 s
+PASS  trace                1.2 s
+PASS  results              3.2 s
+PASS  efficacy             2.4 s
+PASS  E22 hint             2.5 s
 PASS  CMH                  0.0 s
-PASS  decisions            0.7 s
-PASS  pilot tests         75.3 s
-PASS  planted defects    141.4 s
+PASS  decisions            0.5 s
+PASS  pilot tests         49.3 s
+PASS  planted defects     97.5 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE real-5b: PASS
 
-clean clone gate real-5b: PASS (clone: /tmp/specfirst-clean-T8gRUt/specfirst)
+clean clone gate real-5b: PASS (clone: /tmp/specfirst-clean-JQqoZU/specfirst)
 The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
 minute after the last command ends. Copy what must be kept in the same command that
 runs this script (docs/lessons.md, lesson 39). The log is in build/gates/real-5b/ here.

@@ -49,8 +49,44 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   NOT SIGNED, its two blocking findings fixed; passes 2 and 3 SIGNED).
   Decisions: docs/decisions/ADR-015.md and the amendment "of real-5a" at
   the end of ADR-003.md.
+- real-5b The mixed model for repeated measures, CMH and Tables 14-3.11 and
+  14-3.13 against the CSR (slice `efficacy-first`, ADR-012). Gate:
+  `scripts/clean_clone_gate.sh real-5b` exited 0 on a clean clone of commit
+  `2d7164c` (the work with `main` `7806105`, ADR-017 carried out, merged
+  in), 19 of 19 checks (2026-11-20). On clean clones of the same commit
+  read-2a (19 of 19, "arm R, kept dry run" among them), real-5a, real-3a,
+  real-2, gen-2a, gen-3a, read-1a and std-1 passed too. The kept dry run of
+  arm R was not made again: under ADR-017 it is bound by the four registry
+  entries its slice reaches, which real-5b leaves as they were. Evidence:
+  docs/reports/real-5b.md, real-5b.clean-clone.gate.log and
+  real-5b.read-2a.gate.log. Review:
+  docs/reports/real-5b.review.md (passes 1 to 3 NOT SIGNED, their blocking
+  findings F1, G1 and H1 fixed; pass 4 SIGNED). Decisions: the amendments
+  "of real-5b" at the end of ADR-015.md and ADR-003.md.
 
 ## Open
+
+For the owner, from real-5b (ADR-015, "For the owner" of the amendment of
+real-5b, items 1 to 7; docs/reports/real-5b.md, "For the owner"; none
+blocks):
+
+- N2: the 36 differences of Tables 14-3.11 and 14-3.13, all `rule_choice`:
+  the 12 numbers of the model (gold at Week 24 by SAP 10.1.1; the CSR
+  averages over weeks 8, 16 and 24, the hint of E22), 21 counts of 0 and 3
+  p-values of 14-3.13 (display). Four entries of 14-3.11 name two
+  decisions (the visit and the CSR's display: 1 decimal for the limits, the
+  sign of "-0.0", a registry entry of its own, display.pattern.signed).
+- Where the documents are silent or disagree: the records of the mixed
+  model (`conflict`), its degrees of freedom (`asked`), the CMH statistic
+  and scores (`asked`: "Pearson Chi-Square" read as no CMH statistic keeps
+  the CSR's row mean scores; read as general association, gold would
+  follow it, with 3 more differences).
+- The Toeplitz fallback of SAP 10.1.1 is not implemented (not met on the
+  pilot). The gate real-5a counts its own three tables.
+- G2: which visit is the last one is held by no CSR cell (AVISITN puts Week
+  24 last). K1: an other analysis of a proof may differ in a column-valued
+  option at any value. Each could be closed by a small check.
+- The proposals for `catalog@2` in docs/reports/real-5b.md.
 
 For the owner, from real-5a (ADR-015 "For the owner" and
 docs/reports/real-5a.md, sections "For the owner" and "Where the documents
@@ -69,25 +105,20 @@ disagree", say each in full):
   `asked`: no source; both readings give the same cells here.
 - The proposals for `catalog@2` (an efficacy table family, an imputation
   rule in `mod-bds-visits`, the pooling of sites), for the std track.
-- A kept dry run of arm R is tied to the bytes of the registry, the
-  catalog, the generator and more (docs/state/read.md, Open). real-5b
-  changes the registry again: without an ADR that ties a kept run to
-  versions (ADR-010, decision 9), real-5b needs another model run of arm R
-  (about USD 0.6, the owner's spend).
 - The kept transcript holds the Claude Code CLI's usage event (the
   subscription's usage, no credential); the old run on `main` had it too.
-  The reviewer finds it acceptable (review pass 3, K3).
+  The reviewer finds it acceptable (review pass 3, K3); the owner keeps it
+  (2026-11-19). The kept run's tie to the registry's bytes is settled by
+  ADR-017 (read track): only the entries its slice reaches bind it.
 
 Left open by the review of real-5a (none blocks; the report's section
 "What the checks do not cover" has each):
 
-- F3: an exception's proof asks that its decision exists, not that it is
-  about the cell. F4 and G3: the check `decisions` holds 4 of the 8
-  records; nothing holds `custom:eff-display-decimals`.
-- F5: three edge cases of models.R that no vector covers (one group of
-  records stops with an error; group IDs with "-" lose the contrasts; a
-  factor nested in the groups gives an LS mean where statement 7 says
-  missing). For real-5b, with a vector each.
+- F3: closed in real-5b (with the records at hand, each decision an entry
+  names must bind an analysis of the cell or its method). F4 and G3: the
+  check `decisions` holds the records that set an option; nothing holds
+  `custom:eff-display-decimals` (decisions.py lists the unheld records).
+- F5: closed in real-5b, with a vector each.
 - F7: the CSR's population line is parsed and not compared.
 
 For the owner, from real-3a (ADR-003 and docs/reports/real-3a.md say each
@@ -258,10 +289,9 @@ Other open points:
 
 ## Next
 
-- real-5b (ADR-012): the mixed model for repeated measures (R only) and
-  CMH (Python and R), Tables 14-3.11 and 14-3.13, with the cell rule of
-  real-5a. Before it changes the registry, mind read-2a's kept dry run
-  ("Open", real-5a). Start with the F5 edge cases of models.R.
+- The slice `efficacy-first` (ADR-012) is done with real-5b. What comes
+  next on this track is the owner's call (PLAN.md, real-5: the other CSR
+  tables).
 - The findings F1 to F9 of the review of real-3a ("Open" above), as one
   commit with a gate run.
 - The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it:
@@ -297,6 +327,30 @@ for 3,580 of them):
   read from the ARD; the rows themselves are still layout work.
 - Display rules that are not registry entries yet: p-value formats and the
   truncation of long terms (E25).
+
+## Handed over by real-5b
+
+- The mixed model for repeated measures is R only (`model.mmrm.lsmeans`,
+  `.pairwise`; mmrm 0.3.19 with nlminb, emmeans); its vectors come from a
+  second optimization, tests/methods/oracle_mmrm.py, held to 1e-6. CMH is
+  Python and R (`test.cmh`, rule I12d; `strata` are columns, the first test
+  with a columns option).
+- A second proof kind, `other_build` (csr.py): another build of the cell,
+  held to "that alternative": an other analysis differs from the cell's
+  only in its naming and in the options its decisions set
+  (`decisions.PARAMETERS`); an other pattern changes only the mask; an
+  other template is a cell template of the layout (parts as {name}) and
+  adds no text; every decision an entry names binds an analysis of the
+  cell or its method; `decision` may be a list. `display.pattern.signed` is
+  a display rule of its own: display.pattern and the other entries the
+  read track's slice reaches must not change (ADR-017).
+- Layout spec v0 has extra columns, statistics-row `extra` cells and the
+  block kind `groups` (amendment of real-5b to ADR-003). The CSR parser
+  reads a column without a count, the header of the row labels, a line of
+  two labels and "Note:" as a footnote.
+- The gate real-5b holds the hint of E22 (`E22 hint`) and the engines' CMH
+  p-values (`CMH`); the gate real-5a counts its own three tables
+  (`gates.EFFICACY_GRIDS`), real-5b its two (`REAL5B_GRIDS`).
 
 ## Handed over by real-5a
 
