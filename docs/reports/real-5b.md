@@ -389,16 +389,18 @@ the mixed model too, and holds the records against both events.
 
 The unit tests (`tests/unit/test_efficacy_5b.py`, without R and without the
 cache) plant: a line of three labels and a text between two counts (2
-cases), 14 proofs other_build that prove nothing (among them, after the
+cases), 16 proofs other_build that prove nothing (among them, after the
 reviews, an other analysis that differs in more than its decision's
-option, a template that is the CSR's text or adds to it, and a pattern that
-carries text of its own), a rule_choice it does not prove and a build that
+option, a template that is the CSR's text or adds to it, a template whose
+format specs carry text, and a pattern that carries text of its own), a
+rule_choice it does not prove and a build that
 changes nothing, entries whose decisions bind no analysis of the cell or
 set no option (4), extra columns and groups blocks that do not fit their
 event (6) or have another form (6). `tests/unit/test_efficacy.py` plants
 the same pattern of its own in the proof other_pattern (2).
 `tests/unit/test_gates.py` plants three ways the hint of E22 is not shown
-and one way the engines disagree on CMH.
+and three ways the engines disagree on CMH (a value moved, a row left out,
+a missing value).
 
 ## Generated kits and reader task folders
 
@@ -440,8 +442,9 @@ without the owner's word.
   eff-cibic-categories, eff-mmrm-display and eff-cibic-display (review, F5;
   decisions.py lists them). The proofs now ask that every decision an
   entry names binds an analysis of the cell or its method, that an other
-  analysis differ only in the options its decisions set, and that an other
-  pattern change only the mask (review, G1).
+  analysis differ only in the options its decisions set, that an other
+  pattern change only the mask (review, G1), and that an other template be
+  a cell template without format specs (review, H1).
 - Which visit is the last one (`at: last`) is held by no cell: the CSR
   prints no number of that visit. `custom:eff-mmrm-terms` names AVISITN,
   whose order puts Week 24 last; with AVISIT (text) in the record and the

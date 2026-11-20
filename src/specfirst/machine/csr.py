@@ -44,8 +44,10 @@ patterns, another cell template and another display rule gives the CSR's
 text. It is held to "a build with that alternative" (review of real-5b, F1):
 an other analysis is the cell's analysis but for the options its decision
 records set (`decisions.PARAMETERS`; its ARD rows are those of the cell with
-the analysis's ID replaced); another template shows parts of the cell and
-adds no text the cell's template has not; an other pattern, in either proof,
+the analysis's ID replaced); another template is a cell template of the
+layout (each part written {name}, no format spec, no conversion: H1), shows
+parts of the cell and adds no text the cell's template has not; an other
+pattern, in either proof,
 changes only the mask of the part's pattern and keeps the text before and
 after it (G1); and with the kit's records at hand
 every decision an entry names binds an analysis of the cell or its method.
@@ -62,6 +64,7 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from specfirst.machine import layout as layouts
 from specfirst.machine.layout import HEADER_SECTION
 
 FORMAT = 0
@@ -388,13 +391,6 @@ def _stripped(analysis: dict, options: set[str]) -> dict:
     return kept
 
 
-def _template_names(template: str) -> list[str]:
-    """The part names of a cell template (as specfirst.machine.layout.template_names)."""
-    from string import Formatter
-
-    return [name for _, name, _, _ in Formatter().parse(template) if name is not None]
-
-
 def _literal(template: str) -> str:
     """The text of a cell template without its parts."""
     from string import Formatter
@@ -436,11 +432,13 @@ def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
                        f"{', '.join(sorted(DISPLAYS))}")
     if "template" in proof:
         other_template = proof["template"]
+        # A cell template of the layout: parts as {name}, no format spec and no conversion,
+        # which could carry text of their own (review of real-5b, H1).
         try:
-            other_names = set(_template_names(str(other_template)))
+            other_names = set(layouts.template_names(str(other_template)))
             literal = _literal(str(other_template))
-        except ValueError as error:
-            return reasons + [f"the other template cannot be filled: {error}"]
+        except (layouts.LayoutError, ValueError) as error:
+            return reasons + [f"the other template is no cell template: {error}"]
         if not other_names or other_names - names or not _subsequence(literal,
                                                                      _literal(template)):
             reasons.append("the other template must show parts of the cell and add no text "

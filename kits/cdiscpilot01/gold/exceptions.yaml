@@ -302,7 +302,8 @@ results:
 #                              decisions set), other `patterns` (another mask,
 #                              the text around it the part's own; so for
 #                              other_pattern too), another cell `template`
-#                              (parts of the cell, no text of its own) or
+#                              (parts of the cell as {name}, no text of its
+#                              own, no format spec) or
 #                              another display rule of the registry
 #                              (`display`) gives the CSR's text, and ours is
 #                              another (the proof of a rule_choice)

@@ -1405,3 +1405,409 @@ CSR comparison of 14-3.11 can see, to be stated; G3 is the report's
 figures, to be brought to the commit that merges.
 
 Verdict: NOT SIGNED (blocking: G1)
+
+## Pass 3
+
+Reviewer: an independent agent with a fresh context, which wrote neither
+the work nor passes 1 and 2. Date: 2026-11-20. Correctness only, no style.
+
+Under review: commit `1b0ad01` on branch `track/real`, which answers pass 2
+(above, on `753b5ac`; blocking G1). I read the diff `753b5ac..1b0ad01` of
+every file it changes but this one (csr.py, tests/defects/test_defects.py,
+tests/unit/test_efficacy.py, tests/unit/test_efficacy_5b.py,
+gold/exceptions.yaml, ADR-015.md, docs/reports/real-5b.md), passes 1 and 2,
+and the code the proofs call: `layout.template_names`,
+`methods.pattern_mask` and `pattern_text`, `gates._e22_hint`,
+`decisions.PARAMETERS` and the records of efficacy.jsonl.
+`origin/track/real` is `1b0ad01` (`git fetch origin; git log --oneline -3
+origin/track/real`, Windows git, at the start and again after all my runs):
+the commit with the clean-clone gate of `1b0ad01` and its log is not there,
+so question 2 is answered for what `1b0ad01` holds.
+
+### Files I quote, with their SHA-256
+
+At `1b0ad01` (`git show 1b0ad01:<path> | sha256sum`):
+
+```text
+846d7a65cdb1a46b9ee58648d1c19447fcd3cb942f27fcce25ce8188bbd77c46  docs/reports/real-5b.md
+bc8c85ad2a68d0e2150e11103597364c480b4a04f6d922dc1225eb713dec6e18  docs/reports/real-5b.review.md (passes 1 and 2, before this section)
+09ee7d89846da41e0f462c128d9de185d419bc1cbefb3041a5a45a15a6481151  docs/reports/real-5b.clean-clone.gate.log
+2fea7d984eacb708e3573ac776e69d0fe213ab44ca5c7843604dda9d7eb92ce7  docs/decisions/ADR-015.md
+87ccdd4a9e251cb2617c470ee3459cccef9f9740713d8f45d905b7a881ee7b67  kits/cdiscpilot01/gold/exceptions.yaml
+c0acc47e4075e6744f0d767da7a28ce801dac044b735488f0b8f0348e5f4077c  src/specfirst/machine/csr.py
+d7cdf06d93d663e9e6709bd8ce8ef507dcbad8f588ffca883211abcc6c59748d  src/specfirst/machine/layout.py
+ff509ac06d647c6af0bd3e445a0d8bcb6d4d23e7b1cc3f0e2ac193711df97782  src/specfirst/machine/methods.py
+6ba5b56ff67f957866be97d286a0b2fce422d7d034c3b9abd7e1d09b93d3ea5d  tests/defects/test_defects.py
+f74a464efacb53978acb41d5f95626d63c767cadddd1e5364bad87ecdd7cf3fd  tests/unit/test_efficacy.py
+1bb25e9593222378a700c9676946cb70868d2ff9ba1610080f281a557cf54a90  tests/unit/test_efficacy_5b.py
+```
+
+The gate log at `1b0ad01` is the one of `4028b54` and `753b5ac` (09ee7d89...1151
+in pass 1's list), the clean clone of `10c6bbc`. My script `plants3.py`
+(SHA-256 499f699c33613881d49c93561ecd4d92bf06e44f3ea0c7f57a5b96e13bcd62c4)
+is in my session's temporary folder.
+
+### Commands I ran, with their output (rule R8)
+
+Setup: WSL Ubuntu-24.04 as root, the worktree's environment
+(`. /mnt/d/trial_work/specfirst-real/scripts/env.sh`), fresh clones of
+`1b0ad01` in the Linux file system under `/root/scratch-review-real5b-p3/`
+(`gate-real-5b`, `gate-real-5a`, `clone` for the unit tests), made by
+`git clone -q --no-local /mnt/d/trial_work/specfirst/.git` and `git checkout
+-q --detach 1b0ad01`; `SPECFIRST_ROOT` and `PYTHONPATH` set to the clone.
+Both gates and every run of the engines under `flock
+/run/lock/specfirst-heavy.lock taskset -c 0-3`. Nothing written into the
+checkout but this section, nor into the fetch cache (each gate: "cache
+untouched" PASS).
+
+#### E1. The gate real-5b on my clone of 1b0ad01
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -m specfirst gate real-5b   (639 lines)
+gate real-5b at commit 1b0ad01af02d1e2c747affc53f0a8c18fb85dc21 (clean)
+1203 passed, 30 deselected in 336.45s (0:05:36)
+Python implementations: 139 cases of 11 methods, 0 differences
+R implementations: 134 cases of 12 methods, 0 differences
+expected values computed again in exact arithmetic: 134 cases, 0 differences; written by hand: 63 cases (the display rules)
+model-based methods in R: 58 cases of 5 methods, 0 differences
+kit cdiscpilot01: 67 files match their pinned SHA-256 (26 inputs, 41 gold) in .../gate-real-5b/build/kits/cdiscpilot01
+P1 determinism: 56 of 56 files have the same SHA-256 in both builds
+grid Out14-3-11: 24 cells, 15 print a number; 15 of the 15 cells with results have a complete path to SDTM columns
+grid Out14-3-13: 100 cells, 78 print a number; 78 of the 78 cells with results have a complete path to SDTM columns
+results efficacy-adas, engines: 165 results in both, 0 disagree; largest relative difference 2.1e-16 (allowed 1e-09)
+results efficacy-cibic, engines: 141 results in both, 0 disagree; largest relative difference 9.7e-16 (allowed 1e-09)
+grid Out14-3-11 against CSR Table 14-3.11: 24 cells, 15 of them printed in the CSR; 12 equal the CSR, 12 differ, 12 of them with one class and a proof that holds
+grid Out14-3-13 against CSR Table 14-3.13: 100 cells, 78 of them printed in the CSR; 76 equal the CSR, 24 differ, 24 of them with one class and a proof that holds
+efficacy: 2 tables, 124 cells; 88 equal the CSR; classified differences: 36 rule_choice
+E22: Table 14-3.11 prints 12 numbers of the model; at Week 24 0 of them equal the CSR; averaged over weeks 8, 16 and 24, 12 cells give the CSR's text (other_build proofs that hold: 12 of 12 differing cells)
+E22: the LS means of Table 14-3.11 are averages over the weeks: the hint holds
+CMH: 3 results in both engines; largest relative difference 9.7e-16 (allowed 1e-09)
+decisions: 18 records, 18 IDs; 99 options of analyses held against the decisions that set them; 0 problems
+--- D9-efficacy        (7 plants and 1 against the records, then 6 in the CSR and the exceptions: each with problems)
+--- D11-efficacy-5b    (25 plants and 2 against the records, each with problems; the four of G1:)
+planted, a proof whose pattern carries the CSR's text ('X.2727', other_pattern): 1 problems, ... the other pattern 'X.2727' of p changes more than the mask of ...
+planted, a proof whose pattern carries the CSR's text ('X.2727', other_build): 1 problems, ... (the same)
+planted, gold's week 8 p-value is week 16's, proved by a pattern that carries the CSR's text: 1 problems, ... ours '0.400', CSR '0.2727': ... the other pattern 'X.2727' of p changes more than ...
+planted, a proof of 14-3.11 whose pattern carries the CSR's text ('X.X (0.49)'): 1 problems, ... the other pattern 'X.X (0.49)' of lsm changes more th...
+--- D12-cmh-engines    (4 plants, each with CMH results that disagree)
+63 passed in 97.18s (0:01:37)
+ASCII check: 590 files checked, 0 with non-ASCII bytes
+PASS environment, pins, lint, registry, unit tests, method vectors, kit, P1 determinism,
+     P2 reproduction, trace, results, efficacy, E22 hint, CMH, decisions, pilot tests,
+     planted defects, cache untouched, ASCII   (19 of 19)
+GATE real-5b: PASS
+```
+
+#### E2. The check of the cells, on the build of E1 (no engine)
+
+`plants3.py` calls the functions the gate calls (`build.csr_against` for
+each table against its CSR table, the kit's exceptions and its records;
+`decisions.problems`; `efficacy_problems` of tests/defects, D11's own) on
+`gate-real-5b/build/p1/cdiscpilot01/first`. The `B` plants are pass 2's;
+`T` are new: a proof whose other template carries text in the format specs
+of its fields, `filled(part, text)` = one field `{part:c<1.0}` per character
+c of the CSR's text (the part cut to no characters, padded to width 1 with
+c).
+
+```text
+control Out14-3-11: 24 cells, 15 printed, 12 equal, 12 differ, 12 classified ['rule_choice'], 0 problems
+control Out14-3-13: 100 cells, 78 printed, 76 equal, 24 differ, 24 classified ['rule_choice'], 0 problems
+control: classified 36; decisions: 0 problems
+   entries Out14-3-01, 03, 05 other_pattern patterns {"lower": "X.X", "upper": "X.X"}: 3 each
+   entries Out14-3-11 other_build patterns {"lower": "X.X", "upper": "X.X"}: 3; patterns {}: 9
+   entries Out14-3-13 other_build patterns {}: 21; other_pattern patterns {"p": "X.XXXX"}: 3
+B1  14-3.13 r2/c4 (gold right) proved by other_pattern {p: 'X.2727'}: 1 problems -> seen; ... the other pattern 'X.2727' of p changes more than the mask of 'X.XXX'
+B1b the same by other_build {patterns: {p: 'X.2727'}}: 1 problems -> seen; (the same)
+B1c other_pattern {p: '0.X'} (text before the mask): 1 problems -> seen; ... '0.X' of p changes more than the mask of 'X.XXX'
+B1d other_pattern {p: ' X.XXXX'} (a blank before the mask): 1 problems -> seen
+B1e other_pattern {p: 'XXXX.XXXX'} (a wider mask, genuine digits): 0 problems -> passes
+B2  gold's week 8 p-value cell now (ours, CSR): ('0.400', '0.2727')      (layout: the week 8 row shows An_CIBIC_W16_Cmh)
+B2a gold wrong, the entry as it is: 1 problems -> seen; ... with the other patterns the cell is '0.4003'
+B2b gold wrong, the entry's pattern 'X.2727' (other_pattern): 1 problems -> seen; ... changes more than the mask of 'X.XXX'
+B2c gold wrong, the entry's pattern 'X.2727' (other_build): 1 problems -> seen; (the same)
+B6  the 12 entries of 14-3.11 with literal-pattern proofs (made for 7 of 12), gold as it is: 7 problems -> seen; ... the other pattern 'X.6 (0.49)' of se changes more than the mask of 'X.XX'
+T0  csr._template_names / _literal of '{p:2<1.0}{p:7<1.0}': ['p', 'p'] ''
+T0  layout.template_names('{p:2<1.0}'): refused: cell template '{p:2<1.0}': write a part as {name}
+T1  template: {p:0<1.0}{p:.<1.0}{p:2<1.0}{p:7<1.0}{p:2<1.0}{p:7<1.0} -> '0.2727'   (formatted with p = '0.400')
+T1  14-3.13 r2/c4 (gold right) proved by other_build {template: <that template>}: 0 problems -> NOT SEEN
+T2  gold wrong (week 16's p in the week 8 row), proved by that template: 0 problems -> NOT SEEN
+T2' the same through tests/defects' efficacy_problems (D11's function): 0 problems -> NOT SEEN
+T2b the same, template '{p:.0}0.2727' (literal text): 1 problems -> seen; ... the other template must show parts of the cell and add no text the cell's template has not
+T3  14-3.13 r2/c4 proved by template '{p!r}' with pattern X.XXXX: 1 problems -> seen; ... with the other build the cell is "'0.2727'"   (the conversion is accepted; only the quotes fail)
+T4  the 12 entries of 14-3.11 proved by fill templates (gold as it is): 0 problems -> NOT SEEN
+    e.g. cell:Out14-3-11/r2/c1 {lsm:1<1.0}{lsm:.<1.0}{lsm:6<1.0}{lsm:(<1.0}{lsm:0<1.0}...
+T4b the same, each fill template with the entry's averaged analyses: 0 problems -> NOT SEEN
+T5  the 24 entries of 14-3.13 proved by fill templates (gold as it is): 0 problems -> NOT SEEN
+E22 by the gate's rule (my copy of the conditions of gates._e22_hint, on this table and these entries):
+    control: at Week 24 0 of 12 equal the CSR; entries naming averaged analyses 12; classified 12: the hint holds
+    T4:      ... entries naming averaged analyses 0; classified 12: not shown
+    T4b:     ... entries naming averaged analyses 12; classified 12: the hint holds
+```
+
+`S`, every other_build without format specs, searched: templates of 1 to
+3 fields from the cell's parts (repeated or not), the cell template's
+literal text as any subsequence split among the gaps; for each part the
+masks X to X.XXXXX with the part's own text around them; both display
+rules; and, as other analyses, every analysis of the event that the widest
+list of decisions binding the cell allows (`_stripped` on the union of
+their options). A candidate whose text is the CSR's is then held by
+`csr._other_build` itself.
+
+```text
+S control 14-3.11 (gold right): 12 cells with a proof that holds; 31914 candidate proofs tried
+   (each the entry's own proof: the averaged analysis, patterns X.X and X.XX or X.XXX; r4/c2 with display.pattern.signed)
+S control 14-3.13 p-values (gold right): 3 cells with a proof that holds   ({p} with X.XXXX)
+S B2 gold wrong (week 16's p in the week 8 row): 0 cells with a proof that holds; 36 candidate proofs tried
+```
+
+#### E3. Both engines on changed events (under the lock, on the build of E1)
+
+```text
+   LOCF alone (gold's Week 24 analyses on the records LOCF adds): gold's cells of the model: r2/c1 '2.3 (0.60)', r2/c2 '1.8 (0.59)', r2/c3 '1.3 (0.62)', r3/c2 '0.613', r3/c3 '0.237', r4/c2 '-0.4 (0.82)', ...
+C8h-2 gold's Week 24 analyses alone on the LOCF records: efficacy: 12 problems -> seen; ... An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the options at of custom:eff-mmrm-visit
+C8h-2 the same: decisions: 0 problems
+B3  the same wrong gold, literal-pattern proofs (made for 9 of 12): 12 problems -> seen; ... the other pattern 'X.6 (0.49)' of se changes more than the mask of 'X.XX'
+T6a the same wrong gold, the 12 entries proved by fill templates: 0 problems -> NOT SEEN
+    E22 by the gate's rule: ... entries naming averaged analyses 0; classified 12: not shown
+T6b the same, fill templates with the averaged analyses: 12 problems -> seen; ... differs from An_ADAS_MMRM_LSM in more than the options at ...
+S LOCF gold wrong (Week 24 analyses alone): 0 cells with a proof that holds; 320436 candidate proofs tried
+   LOCF in all six analyses (D11's plant "the mixed model with the records LOCF adds"): gold's cells of the model: the same as LOCF alone
+T6c LOCF in all six, the entries as they are: efficacy: 12 problems -> seen; ... with the other build the cell is '1.5 (0.48)'
+T6c the same: decisions: 0 problems
+T6d LOCF in all six, fill templates with the averaged analyses: efficacy: 0 problems -> NOT SEEN
+    E22 by the gate's rule: at Week 24 0 of 12 equal the CSR; entries naming averaged analyses 12; classified 12: the hint holds
+S LOCF in all six (gold wrong): 0 cells with a proof that holds; 640872 candidate proofs tried
+C8h-1 gold's Week 24 analyses alone at 90%: efficacy: 12 problems -> seen; ... in more than the options at of custom:eff-mmrm-visit
+C8h-1 the same: decisions: 0 problems
+S 90% gold wrong (Week 24 analyses alone): 0 cells with a proof that holds; 320436 candidate proofs tried
+T7  all six analyses at 90%, the entries as they are: efficacy: 3 problems -> seen; ... ours '(-2.28;1.09)', CSR '(-1.4;1.3)': ... with the other build the cell is '(-1.2;1.1)'
+T7  the same: decisions: 0 problems
+T7b all six at 90%, fill templates with the averaged analyses: efficacy: 0 problems -> NOT SEEN
+    E22 by the gate's rule: ... entries naming averaged analyses 12; classified 12: the hint holds
+   visits by AVISIT (record custom:eff-mmrm-terms and six analyses): gold's cells of the model: r2/c1 '0.6 (0.48)', r2/c2 '1.6 (0.47)', r2/c3 '0.8 (0.50)', r3/c2 '0.108', ...
+G2  the visits ordered by AVISIT (record and six analyses): efficacy: 0 problems -> NOT SEEN
+G2  the same: decisions: 0 problems -> NOT SEEN
+```
+
+#### E4. The unit tests of the proofs, and the new cases against the old check
+
+```text
+$ python -m pytest -q -p no:cacheprovider tests/unit/test_efficacy.py tests/unit/test_efficacy_5b.py tests/unit/test_gates.py -m "not evidence"   (clone of 1b0ad01)
+88 passed in 1.73s
+$ git show 753b5ac:src/specfirst/machine/csr.py > src/specfirst/machine/csr.py   (the check without _pattern_problems; restored after)
+$ python -m pytest -q -p no:cacheprovider tests/unit/test_efficacy.py tests/unit/test_efficacy_5b.py -m "not evidence"
+FAILED tests/unit/test_efficacy.py::test_a_difference_is_classified_by_its_one_proof
+FAILED tests/unit/test_efficacy_5b.py::test_an_other_build_that_proves_nothing[proof12-the other pattern '-X.X' of d changes more than the mask of 'X.X']
+FAILED tests/unit/test_efficacy_5b.py::test_an_other_build_that_proves_nothing[proof13-the other pattern of d is no pattern]
+3 failed, 66 passed in 1.30s
+```
+
+#### E5. The gate real-5a on my clone of 1b0ad01
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -m specfirst gate real-5a   (687 lines)
+gate real-5a at commit 1b0ad01af02d1e2c747affc53f0a8c18fb85dc21 (clean)
+1203 passed, 30 deselected in 336.80s (0:05:36)
+grid Out14-3-01 against CSR Table 14-3.01: 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+grid Out14-3-03 against CSR Table 14-3.03: (the same: 3 differ, 3 with one class and a proof that holds)
+grid Out14-3-05 against CSR Table 14-3.05: (the same)
+grids: 6 outputs, pass
+efficacy: 3 tables, 153 cells; 144 equal the CSR; classified differences: 9 rule_choice
+decisions: 18 records, 18 IDs; 99 options of analyses held against the decisions that set them; 0 problems
+--- D9-efficacy
+unchanged: 0 problems
+planted, the ANCOVA without the baseline covariate: 19 problems, ... (and 6 more plants, the records plant: 9 problems)
+planted, an exception whose other pattern proves nothing (3 decimals): 1 problems, ... with the other patterns the cell is '(-2.079;1.145)'
+planted, an exception left out / with the class reference_error / that names no decision record: 1 problems each
+63 passed in 96.80s (0:01:36)
+PASS environment, pins, lint, registry, unit tests, method vectors, kit, P1 determinism, P2 reproduction,
+     trace, results, grids, efficacy, decisions, pilot tests, planted defects, cache untouched, ASCII   (18 of 18)
+GATE real-5a: PASS
+```
+
+#### E6. Counts the report and ADR-015 state
+
+```text
+model.mmrm.lsmeans statements: 11; model.mmrm.pairwise: 7; test.cmh: 7; display.pattern.signed: 2
+test_cmh cases: 12; model_mmrm_lsmeans: 15; model_mmrm_pairwise: 8; display_pattern_signed: 7
+tests/unit/test_efficacy_5b.py, test_an_other_build_that_proves_nothing: 14 parametrized cases
+```
+
+### Answers to the four questions
+
+#### 1. G1, the 45 genuine entries, and other ways in
+
+G1 is fixed as asked. A pattern of a proof that changes more than the mask
+is refused in both proof kinds, with the text before or after it, a blank
+included: B1, B1b, B1c, B1d (gold right) and B2b, B2c (gold wrong) are
+seen, by "changes more than the mask"; B6, pass 2's literal patterns for
+the 12 entries of 14-3.11, is seen in all 7 cells it reaches, and B3, the
+same on gold's Week 24 analyses on the LOCF records, in all 12 (the 9
+literal patterns refused, the 3 others by the rule on other analyses; E2,
+E3). A
+wider bare mask still holds where the digits are the cell's own (B1e),
+which is right. The four plants of G1 are in the gate's D11 and seen (E1),
+and the four new unit cases fail on the check of `753b5ac` (E4: 3 tests;
+the two cases of test_efficacy.py are in one test). The 45 genuine entries
+hold: 12 and 24 of real-5b (E1, E2 control), 3, 3 and 3 of real-5a (E5);
+each uses bare masks (E2: X.X, X.XXXX, or none).
+
+Other ways in. Not by a pattern, an analysis, a display rule or a list of
+decisions: my search over every template without format specs, every mask,
+both display rules and every other analysis the widest list of decisions
+binding the cell allows finds the 15 genuine proofs where gold is right,
+and no proof for any cell where gold is wrong, in four wrong golds (B2 in
+14-3.13; gold's Week 24 analyses alone on the LOCF records or at 90%; all
+six analyses on the LOCF records; 0 cells each, up to 640872 candidates,
+E2, E3). But by a template, yes: the format spec of a field carries text
+(H1). A proof of one part repeated, whose specs spell the CSR's text, holds
+for every one of the 36 cells (T1, T4, T5), and it gets wrong gold numbers
+of both tables past the proofs: 14-3.13 with the week 8 row showing the
+p-value of week 16 (T2, T2': 0 problems); 14-3.11 with all six analyses of
+the mixed model on the records LOCF adds (gold's LS means 2.3 (0.60), 1.8
+(0.59), 1.3 (0.62) ...) or at 90% (gold's limits (-2.28;1.09) ...), the
+entries keeping their averaged analyses: `efficacy` 0 problems, `decisions`
+0 problems, and the rule of `E22 hint` holds (T6d, T7b). Where gold's Week
+24 analyses alone are wrong, the averaged analyses can no longer be named
+(T6b) and without them `E22 hint` fails (T6a): that much the fix of F1
+still guards. And G2 stays as stated (E3, below).
+
+#### 2. G2 and G3
+
+G2: stated where the commit says, in the report ("What the checks do not
+cover", "For the owner") and in ADR-015 ("For the owner" item 6), and the
+statement holds: with AVISIT in the record `custom:eff-mmrm-terms` and in
+the six analyses, gold's table shows the LS means of Week 8 (0.6 (0.48),
+1.6 (0.47), 0.8 (0.50) ...) under the title "to Week 24", and `efficacy`
+and `decisions` give 0 problems (E3).
+
+G3, for `1b0ad01` (the commit with the gate of `1b0ad01` is not on
+`origin/track/real`): the figures that do not come from the gate are
+refreshed and right: 11 and 7 statements (E6; the report's table and
+ADR-015 decision 12), 12, 23 (15 and 8) and 7 vectors (E6), 14 proofs that
+prove nothing (E6), 2 cases in test_efficacy.py, the third item of real-5a's
+list now said not to hold (true: pass 2, A4). The gate's figures in the
+report and the log are still those of the clean clone of `10c6bbc` (H2): on
+`1b0ad01` the gate gives 1203 tests (report 1196), 139 Python cases of 11
+methods (136 of 10), 134 R cases (131), 134 exact and 63 by hand (131 and
+60), 58 model-based (55), and D11 25 plants and 2 against the records (the
+report's summary: "D11 (18 plants)"; its D11 output lacks the plants added
+by passes 1 to 3); the lines of the checks `efficacy`, `E22 hint`, `CMH`,
+`decisions`, `results`, P1 and the paths are the same (E1). I cannot say
+whether the next commit carries them; it should carry E1's figures.
+
+#### 3. What the fix may have broken
+
+Nothing I could find. The gate real-5a passes on my clone of `1b0ad01`,
+its 9 other_pattern entries hold (bare X.X for parts of pattern X.XX) and
+D9 sees each of its plants, the bad other pattern and the reference_error
+included (E5). The unit tests of the proofs pass (88, E4; 86 at `753b5ac`
+plus the 2 new parametrized cases). D11 passes with its four new plants
+(E1), D12 as before. The gate real-5b passes (E1). `_pattern_problems` only
+adds reasons; a part whose own pattern had text around its mask would need
+the same text in its other pattern, and no entry of the kit has one.
+
+#### 4. The changed statements
+
+Supported: ADR-015 decision 12 ("11 and 7 statements", E6); decision 16's
+new sentence on patterns ("changes only the mask ... so that no pattern
+carries the CSR's text", E2, E3); "For the owner" item 6 (G2, E3); the
+exceptions file's "other `patterns` (another mask, the text around it the
+part's own; so for other_pattern too)"; the report's new bullets of "What
+the checks do not cover" and "For the owner", and its counts (E6). One
+small inaccuracy: "test_gates.py plants ... one way the engines disagree on
+CMH": its test plants three (a value moved by 2e-9, a row left out, a
+missing value; pass 2, F2).
+
+Not supported, unchanged since pass 2 but now the open way in (H1): ADR-015
+decision 16, "another template shows parts of the cell and adds no text
+its template has not"; the exceptions file, "another cell `template` (parts
+of the cell, no text of its own)"; the docstring of csr.py, the same; and
+`csr._template_names`, "as specfirst.machine.layout.template_names", which
+refuses what it accepts.
+
+### Findings
+
+#### H1 (blocks the merge): the other template of a proof may carry text in the format specs of its fields, so a proof that proves nothing still holds and wrong gold numbers of both tables still pass
+
+Where: `csr._template_names` and the template branch of `csr._other_build`
+(csr.py); stated otherwise in csr.py's docstring, ADR-015 decision 16 and
+the exceptions file's comment.
+
+What: pass 1's F1 (item 2) and pass 2's G1 closed two ways for a proof to
+carry the CSR's text: the template's literal text and a pattern's text
+around its mask. A third is open. `_other_build` takes the part names of
+the other template from `string.Formatter().parse` and holds its literal
+text (a subsequence of the cell template's); the format spec and the
+conversion of each field are not looked at, and the template is then
+filled by `str.format`. A format spec carries text: `{p:2<1.0}` is the part
+p cut to no characters and padded to width 1 with the character "2",
+whatever p is. So `{p:0<1.0}{p:.<1.0}{p:2<1.0}{p:7<1.0}{p:2<1.0}{p:7<1.0}`
+is "0.2727" for any value; it has no literal text and names only a part of
+the cell, and it holds as a proof (T0, T1). The layouts' own
+`layout.template_names` refuses a spec or a conversion ("write a part as
+{name}", T0); `csr._template_names`, which says it works "as" that
+function, does not.
+
+Evidence (E2, E3): every one of the 36 cells holds with such a template
+(T1, T4, T5), and with the entries' averaged analyses kept the rule of
+`E22 hint` holds too (T4b). Wrong gold of 14-3.13: the week 8 row showing
+the CMH p-value of week 16 ("0.400" where the CSR prints "0.2727"), seen
+with the entry as it is (B2a), passes with that template (T2, and T2' by
+D11's own function); no other check of the gate compares that cell. Wrong
+gold of 14-3.11: all six analyses of the mixed model on the records LOCF
+adds (D11's own plant, seen with the entries as they are: T6c, 12
+problems), or all six at 90% (T7, 3 problems), pass `efficacy` (0
+problems), `decisions` (0) and the rule of `E22 hint` (holds) once the 12
+entries prove by such templates and keep their averaged analyses (T6d,
+T7b). Without format specs no proof of a wrong gold cell exists in my
+search (S, 0 cells in four wrong golds), so this is the one way left.
+
+Fix (small; no number and no genuine entry changes): take the other
+template's part names with `layout.template_names` (it refuses a spec and a
+conversion) or refuse any field with a spec or a conversion in
+`_template_names`; plants: T2 and T6d (or T7b) in D11, and a unit case in
+test_efficacy_5b.py (a template such as `{d:-<1.0}{d:0<1.0}...`, and one
+with `!r`). The 36 entries use `{n}` or no template, so they still hold.
+
+#### H2 (does not block): at 1b0ad01 the report's gate figures and its log are still those of 10c6bbc
+
+Where: docs/reports/real-5b.md, sections "Verdict" ("clean clone of commit
+`10c6bbc`", "D11 (18 plants)"), "The methods" (the method vectors' lines),
+"The gate" (1196 tests, the log of 685 lines), "Planted defects" (the D11
+output), "The gates on clean clones"; docs/reports/real-5b.clean-clone.gate.log.
+
+What: pass 2's G3, as far as the gate goes; the commit says these follow
+from the clean-clone gate of `1b0ad01`, which is not on
+`origin/track/real` when I finish. E1 gives what they should be on
+`1b0ad01` (answer 2). Also the one-word slip on test_gates.py's CMH plants
+(answer 4).
+
+Fix: the clean-clone gate of the commit that merges (after H1's fix), and
+these figures with it.
+
+### The owner's choices (PLAN.md section 2.3)
+
+Passes 1 and 2 list them; nothing new. H1 is not the owner's: it is a hole
+in the check, as F1 and G1 were. On G2 (pass 2's item 4) my runs agree with
+what the report and ADR-015 now say.
+
+### Verdict
+
+G1 is fixed and works: no pattern can carry text any more, in either proof
+kind, and every plant of passes 1 and 2 is refused by the rule meant for it
+(E2, E3); the 45 genuine entries hold, and the gates real-5b and real-5a
+pass on my clones of `1b0ad01` (E1, E5), with the new plants seen and the
+new unit cases failing on the old check (E1, E4). G2 is stated and true.
+G3 is done for the figures outside the gate; the gate's own wait for the
+next commit (H2).
+
+One finding blocks: a proof's other template can still carry the CSR's
+text, through the format specs of its fields, which `layout.template_names`
+refuses for the layouts but the proof's check does not (H1). With it a
+proof that reads nothing holds for every cell, and wrong gold numbers of
+both tables pass `efficacy`, `decisions` and the rule of `E22 hint` (T2,
+T6d, T7b). My search found no other way: without format specs no wrong
+gold cell has a proof (S). The fix is one call and two plants.
+
+Verdict: NOT SIGNED (blocking: H1)

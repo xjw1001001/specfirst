@@ -149,6 +149,11 @@ def test_a_difference_is_proved_by_another_build():
      "the other pattern '-X.X' of d changes more than the mask of 'X.X'"),
     ({"kind": "other_build", "patterns": {"d": "-0.0", "se": "X.XX"}},
      "the other pattern of d is no pattern"),
+    # H1: nor may a template's format spec or conversion: "{d:-<1.0}" is "-" for any d.
+    ({"kind": "other_build", "template": "{d:-<1.0}{d} ({se})", "analyses": {"A_PW": "A_PW_Avg"}},
+     "the other template is no cell template"),
+    ({"kind": "other_build", "template": "{d!s} ({se})", "analyses": {"A_PW": "A_PW_Avg"},
+      "display": "display.pattern.signed"}, "the other template is no cell template"),
 ])
 def test_an_other_build_that_proves_nothing(proof, message):
     found = judged(dict(ENTRY, proof=proof))

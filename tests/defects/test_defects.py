@@ -1266,6 +1266,10 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
     week16 = Efficacy(**{**cibic.__dict__, "layouts": {
         **cibic.layouts, "Out14-3-13": layouts.parse(yaml.safe_load(wrong_13), "Out14-3-13")}})
 
+    def spelled(name: str, text: str) -> str:
+        """H1: a template whose format specs give `text` for any value of the part."""
+        return "".join("{" + name + ":" + character + "<1.0}" for character in text)
+
     planted = {
         "a p-value of the CSR changed (0.2727 to 0.2737)":
             lambda: efficacy_problems(cibic, cibic.gold, tables=tables),
@@ -1314,6 +1318,15 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
                     "kind": "other_build", "template": "{lsm}",
                     "analyses": entries_11[0]["proof"]["analyses"],
                     "patterns": {"lsm": "X.X (0.49)"}}))),
+        "gold's week 8 p-value is week 16's, proved by a template whose format specs spell "
+        "the CSR's text": lambda: efficacy_problems(week16, cibic.gold, entries=replaced(
+            cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                "kind": "other_build", "template": spelled("p", entries_13[week8]["csr"])}))),
+        "a proof of 14-3.11 whose template's format specs spell the CSR's text":
+            lambda: efficacy_problems(adas, adas.gold, entries=replaced(
+                adas, "Out14-3-11", 0, dict(entries_11[0], proof={
+                    "kind": "other_build",
+                    "template": spelled("lsm", entries_11[0]["csr"])}))),
     }
     for name, check in planted.items():
         _seen(name, check(), problems)
