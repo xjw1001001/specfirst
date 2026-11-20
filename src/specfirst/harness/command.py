@@ -6,6 +6,7 @@
                   [--seed TEXT | --seed-file FILE] [--stub PLAN] [--score] [--keep]
     specfirst run probe KIT [--tasks DIR] [--runs DIR]
     specfirst run check KEPT --kit KIT [--tasks DIR] [--seed TEXT] [--score]
+    specfirst run bind KEPT --kit KIT [--tasks DIR]         (ADR-017, decision 6)
     specfirst run score RUN --kit KIT
     specfirst run skills [--write]
     specfirst run validate --run RUN --task TASK            (what bin/check runs)
@@ -68,6 +69,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_check.add_argument("--tasks")
     p_check.add_argument("--seed")
     p_check.add_argument("--score", action="store_true")
+    p_bind = commands.add_parser("bind", help="write the binding file of a run kept before "
+                                 "ADR-017, without a model run (its decision 6)")
+    p_bind.add_argument("kept", help="a folder of src/specfirst/harness/kept")
+    p_bind.add_argument("--kit", required=True)
+    p_bind.add_argument("--tasks")
     p_score = commands.add_parser("score", help="score a run on its kit")
     p_score.add_argument("folder", help="a run folder or a kept run")
     p_score.add_argument("--kit", required=True)
@@ -142,6 +148,14 @@ def main(root: Path, argv: list[str]) -> int:
         if args.score:
             print("\n".join(runs.score(root, Path(args.kit), Path(args.kept))))
         return 1 if found or hits else 0
+    if args.what == "bind":
+        path, refused = runs.bind(root, Path(args.kept), Path(args.kit),
+                                  _folder(args.tasks, "SPECFIRST_TASKS"))
+        for line in refused:
+            print(f"refused: {line}")
+        print(f"kept run {Path(args.kept).name}: "
+              + (f"wrote {path.name}" if path is not None else "no binding file written"))
+        return 0 if path is not None else 1
     tasks_dir = _folder(args.tasks, "SPECFIRST_TASKS")
     runs_dir = _folder(args.runs, "SPECFIRST_RUNS")
     if args.what == "pilot":
