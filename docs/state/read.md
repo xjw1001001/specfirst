@@ -185,7 +185,10 @@ in real-5a):
   decision 9: an ADR the owner approves, best before real-5b changes the
   registry again (else real-5b makes the run again, about USD 0.6). The
   isolation probe kept beside it (probe-task-50024a8d7ca2) is of the old
-  task; the gate does not check it.
+  task; the gate does not check it. Drafted as docs/decisions/ADR-017.md
+  (proposed 2026-11-19, with the owner through the base session): bytes
+  where the slice reaches, version where it does not; it covers K4 below
+  as well. real-5b's merge waits for the part that carries it out.
 - Review of real-5a, K4 (since read-2a): the check of a kept run does not
   tie its kept output files to what the run wrote. A kept decisions.jsonl
   with one record removed, or one value changed to another valid one,
