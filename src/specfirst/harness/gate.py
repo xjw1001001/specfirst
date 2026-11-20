@@ -700,16 +700,24 @@ def _passes(out: Out, name: str, problems: list[str]) -> bool:
     return not problems
 
 
+def _task_changed(root: Path, kit_dir: Path, where: Path, relative: str,
+                  change: Callable[[str], str]) -> tasks.Task:
+    """The task of a kit built into `where`, with one of its files changed."""
+    task = tasks.build(root, kit_dir, where)
+    path = task.folder / relative
+    path.write_text(change(path.read_text(encoding="ascii")), encoding="ascii", newline="\n")
+    manifest = tasks.manifest(task.folder)
+    return dataclasses.replace(task, manifest=manifest, id=tasks.task_id(manifest))
+
+
 def _registry_changed(root: Path, kit_dir: Path, where: Path,
                       change: Callable[[dict], None]) -> tasks.Task:
     """The task of a kit built into `where`, with its registry.json changed."""
-    task = tasks.build(root, kit_dir, where)
-    path = task.folder / binding.REGISTRY
-    data = json.loads(path.read_text(encoding="ascii"))
-    change(data)
-    path.write_text(json_text(data) + "\n", encoding="ascii", newline="\n")
-    manifest = tasks.manifest(task.folder)
-    return dataclasses.replace(task, manifest=manifest, id=tasks.task_id(manifest))
+    def edit(text: str) -> str:
+        data = json.loads(text)
+        change(data)
+        return json_text(data) + "\n"
+    return _task_changed(root, kit_dir, where, binding.REGISTRY, edit)
 
 
 def _kit_changed(kit_dir: Path, name: str, change: Callable[[Path, dict], None]) -> Path:
@@ -810,22 +818,55 @@ def bound_plants(root: Path, out: Out, kept: Path, kit_dir: Path,
                 "type": "tool_result", "content": canary.planted(
                     made["kit"]["kit_yaml_sha256"], oracle.ORACLE)}]}}) + "\n")
 
-    def record_edited(folder: Path) -> None:
-        made = json.loads((folder / runs.RUN_JSON).read_text(encoding="ascii"))
-        made["end"]["message"] = f"{made['end']['message']} (planted)"
-        (folder / runs.RUN_JSON).write_text(json.dumps(made, indent=1, sort_keys=True) + "\n",
-                                            encoding="ascii", newline="\n")
+    def record_changed(change: Callable[[dict], None]) -> Callable[[Path], None]:
+        def edit(folder: Path) -> None:
+            made = json.loads((folder / runs.RUN_JSON).read_text(encoding="ascii"))
+            change(made)
+            (folder / runs.RUN_JSON).write_text(json.dumps(made, indent=1, sort_keys=True)
+                                                + "\n", encoding="ascii", newline="\n")
+        return edit
 
+    def message(made: dict) -> None:
+        made["end"]["message"] = f"{made['end']['message']} (planted)"
+
+    def outputs_named(made: dict) -> None:
+        made["outputs"]["decisions.jsonl"]["sha256"] = "0" * 64
+
+    def kit_key(folder: Path) -> None:
+        private_leak(folder)
+        record_changed(lambda made: made["kit"].update(kit_yaml_sha256="0" * 64))(folder)
+
+    def kit_file_alone(folder: Path, manifest: dict) -> None:
+        path = folder / "gold" / "design.yaml"
+        path.write_text(path.read_text(encoding="ascii") + "# planted\n", encoding="ascii",
+                        newline="\n")
+
+    def entry_more(folder: Path) -> None:
+        made = binding.read(folder) or {}
+        made["registry"]["reached"]["test.chisq"] = "0" * 64
+        binding.save(folder, made)
+
+    skill = f"{tasks.KNOWLEDGE}/{tasks.CORE}/SKILL.md"
     other_engines = _kit_changed(kit_dir, "engines", engines)
     return [
+        _holds(out, f"a file of the task built now changed ({skill}), the kept run as it is",
+               check(task=_task_changed(root, kit_dir, _scratch() / "tasks-skill", skill,
+                                        lambda text: text + "\nPlanted.\n"))),
         _holds(out, "a kept record edited where no other check reads, its binding file not "
-               "made again", check(kept_=_kept_changed(kept, "edited", record_edited,
+               "made again", check(kept_=_kept_changed(kept, "edited", record_changed(message),
                                                        rebind=False))),
+        _holds(out, "a kept record that names other outputs than the transcript writes, its "
+               "binding file made again", check(kept_=_kept_changed(
+                   kept, "named", record_changed(outputs_named)))),
         _holds(out, "an entry the slice reaches, changed (count.subjects)", check(
             task=_registry_changed(root, kit_dir, _scratch() / "tasks-reached",
                                    reached_changed))),
         _holds(out, "a file of the kit changed (gold/design.yaml, and its line in kit.yaml)",
                check(kit_=_kit_changed(kit_dir, "file", kit_file))),
+        _holds(out, "a file of the kit changed (gold/design.yaml), and not its line in kit.yaml",
+               check(kit_=_kit_changed(kit_dir, "file-alone", kit_file_alone))),
+        _holds(out, "a binding file that holds an entry the slice does not reach (test.chisq)",
+               check(kept_=_kept_changed(kept, "more", entry_more, rebind=False))),
         _holds(out, "a kept run without binding.json", check(kept_=_kept_changed(
             kept, "unbound", lambda folder: (folder / binding.BINDING).unlink(),
             rebind=False))),
@@ -841,11 +882,14 @@ def bound_plants(root: Path, out: Out, kept: Path, kit_dir: Path,
         _passes(out, "an entry of kind model added to the registry, and registry_sha256 of "
                 "kit.yaml with it", check(kit_=_kit_changed(kit_dir, "registry", registry_pin),
                                           task=added)),
-        _passes(out, "the versions of the engines changed in kit.yaml",
+        _passes(out, "the versions of the engines changed in `pins` of kit.yaml",
                 check(kit_=other_engines)),
-        _holds(out, "the versions of the engines changed in kit.yaml, and a kept transcript "
-               "that holds the canary of the run's private/oracle.json", check(
+        _holds(out, "the versions of the engines changed in `pins` of kit.yaml, and a kept "
+               "transcript that holds the canary of the run's private/oracle.json", check(
                    kept_=_kept_changed(kept, "private", private_leak), kit_=other_engines)),
+        _holds(out, "that canary in a kept transcript, and the record's kit.yaml SHA-256 "
+               "edited, its binding file made again", check(
+                   kept_=_kept_changed(kept, "kit-key", kit_key))),
     ]
 
 

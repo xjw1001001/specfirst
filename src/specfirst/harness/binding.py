@@ -211,8 +211,9 @@ def replay(transcript: Path, asks: list[dict], texts: list[str]) -> tuple[dict[s
     Edit and MultiEdit of a file in out/ that has a result without an error, in the order
     of the results; and the line `bin/ask` appends to out/questions.jsonl for each ask of
     the log, at the Bash result that shows what `specfirst ask` printed for it (`texts`,
-    from `ask_texts`). The Bash results show as many answers of `specfirst ask` as the
-    log holds asks. Returns the files by path and what does not replay."""
+    from `ask_texts`), whose command names the decision and the question of the ask. The
+    Bash results show as many answers of `specfirst ask` as the log holds asks. Returns
+    the files by path and what does not replay."""
     files = dict(OUT_START)
     problems: list[str] = []
     uses: dict[str, tuple[str, dict]] = {}
@@ -237,9 +238,16 @@ def replay(transcript: Path, asks: list[dict], texts: list[str]) -> tuple[dict[s
             if name == "Bash":
                 shown, at = _text(block.get("content")), 0
                 printed += sum(1 for text in shown.splitlines() if text.startswith(ASKED))
+                command = " ".join(str(given.get("command") or "").replace("\\", "").split())
                 while pending < len(asks) and texts[pending] and (
                         found := shown.find(texts[pending], at)) >= 0:
                     item = asks[pending]
+                    if not (any(f"--decision{sep}{item.get('decision')}" in command
+                                for sep in (" ", "=")) and " ".join(
+                            str(item.get("question") or "").split()) in command):
+                        problems.append(f"transcript:{number}: ask {item.get('n')} of the log "
+                                        f"({item.get('decision')}): the Bash command that shows "
+                                        "its answer does not name its decision and its question")
                     files[QUESTIONS] = files.get(QUESTIONS, "") + json.dumps(
                         {"decision": item.get("decision"), "unit": item.get("unit"),
                          "question": item.get("question")}, sort_keys=True,

@@ -508,7 +508,7 @@ def test_a_kept_run_is_bound_as_adr_017_says(root, kit_dir, scratch):
         planted = gate.bound_plants(root, said.append, kept, kit_dir, seed)
     finally:
         gate.cleanup()
-    assert len(planted) == 10 and all(planted), said
+    assert len(planted) == 15 and all(planted), said
 
 
 def _event(kind: str, block: dict) -> str:
@@ -526,8 +526,8 @@ def test_out_is_written_again_from_the_transcript(tmp_path):
                                       "unit": "mod-populations", "answer": "All."}], set())
     assert texts == ["Answer: All."]
     lines = [
-        _event("assistant", {"type": "tool_use", "id": "a", "name": "Bash",
-                             "input": {"command": "bin/ask ..."}}),
+        _event("assistant", {"type": "tool_use", "id": "a", "name": "Bash", "input": {
+            "command": "bin/ask \"Which?\" --decision pop.efficacy.rule"}}),
         _event("user", {"type": "tool_result", "tool_use_id": "a",
                         "content": "Answer: All.\n"}),
         _event("assistant", {"type": "tool_use", "id": "w", "name": "Write", "input": {
@@ -570,6 +570,11 @@ def test_out_is_written_again_from_the_transcript(tmp_path):
     assert binding.replay(transcript, [], [])[1] == [
         "asks: the Bash results of the transcript show 1 answers of `specfirst ask`, the ask "
         "log 0"]
+    # So is an ask of the log whose question or decision is not the command's (review of
+    # adr-017, F4).
+    for changed in ({"question": "Which subjects?"}, {"decision": "pop.safety.rule"}):
+        found = binding.replay(transcript, [{**asks[0], **changed}], texts)[1]
+        assert any("does not name its decision and its question" in p for p in found), found
     assert binding.out_path("<task>/out/../bin/check") is None
     assert binding.out_path("C:\\elsewhere\\out\\x") is None
 

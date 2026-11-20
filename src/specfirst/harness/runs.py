@@ -263,6 +263,9 @@ def kit_canaries(root: Path, kit_dir: Path, texts: list[str], arm: str, kit_sha:
         allowed += canary.reader_views(own, tuple(tasks.DOCUMENTS))
         atoms += [r["statement"] for r in own]
     always = [(f"planted:{name}", canary.planted(kit_sha, name)) for name in PRIVATE]
+    # Every planted canary begins so, whatever kit.yaml it was drawn from (review of
+    # adr-017, F5): a kept record whose kit.yaml SHA-256 is edited hides none of them.
+    always.append(("planted:any private file", canary.PREFIX))
     if seed:
         always.append(("seed", seed))
     return canary.build(sources, allowed, atoms, always)
