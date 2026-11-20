@@ -419,6 +419,12 @@ explained by `tfl.columns.total` = `none`; 0 unexplained.
 - The kept dry run of read-2a still checks against the task built now
   (the task of a generated kit is unchanged by this part): see
   "Commands".
+- The gates read-2a (19 of 19 checks) and read-1a (14 of 14) passed on
+  clean clones of `0a58979`: this part with `main` `548c0f5` (real-5a)
+  merged in and the owner's answers recorded. The gate read-2a checks the
+  kept dry run real-5a made again (R-task-04119188ff71) against the task
+  built now; the gate read-1a runs P1 to P4 of
+  `tests/score/test_score_pilot.py`. See "Commands", last block.
 - Tests: `tests/unit/test_harness_pilot.py` (the pilot task from a toy
   folder: the anchors, TASK.md of a real study, the documents a task may
   cite, the stub reader on it, each check with a planted defect: the key
@@ -932,6 +938,61 @@ All checks passed!
 $ make ascii
 . scripts/env.sh && python -m specfirst.asciicheck
 ASCII check: 553 files checked, 0 with non-ASCII bytes
+```
+
+The gates on clean clones of `0a58979` (this part with `main` `548c0f5`
+merged in, and the owner's answers), one after another, each under the
+shared lock with at most 4 processors. The lines of each gate's summary
+and of its check of the kept dry run; the logs lie with the others in
+WSL `/root/scratch-slice/logs/`:
+
+```text
+$ for wp in read-2a read-1a; do
+    flock /run/lock/specfirst-heavy.lock taskset -c 0-3 \
+      bash scripts/clean_clone_gate.sh $wp /mnt/d/trial_work/specfirst/.git 0a58979
+  done
+== [16/19] arm R, kept dry run: specfirst run check src/specfirst/harness/kept/R-... --kit KIT --score
+kept run R-task-04119188ff71: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  task task-04119188ff71, built again now: task-04119188ff71
+PASS  environment          0.3 s
+PASS  pins                 0.8 s
+PASS  lint                 0.0 s
+PASS  unit tests         325.8 s
+PASS  kit                 11.2 s
+PASS  skills               1.1 s
+PASS  task                 0.1 s
+PASS  oracle               0.1 s
+PASS  adapter              0.0 s
+PASS  budget               0.0 s
+PASS  output files         0.1 s
+PASS  canary scan          4.4 s
+PASS  arm S               19.4 s
+PASS  arm C                1.9 s
+PASS  arm R, stub reader     11.0 s
+PASS  arm R, kept dry run      2.3 s
+PASS  scratch removed      0.0 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE read-2a: PASS
+clean clone gate read-2a: PASS    (523 s)
+== [11/14] pilot tests: SPECFIRST_STRICT=1 pytest tests/score -s -q
+4 passed in 2.14s
+PASS  environment          0.3 s
+PASS  pins                 1.1 s
+PASS  lint                 0.0 s
+PASS  unit tests         343.0 s
+PASS  hand-made study      1.4 s
+PASS  separation          38.8 s
+PASS  parser control       1.2 s
+PASS  standard alone       1.5 s
+PASS  planted defects      5.1 s
+PASS  pilot                0.5 s
+PASS  pilot tests          2.3 s
+PASS  kits of gen-2a     757.4 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE read-1a: PASS
+clean clone gate read-1a: PASS    (1261 s)
 ```
 
 ## Files

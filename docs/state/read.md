@@ -3,30 +3,32 @@
 Result: scorer, harness, reader agent, first scores (PLAN.md section 13.6),
 first for the slice "adverse event summary first" (ADR-005).
 
-## In progress
+## Passed
 
-- slice-ae-summary (2026-11-19, not merged): the report of ADR-005,
-  decision 1, last paragraph: the first scores of the slice on four dev
-  kits (kits 5, 6, 7 and 15 of a dev seed whose file lies outside every
-  checkout), arms S, R and C at stages T and C, and the pilot of decision
-  5 (stage T on the reference ADaM of CDISCPILOT01, arms S and R, arm R
-  reading the real SAP). Not a delivery: N3 applies first. Report:
-  docs/reports/slice-ae-summary.md. Choices: docs/decisions/ADR-016.md.
-  Review pass 1 (docs/reports/slice-ae-summary.review.md) did not sign:
-  its finding 1 (a decision of a dev kit named with its gold class) is
-  fixed by withholding the pairing; questions Q2 and Q3 of the review went
-  to the owner through the base session. Nine runs of arm R, USD 4.05
-  computed from the tokens, within the owner's USD 10. No run folder,
-  task, transcript or log of these runs is in the repository (ADR-016,
-  decision 4); the report holds their numbers and command output, values
-  of dev kits withheld. Kits, logs and the pilot folder lie in WSL
-  `/root/scratch-slice/`, the seed files in
+- slice-ae-summary (2026-11-19): the report of ADR-005, decision 1, last
+  paragraph: the first scores of the slice on four dev kits (kits 5, 6, 7
+  and 15 of a dev seed whose file lies outside every checkout), arms S, R
+  and C at stages T and C, and the pilot of decision 5 (stage T on the
+  reference ADaM of CDISCPILOT01, arms S and R, arm R reading the real
+  SAP). Not a delivery: N3 applies first. Report:
+  docs/reports/slice-ae-summary.md. Review:
+  docs/reports/slice-ae-summary.review.md (signed in its third pass; pass
+  1 found a decision of a dev kit named with its gold class, pass 2 the
+  same pairing in unpushed commits, both fixed before anything was
+  pushed). Choices: docs/decisions/ADR-016.md. The owner's answers
+  (2026-11-19, relayed by the base session): the first scores stand with
+  the limit stated that 8 of the 66 decision paragraphs are the phrasing
+  template (Q2); no more runs (Q3). The gates read-2a and read-1a passed
+  on clean clones of `0a58979` (this part with `main` `548c0f5` merged in).
+  Nine runs of arm R, USD 4.05 computed from the tokens, within the
+  owner's USD 10. No run folder, task, transcript or log of these runs is
+  in the repository (ADR-016, decision 4); the report holds their numbers
+  and command output, values of dev kits withheld. Kits, logs and the
+  pilot folder lie in WSL `/root/scratch-slice/`, the seed files in
   `/root/specfirst-secrets/slice-ae-summary/`, tasks and runs in a folder
   of drive C outside every checkout. New: `specfirst run pilot`,
   `specfirst score pilot --run` (`harness/pilot.py`, `task.render_real`,
   arm R in `score/pilot.py`).
-
-## Passed
 
 - read-2a (2026-11-18): the reader harness for the slice. The task builder,
   the oracle (`specfirst ask`), the canary scan, run records with cost, the
@@ -190,6 +192,10 @@ in real-5a):
   still passes. What settles it: the check compares the kept files with
   the SHA-256 the record holds for each (`outputs`), and with what the
   transcript's writes give, since the record can be edited too.
+- Review of real-5a, K3: the kept transcripts hold the CLI's
+  `rate_limit_event` (the subscription's usage, no credential). The owner
+  keeps it as it is (2026-11-19, relayed by the base session): `runs.keep`
+  need not drop it.
 
 From the review of read-2a (docs/reports/read-2a.review.md), not blocking:
 
@@ -316,11 +322,13 @@ For other tracks:
     be the generator's to rephrase.
   - The pilot: the real SAP plans no adverse event summary; the reader
     said so (`tfl.output.include` = `not_included`). A pilot task that
-    gives the output as planned is offered to the owner (ADR-016, "For
-    the owner"), one run of about USD 0.6.
+    gives the output as planned (one run of about USD 0.6) was offered;
+    the owner wanted no more runs for this report (2026-11-19). It stays
+    a choice for a later part (ADR-016, "For the owner").
   - Dev kits of another seed state statements the store lacks (8 of 66
-    decision paragraphs here are the phrasing template): the loop of the
-    natural form for dev seeds is the gen track's (ADR-009).
+    decision paragraphs here are the phrasing template; the owner accepted
+    the first scores with that limit): the loop of the natural form for
+    dev seeds is the gen track's (ADR-009).
 
 How to run things:
 
