@@ -5,9 +5,9 @@ tier C kit of PLAN.md section 6.1, the reproduction anchor of D1 and D2.
 
 This folder holds `kit.yaml`, this file and the files of our own that the
 manifest names: `gold/exceptions.yaml`, one layout per output in
-`gold/layout/`, the reporting event of the efficacy tables in
+`gold/layout/`, the reporting events of the efficacy tables in
 `gold/events/` and their decision records in `gold/decisions/` (real-5a,
-ADR-015). It holds nothing else. The study data and documents are not
+ADR-015; real-5b, its amendment). It holds nothing else. The study data and documents are not
 ours to redistribute
 (rule 4 of PLAN.md section 2.1, E20). They are fetched at pinned commits and
 assembled on demand:
@@ -37,13 +37,13 @@ gold/                    never placed in an agent's workspace
                          analyses, 3,735 embedded results) and the JSON Schema generated
                          from the ARS model
   reference/adam/        the 10 reference ADaM datasets: what P2 compares with
-  reference/csr/CSR.pdf  the CSR (Pilot 6): its Tables 14-3.01, 14-3.03 and 14-3.05 are the
+  reference/csr/CSR.pdf  the CSR (Pilot 6): its Tables 14-3.01, 14-3.03, 14-3.05, 14-3.11 and 14-3.13 are the
                          references of the efficacy grids, parsed from their pages on
                          every check into build/csr/cdiscpilot01/ (never into git)
   claims/                Pilot 7's reviewed claims, one file per dataset
   exceptions.yaml        a copy of ours: the classified differences from the references
   layout/                a copy of ours: one layout per output that is built as a grid
-  events/                a copy of ours: the reporting event of the efficacy tables
+  events/                a copy of ours: the reporting events of the efficacy tables
   decisions/             a copy of ours: the decision records of the efficacy tables
   resolved/              built: each specification as yamaa composes it, with the file
                          and line of every element
