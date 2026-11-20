@@ -357,7 +357,7 @@ defensible reading. So the answer the key implies (the table is planned)
 is not what the SAP says. The key is a display CDISC built for the ARS
 example; nothing in the SAP plans it as a table. On this output the pilot
 cannot score a reader of the SAP against the key without first giving it
-the output as planned (below, "For the owner").
+the output as planned (below, "The owner's answers": not made).
 
 ### The trace of every cell
 
@@ -501,10 +501,11 @@ Pass 3 confirmed both (the rebuilt history holds none of the withheld
 text, and the summed rows equal the rows pass 1 checked against the
 records) and signed.
 
-Questions Q2 and Q3 of the review are the owner's and went to the base
+Questions Q2 and Q3 of the review were the owner's and went to the base
 session: whether first scores on kits with template paragraphs stand (Q2),
-and whether more runs are wanted within the USD 10 (Q3). Q1 does not need
-the owner: the report now withholds the pairing (finding 1).
+and whether more runs are wanted within the USD 10 (Q3). The owner
+answered both on 2026-11-19 (below, "The owner's answers"). Q1 does not
+need the owner: the report now withholds the pairing (finding 1).
 
 ## Limits
 
@@ -524,7 +525,9 @@ the owner: the report now withholds the pairing (finding 1).
   accepted paragraphs of the store are within 0.9 of their statement, two
   equal to it: the natural form measures little robustness to wording.
   And 8 of the 66 decision paragraphs of these kits are the phrasing
-  template (ADR-016, decision 3), nearer still to the standard form.
+  template (ADR-016, decision 3), nearer still to the standard form. The
+  owner accepted these first scores with this limit stated (Q2, "The
+  owner's answers").
 - **Open findings H10 to H12 of the read-2a review**
   (docs/reports/read-2a.review.md):
   - H10 (open): a list slot filled with texts the task holds can still
@@ -557,16 +560,21 @@ the owner: the report now withholds the pairing (finding 1).
   scorer's build of the gold decisions gives the files of each kit (the
   scorer refuses a kit otherwise, and none was refused).
 
-## For the owner
+## The owner's answers
 
-Nothing blocks. One choice, if the owner wants the pilot to say more
-about reading: a second pilot task in which the output is given as
-planned (`tfl.output.include` fixed at `included`, as stage T fixes the
-module decisions at gold), so that the reader decides the other six table
-decisions from the SAP. One more run of arm R, about USD 0.6. This report
-does not make it: the owner's scope is four dev kits and USD 10, and the
-nine runs of arm R are this part's reading of it (ADR-016, decisions 2 and
-5; the brief of the base session named them). USD 5.95 of the 10 is left.
+The owner answered the two questions of the review on 2026-11-19, in the
+base session's question dialog; the base session relayed the answers word
+for word (in Chinese) with its translation:
+
+- Q2 (ADR-016, decision 3: 8 of the 66 decision paragraphs are the
+  phrasing template): accept, and state the limit. These first scores
+  stand; the limit is under "Limits", "One rewrite per statement".
+- Q3 (USD 5.95 of the 10 left): no more runs. The second pilot task this
+  report offered (the output given as planned, `tfl.output.include` fixed
+  at `included`, so that the reader decides the other six table decisions
+  from the SAP; one run of arm R, about USD 0.6) is not made, and neither
+  is the condition `catalog` on the four kits. The nine runs of arm R,
+  USD 4.05, are the part's model use.
 
 ## Commands and their output (rule R8)
 
