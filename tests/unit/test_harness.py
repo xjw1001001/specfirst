@@ -508,7 +508,7 @@ def test_a_kept_run_is_bound_as_adr_017_says(root, kit_dir, scratch):
         planted = gate.bound_plants(root, said.append, kept, kit_dir, seed)
     finally:
         gate.cleanup()
-    assert len(planted) == 9 and all(planted), said
+    assert len(planted) == 10 and all(planted), said
 
 
 def _event(kind: str, block: dict) -> str:

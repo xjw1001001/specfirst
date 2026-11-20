@@ -661,6 +661,10 @@ def arm_r_stub(root: Path, out: Out) -> bool:
         handle.write(json.dumps({"type": "assistant", "message": {"content": [{
             "type": "tool_use", "name": "Write", "id": "t",
             "input": {"file_path": "<task>\\bin\\check", "content": "cat x"}}]}}) + "\n")
+    # Each planted as a hand edit of the kept run and of its binding file together, so
+    # that the check the plant is for finds it, not the SHA-256 binding.json records.
+    for planted_in in (changed, leaked, over, raised, writes):
+        _rebind(planted_in)
     rewrite = _scratch() / "stub-rewrite.json"
     rewrite.write_text(json.dumps({**json.loads(plan.read_text(encoding="utf-8")), "write": {
         "bin/check": "#!/usr/bin/env bash\ncat \"$0\"\n"}}), encoding="utf-8")
@@ -728,10 +732,15 @@ def _kept_changed(kept: Path, name: str, change: Callable[[Path], None],
     shutil.copytree(kept, copy_of)
     change(copy_of)
     if rebind:
-        made = binding.read(copy_of) or {}
-        made["files"] = binding.kept_files(copy_of)
-        binding.save(copy_of, made)
+        _rebind(copy_of)
     return copy_of
+
+
+def _rebind(kept: Path) -> None:
+    """The binding file of a kept run made again for the files it holds now."""
+    made = binding.read(kept) or {}
+    made["files"] = binding.kept_files(kept)
+    binding.save(kept, made)
 
 
 def _decisions_changed(change: Callable[[list[dict]], list[dict]]) -> Callable[[Path], None]:
@@ -801,8 +810,17 @@ def bound_plants(root: Path, out: Out, kept: Path, kit_dir: Path,
                 "type": "tool_result", "content": canary.planted(
                     made["kit"]["kit_yaml_sha256"], oracle.ORACLE)}]}}) + "\n")
 
+    def record_edited(folder: Path) -> None:
+        made = json.loads((folder / runs.RUN_JSON).read_text(encoding="ascii"))
+        made["end"]["message"] = f"{made['end']['message']} (planted)"
+        (folder / runs.RUN_JSON).write_text(json.dumps(made, indent=1, sort_keys=True) + "\n",
+                                            encoding="ascii", newline="\n")
+
     other_engines = _kit_changed(kit_dir, "engines", engines)
     return [
+        _holds(out, "a kept record edited where no other check reads, its binding file not "
+               "made again", check(kept_=_kept_changed(kept, "edited", record_edited,
+                                                       rebind=False))),
         _holds(out, "an entry the slice reaches, changed (count.subjects)", check(
             task=_registry_changed(root, kit_dir, _scratch() / "tasks-reached",
                                    reached_changed))),
