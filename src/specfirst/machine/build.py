@@ -500,7 +500,8 @@ def csr_against(made: dict, table: dict, event: ars.Event, layout: layouts.Layou
     """A grid against a parsed CSR table, each difference held against its entry."""
     compared = csr.compare(made, table)
     planned = grid.plan(event, layout, rows)
-    cells = {f"cell:{made['output_id']}/r{number}/{cell.column}": (row.template, cell.shown)
+    cells = {f"cell:{made['output_id']}/r{number}/{cell.column}":
+             (grid.template_of(row, cell), cell.shown)
              for number, row in enumerate(planned.rows, start=1) for cell in row.cells}
     csr.judge(compared, entries, cells, {key: row["raw_value"] for key, row in rows.items()},
               decisions)

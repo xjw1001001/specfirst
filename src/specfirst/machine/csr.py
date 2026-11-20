@@ -6,7 +6,11 @@ page is turned into text by poppler's pdftotext with -layout, as evidence
 E24 and E25 did, and that text is parsed into a reference grid: the titles,
 the column labels with the count under each, and the lines of the body,
 each a label with one cell per column (a line without cells is a section
-heading). Footnotes are kept as lines of text.
+heading). Footnotes are kept as lines of text. Since real-5b a page may have
+a column without a count to the right of the counted ones (CSR Table 14-3.13:
+"p-value [1]"), a text left of the counts on their line (the header of the
+row labels, "Assessment"), and a line with two labels, the section heading
+and the row label ("Week 8" and "n"), read as a heading line and a row.
 
 CSR content is CDISC material (rule 4 of section 2.1). A reference grid is
 written into an ignored folder of the checkout (build/csr/<kit>/), never
@@ -29,11 +33,17 @@ The comparison (`compare`) holds a built grid against a reference grid:
 A cell whose text differs is a difference. Section 4.8 asks for exactly one
 class and a proof per difference: the `cells` section of the kit's
 exceptions file (`load_exceptions`), one entry per cell, checked by `judge`.
-The one proof kind so far is `other_pattern` (class `rule_choice`): the
-cell's own results, shown by other patterns, give the CSR's text. It is the
-first real case of a difference of display (ADR-003, decision 5): SAP
-template 5 shows the limits of a confidence interval with 2 decimals, the
-CSR with 1 (ADR-015). The titles are compared like labels. The footnotes
+Two proof kinds, both for the class `rule_choice` (section 4.8: a build with
+the other alternative, in which the cell equals the reference).
+`other_pattern`: the cell's own results, shown by other patterns, give the
+CSR's text. It is the first real case of a difference of display (ADR-003,
+decision 5): SAP template 5 shows the limits of a confidence interval with 2
+decimals, the CSR with 1 (ADR-015). `other_build` (real-5b): the cell built
+again with any of the results of other analyses of the same event (an
+analysis that follows the other alternative of the decision; its ARD rows
+are those of the cell with the analysis's ID replaced), other patterns,
+another cell template and other options of display.pattern gives the CSR's
+text. The titles are compared like labels. The footnotes
 are not compared: the layouts state the methods in words of their own, and
 the CSR's footnotes are not copied into git.
 """
@@ -51,7 +61,8 @@ from specfirst.machine.layout import HEADER_SECTION
 FORMAT = 0
 _COUNT = re.compile(r"\(N=\s*\d+\)")
 _TOKEN = re.compile(r"\S+(?: \S+)*")  # words joined by single blanks
-_FOOTNOTE = re.compile(r"^\[\d+\]")
+# A footnote, or a note in the place of footnotes (CSR Table 14-3.11).
+_FOOTNOTE = re.compile(r"^(\[\d+\]|Note:)")
 
 
 class CsrError(ValueError):
@@ -97,19 +108,35 @@ def parse(text: str, table: str) -> dict:
         raise CsrError(f"{heading}: no line with the counts of the columns, (N=...)")
     counts = [(match.start(), match.end(), match.group()) for match in
               _COUNT.finditer(lines[counts_at])]
-    centres = [(start + end) / 2 for start, end, _ in counts]
+    # The other texts of the line of counts: left of the counts, the header of the row
+    # labels; right of them, a column without a count, the text its label ends with.
+    first_count, last_count = counts[0][0], counts[-1][1]
+    stub, extra = [], []
+    for start, end, token in _tokens(lines[counts_at]):
+        if _COUNT.fullmatch(token):
+            continue
+        if end <= first_count:
+            stub.append(token)
+        elif start >= last_count:
+            extra.append((start, end, token))
+        else:
+            raise CsrError(f"{heading}: the line of counts has {token!r} between two counts")
+    centres = [(start + end) / 2 for start, end, _ in counts + extra]
     # The titles: the table's own line and the lines under it, up to the first empty
     # line; the column labels: the lines from there to the counts.
     first_label = next((n for n in range(at + 1, counts_at) if not lines[n].strip()), counts_at)
     titles = [heading] + [" ".join(lines[n].split()) for n in range(at + 1, first_label)]
-    labels: list[list[str]] = [[] for _ in counts]
+    labels: list[list[str]] = [[] for _ in centres]
     for n in range(first_label, counts_at):
         for start, end, token in _tokens(lines[n]):
             labels[_nearest(centres, start, end)].append(token)
+    for number, (_, _, token) in enumerate(extra, start=len(counts)):
+        labels[number].append(token)
     columns = [{"label": " ".join(parts), "count": count}
-               for parts, (_, _, count) in zip(labels, counts, strict=True)]
+               for parts, count in zip(labels, [count for _, _, count in counts]
+                                       + [None] * len(extra), strict=True)]
     body, footnotes = [], []
-    margin = min(start for start, _, _ in counts) - 4
+    margin = first_count - 4
     for n in range(counts_at + 1, len(lines)):
         line = lines[n]
         if not line.strip():
@@ -123,11 +150,16 @@ def parse(text: str, table: str) -> dict:
                 footnotes[-1] += " " + " ".join(line.split())
             continue
         tokens = _tokens(line)
-        label, cells = "", [None] * len(counts)
-        if not tokens or tokens[0][0] >= margin:
+        cells: list[str | None] = [None] * len(centres)
+        named = [token for start, _, token in tokens if start < margin]
+        if not named:
             raise CsrError(f"{heading}, line {n + 1}: no row label: {line.strip()!r}")
-        label = tokens.pop(0)[2]
-        for start, end, token in tokens:
+        if len(named) > 2:
+            raise CsrError(f"{heading}, line {n + 1}: more than two labels: {named}")
+        if len(named) == 2:  # a section heading on the line of its first row
+            body.append({"label": named[0], "cells": None})
+        label = named[-1]
+        for start, end, token in tokens[len(named):]:
             column = _nearest(centres, start, end)
             if cells[column] is not None:
                 raise CsrError(f"{heading}, line {n + 1}: two texts in column {column + 1}")
@@ -140,7 +172,8 @@ def parse(text: str, table: str) -> dict:
     population = next((" ".join(line.split()[1:]) for line in lines[:at]
                        if line.strip().startswith("Population:")), None)
     return {"reference": FORMAT, "table": table, "titles": titles, "population": population,
-            "columns": columns, "lines": body, "footnotes": footnotes}
+            "stub": " ".join(stub) or None, "columns": columns, "lines": body,
+            "footnotes": footnotes}
 
 
 def read_table(pdf: Path, page: int, table: str) -> dict:
@@ -178,7 +211,9 @@ class Comparison:
 # ---- the classified differences of cells (section 4.8) ---------------------------------
 
 CLASSES = ("rule_choice", "reference_error", "data_difference")
-PROOFS = ("other_pattern",)
+PROOFS = ("other_pattern", "other_build")
+# The keys of an other_build proof besides its kind; at least one is given.
+BUILD_KEYS = ("analyses", "patterns", "template", "display")
 
 
 def load_exceptions(path: Path) -> dict[str, list[dict]]:
@@ -273,10 +308,59 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
                         reasons.append(f"with the other patterns the cell is {other!r}")
                     if squeeze(other) == squeeze(text):
                         reasons.append("the other patterns change nothing")
+        elif proof["kind"] == "other_build":
+            reasons += _other_build(entry, proof, template, shown, ours, text, theirs)
         if reasons:
             found.problems.append(f"{where}: the proof does not hold: " + "; ".join(reasons))
         else:
             found.classified[cell_id] = entry["class"]
+
+
+def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
+                 ours: dict[str, float | int | None], text: str, theirs: str) -> list[str]:
+    """Why an other_build proof does not hold; nothing when it does."""
+    from specfirst.machine import methods
+
+    reasons = []
+    if entry["class"] != "rule_choice":
+        reasons.append("other_build proves a rule_choice")
+    unknown = set(proof) - {"kind", *BUILD_KEYS}
+    if unknown or not set(proof) & set(BUILD_KEYS):
+        return reasons + [f"other_build takes {', '.join(BUILD_KEYS)}, at least one"]
+    analyses = proof.get("analyses") or {}
+    patterns = proof.get("patterns") or {}
+    display = proof.get("display") or {}
+    names = {item.name for item in shown}
+    if not isinstance(analyses, dict) or set(analyses) - {item.analysis for item in shown}:
+        reasons.append("'analyses' must map analyses of the cell to other analyses")
+    if not isinstance(patterns, dict) or set(patterns) - names:
+        reasons.append(f"'patterns' must give parts of the cell ({', '.join(sorted(names))})")
+    if not isinstance(display, dict):
+        reasons.append("'display' must give options of display.pattern")
+    if reasons:
+        return reasons
+    texts = {}
+    for item in shown:
+        ard = item.ard
+        if item.analysis in analyses:
+            head = "ard:" + item.analysis + "/"
+            ard = "ard:" + str(analyses[item.analysis]) + "/" + ard[len(head):]
+            if ard not in ours:
+                return [f"no result {ard} of the other analysis"]
+        try:
+            texts[item.name] = methods.pattern_text(
+                ours.get(ard), patterns.get(item.name, item.pattern), **display) or ""
+        except (methods.MethodError, TypeError) as error:
+            return [f"the other build cannot be shown: {error}"]
+    try:
+        other = str(proof.get("template", template)).format(**texts)
+    except (KeyError, ValueError, IndexError) as error:
+        return [f"the other template cannot be filled: {error}"]
+    if squeeze(other) != squeeze(theirs):
+        reasons.append(f"with the other build the cell is {other!r}")
+    if squeeze(other) == squeeze(text):
+        reasons.append("the other build changes nothing")
+    return reasons
 
 
 def _body(grid: dict) -> list[tuple[str, object]]:

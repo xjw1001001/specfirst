@@ -65,6 +65,7 @@ class Shown:
 class PlannedCell:
     column: str  # c1, c2, ...
     shown: tuple[Shown, ...]
+    template: str | None = None  # None: the row's; an extra cell has its own (real-5b)
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,14 @@ class Plan:
     columns: tuple[tuple[str, results.Group, str], ...]  # (column ID, group, label)
     rows: tuple[PlannedRow, ...]
     missing: str
+
+
+EXTRA = "extra"  # the kind of the group of an extra column: it is no group (real-5b)
+
+
+def template_of(row: PlannedRow, cell: PlannedCell) -> str:
+    """The template a cell is filled by: its own, else its row's."""
+    return cell.template if cell.template is not None else row.template
 
 
 def _columns(event: ars.Event, layout: layouts.Layout, rows: Rows | None,
@@ -117,15 +126,20 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
     sections = ars.display_sections(event, layout.output)
     used = {part.analysis or analysis_id for block in layout.blocks
             for analysis_id, _ in (block.analyses or ((None, None),)) for part in block.parts}
-    used |= {block.analysis for block in layout.blocks if block.kind == "statistics"}
-    columns = [(f"c{number}", group, label) for number, (group, label)
-               in enumerate(_columns(event, layout, rows, used), start=1)]
-    if not columns:
+    used |= {block.analysis for block in layout.blocks if block.kind in ("statistics", "groups")}
+    found_columns = _columns(event, layout, rows, used)
+    if not found_columns:
         raise GridError(f"the column grouping {layout.grouping} has no group")
+    found_columns += [((EXTRA, name), label) for name, label in layout.extra]
+    columns = [(f"c{number}", group, label) for number, (group, label)
+               in enumerate(found_columns, start=1)]
 
     def cells(block: layouts.Block, analysis_id: str | None) -> tuple[PlannedCell, ...]:
         made = []
         for column, group, _ in columns:
+            if group[0] == EXTRA:
+                made.append(PlannedCell(column, ()))
+                continue
             shown = []
             for part in block.parts:
                 analysis = event.analyses[part.analysis or analysis_id]
@@ -144,7 +158,16 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
         made = []
         for row in block.statistics:
             row_cells = []
+            extra = {cell.column: cell for cell in row.extra}
             for column, group, _ in columns:
+                if group[0] == EXTRA:
+                    cell = extra.get(group[1])
+                    row_cells.append(PlannedCell(column, () if cell is None else tuple(
+                        Shown(part.name, ard_id(event, event.analyses[part.analysis],
+                                                part.operation, {}),
+                              layouts.pattern_of(event, part), part.analysis)
+                        for part in cell.parts), None if cell is None else cell.cell))
+                    continue
                 if block.columns is not None and group[1] not in block.columns:
                     row_cells.append(PlannedCell(column, ()))
                     continue
@@ -157,10 +180,37 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
                                    row.indent))
         return made
 
+    def by_group(block: layouts.Block) -> list[PlannedRow]:
+        """One row per group of the row grouping, in its order (a groups block)."""
+        analysis = event.analyses[block.analysis]
+        grouping = event.groupings[block.grouping]
+        labels = dict(block.labels)
+        ordered = sorted(enumerate(grouping["groups"]),
+                         key=lambda item: (item[1].get("order", 0), item[0]))
+        made = []
+        for _, group in ordered:
+            row_cells = []
+            for column, column_group, _ in columns:
+                if column_group[0] == EXTRA:
+                    row_cells.append(PlannedCell(column, ()))
+                    continue
+                groups = {layout.grouping: column_group, block.grouping: ("id", group["id"])}
+                row_cells.append(PlannedCell(column, tuple(
+                    Shown(part.name, ard_id(event, analysis, part.operation, groups),
+                          layouts.pattern_of(event, part), analysis["id"])
+                    for part in block.parts)))
+            label = labels.get(group["id"], str(group.get("name") or ""))
+            made.append(PlannedRow(label, block.cell, tuple(row_cells), block.section,
+                                   block.indent))
+        return made
+
     planned = []
     for block in layout.blocks:
         if block.kind == "statistics":
             planned += statistics(block)
+            continue
+        if block.kind == "groups":
+            planned += by_group(block)
             continue
         if block.kind == "header":
             label = block.label if block.label is not None else " ".join(
@@ -226,7 +276,7 @@ def fill(planned: Plan, rows: Rows | None) -> dict:
             record["section"] = row.section
         record["cells"] = [{
             "id": f"cell:{quote(planned.output, safe='')}/r{number}/{cell.column}",
-            "column": cell.column, "text": cell_text(row.template, cell.shown, texts),
+            "column": cell.column, "text": cell_text(template_of(row, cell), cell.shown, texts),
             "ard": cell_rows(cell.shown),
         } for cell in row.cells]
         made.append(record)
@@ -371,7 +421,7 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
                 continue
             if any(key in absent for key in wanted):
                 continue  # reported above
-            if there["text"] != cell_text(row.template, cell.shown, ours):
+            if there["text"] != cell_text(template_of(row, cell), cell.shown, ours):
                 found.problems.append(f"{there['id']}: the text {there['text']!r} is not what "
                                       "the layout and the ARD give")
                 continue
@@ -380,7 +430,7 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
             if without:
                 found.no_reference += without
                 continue
-            theirs = cell_text(row.template, cell.shown, {
+            theirs = cell_text(template_of(row, cell), cell.shown, {
                 (item.ard, item.pattern): embedded[item.ard].formatted for item in cell.shown})
             if there["text"] == theirs:
                 found.equal += 1

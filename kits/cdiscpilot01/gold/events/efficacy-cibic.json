@@ -1,0 +1,884 @@
+{
+  "id": "RE_CDISCPILOT01_EFF_CIBIC",
+  "name": "CDISCPILOT01: CIBIC+ by category, LOCF, with the CMH test",
+  "description": "Written by specfirst (real-5b, ADR-012, ADR-015 and its amendment of real-5b) from the SAP (section 16.1, ad hoc template 1) and the shell of the CSR. MIT license.",
+  "version": 1,
+  "mainListOfContents": {
+    "name": "Efficacy tables of real-5b",
+    "contentsList": {
+      "listItems": [
+        {
+          "name": "Table 14-3.13: CIBIC+ - Categorical Analysis - LOCF",
+          "level": 1,
+          "order": 1,
+          "outputId": "Out14-3-13",
+          "sublist": {
+            "listItems": [
+              {
+                "name": "Subjects",
+                "level": 2,
+                "order": 1,
+                "analysisId": "An_CIBIC_EFF_N"
+              },
+              {
+                "name": "Week 8: subjects with a value",
+                "level": 2,
+                "order": 2,
+                "analysisId": "An_CIBIC_W08_N"
+              },
+              {
+                "name": "Week 8: CMH test",
+                "level": 2,
+                "order": 3,
+                "analysisId": "An_CIBIC_W08_Cmh"
+              },
+              {
+                "name": "Week 8: subjects by category",
+                "level": 2,
+                "order": 4,
+                "analysisId": "An_CIBIC_W08_Cat"
+              },
+              {
+                "name": "Week 16: subjects with a value",
+                "level": 2,
+                "order": 5,
+                "analysisId": "An_CIBIC_W16_N"
+              },
+              {
+                "name": "Week 16: CMH test",
+                "level": 2,
+                "order": 6,
+                "analysisId": "An_CIBIC_W16_Cmh"
+              },
+              {
+                "name": "Week 16: subjects by category",
+                "level": 2,
+                "order": 7,
+                "analysisId": "An_CIBIC_W16_Cat"
+              },
+              {
+                "name": "Week 24: subjects with a value",
+                "level": 2,
+                "order": 8,
+                "analysisId": "An_CIBIC_W24_N"
+              },
+              {
+                "name": "Week 24: CMH test",
+                "level": 2,
+                "order": 9,
+                "analysisId": "An_CIBIC_W24_Cmh"
+              },
+              {
+                "name": "Week 24: subjects by category",
+                "level": 2,
+                "order": 10,
+                "analysisId": "An_CIBIC_W24_Cat"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "analysisSets": [
+    {
+      "id": "AnalysisSet_EFF",
+      "name": "Efficacy population",
+      "level": 1,
+      "order": 1,
+      "condition": {
+        "dataset": "ADSL",
+        "variable": "EFFFL",
+        "comparator": "EQ",
+        "value": [
+          "Y"
+        ]
+      }
+    }
+  ],
+  "dataSubsets": [
+    {
+      "id": "DS_CIBIC_W08",
+      "name": "CIBIC+ at Week 8, LOCF",
+      "level": 1,
+      "order": 1,
+      "compoundExpression": {
+        "logicalOperator": "AND",
+        "whereClauses": [
+          {
+            "level": 2,
+            "order": 1,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "PARAMCD",
+              "comparator": "EQ",
+              "value": [
+                "CIBICVAL"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 2,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "AVISIT",
+              "comparator": "EQ",
+              "value": [
+                "Week 8"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 3,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "ANL01FL",
+              "comparator": "EQ",
+              "value": [
+                "Y"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "DS_CIBIC_W16",
+      "name": "CIBIC+ at Week 16, LOCF",
+      "level": 1,
+      "order": 2,
+      "compoundExpression": {
+        "logicalOperator": "AND",
+        "whereClauses": [
+          {
+            "level": 2,
+            "order": 1,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "PARAMCD",
+              "comparator": "EQ",
+              "value": [
+                "CIBICVAL"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 2,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "AVISIT",
+              "comparator": "EQ",
+              "value": [
+                "Week 16"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 3,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "ANL01FL",
+              "comparator": "EQ",
+              "value": [
+                "Y"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "DS_CIBIC_W24",
+      "name": "CIBIC+ at Week 24, LOCF",
+      "level": 1,
+      "order": 3,
+      "compoundExpression": {
+        "logicalOperator": "AND",
+        "whereClauses": [
+          {
+            "level": 2,
+            "order": 1,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "PARAMCD",
+              "comparator": "EQ",
+              "value": [
+                "CIBICVAL"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 2,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "AVISIT",
+              "comparator": "EQ",
+              "value": [
+                "Week 24"
+              ]
+            }
+          },
+          {
+            "level": 2,
+            "order": 3,
+            "condition": {
+              "dataset": "ADQSCIBC",
+              "variable": "ANL01FL",
+              "comparator": "EQ",
+              "value": [
+                "Y"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "analysisGroupings": [
+    {
+      "id": "AnlsGrouping_TRT01P",
+      "name": "Planned treatment",
+      "groupingDataset": "ADSL",
+      "groupingVariable": "TRT01PN",
+      "dataDriven": false,
+      "groups": [
+        {
+          "id": "Grp_Pbo",
+          "name": "Placebo",
+          "level": 1,
+          "order": 1,
+          "condition": {
+            "dataset": "ADSL",
+            "variable": "TRT01PN",
+            "comparator": "EQ",
+            "value": [
+              "0"
+            ]
+          }
+        },
+        {
+          "id": "Grp_Low",
+          "name": "Xanomeline Low Dose",
+          "level": 1,
+          "order": 2,
+          "condition": {
+            "dataset": "ADSL",
+            "variable": "TRT01PN",
+            "comparator": "EQ",
+            "value": [
+              "54"
+            ]
+          }
+        },
+        {
+          "id": "Grp_High",
+          "name": "Xanomeline High Dose",
+          "level": 1,
+          "order": 3,
+          "condition": {
+            "dataset": "ADSL",
+            "variable": "TRT01PN",
+            "comparator": "EQ",
+            "value": [
+              "81"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "AnlsGrouping_CIBIC",
+      "name": "CIBIC+ category",
+      "groupingDataset": "ADQSCIBC",
+      "groupingVariable": "AVAL",
+      "dataDriven": false,
+      "groups": [
+        {
+          "id": "Grp_CIBIC_1",
+          "name": "Marked improvement",
+          "level": 1,
+          "order": 1,
+          "condition": {
+            "dataset": "ADQSCIBC",
+            "variable": "AVAL",
+            "comparator": "EQ",
+            "value": [
+              "1"
+            ]
+          }
+        },
+        {
+          "id": "Grp_CIBIC_2",
+          "name": "Moderate improvement",
+          "level": 1,
+          "order": 2,
+          "condition": {
+            "dataset": "ADQSCIBC",
+            "variable": "AVAL",
+            "comparator": "EQ",
+            "value": [
+              "2"
+            ]
+          }
+        },
+        {
+          "id": "Grp_CIBIC_3",
+          "name": "Minimal improvement",
+          "level": 1,
+          "order": 3,
+          "condition": {
+            "dataset": "ADQSCIBC",
+            "variable": "AVAL",
+            "comparator": "EQ",
+            "value": [
+              "3"
+            ]
+          }
+        },
+        {
+          "id": "Grp_CIBIC_4",
+          "name": "No Change",
+          "level": 1,
+          "order": 4,
+          "condition": {
+            "dataset": "ADQSCIBC",
+            "variable": "AVAL",
+            "comparator": "EQ",
+            "value": [
+              "4"
+            ]
+          }
+        },
+        {
+          "id": "Grp_CIBIC_5",
+          "name": "Minimal worsening",
+          "level": 1,
+          "order": 5,
+          "condition": {
+            "dataset": "ADQSCIBC",
+            "variable": "AVAL",
+            "comparator": "EQ",
+            "value": [
+              "5"
+            ]
+          }
+        },
+        {
+          "id": "Grp_CIBIC_6",
+          "name": "Moderate worsening",
+          "level": 1,
+          "order": 6,
+          "condition": {
+            "dataset": "ADQSCIBC",
+            "variable": "AVAL",
+            "comparator": "EQ",
+            "value": [
+              "6"
+            ]
+          }
+        },
+        {
+          "id": "Grp_CIBIC_7",
+          "name": "Marked worsening",
+          "level": 1,
+          "order": 7,
+          "condition": {
+            "dataset": "ADQSCIBC",
+            "variable": "AVAL",
+            "comparator": "EQ",
+            "value": [
+              "7"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "id": "Mth_Count",
+      "name": "Count of subjects",
+      "label": "Count of subjects",
+      "description": "Method registry: count.subjects",
+      "operations": [
+        {
+          "id": "Mth_Count_1_n",
+          "name": "Count of subjects",
+          "order": 1,
+          "resultPattern": "(N=X)"
+        }
+      ]
+    },
+    {
+      "id": "Mth_CatSumm",
+      "name": "Count and percent of subjects by category",
+      "label": "n (%)",
+      "description": "Count and percent of subjects; the operations are bound by their names (rule B3)",
+      "operations": [
+        {
+          "id": "Mth_CatSumm_1_n",
+          "name": "Count of subjects",
+          "order": 1,
+          "resultPattern": "X"
+        },
+        {
+          "id": "Mth_CatSumm_2_pct",
+          "name": "Percent of subjects",
+          "order": 2,
+          "referencedOperationRelationships": [
+            {
+              "id": "Mth_CatSumm_2_pct_NUM",
+              "referencedOperationRole": {
+                "controlledTerm": "NUMERATOR"
+              },
+              "operationId": "Mth_CatSumm_1_n"
+            },
+            {
+              "id": "Mth_CatSumm_2_pct_DEN",
+              "referencedOperationRole": {
+                "controlledTerm": "DENOMINATOR"
+              },
+              "operationId": "Mth_Count_1_n"
+            }
+          ],
+          "resultPattern": "XX%"
+        }
+      ]
+    },
+    {
+      "id": "Mth_Cmh",
+      "name": "Cochran-Mantel-Haenszel test",
+      "label": "CMH test",
+      "description": "Method registry: test.cmh",
+      "operations": [
+        {
+          "id": "Mth_Cmh_1_pval",
+          "name": "P-value",
+          "order": 1,
+          "resultPattern": "X.XXX"
+        }
+      ]
+    }
+  ],
+  "analyses": [
+    {
+      "id": "An_CIBIC_EFF_N",
+      "name": "Number of subjects in the efficacy population by planned treatment",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADSL",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "methodId": "Mth_Count",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_CIBIC_W08_N",
+      "name": "CIBIC+ at Week 8: subjects with a value",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W08",
+      "methodId": "Mth_Count",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_CIBIC_W08_Cat",
+      "name": "CIBIC+ at Week 8: subjects by category",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W08",
+      "methodId": "Mth_CatSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        },
+        {
+          "order": 2,
+          "groupingId": "AnlsGrouping_CIBIC",
+          "resultsByGroup": true
+        }
+      ],
+      "referencedAnalysisOperations": [
+        {
+          "referencedOperationRelationshipId": "Mth_CatSumm_2_pct_NUM",
+          "analysisId": "An_CIBIC_W08_Cat"
+        },
+        {
+          "referencedOperationRelationshipId": "Mth_CatSumm_2_pct_DEN",
+          "analysisId": "An_CIBIC_W08_N"
+        }
+      ]
+    },
+    {
+      "id": "An_CIBIC_W08_Cmh",
+      "name": "CIBIC+ at Week 8: CMH test of the treatments, controlling for the pooled site group",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "AVAL",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W08",
+      "methodId": "Mth_Cmh",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": false
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "statistic",
+            "value": [
+              "row_mean_scores"
+            ]
+          },
+          {
+            "name": "scores",
+            "value": [
+              "table"
+            ]
+          },
+          {
+            "name": "strata",
+            "value": [
+              "SITEGR1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_CIBIC_W16_N",
+      "name": "CIBIC+ at Week 16: subjects with a value",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W16",
+      "methodId": "Mth_Count",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_CIBIC_W16_Cat",
+      "name": "CIBIC+ at Week 16: subjects by category",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W16",
+      "methodId": "Mth_CatSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        },
+        {
+          "order": 2,
+          "groupingId": "AnlsGrouping_CIBIC",
+          "resultsByGroup": true
+        }
+      ],
+      "referencedAnalysisOperations": [
+        {
+          "referencedOperationRelationshipId": "Mth_CatSumm_2_pct_NUM",
+          "analysisId": "An_CIBIC_W16_Cat"
+        },
+        {
+          "referencedOperationRelationshipId": "Mth_CatSumm_2_pct_DEN",
+          "analysisId": "An_CIBIC_W16_N"
+        }
+      ]
+    },
+    {
+      "id": "An_CIBIC_W16_Cmh",
+      "name": "CIBIC+ at Week 16: CMH test of the treatments, controlling for the pooled site group",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "AVAL",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W16",
+      "methodId": "Mth_Cmh",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": false
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "statistic",
+            "value": [
+              "row_mean_scores"
+            ]
+          },
+          {
+            "name": "scores",
+            "value": [
+              "table"
+            ]
+          },
+          {
+            "name": "strata",
+            "value": [
+              "SITEGR1"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "An_CIBIC_W24_N",
+      "name": "CIBIC+ at Week 24: subjects with a value",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W24",
+      "methodId": "Mth_Count",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        }
+      ]
+    },
+    {
+      "id": "An_CIBIC_W24_Cat",
+      "name": "CIBIC+ at Week 24: subjects by category",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "USUBJID",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W24",
+      "methodId": "Mth_CatSumm",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": true
+        },
+        {
+          "order": 2,
+          "groupingId": "AnlsGrouping_CIBIC",
+          "resultsByGroup": true
+        }
+      ],
+      "referencedAnalysisOperations": [
+        {
+          "referencedOperationRelationshipId": "Mth_CatSumm_2_pct_NUM",
+          "analysisId": "An_CIBIC_W24_Cat"
+        },
+        {
+          "referencedOperationRelationshipId": "Mth_CatSumm_2_pct_DEN",
+          "analysisId": "An_CIBIC_W24_N"
+        }
+      ]
+    },
+    {
+      "id": "An_CIBIC_W24_Cmh",
+      "name": "CIBIC+ at Week 24: CMH test of the treatments, controlling for the pooled site group",
+      "version": 1,
+      "reason": {
+        "controlledTerm": "SPECIFIED IN SAP"
+      },
+      "purpose": {
+        "controlledTerm": "PRIMARY OUTCOME MEASURE"
+      },
+      "dataset": "ADQSCIBC",
+      "variable": "AVAL",
+      "analysisSetId": "AnalysisSet_EFF",
+      "dataSubsetId": "DS_CIBIC_W24",
+      "methodId": "Mth_Cmh",
+      "orderedGroupings": [
+        {
+          "order": 1,
+          "groupingId": "AnlsGrouping_TRT01P",
+          "resultsByGroup": false
+        }
+      ],
+      "programmingCode": {
+        "context": "specfirst method registry",
+        "parameters": [
+          {
+            "name": "statistic",
+            "value": [
+              "row_mean_scores"
+            ]
+          },
+          {
+            "name": "scores",
+            "value": [
+              "table"
+            ]
+          },
+          {
+            "name": "strata",
+            "value": [
+              "SITEGR1"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "globalDisplaySections": [
+    {
+      "sectionType": "Footnote",
+      "subSections": [
+        {
+          "id": "Fn_CIBIC_1",
+          "text": "[1] Overall comparison of treatments by the Cochran-Mantel-Haenszel test of row mean scores, the CIBIC+ values as scores, controlling for the pooled site group."
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "id": "Out14-3-13",
+      "name": "Table 14-3.13",
+      "version": 1,
+      "displays": [
+        {
+          "order": 1,
+          "display": {
+            "id": "Disp14-3-13",
+            "name": "Table 14-3.13",
+            "version": 1,
+            "displayTitle": "CIBIC+ - Categorical Analysis - LOCF",
+            "displaySections": [
+              {
+                "sectionType": "Title",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSection": {
+                      "id": "Out14-3-13_T1",
+                      "text": "Table 14-3.13"
+                    }
+                  },
+                  {
+                    "order": 2,
+                    "subSection": {
+                      "id": "Out14-3-13_T2",
+                      "text": "CIBIC+ - Categorical Analysis - LOCF"
+                    }
+                  }
+                ]
+              },
+              {
+                "sectionType": "Rowlabel Header",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSection": {
+                      "id": "Out14-3-13_R1",
+                      "text": "Assessment"
+                    }
+                  }
+                ]
+              },
+              {
+                "sectionType": "Footnote",
+                "orderedSubSections": [
+                  {
+                    "order": 1,
+                    "subSectionId": "Fn_CIBIC_1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

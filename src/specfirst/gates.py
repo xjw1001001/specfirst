@@ -319,41 +319,123 @@ def _defects_3a(ctx: Context) -> bool:
 
 
 # real-5a (ADR-012, ADR-015): the three efficacy tables of the part, each with its
-# CSR table, its cells and the cells the CSR prints in; the classes of their
-# differences are counted, not fixed (the owner reviews them at N2).
+# result set, its CSR table, its cells and the cells the CSR prints in; the classes of
+# their differences are counted, not fixed (the owner reviews them at N2). real-5b adds
+# two tables; each gate counts its own (the others are judged by display_checks too).
 EFFICACY_SET = "efficacy-adas"
-EFFICACY_GRIDS = {"Out14-3-01": "14-3.01", "Out14-3-03": "14-3.03", "Out14-3-05": "14-3.05"}
-EFFICACY_CELLS, EFFICACY_PRINTED = 51, 40
+EFFICACY_GRIDS = {"Out14-3-01": (EFFICACY_SET, "14-3.01", 51, 40),
+                  "Out14-3-03": (EFFICACY_SET, "14-3.03", 51, 40),
+                  "Out14-3-05": (EFFICACY_SET, "14-3.05", 51, 40)}
 REAL5A_METHOD_TESTS = (*REAL2_METHOD_TESTS, "model-vectors")
 REAL5A_DEFECTS = (*REAL3A_DEFECTS, "D9-efficacy", "D10-trace-model")
+# real-5b (ADR-012, amendment of real-5b to ADR-015): Table 14-3.11, the mixed model for
+# repeated measures, and Table 14-3.13, CIBIC+ with the CMH test.
+REAL5B_GRIDS = {"Out14-3-11": (EFFICACY_SET, "14-3.11", 24, 15),
+                "Out14-3-13": ("efficacy-cibic", "14-3.13", 100, 78)}
+REAL5B_DEFECTS = (*REAL5A_DEFECTS, "D11-efficacy-5b", "D12-cmh-engines")
 
 
-def _efficacy(ctx: Context) -> bool:
-    """Every printed cell equals the CSR, or has exactly one class with a proof that holds."""
-    from specfirst.machine import build
+def _efficacy_of(grids: dict[str, tuple[str, str, int, int]]) -> Callable[[Context], bool]:
+    """Every printed cell of the tables equals the CSR, or has exactly one class with a
+    proof that holds."""
+    def check(ctx: Context) -> bool:
+        from specfirst.machine import build
 
-    passed, counts = build.display_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
-    found = {count["output"]: count for count in counts if count["set"] == EFFICACY_SET}
-    if set(found) != set(EFFICACY_GRIDS):
-        ctx.out(f"efficacy: the kit builds {sorted(found)}, the gate asks for "
-                f"{sorted(EFFICACY_GRIDS)}")
+        passed, counts = build.display_checks(ctx.root, PILOT, _first_build(ctx), ctx.out)
+        found = {count["output"]: count for count in counts
+                 if count["output"] in grids and count["set"] == grids[count["output"]][0]}
+        if set(found) != set(grids):
+            ctx.out(f"efficacy: the kit builds {sorted(found)} of the tables the gate asks "
+                    f"for, {sorted(grids)}")
+            return False
+        classes: dict[str, int] = {}
+        for output, count in sorted(found.items()):
+            _, table, cells, printed = grids[output]
+            if count.get("reference") != "csr" or (count["cells"], count["printed"]) != (
+                    cells, printed) or count["problems"] or (
+                    count["equal"] + count["classified"] != count["cells"]):
+                ctx.out(f"efficacy: {output}: {count}. The gate asks for {cells} cells against "
+                        f"CSR Table {table}, {printed} of them printed, each equal or with one "
+                        "classified difference, and no problem")
+                passed = False
+            for name, number in count["classes"].items():
+                classes[name] = classes.get(name, 0) + number
+        ctx.out(f"efficacy: {len(found)} tables, {sum(c['cells'] for c in found.values())} "
+                f"cells; {sum(c['equal'] for c in found.values())} equal the CSR; classified "
+                "differences: " + (", ".join(f"{number} {name}" for name, number
+                                             in sorted(classes.items())) or "none"))
+        return passed
+    return check
+
+
+_efficacy = _efficacy_of(EFFICACY_GRIDS)
+_efficacy_5b = _efficacy_of(REAL5B_GRIDS)
+
+
+def _e22_hint(ctx: Context) -> bool:
+    """Evidence E22: the LS means of Table 14-3.11 are averages over the weeks.
+
+    Gold takes them at Week 24, as the SAP says (custom:eff-mmrm-visit). The hint
+    holds when no printed number of the table follows from Week 24 and every one
+    follows from the average: each of its differing cells has an other_build
+    proof that holds and names the averaged analyses.
+    """
+    from specfirst.machine import build, csr
+
+    passed, counts = build.display_checks(ctx.root, PILOT, _first_build(ctx), lambda line: None)
+    count = next((c for c in counts if c["output"] == "Out14-3-11"), None)
+    entries = csr.load_exceptions(ctx.root / "kits" / PILOT / "gold" / "exceptions.yaml").get(
+        "Out14-3-11", [])
+    averaged = [entry for entry in entries if entry["proof"].get("kind") == "other_build"
+                and all(str(other).endswith("_Avg")
+                        for other in (entry["proof"].get("analyses") or {"": ""}).values())]
+    if count is None:
+        ctx.out("E22: Table 14-3.11 is not built")
         return False
-    classes: dict[str, int] = {}
-    for output, count in sorted(found.items()):
-        if count.get("reference") != "csr" or (count["cells"], count["printed"]) != (
-                EFFICACY_CELLS, EFFICACY_PRINTED) or count["problems"] or (
-                count["equal"] + count["classified"] != count["cells"]):
-            ctx.out(f"efficacy: {output}: {count}. The gate asks for {EFFICACY_CELLS} cells "
-                    f"against CSR Table {EFFICACY_GRIDS[output]}, {EFFICACY_PRINTED} of them "
-                    "printed, each equal or with one classified difference, and no problem")
-            passed = False
-        for name, number in count["classes"].items():
-            classes[name] = classes.get(name, 0) + number
-    ctx.out(f"efficacy: {len(found)} tables, {sum(c['cells'] for c in found.values())} cells; "
-            f"{sum(c['equal'] for c in found.values())} equal the CSR; classified differences: "
-            + (", ".join(f"{number} {name}" for name, number in sorted(classes.items()))
-               or "none"))
-    return passed
+    body = count["printed"] - 3  # the three counts of the header are no model result
+    # Cells the CSR leaves empty are empty in the grid too: they count as equal.
+    equal = count["equal"] - (count["cells"] - count["printed"]) - 3
+    ctx.out(f"E22: Table 14-3.11 prints {body} numbers of the model; at Week 24 {equal} of "
+            f"them equal the CSR; averaged over weeks 8, 16 and 24, {len(averaged)} cells give "
+            f"the CSR's text (other_build proofs that hold: {count['classified']} of "
+            f"{count['cells'] - count['equal']} differing cells)")
+    holds = passed and equal == 0 and len(averaged) == body and count["classified"] == body
+    ctx.out("E22: the LS means of Table 14-3.11 are averages over the weeks: "
+            + ("the hint holds" if holds else "not shown"))
+    return holds
+
+
+def _cmh_engines(ctx: Context) -> bool:
+    """Rule R11 for the CMH test: the R engine's results are the Python engine's."""
+    from specfirst.machine.canonical import read_jsonl
+
+    folder = _first_build(ctx) / "gold" / "ard"
+    found: dict[str, dict[str, object]] = {}
+    for engine, suffix in (("Python", ""), ("R", ".r")):
+        path = folder / f"efficacy-cibic{suffix}.jsonl"
+        if not path.is_file():
+            ctx.out(f"CMH: no ARD of the {engine} engine at {path}")
+            return False
+        found[engine] = {row["id"]: row["raw_value"] for row in read_jsonl(path)
+                         if row["method_id"] == "test.cmh"}
+    python, r = found["Python"], found["R"]
+    worst = 0.0
+    problems = []
+    if set(python) != set(r) or len(python) != 3:
+        problems.append(f"the engines give {sorted(python)} and {sorted(r)}; three p-values "
+                        "are asked for, one per week")
+    for key in sorted(set(python) & set(r)):
+        a, b = python[key], r[key]
+        if not isinstance(a, float) or not isinstance(b, float):
+            problems.append(f"{key}: {a!r} and {b!r}")
+            continue
+        worst = max(worst, abs(a - b) / max(abs(a), abs(b)))
+        ctx.out(f"CMH: {key}: Python {a!r}, R {b!r}")
+    if worst > 1e-9:
+        problems.append(f"the largest relative difference is {worst:.1e} (allowed 1e-09)")
+    ctx.out(f"CMH: {len(python)} results in both engines; largest relative difference "
+            f"{worst:.1e} (allowed 1e-09)" + "".join(f"; {p}" for p in problems))
+    return not problems
 
 
 def _decisions(ctx: Context) -> bool:
@@ -368,6 +450,10 @@ def _method_vectors_5a(ctx: Context) -> bool:
 
 def _defects_5a(ctx: Context) -> bool:
     return _pytest(ctx, "tests/defects", "defects.xml", REAL5A_DEFECTS)
+
+
+def _defects_5b(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/defects", "defects.xml", REAL5B_DEFECTS)
 
 
 def _score(name: str) -> Callable[[Context], bool]:
@@ -492,6 +578,39 @@ GATES: dict[str, tuple[Check, ...]] = {
               _decisions),
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
         Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_5a),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # ADR-012, part real-5b of the slice efficacy-first (ADR-015 and its amendment of
+    # real-5b): everything the gate of real-5a checks, for Tables 14-3.11 and 14-3.13;
+    # the registry entries of the mixed model and of CMH with their vectors, computed
+    # again another way (method vectors); every printed cell of the two tables equals
+    # the CSR or has exactly one class with a proof (efficacy); the hint of E22 on the
+    # LS means of 14-3.11 is tested (E22 hint); the two engines agree on CMH (CMH,
+    # rule R11); each check has planted defects (D11, D12).
+    "real-5b": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("registry", "specfirst methods", _registry),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q",
+              _method_vectors_5a),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("P2 reproduction", f"{_REAL1_CHECK} (its second part)", _p2),
+        Check("trace", f"{_REAL1_CHECK} (its third part)", _trace),
+        Check("results", f"{_REAL1_CHECK} (its fourth part)", _results),
+        Check("efficacy", f"{_REAL1_CHECK} (its last part), CSR Tables 14-3.11 and 14-3.13",
+              _efficacy_5b),
+        Check("E22 hint", "the LS means of 14-3.11 against the CSR, at Week 24 and averaged",
+              _e22_hint),
+        Check("CMH", f"the test.cmh rows of build/p1/{PILOT}/first, Python against R",
+              _cmh_engines),
+        Check("decisions", f"specfirst.machine.build.decision_checks on build/p1/{PILOT}/first",
+              _decisions),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
+        Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_5b),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),

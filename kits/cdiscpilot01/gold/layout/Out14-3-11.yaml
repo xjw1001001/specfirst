@@ -1,0 +1,67 @@
+# Layout of the output Out14-3-11: CSR Table 14-3.11, ADAS Cog (11) - Repeated Measures Analysis of Change from Baseline to Week 24.
+#
+# Layout spec v0 (specfirst.machine.layout, ADR-003 and its amendments of real-5a and
+# real-5b). This file is ours. It holds what the ARS file (gold/events/efficacy-adas.json)
+# does not: which analysis stands in which rows, the cell templates and the row labels,
+# and which columns show a comparison. The patterns are those of the ARS operations: the
+# decimals of SAP template 10. The row labels are the CSR's; the reference of the grid is
+# the CSR page (kit.yaml). The rows show the analyses at Week 24 (custom:eff-mmrm-visit);
+# the analyses averaged over the weeks (An_ADAS_MMRM_*_Avg) stand in no row: they are the
+# other alternative, which the proofs of gold/exceptions.yaml name.
+layout: 0
+output: Out14-3-11
+columns:
+  grouping: AnlsGrouping_TRT01P
+rows:
+  - kind: header
+    cell: "{N}"
+    parts:
+      N: {analysis: An_EFF_N, operation: Mth_Count_1_n}
+  - kind: statistics
+    analysis: An_ADAS_MMRM_LSM
+    rows:
+      - label: LS Means (SE)
+        cell: "{lsm} ({se})"
+        parts:
+          lsm: {operation: Mth_MmrmLsm_1_lsm}
+          se: {operation: Mth_MmrmLsm_2_se}
+  - kind: statistics
+    analysis: An_ADAS_MMRM_PwPbo
+    columns: [Grp_Low, Grp_High]
+    rows:
+      - label: "p-value(Xan - Placebo)"
+        cell: "{p}"
+        parts:
+          p: {operation: Mth_MmrmPw_5_pval}
+      - label: Diff of LS Means (SE)
+        indent: 1
+        cell: "{diff} ({se})"
+        parts:
+          diff: {operation: Mth_MmrmPw_1_diff}
+          se: {operation: Mth_MmrmPw_2_se}
+      - label: 95% CI
+        indent: 1
+        cell: "({lower};{upper})"
+        parts:
+          lower: {operation: Mth_MmrmPw_3_lcl}
+          upper: {operation: Mth_MmrmPw_4_ucl}
+  - kind: statistics
+    analysis: An_ADAS_MMRM_PwLow
+    columns: [Grp_High]
+    rows:
+      - label: "p-value(Xan High - Xan Low)"
+        cell: "{p}"
+        parts:
+          p: {operation: Mth_MmrmPw_5_pval}
+      - label: Diff of LS Means (SE)
+        indent: 1
+        cell: "{diff} ({se})"
+        parts:
+          diff: {operation: Mth_MmrmPw_1_diff}
+          se: {operation: Mth_MmrmPw_2_se}
+      - label: 95% CI
+        indent: 1
+        cell: "({lower};{upper})"
+        parts:
+          lower: {operation: Mth_MmrmPw_3_lcl}
+          upper: {operation: Mth_MmrmPw_4_ucl}

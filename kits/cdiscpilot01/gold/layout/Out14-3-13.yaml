@@ -1,0 +1,89 @@
+# Layout of the output Out14-3-13: CSR Table 14-3.13, CIBIC+ - Categorical Analysis - LOCF.
+#
+# Layout spec v0 with the extra columns and the block kind `groups` of real-5b
+# (specfirst.machine.layout, ADR-003 and its amendments). This file is ours. It holds what
+# the ARS file (gold/events/efficacy-cibic.json) does not: which analysis stands in which
+# rows, the cell templates, the row labels and the column of the p-values, which is no
+# treatment group. The patterns are those of the ARS operations: the decimals of SAP ad hoc
+# template 1 ("xx (xx%)", "x.xxx"); the n rows show a count without the "(N=" of the
+# header. The row labels are the CSR's; the reference of the grid is the CSR page (kit.yaml).
+layout: 0
+output: Out14-3-13
+columns:
+  grouping: AnlsGrouping_TRT01P
+  extra:
+    - {id: pvalue, label: "p-value [1]"}
+rows:
+  - kind: header
+    cell: "{N}"
+    parts:
+      N: {analysis: An_CIBIC_EFF_N, operation: Mth_Count_1_n}
+  - kind: statistics
+    analysis: An_CIBIC_W08_N
+    section: Week 8
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth_Count_1_n, pattern: "X"}
+        extra:
+          pvalue:
+            cell: "{p}"
+            parts:
+              p: {analysis: An_CIBIC_W08_Cmh, operation: Mth_Cmh_1_pval}
+  - kind: groups
+    analysis: An_CIBIC_W08_Cat
+    grouping: AnlsGrouping_CIBIC
+    section: Week 8
+    indent: 1
+    cell: "{n} ({pct})"
+    parts:
+      n: {operation: Mth_CatSumm_1_n}
+      pct: {operation: Mth_CatSumm_2_pct}
+  - kind: statistics
+    analysis: An_CIBIC_W16_N
+    section: Week 16
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth_Count_1_n, pattern: "X"}
+        extra:
+          pvalue:
+            cell: "{p}"
+            parts:
+              p: {analysis: An_CIBIC_W16_Cmh, operation: Mth_Cmh_1_pval}
+  - kind: groups
+    analysis: An_CIBIC_W16_Cat
+    grouping: AnlsGrouping_CIBIC
+    section: Week 16
+    indent: 1
+    cell: "{n} ({pct})"
+    parts:
+      n: {operation: Mth_CatSumm_1_n}
+      pct: {operation: Mth_CatSumm_2_pct}
+  - kind: statistics
+    analysis: An_CIBIC_W24_N
+    section: Week 24
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth_Count_1_n, pattern: "X"}
+        extra:
+          pvalue:
+            cell: "{p}"
+            parts:
+              p: {analysis: An_CIBIC_W24_Cmh, operation: Mth_Cmh_1_pval}
+  - kind: groups
+    analysis: An_CIBIC_W24_Cat
+    grouping: AnlsGrouping_CIBIC
+    section: Week 24
+    indent: 1
+    cell: "{n} ({pct})"
+    parts:
+      n: {operation: Mth_CatSumm_1_n}
+      pct: {operation: Mth_CatSumm_2_pct}

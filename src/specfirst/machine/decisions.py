@@ -37,12 +37,20 @@ from specfirst.machine import ars
 from specfirst.machine.registry import Registry
 
 # Decision -> {key of its value: the registry option it sets}. The custom
-# decisions of real-5a that the method registry reads (ADR-015).
+# decisions of real-5a and real-5b that the method registry reads (ADR-015 and its
+# amendment of real-5b).
 PARAMETERS: dict[str, dict[str, str]] = {
     "custom:eff-model-terms": {"factors": "factors", "covariates": "covariates"},
     "custom:eff-dose-response": {"rule": "model", "dose": "dose"},
     "custom:eff-pairwise": {"df": "df", "confidence_level": "confidence_level"},
     "custom:eff-lsmeans-weights": {"rule": "weights"},
+    "custom:eff-mmrm-terms": {"factors": "factors", "covariates": "covariates",
+                              "visit": "visit", "by_visit": "by_visit",
+                              "treatment_by_visit": "treatment_by_visit"},
+    "custom:eff-mmrm-covariance": {"rule": "covariance"},
+    "custom:eff-mmrm-df": {"rule": "df"},
+    "custom:eff-mmrm-visit": {"rule": "at"},
+    "custom:eff-cmh": {"rule": "statistic", "scores": "scores", "strata": "strata"},
 }
 
 

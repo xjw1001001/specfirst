@@ -36,8 +36,14 @@ semantics:
     With the option rounding set to half_even, the number is rounded by
     display.round.half_even in place of the rule of statement 2. Statements
     3 to 7 hold as they stand.
+  - >-
+    With the option zero_sign set to kept, a negative number that rounds to
+    zero keeps its minus sign, in place of the last sentence of statement 5:
+    -0.04 under "X.X" is "-0.0". A number that is 0 has no sign either way
+    (amendment of real-5b: CSR Table 14-3.11 prints "-0.0").
 options:
   rounding: {values: [half_away_from_zero, half_even], default: half_away_from_zero}
+  zero_sign: {values: [dropped, kept], default: dropped}
 # Statements 3 to 5 are what the formatted values of CDISC's ARS example
 # "Common Safety Displays" show for its patterns (ADR-003). A display rule is
 # applied once, where the grid is built, so there is no second implementation.

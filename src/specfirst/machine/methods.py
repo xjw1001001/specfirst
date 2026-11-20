@@ -352,22 +352,30 @@ def pattern_mask(pattern: object) -> tuple[str, str, str]:
     return pattern[:found[0].start()], found[0].group(), pattern[found[0].end():]
 
 
+ZERO_SIGNS = ("dropped", "kept")
+
+
 def pattern_text(value: float | int | None, pattern: str, mock: bool = False,
-                 rounding: str = "half_away_from_zero") -> str | None:
+                 rounding: str = "half_away_from_zero", zero_sign: str = "dropped") -> str | None:
     """display.pattern: a number as the text a result pattern asks for.
 
     With `mock` the mask itself is shown, in lower case, in place of the
-    number: the text of a mock shell. `rounding` is the option of that name.
+    number: the text of a mock shell. `rounding` and `zero_sign` are the
+    options of those names.
     """
     before, mask, after = pattern_mask(pattern)
     if rounding not in ROUNDING_RULES:
         raise MethodError(f"unknown rounding rule '{rounding}'")
+    if zero_sign not in ZERO_SIGNS:
+        raise MethodError(f"unknown zero_sign '{zero_sign}'")
     if mock:
         return before + mask.lower() + after
     if value is None:
         return None
     rounded = _rounded(value, len(mask.partition(".")[2]), rounding)
     sign = "-" if rounded.startswith("-") else ""
+    if zero_sign == "kept" and value < 0 and not sign:  # statement 9
+        sign = "-"
     digits = rounded.removeprefix("-")
     if "." in mask:
         digits = digits.rjust(len(mask))
