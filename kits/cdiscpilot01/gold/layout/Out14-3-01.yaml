@@ -1,0 +1,128 @@
+# Layout of the output Out14-3-01: CSR Table 14-3.01, Primary Endpoint Analysis: ADAS Cog (11) - Change from Baseline to Week 24 - LOCF.
+#
+# Layout spec v0 with the block kind `statistics` of real-5a (specfirst.machine.layout,
+# ADR-003 and its amendment). This file is ours. It holds what the ARS file
+# (gold/events/efficacy-adas.json) does not: which analysis stands in which rows, the
+# cell templates and the row labels, and which columns show a comparison. The patterns
+# are those of the ARS operations: the decimals of SAP template 5. The row labels are the
+# CSR's; the reference of the grid is the CSR page (kit.yaml).
+layout: 0
+output: Out14-3-01
+columns:
+  grouping: AnlsGrouping_TRT01P
+rows:
+  - kind: header
+    cell: "{N}"
+    parts:
+      N: {analysis: An_EFF_N, operation: Mth_Count_1_n}
+  - kind: statistics
+    analysis: An_ADAS_W24_Base
+    section: Baseline
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth_ContSumm_1_n}
+      - label: Mean (SD)
+        cell: "{mean} ({sd})"
+        parts:
+          mean: {operation: Mth_ContSumm_2_Mean}
+          sd: {operation: Mth_ContSumm_3_SD}
+      - label: Median (Range)
+        cell: "{median} ({min};{max})"
+        parts:
+          median: {operation: Mth_ContSumm_4_Median}
+          min: {operation: Mth_ContSumm_5_Min}
+          max: {operation: Mth_ContSumm_6_Max}
+  - kind: statistics
+    analysis: An_ADAS_W24_Aval
+    section: Week 24
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth_ContSumm_1_n}
+      - label: Mean (SD)
+        cell: "{mean} ({sd})"
+        parts:
+          mean: {operation: Mth_ContSumm_2_Mean}
+          sd: {operation: Mth_ContSumm_3_SD}
+      - label: Median (Range)
+        cell: "{median} ({min};{max})"
+        parts:
+          median: {operation: Mth_ContSumm_4_Median}
+          min: {operation: Mth_ContSumm_5_Min}
+          max: {operation: Mth_ContSumm_6_Max}
+  - kind: statistics
+    analysis: An_ADAS_W24_Chg
+    section: Change from Baseline
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth_ContSumm_1_n}
+      - label: Mean (SD)
+        cell: "{mean} ({sd})"
+        parts:
+          mean: {operation: Mth_ContSumm_2_Mean}
+          sd: {operation: Mth_ContSumm_3_SD}
+      - label: Median (Range)
+        cell: "{median} ({min};{max})"
+        parts:
+          median: {operation: Mth_ContSumm_4_Median}
+          min: {operation: Mth_ContSumm_5_Min}
+          max: {operation: Mth_ContSumm_6_Max}
+  - kind: statistics
+    analysis: An_ADAS_W24_Dose
+    indent: 1
+    columns: [Grp_High]
+    rows:
+      - label: "p-value(Dose Response) [1][2]"
+        cell: "{p}"
+        parts:
+          p: {operation: Mth_AncovaDose_1_pval}
+  - kind: statistics
+    analysis: An_ADAS_W24_PwPbo
+    indent: 1
+    columns: [Grp_Low, Grp_High]
+    rows:
+      - label: "p-value(Xan - Placebo) [1][3]"
+        cell: "{p}"
+        parts:
+          p: {operation: Mth_AncovaPw_5_pval}
+      - label: Diff of LS Means (SE)
+        indent: 2
+        cell: "{diff} ({se})"
+        parts:
+          diff: {operation: Mth_AncovaPw_1_diff}
+          se: {operation: Mth_AncovaPw_2_se}
+      - label: 95% CI
+        indent: 2
+        cell: "({lower};{upper})"
+        parts:
+          lower: {operation: Mth_AncovaPw_3_lcl}
+          upper: {operation: Mth_AncovaPw_4_ucl}
+  - kind: statistics
+    analysis: An_ADAS_W24_PwLow
+    indent: 1
+    columns: [Grp_High]
+    rows:
+      - label: "p-value(Xan High - Xan Low) [1][3]"
+        cell: "{p}"
+        parts:
+          p: {operation: Mth_AncovaPw_5_pval}
+      - label: Diff of LS Means (SE)
+        indent: 2
+        cell: "{diff} ({se})"
+        parts:
+          diff: {operation: Mth_AncovaPw_1_diff}
+          se: {operation: Mth_AncovaPw_2_se}
+      - label: 95% CI
+        indent: 2
+        cell: "({lower};{upper})"
+        parts:
+          lower: {operation: Mth_AncovaPw_3_lcl}
+          upper: {operation: Mth_AncovaPw_4_ucl}

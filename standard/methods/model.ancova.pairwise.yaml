@@ -1,0 +1,76 @@
+# Method registry entry (PLAN.md section 7.3). Format: README.md in this folder.
+# A model-based method: R only (section 7.3; ADR-015).
+id: model.ancova.pairwise
+kind: model
+title: Analysis of covariance, each treatment group against a reference group
+takes: >-
+  the analysis records; the one grouping of the analysis, the treatment, with
+  results by group; the reference group, the factors and the covariates the
+  analysis names
+operations:
+  estimate:
+    result: number
+    ars_names: ["Difference of LS means"]
+  se:
+    result: number
+    ars_names: ["Standard error"]
+  lower_cl:
+    result: number
+    ars_names: ["Lower confidence limit"]
+  upper_cl:
+    result: number
+    ars_names: ["Upper confidence limit"]
+  p_value:
+    result: number
+    ars_names: ["P-value"]
+semantics:
+  - >-
+    The model records, the model and its variance are those of
+    model.ancova.lsmeans, statements 1 to 3.
+  - >-
+    The option reference names one group of the treatment grouping. Every
+    other group gives one result per operation, the comparison of that group
+    with the reference. The reference itself gives no result.
+  - >-
+    estimate: the lsmean of the group minus the lsmean of the reference
+    (model.ancova.lsmeans, statement 4), which is tau[group] - tau[reference].
+    In a model without interactions it does not depend on the weights of the
+    LS means or on the values the covariates are taken at.
+  - >-
+    se: the square root of d' V d, where d is the vector of coefficients that
+    gives the estimate and V the estimated covariance matrix of the
+    coefficients (model.ancova.lsmeans, statement 5).
+  - >-
+    p_value: the probability that |T| is at least |estimate / se|, two-sided,
+    where T has the t distribution with N - r degrees of freedom when the
+    option df is residual, and the standard normal distribution when it is
+    asymptotic. It is not adjusted for multiple comparisons.
+  - >-
+    lower_cl and upper_cl: estimate minus and plus q * se, with q of
+    model.ancova.lsmeans, statement 6.
+  - >-
+    A group or a reference without model records, or a difference that is not
+    estimable, gives missing results. When N - r is less than 1, every result
+    is missing.
+options:
+  factors:
+    takes: columns
+    default: []
+  covariates:
+    takes: columns
+    default: []
+  reference:
+    takes: group
+    default: null
+  df:
+    values: [residual, asymptotic]
+    default: residual
+  confidence_level:
+    values: [90, 95, 99]
+    default: 95
+implementations: [r]
+vectors: tests/methods/model_ancova_pairwise.json
+xref:
+  ars_example: []
+  siera: []
+  acdc: null

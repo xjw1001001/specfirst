@@ -407,6 +407,13 @@ run_analysis <- function(eng, analysis) {
     list(operation = operation, method = entry$method, name = entry$operation,
          hash = sha256_text(canonical_options(options[[entry$method]])))
   })
+  kinds <- vapply(bound, function(item) eng$registry$methods[[item$method]]$kind, "")
+  if (any(kinds == "model")) {
+    if (length(unique(vapply(bound, function(item) item$method, ""))) != 1) {
+      fail(where, ": a model-based analysis binds the operations of one registry method")
+    }
+    return(run_model(eng, analysis, rows, ordered, bound, options[[bound[[1]]$method]]))
+  }
   found <- list()
   percents <- list()
   for (cell in cells(eng, dataset, rows, by)) {
@@ -460,6 +467,95 @@ run_analysis <- function(eng, analysis) {
   found
 }
 
+# ---- model-based analyses (rules I16 to I19; R only) --------------------------------------
+
+# The model of an analysis is fitted once, to its analysis records (rule I6). Its one
+# grouping is the treatment: the group of a record is the group whose where clause it
+# fulfils (rule I8), or its value (rule I9). Results are per group of the grouping, or
+# one for the analysis when the grouping is compared (resultsByGroup false).
+run_model <- function(eng, analysis, rows, ordered, bound, options) {
+  dataset <- analysis$dataset
+  method <- bound[[1]]$method
+  where <- paste0("analysis '", analysis$id, "'")
+  if (length(ordered) != 1) {
+    fail(where, ": a model-based analysis has one grouping, the treatment; found ",
+         length(ordered))
+  }
+  grouping <- eng$groupings[[ordered[[1]]$groupingId]]
+  split <- isTRUE(ordered[[1]]$resultsByGroup)
+  if (method == "model.ancova.dose_response" && split) {
+    fail(where, ": the dose-response test compares its grouping (resultsByGroup false)")
+  }
+  if (method != "model.ancova.dose_response" && !split) {
+    fail(where, ": ", method, " gives results by group (resultsByGroup true)")
+  }
+  groups <- members(eng, dataset, grouping, rows)
+  ids <- vapply(groups, function(g) g$key, "")
+  group <- rep(NA_character_, length(rows))
+  for (g in groups) {
+    if (any(!is.na(group[g$mask]))) fail(where, ": a record belongs to two groups of ", grouping$id)
+    group[g$mask] <- g$key
+  }
+  y <- eng_numbers(eng, dataset, analysis$variable)[rows]
+  factors <- list()
+  for (name in unlist(options$factors)) factors[[name]] <- eng_text(eng, dataset, name)[rows]
+  covariates <- list()
+  for (name in unlist(options$covariates)) {
+    covariates[[name]] <- eng_numbers(eng, dataset, name)[rows]
+  }
+  df <- options$df %||% "residual"
+  level <- as.numeric(options$confidence_level %||% 95)
+  label <- function(g) list(n = 1, grouping = grouping$id, kind = g$kind, key = g$key)
+  found <- list()
+  add <- function(groups_of, value_of) {
+    for (item in bound) {
+      value <- value_of(item$name)
+      if (is.nan(value)) value <- NA_real_
+      found[[length(found) + 1]] <<- new_result(analysis$id, item$operation$id, groups_of,
+                                                method, item$hash, value)
+    }
+  }
+  if (method == "model.ancova.dose_response") {
+    doses <- NULL
+    if ((options$dose %||% "grouping_value") == "grouping_value") {
+      source <- eng_column(eng, grouping$groupingDataset, grouping$groupingVariable)
+      if (source$kind != "number") {
+        fail(where, ": the dose is the value of ", grouping$groupingDataset, ".",
+             grouping$groupingVariable, ", which holds text")
+      }
+      texts <- group_values(eng, dataset, grouping)[rows]
+      doses <- rep(NA_real_, length(texts))
+      if (any(texts != "")) doses[texts != ""] <- numbers_of(texts[texts != ""])
+    }
+    result <- m_ancova_dose_response(y, group, ids, doses, factors, covariates,
+                                     options$dose %||% "grouping_value",
+                                     options$model %||% "continuous_dose", df)
+    add(list(list(n = 1, grouping = grouping$id, kind = "all", key = NA_character_)),
+        function(name) result[[name]])
+    return(found)
+  }
+  if (method == "model.ancova.lsmeans") {
+    result <- m_ancova_lsmeans(y, group, ids, factors, covariates,
+                               options$weights %||% "equal", df, level)
+    for (g in groups) add(list(label(g)), function(name) result[[g$key]][[name]])
+    return(found)
+  }
+  if (method == "model.ancova.pairwise") {
+    if (!options$reference %in% ids) {
+      fail(where, ": the reference group ", options$reference, " is not a group of ",
+           grouping$id)
+    }
+    result <- m_ancova_pairwise(y, group, ids, options$reference, factors, covariates, df,
+                                level)
+    for (g in groups) {
+      if (g$key == options$reference) next
+      add(list(label(g)), function(name) result[[g$key]][[name]])
+    }
+    return(found)
+  }
+  fail(where, ": the R engine does not know ", method)
+}
+
 # ---- the registry and the job -----------------------------------------------------------
 
 # What the job binds must be in the registry, with an R implementation and
@@ -485,6 +581,14 @@ check_binding <- function(registry, binding) {
              "the registry")
       }
       for (name in names(given)) {
+        takes <- method$options[[name]]$takes
+        if (!is.null(takes)) {  # columns, or a group: stated by the analysis (ADR-015)
+          if (!all(vapply(given[[name]], is.character, TRUE))) {
+            fail("analysis ", analysis_id, ", method ", method_id, ": option ", name,
+                 " is not text")
+          }
+          next
+        }
         if (!given[[name]] %in% unlist(method$options[[name]]$values)) {
           fail("analysis ", analysis_id, ", method ", method_id, ": option ", name, " = ",
                given[[name]], " is not in the registry")
@@ -528,6 +632,7 @@ run_job <- function(job_path) {
   eng <- new.env()
   eng$subject_key <- job$subject_key
   eng$binding <- job$binding
+  eng$registry <- registry
   eng$analyses <- by_id(event$analyses)
   eng$methods <- by_id(event$methods)
   eng$sets <- by_id(event$analysisSets)

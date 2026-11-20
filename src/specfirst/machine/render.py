@@ -9,7 +9,9 @@ bytes (rule R4).
 Rows of the section `@header` (specfirst.machine.layout.HEADER_SECTION) are
 shown in the table header, under the column labels. The label of the first
 of them is the header of the row labels. Blanks in a cell are kept: a
-pattern pads with them.
+pattern pads with them. A section of the body is shown as a heading line
+above its rows, held against the grid like every other text (real-5a); a
+row without a section after a section gets an empty separator line.
 """
 
 from __future__ import annotations
@@ -54,6 +56,30 @@ def _row(row: dict) -> str:
     return f'<tr data-row="{escape(row["id"])}">{_stub(row)}{cells}</tr>'
 
 
+def _sections(body: list[dict]) -> list[tuple[str, object]]:
+    """The lines of the body: ("heading", name), ("separator", None) or ("row", row).
+
+    A row whose section differs from the row before it starts that section:
+    with a name, a heading line shows the name; without one (a row after a
+    section), an empty separator stands before it.
+    """
+    found: list[tuple[str, object]] = []
+    current: str | None = None
+    for row in body:
+        if row.get("section") != current:
+            current = row.get("section")
+            found.append(("heading", current) if current is not None else ("separator", None))
+        found.append(("row", row))
+    return found
+
+
+def section_headings(grid: dict) -> dict[str, str]:
+    """The heading lines a page shows, by their number (data-section): the section's name."""
+    body = [row for row in grid["rows"] if row.get("section") != HEADER_SECTION]
+    headings = [name for kind, name in _sections(body) if kind == "heading"]
+    return {str(number): str(name) for number, name in enumerate(headings, start=1)}
+
+
 def html(grid: dict) -> str:
     """One page that shows the grid."""
     columns = grid["columns"]
@@ -78,13 +104,17 @@ def html(grid: dict) -> str:
     lines.append(f'<tr><th class="stub"></th>{labels}</tr>')
     lines += [_row(row) for row in head]
     lines.append("</thead>")
-    section = None
     lines.append("<tbody>")
-    for row in body:
-        if row.get("section") != section:
-            section = row.get("section")
-            lines.append(f'<tr class="section" data-section="{escape(section or "")}"></tr>')
-        lines.append(_row(row))
+    headings = 0
+    for kind, item in _sections(body):
+        if kind == "heading":  # the section's name, above its rows
+            headings += 1
+            lines.append(f'<tr class="section"><th class="stub" colspan="{len(columns) + 1}" '
+                         f'data-section="{headings}">{escape(str(item))}</th></tr>')
+        elif kind == "separator":  # the rows after it have no section
+            lines.append('<tr class="section"></tr>')
+        else:
+            lines.append(_row(item))
     lines.append("</tbody>")
     if grid["footnotes"]:
         lines.append("<tfoot>")
@@ -99,7 +129,8 @@ def html(grid: dict) -> str:
 class _Reader(HTMLParser):
     """Collects the texts of a page made by `html`, by what each one is."""
 
-    _KINDS = ("data-cell", "data-label", "data-column", "data-title", "data-footnote")
+    _KINDS = ("data-cell", "data-label", "data-column", "data-title", "data-footnote",
+              "data-section")
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -151,6 +182,8 @@ def projection_problems(grid: dict, page: str) -> list[str]:
         wanted[("data-footnote", str(number))] = text
     for column in grid["columns"]:
         wanted[("data-column", column["id"])] = column["label"]
+    for number, name in section_headings(grid).items():
+        wanted[("data-section", number)] = name
     for row in grid["rows"]:
         wanted[("data-label", row["id"])] = row["label"]
         for cell in row["cells"]:

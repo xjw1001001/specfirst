@@ -606,6 +606,12 @@ def exchanged(event: ars.Event, comparison: Comparison, rows: Rows) -> Counter:
 # ---- the two engines ------------------------------------------------------------
 
 
+def r_only_methods(registry: Registry) -> set[str]:
+    """The registry methods only the R engine implements: the model-based ones (ADR-015)."""
+    return {method.id for method in registry.methods.values()
+            if "python" not in method.implementations}
+
+
 def agreement(first: Rows, second: Rows, names: tuple[str, str] = ("Python", "R"),
               tolerance: float = RELATIVE) -> tuple[list[str], list[str]]:
     """Rule R11: the same rows, the same stamps, and values within the relative tolerance."""

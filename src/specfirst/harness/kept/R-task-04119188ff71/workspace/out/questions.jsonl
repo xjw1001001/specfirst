@@ -1,0 +1,2 @@
+{"decision": "pop.efficacy.rule", "question": "Which subjects form the efficacy-evaluable set? Neither the protocol nor the SAP defines it.", "unit": "mod-populations"}
+{"decision": "ae.related.values", "question": "Which collected causality values (scale: NOT RELATED, UNLIKELY RELATED, POSSIBLY RELATED, PROBABLY RELATED, RELATED) count as related to study treatment?", "unit": "mod-ae-emergence"}

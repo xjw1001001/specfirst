@@ -185,4 +185,8 @@ def expected(method: str, case: dict) -> dict:
         return {"p_value": anova_oneway_p(given["groups"])}
     if method == "test.fisher.exact":
         return {"p_value": fisher_exact_p(given["table"])}
+    if method.startswith("model."):
+        import oracle_models
+
+        return oracle_models.expected(method, case)
     raise NotCovered(method)

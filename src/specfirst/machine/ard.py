@@ -2,7 +2,7 @@
 
 PLAN.md sections 7.1 and 7.2. One generic interpreter, no code per table.
 How an analysis is read (records, groupings, cells, tables, the population
-of an occurrence test) is written down as the numbered rules I1 to I15 in
+of an occurrence test) is written down as the numbered rules I1 to I19 in
 standard/methods/README.md; the comments here name them. What an operation
 computes is the method registry's business (specfirst.machine.methods).
 
@@ -419,7 +419,23 @@ class Engine:
 
     # ---- analyses ------------------------------------------------------------------
 
+    def r_only(self, analysis_id: str) -> bool:
+        """Whether the analysis uses a model-based method, which only the R engine runs.
+
+        PLAN.md section 7.3: model-based methods are R only. Their results come
+        from the R engine (ADR-015); this engine gives none for them.
+        """
+        analysis = self.event.analyses.get(analysis_id) or {}
+        used = {self.binding.operations[operation_id][0]
+                for operation_id, (method_id, _) in self.event.operations.items()
+                if method_id == analysis.get("methodId") and operation_id in
+                self.binding.operations}
+        return bool(used) and all(
+            "python" not in self.registry.method(method_id).implementations for method_id in used)
+
     def results(self, analysis_id: str) -> list[Result]:
+        if analysis_id not in self._results and self.r_only(analysis_id):
+            self._results[analysis_id] = []
         if analysis_id not in self._results:
             if analysis_id in self._running:
                 chain = " -> ".join([*self._running, analysis_id])
@@ -531,7 +547,10 @@ class Engine:
         return fits[0].value
 
     def run(self) -> list[dict]:
-        """Every analysis of the event, as ARD rows sorted by their ID."""
+        """Every analysis of the event, as ARD rows sorted by their ID.
+
+        An analysis of a model-based method gives no row here (`r_only`).
+        """
         rows = [result.row() for analysis_id in self.event.analyses
                 for result in self.results(analysis_id)]
         rows.sort(key=lambda row: row["id"])
