@@ -144,6 +144,11 @@ def test_a_difference_is_proved_by_another_build():
     ({"kind": "other_build", "template": "{n}"}, "must show parts of the cell"),
     ({"kind": "other_build", "template": "-{d} ({se})", "analyses": {"A_PW": "A_PW_Avg"}},
      "add no text"),
+    # G1: nor may a pattern carry text: the sign of "-0.0" by a pattern, not by the rule.
+    ({"kind": "other_build", "analyses": {"A_PW": "A_PW_Avg"}, "patterns": {"d": "-X.X"}},
+     "the other pattern '-X.X' of d changes more than the mask of 'X.X'"),
+    ({"kind": "other_build", "patterns": {"d": "-0.0", "se": "X.XX"}},
+     "the other pattern of d is no pattern"),
 ])
 def test_an_other_build_that_proves_nothing(proof, message):
     found = judged(dict(ENTRY, proof=proof))

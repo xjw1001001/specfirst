@@ -896,3 +896,512 @@ waits, as the report says, for the read track's ADR on kept runs; that is
 not a finding.
 
 Verdict: NOT SIGNED (blocking: F1)
+
+## Pass 2
+
+Reviewer: an independent agent with a fresh context, which wrote neither
+the work nor pass 1. Date: 2026-11-20. Correctness only, no style.
+
+Under review: commit `753b5ac` on branch `track/real`, which answers pass 1
+(above, on `4028b54`). I read the diff `4028b54..753b5ac` of every file it
+changes, pass 1 in full, the amendment "of real-5b" of ADR-015 as it now
+stands, the report docs/reports/real-5b.md as it now stands, and ADR-017
+and `src/specfirst/harness/binding.py` and the kept run's `binding.json` on
+`track/read` (`f104ef3`), which say what the read track's kept run is bound
+to.
+
+### Files I quote, with their SHA-256
+
+At `753b5ac` (`git show 753b5ac:<path> | sha256sum`):
+
+```text
+4262ce5fbf1e2922332fc23ff9c6dc4b28d6477a093a853277366f448968b0ee  docs/reports/real-5b.md
+e1cd8c9d0d3171e4055c0fd0183c616b7af4dc2ae1f37fcfd555a988c632ac8d  docs/reports/real-5b.review.md (pass 1, before this section)
+09ee7d89846da41e0f462c128d9de185d419bc1cbefb3041a5a45a15a6481151  docs/reports/real-5b.clean-clone.gate.log
+c8ffb8c05a306a595440e26c6b7e7a22fdf206acf2d43068a3727a01489eed8b  docs/decisions/ADR-015.md
+e9dc75f73b0650340cc9dc7f1aafdbedf0335d1e83396747db03cd34f3422baa  src/specfirst/machine/csr.py
+bc9f3b91e866037152b49c3f90cd05c4040141e1d0a09b73d8f999a0c1798e1b  src/specfirst/machine/build.py
+46fbff426c09cd48c050019e2faae9a251d9725dcc225e9aa00bb1deee812a2d  src/specfirst/machine/decisions.py
+ff509ac06d647c6af0bd3e445a0d8bcb6d4d23e7b1cc3f0e2ac193711df97782  src/specfirst/machine/methods.py
+287ecd1f099e0ce333d2693225f2daf31f7dd6ca67486051b0bb3799a4d649b2  r/specfirstr/R/models.R
+f22e5c95370d01d06cab4d0e1b58b7ba462bea4b302a76b7d0ddb8864ce570ae  standard/methods/display.pattern.yaml
+40af290cbd18994cd802200072e28265c66c0ade916035e99d679838f0bbd91a  standard/methods/display.pattern.signed.yaml
+4cab3003bf40e0581b5ad61d400ade9040225cb74e311b46ccdfba31f8bd1b9a  standard/methods/model.mmrm.lsmeans.yaml
+d483f17d951d8597716a033a8e41ce8f88004b220389901aa92c65a22616c6de  standard/methods/model.mmrm.pairwise.yaml
+edc5419a1e130a5da28694d02661897b2ab23ced6bd3c8df9776a0e9be048a7d  standard/methods/registry.json
+e33a656e678911b40212dd640120c5557c12865ce7fc633ec9638dc54c0e3bfa  tests/methods/display_pattern.json
+44169ae1a60ae781fdf466356ce13d8e795bf88834308d4ba1fd4dd63dc130ce  tests/methods/display_pattern_signed.json
+247934c23f1b985c53289255eaf97cfb6ef03627736441993dc5a596c3c32dee  tests/methods/model_mmrm_lsmeans.json
+f595b37ad461840b138b2663a1b40d2771864edd2952e513fe23e8f2c2c8329b  tests/methods/model_mmrm_pairwise.json
+67fc6b83ce126f1324dd5864b59b8033a6179b305499a05bf7fdaf30851a90bc  tests/methods/oracle_mmrm.py
+07c57c1a51036ed8ea9d52e6e0383c20ade6948b078ba81801d6389c3d2b3203  tests/defects/test_defects.py
+32843f3a2edb18c52a025ec9955f745fa7495e64283addcec8b0d8276c7144b7  tests/unit/test_efficacy_5b.py
+3b06f8acab5615ecab9b1b89ce742c26df4a237cd3f4d37aacd35fd9c5faa958  tests/unit/test_gates.py
+ab0778f58a2e1701ca0ff1a1d8b15c2e64f39954d35e95b2e0b78c241f9a1ad2  kits/cdiscpilot01/gold/exceptions.yaml
+650a344f128c03a51425bdcedc438f5f16af2f782b118b244cd2ccf0f2171a51  kits/cdiscpilot01/gold/decisions/efficacy.jsonl
+29027aa6503d5f9e3d952e121a0fa1ab7542b7600a81b8ad9928bcfc9cf4467b  kits/cdiscpilot01/gold/layout/Out14-3-11.yaml
+85aa29f0723b031b6aaa9f61cd25e1c94920c9f94a57dcb86b148d33a467024b  kits/cdiscpilot01/gold/layout/Out14-3-13.yaml
+01f290d85220a0d6f83d162f99e6c81a33017fff62d962765e91cc1f5fe9f717  kits/cdiscpilot01/gold/events/efficacy-adas.json
+```
+
+At `548c0f5`: `standard/methods/display.pattern.yaml` f22e5c95...70ae and
+`tests/methods/display_pattern.json` e33a656e...3bfa, the same as at
+`753b5ac`. On `track/read` `f104ef3`:
+`src/specfirst/harness/kept/R-task-04119188ff71/binding.json`
+68822d77688e7759eda10b190a1fe95da6df82256c2252df24710a3babc6a641.
+Pinned sources, read in my assembled kit (`kit assemble`: "67 files match
+their pinned SHA-256"): sap.pdf 210b7f1f...1bc7, CSR.pdf 0cab016c...842d
+(as in pass 1); poppler `pdftotext` 24.02.0.
+
+### Commands I ran, with their output (rule R8)
+
+Setup: WSL Ubuntu-24.04 as root, the worktree's environment
+(`. /mnt/d/trial_work/specfirst-real/scripts/env.sh`), fresh clones of
+`753b5ac` in the Linux file system under `/root/scratch-review-real5b-p2/`
+(`gate-real-5b`, `gate-real-5a`, `gate-real-3a`, and `clone` for the light
+runs), `SPECFIRST_ROOT` and `PYTHONPATH` set to the clone; my scripts in my
+session's temporary folder. Every gate and every run of the engines under
+`flock /run/lock/specfirst-heavy.lock taskset -c 0-3`. Nothing written into
+the checkout but this section, nor into the fetch cache (each gate: "cache
+untouched" PASS).
+
+#### D1. The gate real-5b on my clone of 753b5ac
+
+```text
+$ git clone -q --no-local /mnt/d/trial_work/specfirst/.git gate-real-5b; git -C gate-real-5b checkout -q --detach 753b5ac
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -m specfirst gate real-5b
+gate real-5b at commit 753b5acfc256979a7a494a616db1b5520d0ebc3b (clean)
+1201 passed, 30 deselected in 519.53s (0:08:39)
+Python implementations: 139 cases of 11 methods, 0 differences
+R implementations: 134 cases of 12 methods, 0 differences
+expected values computed again in exact arithmetic: 134 cases, 0 differences; written by hand: 63 cases (the display rules)
+model-based methods in R: 58 cases of 5 methods, 0 differences
+planted: model.mmrm.lsmeans always with at = last: 2 cases differ
+planted: model.mmrm.pairwise always with df = kenward_roger_linear: 1 cases differ
+P1 determinism: 56 of 56 files have the same SHA-256 in both builds
+grid Out14-3-11 against CSR Table 14-3.11: 24 cells, 15 of them printed in the CSR; 12 equal the CSR, 12 differ, 12 of them with one class and a proof that holds
+grid Out14-3-13 against CSR Table 14-3.13: 100 cells, 78 of them printed in the CSR; 76 equal the CSR, 24 differ, 24 of them with one class and a proof that holds
+grid Out14-3-01 (03, 05) against CSR Table 14-3.01 (03, 05): ... 3 differ, 3 of them with one class and a proof that holds
+efficacy: 2 tables, 124 cells; 88 equal the CSR; classified differences: 36 rule_choice
+E22: Table 14-3.11 prints 12 numbers of the model; at Week 24 0 of them equal the CSR; averaged over weeks 8, 16 and 24, 12 cells give the CSR's text (other_build proofs that hold: 12 of 12 differing cells)
+CMH: 3 results in both engines; largest relative difference 9.7e-16 (allowed 1e-09)
+decisions: 18 records, 18 IDs; 99 options of analyses held against the decisions that set them; 0 problems
+--- D11-efficacy-5b   (21 plants and 2 against the records, each with problems; among them:)
+planted, gold's analyses alone at 90% confidence: 12 problems, ... An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the optio...
+planted, gold's analyses alone on the records LOCF adds: 12 problems, ...
+planted, a proof whose template is the CSR's text: 1 problems, ... the other template must show parts of the cell and add no text ...
+planted, a proof whose template adds text ('{lsm} (0.49)'): 1 problems, ...
+planted, an entry that names an unrelated decision (custom:eff-cmh): 1 problems, ... custom:eff-cmh binds no analysis of the cell nor its me...
+63 passed in 148.97s (0:02:28)
+PASS environment, pins, lint, registry, unit tests, method vectors, kit, P1 determinism,
+     P2 reproduction, trace, results, efficacy, E22 hint, CMH, decisions, pilot tests,
+     planted defects, cache untouched, ASCII
+GATE real-5b: PASS
+```
+
+#### D2. The check of the cells against the plants of pass 1 and new ones
+
+`plants2.py` (SHA-256 47932340...c0be5) on the build of D1
+(`build/p1/cdiscpilot01/first`): the functions the gate calls
+(`build.csr_against` for each table against its CSR table and the kit's
+exceptions and records, `decisions.problems`), and both engines on a
+changed event (`efficacy_rows` of tests/defects), under the lock.
+
+```text
+control Out14-3-11: 24 cells, 15 printed, 12 equal, 12 differ, 12 classified ['rule_choice'], 0 problems
+control Out14-3-13: 100 cells, 78 printed, 76 equal, 24 differ, 24 classified ['rule_choice'], 0 problems
+control: classified 36; decisions: 0 problems
+A1 other_build template = the CSR's text '1.6 (0.49)': 1 problems -> seen; ... the other template must show parts of the cell and add no text ...
+A2 template '{lsm} (0.49)' (no analyses): 1 problems -> seen; (the same reason)
+A2b template '{lsm} (0.49)' with the averaged analysis: 1 problems -> seen; (the same reason)
+A3 14-3.13 p-value proved by template '0.2727': 1 problems -> seen; (the same reason)
+A4 the 12 entries of 14-3.11 naming custom:eff-cmh: 12 problems -> seen; ... custom:eff-cmh binds no analysis of the cell nor its method; An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the opti...
+A4b one entry naming [custom:eff-mmrm-visit, custom:eff-cmh]: 1 problems -> seen; ... custom:eff-cmh binds no analysis of the cell nor its method
+A5 an LS-mean proof mapping to the averaged pairwise analysis: 1 problems -> seen; ... An_ADAS_MMRM_PwPbo_Avg differs from An_ADAS_MMRM_LSM in more than the options at of custom:eff-mmrm-visit
+A6 an entry of 14-3.11 with class reference_error: 1 problems -> seen; ... other_build proves a rule_choice
+A7 an entry naming custom:eff-mmrm-df (binds the cell, sets df, not at): 1 problems -> seen; ... differs from An_ADAS_MMRM_LSM in more than the options df of custom:eff-mmrm-df
+A8 an entry naming custom:eff-mmrm-display only (binds the method, sets nothing): 1 problems -> seen; ... set no option of an analysis ...
+A9 '-0.0' proved without display.pattern.signed: 1 problems -> seen; ... with the other build the cell is '0.0 (0.70)'
+A10 '-0.0' proved with display 'display.pattern' named: 1 problems -> seen; (the same)
+A11 a template that drops a part, '{lsm}', with the averaged analysis: 1 problems -> seen; ... with the other build the cell is '1.6'
+A12 a template that swaps the parts, '{se} ({lsm})', with the averaged analysis: 1 problems -> seen; ... '0.49 (1.6)'
+B1 14-3.13 r2/c4 (gold right) proved by other_pattern {p: 'X.2727'}: 0 problems -> NOT SEEN
+B1b the same by other_build {patterns: {p: 'X.2727'}}: 0 problems -> NOT SEEN
+B2 gold's week 8 p-value cell now (ours, CSR): ('0.400', '0.2727')      (layout: the week 8 row shows An_CIBIC_W16_Cmh)
+B2a gold wrong (week 16's p in the week 8 row), the entry as it is: 1 problems -> seen; ... with the other patterns the cell is '0.4003'
+B2b gold wrong, the entry's pattern 'X.2727' (other_pattern): 0 problems -> NOT SEEN
+B6 literal-pattern proofs for the 12 entries of 14-3.11, gold as it is:
+   r2/c1 {se}: {"se": "X.6 (0.49)"}; r2/c2 {lsm}: {"lsm": "1.5 (0.5X)"}; r2/c3 {se}: {"se": "X.1 (0.56)"};
+   r3/c3 {p}: {"p": "X.556"}; r5/c2 {upper}: {"upper": "(-X.4;1.3)"}; r5/c3 {upper}: {"upper": "(-X.9;1.0)"};
+   r7/c3 {diff}: {"diff": "-X.4 (0.75)"}; r3/c2, r4/c2, r4/c3, r6/c3, r8/c3: none found (entry kept)
+B6 the 12 entries of 14-3.11 with literal-pattern proofs (gold as it is): 0 problems -> NOT SEEN
+--- both engines, under the lock
+C8h-1 gold's Week 24 analyses alone at 90%: efficacy: 12 problems -> seen; ... An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the options at of custom:eff-mmrm-visit
+C8h-1 the same: decisions: 0 problems
+   LOCF alone: gold's cells of the model: r2/c1 '2.3 (0.60)', r2/c2 '1.8 (0.59)', r2/c3 '1.3 (0.62)', r3/c2 '0.613', r3/c3 '0.237', r4/c2 '-0.4 (0.82)', ...
+C8h-2 gold's Week 24 analyses alone on the LOCF records: efficacy: 12 problems -> seen; (the same reason)
+C8h-2 the same: decisions: 0 problems
+B3 literal-pattern proofs for gold on the LOCF records: found for 9 cells
+   (r2/c1, r2/c2, r2/c3, r3/c3, r4/c2 {"diff": "-X.0 (0.70)"}, r5/c2, r5/c3, r6/c3 {"p": "X.606"}, r8/c3); none for r3/c2, r4/c3, r7/c3
+B3 gold's Week 24 analyses alone on the LOCF records, literal-pattern proofs: 3 problems -> seen; the 3 cells without one:
+   cell:Out14-3-11/r3/c2: ours '0.613', CSR '0.955': ... An_ADAS_MMRM_PwPbo_Avg differs from An_ADAS_MMRM_PwPbo in more than the options at ...
+   unchanged: gold's cells of the model: r2/c1 '2.3 (0.69)', r2/c2 '1.7 (0.77)', r2/c3 '1.5 (0.84)', r3/c2 '0.560', r3/c3 '0.440', r4/c2 '-0.6 (1.02)', ...
+   visits by AVISIT: gold's cells of the model: r2/c1 '0.6 (0.48)', r2/c2 '1.6 (0.47)', r2/c3 '0.8 (0.50)', r3/c2 '0.108', r3/c3 '0.769', r4/c2 '1.1 (0.65)', r4/c3 '0.2 (0.67)', r5/c2 '(-0.23;2.33)', ...
+B4 the visits ordered by AVISIT (record and six analyses): efficacy: 0 problems -> NOT SEEN
+B4 the same: decisions: 0 problems -> NOT SEEN
+B4 the six analyses by AVISIT, the record unchanged: decisions: 6 problems -> seen; first: custom:eff-mmrm-terms: ars:An_ADAS_MMRM_LSM has visit = ['AVISIT'], the decision visit = ['AVISITN']
+B5 r2/c1 proved by an analysis averaged and with Satterthwaite (names visit, df): 0 problems -> passes
+B5b the same naming custom:eff-mmrm-visit only: 1 problems -> seen; ... An_ADAS_MMRM_LSM_X differs from An_ADAS_MMRM_LSM in more than the options at of custom:eff-mmrm-visit
+```
+
+In B3 the 9 cells with a literal proof pass: the 3 problems are the cells
+for which no single mask of their values gives a digit the CSR's text
+holds, so they keep their original entry.
+
+#### D3. display.pattern and the entries the read track's slice reaches
+
+`registry_and_signed.py`: the canonical SHA-256 (`canonical.content_hash`,
+as `binding.entries` of `track/read` computes it) of each record of
+registry.json at `548c0f5` and `753b5ac`, against the kept run's
+`binding.json` on `track/read` `f104ef3`.
+
+```text
+registry format: 548c0f5 0 753b5ac 0 kept binding 0
+count.subjects                       548c0f5 59ebd98d4878fe2e 753b5ac 59ebd98d4878fe2e same; kept binding 59ebd98d4878fe2e equal
+display.pattern                      548c0f5 cd734ed0247cc43c 753b5ac cd734ed0247cc43c same; kept binding cd734ed0247cc43c equal
+display.pattern.signed               548c0f5 None             753b5ac 4247d61ce9b20592 added
+display.round.half_away_from_zero    548c0f5 2cc13b617fd65862 753b5ac 2cc13b617fd65862 same; kept binding 2cc13b617fd65862 equal
+display.round.half_even              548c0f5 7547577274e4fb9f 753b5ac 7547577274e4fb9f same
+model.mmrm.lsmeans, model.mmrm.pairwise, test.cmh: added; the other 7 entries: same
+percent.subjects                     548c0f5 6da10171ab4b2eef 753b5ac 6da10171ab4b2eef same; kept binding 6da10171ab4b2eef equal
+$ git diff --stat 548c0f5 753b5ac -- (the YAML and vector files of count.subjects, percent.subjects,
+      display.round.half_away_from_zero, display.round.half_even, display.pattern)
+(no output)
+```
+
+#### D4. display.pattern.signed: its vectors against the implementation and against plants
+
+The same script, the 7 cases called as test_methods.py calls them
+(`pattern_text(..., zero_sign="kept", **options)`), and the 22 cases of
+display.pattern, with `methods.pattern_text` and with six changed copies:
+
+```text
+display_pattern.json cases: 22 ; any with zero_sign: False
+implementation as committed: signed vectors 7 of 7 pass; display.pattern vectors that fail: 0
+plant: the sign never kept: signed vectors 4 of 7 pass (cases 1, 2, 4 fail)
+plant: 0 signed too: signed vectors 6 of 7 pass (case 5: '-0.0' != '0.0')
+plant: a positive number that rounds to zero signed: 6 of 7 pass (case 6)
+plant: the sign after the padding: 5 of 7 pass (case 2: ' -0.0' != '- 0.0'; case 3)
+plant: the option rounding ignored: 6 of 7 pass (case 4: '-0.1' != '-0.0')
+plant: a missing number shown as empty text: 6 of 7 pass (case 7)
+```
+
+#### D5. The mixed model's edge cases and its 23 vectors
+
+`mmrm_edges.py`: data from a seeded numpy generator (SITE of 3 levels,
+BASE and BASE by visit), through the registry's R implementation
+(`rengine.run_vectors`) and `oracle_mmrm.expected`; `vec23.py`: the 23
+vectors through R now and the oracle now.
+
+```text
+model.mmrm.lsmeans: one group (B of A, B, C), KR, last [19 records]: agree; groups with results []        (oracle: does not increase; R: no fit)
+model.mmrm.lsmeans: one group, Toeplitz, no treatment by visit [19 records]: agree; groups with results ['B']
+model.mmrm.lsmeans: one group (C), 4 visits, average [37 records]: DIFFER; R gives C, oracle: Fisher scoring did not converge
+model.mmrm.lsmeans: one visit, three groups [24 records]: agree; groups with results []
+model.mmrm.lsmeans: one text visit, two groups [16 records]: agree; groups with results []
+model.mmrm.lsmeans: two groups of three (B without records) [45 records]: agree; groups with results ['A', 'C']
+model.mmrm.lsmeans: one group, text visits V16 < V24 < V8 [20 records]: DIFFER; R gives B, oracle: does not increase
+model.mmrm.lsmeans: one group, 30 subjects, unstructured, KR, last [83 records]: agree; groups with results ['B']
+model.mmrm.lsmeans: one group, 30 subjects, Satterthwaite, average [83 records]: agree; groups with results ['B']
+model.mmrm.lsmeans: one group, 30 subjects, text visits V16 < V24 < V8, last [81 records]: agree; groups with results ['C']
+model.mmrm.pairwise: one group (C) that is not the reference A [37 records]: agree; groups with results []
+model.mmrm.pairwise: the reference alone (A) [20 records]: agree; groups with results []
+model.mmrm.pairwise: the reference alone, average, Satterthwaite [23 records]: agree; groups with results []
+model.mmrm.pairwise: one visit, three groups, pairwise [24 records]: agree; groups with results []
+model.mmrm.pairwise: two groups, reference C, B without records [45 records]: agree; groups with results ['A']
+model.mmrm.pairwise: reference B and one other group present of four [109 records]: agree; groups with results ['D']
+largest relative difference R against oracle (results both give): 2.1e-08
+
+$ python vec23.py
+23 vectors; largest relative difference: R against the files 7.1e-09; oracle now against the files 1.3e-15; R against the oracle now 7.1e-09
+```
+
+#### D6. The quotes of the changed records in the SAP
+
+My poppler text of sap.pdf, blanks collapsed:
+
+```text
+1  Summary statistics will be generated for each visit using the efficacy      (custom:eff-cibic-records, 10.1.2: 572 characters after the heading 10.1.2)
+1  The visits for CIBIC+ are Week 8, Week 16, and Week 24
+1  Week 8 N xx xx xx x.xxx                                                      (custom:eff-cibic-categories: in ad hoc template 1, "CIBIC+ - Categorical Analysis - LOCF")
+2  Marked improvement xx (xx%)
+1  7-point scale
+1  Overall comparison of treatments using CMH test (Pearson Chi-Square),        (custom:eff-cmh)
+1  by using the CMH test, controlling for site
+3  LS Means (SE) xx.x (x.xx)                                                    (custom:eff-mmrm-display)
+12 95% CI (xx.xx;xx.xx)
+```
+
+#### D7. The other gates and the unit tests of the proofs
+
+```text
+$ python -m pytest -q tests/unit/test_efficacy.py tests/unit/test_efficacy_5b.py tests/unit/test_gates.py -m "not evidence"   (clone of 753b5ac)
+86 passed in 2.82s
+$ grep -n "csr.judge" tests/unit/test_efficacy.py
+129:    csr.judge(compared, [ENTRY], PLANNED, OURS, {"custom:d"})
+145:        csr.judge(compared, entries, PLANNED, OURS, {"custom:d"})
+$ flock ... taskset -c 0-3 python -m specfirst gate real-5a   (clone gate-real-5a of 753b5ac)
+gate real-5a at commit 753b5acfc256979a7a494a616db1b5520d0ebc3b (clean)
+1201 passed, 30 deselected in 455.05s (0:07:35)
+grid Out14-3-01 (03, 05) against CSR Table 14-3.01 (03, 05): 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+grids: 6 outputs, pass
+efficacy: 3 tables, 153 cells; 144 equal the CSR; classified differences: 9 rule_choice
+decisions: 18 records, 18 IDs; 99 options of analyses held against the decisions that set them; 0 problems
+63 passed in 130.14s (0:02:10)
+GATE real-5a: PASS   (18 of 18 PASS)
+$ flock ... taskset -c 0-3 python -m specfirst gate real-3a   (clone gate-real-3a of 753b5ac)
+gate real-3a at commit 753b5acfc256979a7a494a616db1b5520d0ebc3b (clean)
+1201 passed, 30 deselected in 463.12s (0:07:43)
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+grids: 6 outputs, pass
+63 passed in 132.97s (0:02:12)
+GATE real-3a: PASS   (16 of 16 PASS)
+```
+
+### Answers to the five questions
+
+#### 1. F1: the cases of pass 1, the 36 entries, and other ways in
+
+Every case pass 1 planted is now refused, and by the rule meant for it
+(D2): the CSR's text as the template, the half-literal template with or
+without the averaged analysis, the literal p-value template (A1 to A3: "the
+other template must show parts of the cell and add no text"); the 12
+entries naming `custom:eff-cmh`, alone or beside `custom:eff-mmrm-visit`
+(A4, A4b: "binds no analysis of the cell nor its method"); an LS mean
+mapped to the averaged pairwise analysis (A5: "differs ... in more than the
+options at"); the class `reference_error` (A6); gold's Week 24 analyses
+alone at 90% or on the records LOCF adds, both engines (C8h-1, C8h-2:
+`efficacy` sees each, 12 problems, by "differs from ... in more than the
+options at"; `decisions` still sees neither, which is right: no record sets
+those). So are a decision that binds the cell but sets another option
+(A7), a decision that sets no option (A8), the sign of "-0.0" without
+display.pattern.signed (A9, A10) and a template that drops or swaps parts
+of the averaged build (A11, A12). The 36 genuine entries hold: 12 of 12
+and 24 of 24 classified `rule_choice`, 0 problems, `decisions` 0 problems
+(D2 control; D1).
+
+Other ways in. (a) An other analysis that differs only in an option a
+named decision sets: the options allowed are those of all the decisions
+an entry names, and nothing asks that the CSR follows each of them. B5:
+the LS mean of placebo proved by an analysis averaged and with
+Satterthwaite, the entry naming `custom:eff-mmrm-visit` and
+`custom:eff-mmrm-df`: 0 problems; naming the first alone: seen
+("differs ... in more than the options at"). That is the design the
+amendment states ("an entry may name a list of decisions"), and
+gold itself stays held by the check `decisions` for every option a record
+sets, so I record it, not as a finding: the owner sees both names at N2.
+(b) A template that drops a part: allowed and needed (`{n}` for the counts
+of 0); with the averaged build it gives "1.6", not the CSR's text (A11).
+(c) Text carried by a pattern: G1, which gets wrong gold numbers past the
+check. (d) What "last" means: G2, inherent to a CSR that prints no
+number of the last visit.
+
+#### 2. F2 to F7
+
+- F2: `test_the_cmh_check_of_real5b_sees_a_disagreement` plants a value
+  moved by 2e-9, a row left out and a missing value in the R file and keeps
+  5e-10 inside; it runs in the gate's unit tests (D1, D7). Fixed.
+- F3: fixed as said. R against the oracle on inputs of mine (D5): one group
+  of three with records, at the last visit and averaged, unstructured and
+  Toeplitz, KR and Satterthwaite, text visits, gives that group's LS mean
+  and the others missing; the reference alone, one visit (numeric or text),
+  a non-reference group alone give missing results; where both give
+  numbers they agree to 2.1e-8. On small data of one group (8 to 10
+  subjects) the oracle stops ("does not increase", "did not converge")
+  where R gives results: F4 again, not R. The 23 vectors: R against the
+  files 7.1e-9, the oracle now against the files 1.3e-15 (D5).
+- F4: not fixed, stated: the oracle's comment, ADR-015 decision 14, the
+  report. Holds.
+- F5: the four records now say what pass 1 asked; every new quote stands in
+  the SAP section it cites (D6); decisions.py and the report list the
+  records held by no check. Fixed.
+- F6: items 1, 2, 3 and 5 corrected; item 4 true now that F2 is planted.
+  Fixed, but the report has new stale figures (G3).
+- F7: `custom:eff-mmrm-display` states gold's sign rule (`zero: no_sign`),
+  the four entries name both decisions, ADR-015 "For the owner" item 5 lists
+  both points. Fixed.
+
+#### 3. display.pattern and display.pattern.signed
+
+display.pattern is byte for byte what it was at `548c0f5`: the YAML and
+its vectors have the same SHA-256, and its record in registry.json has the
+same canonical SHA-256 (D3). So have count.subjects, percent.subjects and
+both rounding rules (YAML, vectors and record), and the four records equal
+those the kept run's `binding.json` on `track/read` holds for the entries
+its slice reaches; the registry's format is 0 in both. `pattern_text`
+without `zero_sign` does what it did at `548c0f5` (the 22 vectors of
+display.pattern pass). The new entry adds no ARS name, so `ars.bind` (B3:
+descriptive only) cannot make a generated kit reach it.
+
+display.pattern.signed says what the code does: statement 1 is
+`zero_sign == "kept" and value < 0 and not sign` (the sign before the
+padding, as display.pattern places a sign), statement 2 that 0 and a
+positive number get none (-0.0 is not < 0). Its 7 vectors fail on every
+plant I made in the implementation (D4): the sign never kept (3 fail), 0
+signed (1), a positive number signed (1), the sign after the padding (2),
+the option rounding ignored (1), a missing number as empty text (1).
+
+#### 4. What the fixes may have broken
+
+Nothing I could find. The gates real-5a and real-3a pass on clones of
+`753b5ac` (D7); real-5a's 9 entries (other_pattern) pass the new bind
+check, and real-5a's D9 sees its plants as before. The unit tests of
+real-5a that call `csr.judge` with a set of IDs pass (86 passed in
+test_efficacy, test_efficacy_5b and test_gates, D7): with a set the bind
+check is skipped and an other analysis is refused
+("which the check was not given"); no caller outside the tests passes a
+set (`build.csr_against` passes the records and the event's analyses, and
+`csr_comparison` the kit's records), so the gates always run the full
+check.
+
+#### 5. The report and ADR-015's amendment
+
+The amendment's decisions 16, 17 and 19 and its "For the owner" items 2, 4
+and 5 are supported by my runs, except decision 16's "held to 'that
+alternative'" and "adds no text", which patterns defeat (G1). Decision 14's
+"23 vectors ... about 1e-8" holds (7.1e-9, D5). The report's changed
+statements hold: the two Satterthwaite cells (D11 in D1: "2 problems"),
+the edge cases (D5), the CMH reading of general association (0.770 for
+week 16 in D11's plant, D1; 0.478 and 0.868 are pass 1's C5, as are the df
+figures, C4). But its gate and counts are of `10c6bbc` (G3), and it does
+not say G2.
+
+### Findings
+
+#### G1 (blocks the merge): a pattern of a proof may carry text of its own, so a proof that proves nothing still holds and a wrong gold number still passes
+
+Where: `csr._other_build` and the `other_pattern` branch of `csr.judge`
+(the `patterns` of a proof go to `methods.pattern_text` unchecked);
+ADR-015, amendment of real-5b, decision 16.
+
+What: pass 1's F1, item 2, was that "a template may show no result" (the
+CSR's text as the template). The fix holds the template: it must show
+parts of the cell and add no text. But `patterns` are not held, and a
+result pattern is text around one mask of X (`methods.pattern_mask`:
+"(XXX.X)" is a valid pattern), so the text the template may no longer add
+comes in through the pattern of one part, and the template may drop the
+other parts (`{se}` alone is allowed, rightly, for the counts of 0). The
+mask then shows only one or two digits of the value: a p-value below 0.5
+under "X" is "0", so "X.2727" shows "0.2727" for any such p-value.
+
+Evidence (D2): on the genuine values, the p-value of week 8 in 14-3.13
+proved by `{p: X.2727}` (other_pattern or other_build), 0 problems (B1,
+B1b); 7 of the 12 entries of 14-3.11 replaced by proofs such as `{template:
+"{se}", patterns: {se: "X.6 (0.49)"}}`, which read no averaged analysis, 0
+problems (B6). With gold wrong: the week 8 row of 14-3.13 showing the CMH
+p-value of week 16 ("0.400"), seen with the entry as it is (B2a), passes
+with the pattern "X.2727" (B2b, 0 problems); gold's Week 24 analyses alone
+on the records LOCF adds, which the fixed check now sees (C8h-2), pass in
+the 9 cells for which one mask of a value gives a digit the CSR's text
+holds; the 3 others fail only for want of such a digit (B3). So, for
+Table 14-3.11 as for 14-3.13, a differing cell can still be classed
+`rule_choice` with a proof that proves nothing, and ADR-015's "held to
+'that alternative'" and the exceptions file's "(parts of the cell, no text
+of its own)" are not what the check does.
+
+Fix (small; no number and no genuine entry changes): a pattern of a proof
+keeps the text of the part's own pattern before and after its mask and
+changes only the mask (`pattern_mask(new)[0] == pattern_mask(old)[0]` and
+the same for `[2]`), in both proof kinds. All 45 genuine entries of the kit
+(the 36 of real-5b and the 9 of real-5a) give bare masks (`X.X`,
+`X.XXXX`) for parts whose own patterns are bare masks, so they still hold.
+Plants: B1, B2b and B6 (or one of each kind) in D11 and in
+test_efficacy_5b.
+
+#### G2 (does not block): what "the last visit" is, is held by no cell of the CSR
+
+Where: Table 14-3.11; `custom:eff-mmrm-terms` (`visit`) and
+`custom:eff-mmrm-visit`; the report's "What the checks do not cover".
+
+What: since the fix, gold's analyses and the averaged ones that prove the
+12 cells may differ only in `at`, so every defect the two share shows in
+the averaged numbers and fails a proof (C8h-1, C8h-2: seen). What they do
+not share is which visit is last, and the CSR prints no number of the last
+visit. B4 (D2): the visits taken from AVISIT (text, so "Week 8" sorts last)
+in the record `custom:eff-mmrm-terms` and in the six analyses alike: gold's
+table under the title "to Week 24" shows the LS means of the last visit by
+characters, Week 8 (statement 2): "0.6 (0.48)", "1.6 (0.47)", "0.8
+(0.50)" in place of "2.3 (0.69)", "1.7 (0.77)", "1.5 (0.84)", and each of
+the other 9 numbers of the model changes too; `efficacy` and `decisions`
+give 0 problems. The R code's choice of the last level is held
+by the vectors (pass 1, C8g R4); the record's choice of the visit column is
+held by nothing but the owner's reading.
+
+Fix: say it in "What the checks do not cover". Better, and small: let
+`custom:eff-mmrm-visit` name the visit ("Week 24") and check that the last
+visit of the model records of gold's analyses is that one.
+
+#### G3 (does not block): the report's figures are those of 10c6bbc
+
+Where: docs/reports/real-5b.md, sections "Verdict", "What real-5b asks
+for", "The gate", "Planted defects", "What the checks do not cover".
+
+What: the verdict and the gate's output are of the clean clone of
+`10c6bbc`; on `753b5ac` the gate prints other lines (D1: 1201 tests
+passed, not 1196; method vectors 139 cases of 11 methods in Python, 134 in
+R, 58 model-based, not 136 of 10, 131, 55; D11 with 21 plants and 2
+against the records, not 16 and 2).
+Stale or wrong now: "D11 (18 plants)" (23: D1); "model.mmrm.lsmeans.yaml
+(10 statements)" (11); "nine proofs other_build that prove nothing and two
+more of their form" (12 cases and a new test); "test_gates.py plants three
+ways the hint of E22 is not shown" (and now the check CMH, F2); and "What
+real-5a's report lists stays: ... the proofs' decision records held for
+existence only", which the bullet above it (and the code) contradicts.
+
+Fix: the clean-clone gate of the commit that merges, and these figures
+with it (the report says the next version records the gates).
+
+### The owner's choices (PLAN.md section 2.3)
+
+Pass 1's list stands; what changed:
+
+1. **The classes of the 36 differences (N2).** As in pass 1; the four
+   entries that also rest on the CSR's display (three with 1 decimal for the
+   limits, one with the sign of -0.04) now name `custom:eff-mmrm-display`
+   beside `custom:eff-mmrm-visit`, and the CSR's sign rule is an entry of
+   its own (ADR-015, "For the owner" item 5). Recommendation unchanged.
+2. **real-5a's gate changed** (pass 1, item 2): now recorded in ADR-015's
+   amendment, "For the owner" item 4. Recommendation: accept.
+3. **The CMH statistic.** The record and the amendment now give both
+   readings of "Pearson Chi-Square". Recommendation unchanged: the owner
+   decides; nothing changes under the first.
+4. **What "the last visit" is (G2).** Recommendation: accept that the CSR
+   cannot show it, record it in the report, and, if the owner wants it held,
+   let `custom:eff-mmrm-visit` name Week 24 and check the last visit of the
+   model records against it.
+5. **The merge waits for ADR-017 on `main`** (the owner's answer). The
+   entries the slice reaches are unchanged (D3), so under ADR-017 the kept
+   run's binding still holds for them; I did not run read-2a.
+
+### Verdict
+
+The fixes of pass 1 are in and work. Every case pass 1 planted is refused,
+by the rule meant for it, gold's Week 24 analyses alone at 90% or on the
+LOCF records included, and the 36 genuine entries still hold (D2). F2 to
+F7 are fixed or stated as the commit says (F4 stated). display.pattern, its
+vectors and its record, and the other entries the read track's slice
+reaches, are byte for byte those of `548c0f5` and of the kept run's binding
+(D3); display.pattern.signed says what the code does, and each of six
+plants fails its vectors (D4). The mixed model's edge cases agree with the
+oracle wherever the oracle converges (D5). The gate real-5b passes on my
+clone of `753b5ac` (D1), and so do real-5a and real-3a (D7).
+
+One finding blocks: the proof is still not held to "a build with that
+alternative", because a part's pattern may carry the CSR's text around its
+mask (G1). A literal pattern proves a genuine cell and wrong gold numbers
+of both tables (B1, B2b, B3, B6). The fix is a few lines and plants, and no
+genuine entry changes. G2 and G3 do not block: G2 is a limit of what any
+CSR comparison of 14-3.11 can see, to be stated; G3 is the report's
+figures, to be brought to the commit that merges.
+
+Verdict: NOT SIGNED (blocking: G1)

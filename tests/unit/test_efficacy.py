@@ -136,6 +136,11 @@ def test_a_difference_is_classified_by_its_one_proof():
          "with the other patterns the cell is '-0.499 (0.40)'"),
         ([dict(ENTRY, proof={"kind": "other_pattern", "patterns": {"x": "X.X"}})],
          "'patterns' must give parts of the cell"),
+        # Review of real-5b, G1: a pattern changes the mask only, so it carries no CSR text.
+        ([dict(ENTRY, proof={"kind": "other_pattern", "patterns": {"d": "X.X", "se": "X.40"}})],
+         "the other pattern 'X.40' of se changes more than the mask of 'X.XX'"),
+        ([dict(ENTRY, proof={"kind": "other_pattern", "patterns": {"d": "-0.5"}})],
+         "the other pattern of d is no pattern"),
         ([dict(ENTRY, **{"class": "reference_error"})], "other_pattern proves a rule_choice"),
         ([dict(ENTRY, decision="custom:other")], "no decision record custom:other"),
         ([dict(ENTRY, csr="-0.6 (0.40)")], "the entry says the CSR prints"),

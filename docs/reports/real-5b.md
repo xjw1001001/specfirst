@@ -30,9 +30,10 @@ In short, what the gate shows:
   0.6180 as the CSR prints them, within 9.7e-16 (rule R11).
 - Every cell with a result has a complete path to SDTM columns: 15 of 15 and
   78 of 78.
-- Each new method has vectors: 12 CMH cases computed in fractions, 20 of the
+- Each new method has vectors: 12 CMH cases computed in fractions, 23 of the
   mixed model from a second optimization outside R, which agrees with R to
-  about 1e-8; options left at one value are planted and seen.
+  about 1e-8, and 7 of display.pattern.signed; options left at one value
+  are planted and seen.
 - P1: two builds give 56 of 56 files with the same SHA-256.
 - Each new check fails on defects planted for it: D11 (18 plants), D12 (4),
   the vectors, and the unit tests of the parser, the proof and the layout.
@@ -47,7 +48,7 @@ reader task folders").
 
 | ADR-012 asks | Where |
 | --- | --- |
-| The mixed model for repeated measures, R only, `mmrm`, with its covariance structure and degrees-of-freedom method as options | `standard/methods/model.mmrm.lsmeans.yaml` (10 statements), `model.mmrm.pairwise.yaml` (7); options `factors`, `covariates`, `visit`, `by_visit`, `treatment_by_visit`, `covariance` (unstructured, toeplitz), `df` (kenward_roger_linear, satterthwaite), `at` (last, average), `confidence_level`, `reference`; R in `r/specfirstr/R/models.R` (mmrm 0.3.19 with nlminb, emmeans 2.0.4) |
+| The mixed model for repeated measures, R only, `mmrm`, with its covariance structure and degrees-of-freedom method as options | `standard/methods/model.mmrm.lsmeans.yaml` (11 statements), `model.mmrm.pairwise.yaml` (7); options `factors`, `covariates`, `visit`, `by_visit`, `treatment_by_visit`, `covariance` (unstructured, toeplitz), `df` (kenward_roger_linear, satterthwaite), `at` (last, average), `confidence_level`, `reference`; R in `r/specfirstr/R/models.R` (mmrm 0.3.19 with nlminb, emmeans 2.0.4) |
 | CMH, Python and R, with its scores and strata; the start is the spike | `standard/methods/test.cmh.yaml` (7 statements); options `statistic` (general_association, row_mean_scores), `scores` (table, rank), `strata` (columns); `specfirst.machine.methods.cmh_p`, `m_cmh_p` in `r/specfirstr/R/methods.R`; rule I12d in both engines |
 | Test vectors | `tests/methods/test_cmh.json` (12 cases, fractions), `model_mmrm_lsmeans.json` (15), `model_mmrm_pairwise.json` (8), from `tests/methods/oracle_mmrm.py`; `display_pattern_signed.json` (7) |
 | Tables 14-3.11 (repeated measures) and 14-3.13 (CIBIC+, CMH controlling for site group) | `kits/cdiscpilot01/gold/events/efficacy-adas.json` (6 analyses added), `gold/events/efficacy-cibic.json` (new, 10 analyses), `gold/layout/Out14-3-11.yaml`, `Out14-3-13.yaml` |
@@ -388,10 +389,16 @@ the mixed model too, and holds the records against both events.
 
 The unit tests (`tests/unit/test_efficacy_5b.py`, without R and without the
 cache) plant: a line of three labels and a text between two counts (2
-cases), nine proofs other_build that prove nothing and two more of their
-form, extra columns and groups blocks that do not fit their event (6) or
-have another form (6). `tests/unit/test_gates.py` plants three ways the
-hint of E22 is not shown.
+cases), 14 proofs other_build that prove nothing (among them, after the
+reviews, an other analysis that differs in more than its decision's
+option, a template that is the CSR's text or adds to it, and a pattern that
+carries text of its own), a rule_choice it does not prove and a build that
+changes nothing, entries whose decisions bind no analysis of the cell or
+set no option (4), extra columns and groups blocks that do not fit their
+event (6) or have another form (6). `tests/unit/test_efficacy.py` plants
+the same pattern of its own in the proof other_pattern (2).
+`tests/unit/test_gates.py` plants three ways the hint of E22 is not shown
+and one way the engines disagree on CMH.
 
 ## Generated kits and reader task folders
 
@@ -432,8 +439,14 @@ without the owner's word.
   check: of real-5b eff-mmrm-records, eff-cibic-records,
   eff-cibic-categories, eff-mmrm-display and eff-cibic-display (review, F5;
   decisions.py lists them). The proofs now ask that every decision an
-  entry names binds an analysis of the cell or its method, and an other
-  analysis may differ only in the options its decisions set.
+  entry names binds an analysis of the cell or its method, that an other
+  analysis differ only in the options its decisions set, and that an other
+  pattern change only the mask (review, G1).
+- Which visit is the last one (`at: last`) is held by no cell: the CSR
+  prints no number of that visit. `custom:eff-mmrm-terms` names AVISITN,
+  whose order puts Week 24 last; with AVISIT (text) in the record and the
+  analyses alike, Week 8 would be last and no check would see it (review,
+  G2; ADR-015, "For the owner" item 6).
 - The averaged analyses of 14-3.11 are in the gold ARD (they are results of
   our event), although no row shows them.
 - The CMH vectors and the pilot have full-rank and rank-deficient W, but no
@@ -441,7 +454,9 @@ without the owner's word.
 - The header of the row labels of 14-3.13 ("Assessment") is parsed and not
   compared, like the population line (review of real-5a, F7).
 - What real-5a's report lists stays: footnotes not compared, blanks not
-  compared, and the proofs' decision records held for existence only.
+  compared. Its third item, the proofs' decision records held for existence
+  only, no longer holds: with the records at hand each must bind an
+  analysis of the cell or its method.
 
 ## Proposals for `catalog@2`
 
@@ -506,4 +521,6 @@ has it in full.
 - The classes of the 36 differences (N2), and the three records the
   documents do not settle (section "Where the documents are silent or
   disagree"); ADR-015's amendment of real-5b lists them.
+- Whether the last visit of the mixed model should be held by a check
+  (ADR-015, "For the owner" item 6; review, G2).
 - The binding ADR of the read track, before the merge of real-5b.

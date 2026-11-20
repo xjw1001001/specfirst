@@ -45,7 +45,9 @@ text. It is held to "a build with that alternative" (review of real-5b, F1):
 an other analysis is the cell's analysis but for the options its decision
 records set (`decisions.PARAMETERS`; its ARD rows are those of the cell with
 the analysis's ID replaced); another template shows parts of the cell and
-adds no text the cell's template has not; and with the kit's records at hand
+adds no text the cell's template has not; an other pattern, in either proof,
+changes only the mask of the part's pattern and keeps the text before and
+after it (G1); and with the kit's records at hand
 every decision an entry names binds an analysis of the cell or its method.
 The titles are compared like labels. The footnotes are not compared: the
 layouts state the methods in words of their own, and the CSR's footnotes
@@ -326,6 +328,8 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
             if not isinstance(patterns, dict) or not patterns or set(patterns) - names:
                 reasons.append("'patterns' must give parts of the cell "
                                f"({', '.join(sorted(names))})")
+            elif masked := _pattern_problems(patterns, shown):
+                reasons += masked
             else:
                 try:
                     texts = {item.name: methods.pattern_text(
@@ -347,6 +351,30 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
             found.problems.append(f"{where}: the proof does not hold: " + "; ".join(reasons))
         else:
             found.classified[cell_id] = entry["class"]
+
+
+def _pattern_problems(patterns: dict, shown: tuple) -> list[str]:
+    """Why the other patterns of a proof are no patterns of the cell's parts.
+
+    An other pattern changes only the mask: the text before and after it is
+    the cell's own (review of real-5b, G1); otherwise a pattern could carry the
+    CSR's text itself and prove nothing.
+    """
+    from specfirst.machine import methods
+
+    reasons = []
+    own = {item.name: item.pattern for item in shown}
+    for name, pattern in sorted(patterns.items()):
+        try:
+            before, _, after = methods.pattern_mask(pattern)
+            mine_before, _, mine_after = methods.pattern_mask(own[name])
+        except methods.MethodError as error:
+            reasons.append(f"the other pattern of {name} is no pattern: {error}")
+            continue
+        if (before, after) != (mine_before, mine_after):
+            reasons.append(f"the other pattern {pattern!r} of {name} changes more than the mask "
+                           f"of {own[name]!r}")
+    return reasons
 
 
 def _stripped(analysis: dict, options: set[str]) -> dict:
@@ -401,6 +429,8 @@ def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
         reasons.append("'analyses' must map analyses of the cell to other analyses")
     if not isinstance(patterns, dict) or set(patterns) - names:
         reasons.append(f"'patterns' must give parts of the cell ({', '.join(sorted(names))})")
+    else:
+        reasons += _pattern_problems(patterns, shown)
     if display not in DISPLAYS:
         reasons.append(f"'display' must be a display rule of the registry: "
                        f"{', '.join(sorted(DISPLAYS))}")

@@ -1254,6 +1254,18 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
         listed[number] = entry
         return {**eff.entries, output: listed}
 
+    # Review of real-5b, G1: a pattern that carries the CSR's text around its mask.
+    entries_13 = cibic.entries["Out14-3-13"]
+    week8 = next(n for n, e in enumerate(entries_13) if e["cell"] == "cell:Out14-3-13/r2/c4")
+    carried = {"p": "X.2727"}  # mask X: the p-value rounded to 0, then the CSR's ".2727"
+    shown_13 = next(d for d in cibic.spec.displays if d.output == "Out14-3-13")
+    text_13 = (pilot.folder / shown_13.layout).read_text(encoding="ascii")
+    wrong_13 = text_13.replace("p: {analysis: An_CIBIC_W08_Cmh",
+                               "p: {analysis: An_CIBIC_W16_Cmh", 1)
+    assert wrong_13 != text_13
+    week16 = Efficacy(**{**cibic.__dict__, "layouts": {
+        **cibic.layouts, "Out14-3-13": layouts.parse(yaml.safe_load(wrong_13), "Out14-3-13")}})
+
     planted = {
         "a p-value of the CSR changed (0.2727 to 0.2737)":
             lambda: efficacy_problems(cibic, cibic.gold, tables=tables),
@@ -1284,6 +1296,24 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
         "an entry that names an unrelated decision (custom:eff-cmh)": lambda: efficacy_problems(
             adas, adas.gold, entries=replaced(adas, "Out14-3-11", 0, dict(
                 entries_11[0], decision="custom:eff-cmh"))),
+        "a proof whose pattern carries the CSR's text ('X.2727', other_pattern)":
+            lambda: efficacy_problems(cibic, cibic.gold, entries=replaced(
+                cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                    "kind": "other_pattern", "patterns": carried}))),
+        "a proof whose pattern carries the CSR's text ('X.2727', other_build)":
+            lambda: efficacy_problems(cibic, cibic.gold, entries=replaced(
+                cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                    "kind": "other_build", "patterns": carried}))),
+        "gold's week 8 p-value is week 16's, proved by a pattern that carries the CSR's text":
+            lambda: efficacy_problems(week16, cibic.gold, entries=replaced(
+                cibic, "Out14-3-13", week8, dict(entries_13[week8], proof={
+                    "kind": "other_pattern", "patterns": carried}))),
+        "a proof of 14-3.11 whose pattern carries the CSR's text ('X.X (0.49)')":
+            lambda: efficacy_problems(adas, adas.gold, entries=replaced(
+                adas, "Out14-3-11", 0, dict(entries_11[0], proof={
+                    "kind": "other_build", "template": "{lsm}",
+                    "analyses": entries_11[0]["proof"]["analyses"],
+                    "patterns": {"lsm": "X.X (0.49)"}}))),
     }
     for name, check in planted.items():
         _seen(name, check(), problems)
