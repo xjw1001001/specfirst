@@ -17,8 +17,9 @@ def test_the_registry_of_this_repository_is_valid(root):
     assert sorted(known.methods) == [
         "count.subjects", "display.pattern", "display.round.half_away_from_zero",
         "display.round.half_even", "model.ancova.dose_response", "model.ancova.lsmeans",
-        "model.ancova.pairwise", "percent.subjects",
-        "summary.continuous", "test.anova.oneway", "test.chisq", "test.fisher.exact",
+        "model.ancova.pairwise", "model.mmrm.lsmeans", "model.mmrm.pairwise",
+        "percent.subjects", "summary.continuous", "test.anova.oneway", "test.chisq",
+        "test.cmh", "test.fisher.exact",
     ]
     for method in known.methods.values():
         assert (root / method.vectors).is_file()
@@ -77,8 +78,8 @@ def test_operations_are_found_by_the_name_ars_gives_them(root):
     assert known.by_ars_name(" Mean ") == [("summary.continuous", "mean")]
     assert known.by_ars_name("P-value") == [
         ("model.ancova.dose_response", "p_value"), ("model.ancova.pairwise", "p_value"),
-        ("test.anova.oneway", "p_value"), ("test.chisq", "p_value"),
-        ("test.fisher.exact", "p_value")]
+        ("model.mmrm.pairwise", "p_value"), ("test.anova.oneway", "p_value"),
+        ("test.chisq", "p_value"), ("test.cmh", "p_value"), ("test.fisher.exact", "p_value")]
     assert known.by_ars_name("Geometric mean") == []
 
 

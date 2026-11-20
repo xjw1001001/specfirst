@@ -935,12 +935,15 @@ def d9_efficacy(pilot: Pilot, tmp_path) -> list[str]:
     from specfirst.machine import decisions
 
     records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
+    cibic = efficacy_5b(pilot)[CIBIC]  # the records of real-5b bind its analyses
+    other = (ars.index(cibic.event.data), cibic.spec.binding)
     for name, value in (("unchanged", data()),
                         ("the ANCOVA without the baseline covariate",
                          in_event["the ANCOVA without the baseline covariate"])):
         event = ars.index(value)
         _, found = decisions.problems(
-            pilot.root, records, [(event, ars.bind(event, pilot.registry, eff.spec.binding))],
+            pilot.root, records, [(event, ars.bind(event, pilot.registry, eff.spec.binding)),
+                                  (other[0], ars.bind(other[0], pilot.registry, other[1]))],
             pilot.registry)
         print(f"decision records, {name}: {len(found)} problems"
               + (f", for example: {found[0][:160]}" if found else ""))
@@ -1187,8 +1190,9 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
                                                           ["general_association"])),
         "the CMH test without strata": cmh(lambda ps: [p for p in ps if p["name"] != "strata"]),
         "the CMH test with rank scores": cmh(option("scores", ["rank"])),
-        "the observed records only, without LOCF": _with_subset(
-            copy.deepcopy(cibic.event.data), "DS_CIBIC_W08", observed_only),
+        # At week 8 LOCF adds no record: nothing comes before it to carry forward.
+        "week 24 with the observed records only, without LOCF": _with_subset(
+            copy.deepcopy(cibic.event.data), "DS_CIBIC_W24", observed_only),
         "the percent of the efficacy population in place of the subjects of the week":
             population_percent(copy.deepcopy(cibic.event.data)),
     }
@@ -1264,8 +1268,10 @@ def d12_cmh_engines(pilot: Pilot, tmp_path) -> list[str]:
         event, r_event = ars.index(data), ars.index(r_data)
         bound = ars.bind(event, pilot.registry, eff.spec.binding)
         r_bound = ars.bind(r_event, pilot.registry, eff.spec.binding)
-        tables = ard.load_tables(pilot.folder / build.ADAM,
-                                 ars.columns(event, eff.spec.subject_key))
+        wanted = ars.columns(event, eff.spec.subject_key)
+        for dataset, names in ars.columns(r_event, eff.spec.subject_key).items():
+            wanted[dataset] = sorted({*wanted.get(dataset, []), *names})
+        tables = ard.load_tables(pilot.folder / build.ADAM, wanted)
         python = ard.run(event, pilot.registry, bound, tables, eff.spec.subject_key)
         work.mkdir(parents=True, exist_ok=True)
         path = work / "event.json"
@@ -1292,9 +1298,11 @@ def d12_cmh_engines(pilot: Pilot, tmp_path) -> list[str]:
         "rank scores": cmh(lambda ps: [dict(p, value=["rank"]) if p["name"] == "scores" else p
                                        for p in ps]),
         # Not an option of the test, so the stamps stay the same and the values differ.
-        "week 8 with every record of its window, not the one ANL01FL marks": _with_subset(
-            copy.deepcopy(eff.event.data), "DS_CIBIC_W08",
-            lambda clauses: [c for c in clauses if c["condition"]["variable"] != "ANL01FL"]),
+        "week 24 with the observed records only, without LOCF": _with_subset(
+            copy.deepcopy(eff.event.data), "DS_CIBIC_W24", lambda clauses: [
+                *clauses, {"level": 2, "order": len(clauses) + 1, "condition": {
+                    "dataset": "ADQSCIBC", "variable": "DTYPE", "comparator": "EQ",
+                    "value": [""]}}]),
     }
     for number, (name, r_data) in enumerate(planted.items(), start=1):
         _, found = engines(data, r_data, tmp_path / f"planted{number}")

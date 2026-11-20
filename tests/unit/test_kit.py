@@ -94,7 +94,8 @@ def test_the_pilot_kit_is_pinned_like_the_sources(root):
     # The ARS example is the file PLAN.md appendix A pins by its hash.
     example = next(entry for entry in kit.files if entry.path.endswith("displays.json"))
     assert example.sha256 in {pin.sha256 for pin in manifest_of_sources.files}
-    assert [spec.id for spec in kit.results] == ["common-safety-displays", "efficacy-adas"]
+    assert [spec.id for spec in kit.results] == ["common-safety-displays", "efficacy-adas",
+                                                 "efficacy-cibic"]
     assert kit.results[0].ars == example.path and kit.exceptions == "gold/exceptions.yaml"
     assert (root / "kits" / "cdiscpilot01" / kit.exceptions).is_file()
     # real-5a: the reporting event is our own file; each grid has its CSR table.
@@ -102,7 +103,12 @@ def test_the_pilot_kit_is_pinned_like_the_sources(root):
     assert efficacy.ars == "gold/events/efficacy-adas.json" and efficacy.ars in kit.own_files()
     assert [(d.output, d.reference.page, d.reference.table) for d in efficacy.displays] == [
         ("Out14-3-01", 49, "14-3.01"), ("Out14-3-03", 51, "14-3.03"),
-        ("Out14-3-05", 53, "14-3.05")]
+        ("Out14-3-05", 53, "14-3.05"), ("Out14-3-11", 59, "14-3.11")]
+    # real-5b: CIBIC+ in an event of its own.
+    cibic = kit.results[2]
+    assert cibic.ars == "gold/events/efficacy-cibic.json" and cibic.ars in kit.own_files()
+    assert [(d.output, d.reference.page, d.reference.table) for d in cibic.displays] == [
+        ("Out14-3-13", 61, "14-3.13")]
     assert kit.decisions == "gold/decisions/efficacy.jsonl" and kit.decisions in kit.own_files()
     assert all((root / "kits" / "cdiscpilot01" / name).is_file() for name in kit.own_files())
 

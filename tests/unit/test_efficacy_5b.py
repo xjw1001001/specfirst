@@ -152,13 +152,13 @@ GROUPS = {
 
 @pytest.fixture
 def toy_event():
-    return ars.index(toy.event_data())
+    return ars.index(displays.event_data())
 
 
 def test_a_groups_block_gives_a_row_per_group_and_an_extra_column(root, toy_event):
     spec = layouts.parse(copy.deepcopy(GROUPS))
     assert layouts.problems(spec, toy_event) == []
-    rows = toy.run(root, toy.event_data())
+    rows = toy.run(root, displays.event_data())
     made = grid.build(toy_event, spec, rows)
     assert grid.grid_problems(made, root) == []
     assert [column["label"] for column in made["columns"]][-1] == "p-value"
