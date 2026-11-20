@@ -1,0 +1,487 @@
+# real-5b The mixed model, CMH and Tables 14-3.11 and 14-3.13 against the CSR: report
+
+Date: 2026-11-19. Branch: `track/real`. Part `real-5b` of the slice
+`efficacy-first` (ADR-012, approved by the owner on 2026-11-18). Depends on
+real-5a (merged, `548c0f5`). Decisions: the amendment "of real-5b" at the
+end of docs/decisions/ADR-015.md and the one at the end of ADR-003.md. The
+owner's go-ahead came through the base session on 2026-11-19 (section "For
+the base session"); the merge waits for the read track's ADR that ties a
+kept reader run to versions (section "Generated kits and reader task
+folders").
+
+## Verdict
+
+The gate passed. `scripts/clean_clone_gate.sh real-5b` exited 0 on a clean
+clone of commit `10c6bbc` after a fresh install and a fresh fetch: 19 of 19
+checks (`docs/reports/real-5b.clean-clone.gate.log`; section "The gate").
+
+In short, what the gate shows:
+
+- Every printed cell of Tables 14-3.11 and 14-3.13 equals the CSR at its
+  printed precision, or has exactly one classified difference with a proof
+  that holds: 124 cells, 93 of them printed in the CSR; 88 cells equal the
+  CSR, 36 differ, each classed `rule_choice` with its proof (section "The
+  classified differences").
+- The hint of E22 is tested and holds: none of the 12 numbers of the model
+  in 14-3.11 follows from Week 24, every one from the LS means averaged over
+  weeks 8, 16 and 24. Gold follows the SAP (Week 24); the 12 cells are
+  classified differences.
+- The two engines agree on CMH: the three p-values, 0.2727, 0.4003 and
+  0.6180 as the CSR prints them, within 9.7e-16 (rule R11).
+- Every cell with a result has a complete path to SDTM columns: 15 of 15 and
+  78 of 78.
+- Each new method has vectors: 12 CMH cases computed in fractions, 20 of the
+  mixed model from a second optimization outside R, which agrees with R to
+  about 1e-8; options left at one value are planted and seen.
+- P1: two builds give 56 of 56 files with the same SHA-256.
+- Each new check fails on defects planted for it: D11 (18 plants), D12 (4),
+  the vectors, and the unit tests of the parser, the proof and the layout.
+
+What it does not show yet: the merge. The three registry entries change
+every reader task folder, so read-2a's kept dry run of arm R fails its
+check on this branch; by the owner's answer real-5b merges after the read
+track's ADR that ties a kept run to versions (section "Generated kits and
+reader task folders").
+
+## What real-5b asks for, and where it stands
+
+| ADR-012 asks | Where |
+| --- | --- |
+| The mixed model for repeated measures, R only, `mmrm`, with its covariance structure and degrees-of-freedom method as options | `standard/methods/model.mmrm.lsmeans.yaml` (10 statements), `model.mmrm.pairwise.yaml` (7); options `factors`, `covariates`, `visit`, `by_visit`, `treatment_by_visit`, `covariance` (unstructured, toeplitz), `df` (kenward_roger_linear, satterthwaite), `at` (last, average), `confidence_level`, `reference`; R in `r/specfirstr/R/models.R` (mmrm 0.3.19 with nlminb, emmeans 2.0.4) |
+| CMH, Python and R, with its scores and strata; the start is the spike | `standard/methods/test.cmh.yaml` (7 statements); options `statistic` (general_association, row_mean_scores), `scores` (table, rank), `strata` (columns); `specfirst.machine.methods.cmh_p`, `m_cmh_p` in `r/specfirstr/R/methods.R`; rule I12d in both engines |
+| Test vectors | `tests/methods/test_cmh.json` (12 cases, fractions), `model_mmrm_lsmeans.json` (13), `model_mmrm_pairwise.json` (7), from `tests/methods/oracle_mmrm.py` |
+| Tables 14-3.11 (repeated measures) and 14-3.13 (CIBIC+, CMH controlling for site group) | `kits/cdiscpilot01/gold/events/efficacy-adas.json` (6 analyses added), `gold/events/efficacy-cibic.json` (new, 10 analyses), `gold/layout/Out14-3-11.yaml`, `Out14-3-13.yaml` |
+| The cell rule of real-5a for the two tables | the gate check `efficacy` (section "The gate") |
+| The two engines agree on CMH (R11) | the gate checks `results` and `CMH` |
+| The hint of E22 on the LS means of 14-3.11 tested and its result recorded | the gate check `E22 hint`; section "The hint of E22"; `custom:eff-mmrm-visit` |
+| The F5 edge cases of the R implementation (review of real-5a) | fixed in `models.R`, a vector each (section "The methods") |
+| Nothing added to `catalog@1`; proposals for `catalog@2` | nothing added; section "Proposals for catalog@2" |
+
+## The methods
+
+### The mixed model for repeated measures
+
+Two entries of kind `model`, R only (amendment of real-5b to ADR-015,
+decisions 12 to 14). The mean of a record is
+
+    mu + tau[group] + alpha[visit] + (tau alpha)[group, visit]
+       + factors + gamma * covariates + the by_visit terms
+
+and the records of one subject are normal with the covariance matrix of the
+visits, unstructured or Toeplitz, estimated by restricted maximum
+likelihood. An LS mean is taken at the last visit or averaged over the
+visits; a factor is averaged over its levels with equal weights, a
+covariate is at its mean over the model records.
+
+The vectors' expected values come from `tests/methods/oracle_mmrm.py`: the
+restricted likelihood maximized by Fisher scoring in numpy, in the entries
+of the covariance matrix, with the adjusted covariance of Kenward and Roger
+and the degrees of freedom written out from their formulas. It shares no
+code with mmrm, TMB or emmeans. Three things were found on the way, each
+now in the statements or the code:
+
+- mmrm's default optimizer, L-BFGS-B, stops before the maximum. On the
+  CSR's data its REML log-likelihood is -1543.9215174808 against
+  -1543.9215174373 with nlminb or a tight BFGS, and the standard error of
+  an LS mean moves from 0.49233568 to 0.49234173. The R implementation runs
+  nlminb; then mmrm and the oracle agree to 8 digits (0.49234173 both).
+- mmrm's Kenward-Roger degrees of freedom are its Satterthwaite degrees of
+  freedom (179.903645 both, on the CSR's data): W is the inverse of the
+  observed information, not of the expected one Kenward and Roger (1997)
+  write. Statement 8 says so; for one contrast Kenward and Roger's lambda
+  is 1 and their degrees of freedom are 2 (l'Vl)^2 / (g'Wg).
+- `Kenward-Roger-Linear` leaves out the second derivatives of the
+  covariance, so its adjusted covariance does not depend on how mmrm
+  parametrizes the covariance: it is that of the entries the covariance is
+  linear in (statement 7), which the oracle computes.
+
+```text
+$ SPECFIRST_STRICT=1 pytest tests/methods -s -q   (gate check "method vectors")
+--- python-vectors
+Python implementations: 136 cases of 10 methods, 0 differences
+--- r-vectors
+R implementations: 131 cases of 12 methods, 0 differences
+--- exact-arithmetic
+expected values computed again in exact arithmetic: 131 cases, 0 differences; written by hand: 60 cases (the display rules)
+...
+--- model-vectors
+model-based methods in R: 55 cases of 5 methods, 0 differences
+planted: model.ancova.dose_response always with dose = group_rank: 7 cases differ
+planted: model.ancova.lsmeans always with weights = equal: 1 cases differ
+planted: model.ancova.pairwise always with df = residual: 1 cases differ
+planted: model.mmrm.lsmeans always with at = last: 2 cases differ
+planted: model.mmrm.pairwise always with df = kenward_roger_linear: 1 cases differ
+```
+
+### CMH
+
+`test.cmh` follows the generalized statistic of the spike: per stratum the
+counts' mean and covariance under the null hypothesis, a matrix B that picks
+the comparison (every row with every column, or the mean scores of the
+rows), the statistic G' W+ G with the Moore-Penrose inverse and its rank as
+the degrees of freedom. Both implementations are written from the
+statements; the vectors are computed in fractions, the rank and the
+generalized inverse by exact elimination (`tests/methods/oracle.py`), and
+the two engines agree with them within 3.5e-15.
+
+### The edge cases of real-5a (review, F5)
+
+Each with a vector in `model_ancova_lsmeans.json` or
+`model_ancova_pairwise.json`: one group with model records gives its LS
+mean (the model without the group term) and the others missing, where R
+stopped; group IDs with a minus sign give their comparisons, which emmeans
+had labelled "(Grp-2) - (Grp-1)" so that the lookup missed them (the
+contrasts are now named by position); a factor nested in the groups gives
+missing LS means and differences (`nesting = NULL`), where emmeans gave a
+number statements 4 and 7 call not estimable.
+
+## The tables
+
+Table 14-3.11 is six analyses of the event `efficacy-adas.json`: the LS
+means, each dose against placebo and the high dose against the low, at
+Week 24 (gold), and the same three averaged over the weeks
+(`An_ADAS_MMRM_*_Avg`, reason "DATA DRIVEN"), which no row shows and the
+proofs read. Their records: ADQSADAS, PARAMCD = ACTOT, weeks 8, 16 and 24,
+ANL01FL = Y and no DTYPE (539 records of 234 subjects).
+
+Table 14-3.13 is a new event, `efficacy-cibic.json`: per week the subjects
+with a value (the row n), the subjects by CIBIC+ category (seven defined
+groups of AVAL, every one shown) with their percent of n, and the CMH test
+of row mean scores with the CIBIC+ values as scores, controlling for
+SITEGR1. Its layout has an extra column, "p-value [1]", which the row n of
+each week fills with the week's CMH p-value, and a groups block per week
+(amendment of real-5b to ADR-003).
+
+The CSR parser reads the shape of 14-3.13: a column without a count, the
+header of the row labels ("Assessment"), and "Week 8" and "n" on one line,
+read as a heading and a row; and the note of 14-3.11 as a footnote. The
+three pages of real-5a parse as before:
+
+```text
+$ python parse_check.py   (a scratch script: csr.parse of real-5a's code and of real-5b's on pages 49, 51, 53)
+14-3.01 same as before: True
+14-3.03 same as before: True
+14-3.05 same as before: True
+```
+
+## The hint of E22
+
+Atorus reports that the LS means of Table 14-3.11 are averages over weeks
+8, 16 and 24, although the title says Week 24 (PLAN.md, real-5;
+evidence E22). Tested: of the 12 numbers of the model that the CSR prints,
+none follows from Week 24 and every one follows from the average, with the
+mixed model of the SAP (terms of SAP 10.1.1, unstructured covariance) and
+Kenward-Roger standard errors. Two cells, quoted as the proofs need them:
+
+| Cell | Ours, Week 24 (gold) | Averaged over the weeks | CSR |
+| --- | --- | --- | --- |
+| LS Means (SE), placebo | 2.3 (0.69) | 1.6 (0.49) | 1.6 (0.49) |
+| Diff of LS Means (SE), low dose against placebo | -0.6 (1.02) | -0.0 (0.70), with the sign kept | -0.0 (0.70) |
+
+The gold LS means are 2.3291, 1.7352 and 1.5009; averaged, 1.5535, 1.5136
+and 1.1270. SAP 10.1.1 and the title of template 10 say Week 24, so gold
+follows them (PLAN.md decision 17; `custom:eff-mmrm-visit`) and the 12
+cells are `rule_choice` differences, each with an `other_build` proof that
+reads the averaged analyses. The gate check `E22 hint` holds it:
+
+```text
+$ specfirst gate real-5b   (its check "E22 hint", on the clean clone of 10c6bbc)
+E22: Table 14-3.11 prints 12 numbers of the model; at Week 24 0 of them equal the CSR; averaged over weeks 8, 16 and 24, 12 cells give the CSR's text (other_build proofs that hold: 12 of 12 differing cells)
+E22: the LS means of Table 14-3.11 are averages over the weeks: the hint holds
+-- PASS E22 hint (3.8 s)
+```
+
+Two details of the same reproduction: with Satterthwaite's standard errors,
+or Kenward-Roger's in another parametrization, one standard error is 0.55
+where the CSR prints 0.56 (`custom:eff-mmrm-df`, D11); with the records LOCF
+adds, nothing matches (`custom:eff-mmrm-records`, D11).
+
+## The classified differences (for N2)
+
+| Class | Table | Cells | What | Proof |
+| --- | --- | --- | --- | --- |
+| `rule_choice` | 14-3.11 | 12 | the LS means and their differences at Week 24 (SAP) against their average over the weeks (CSR); 3 confidence intervals also with 1 decimal (template 10: 2) and one difference with the sign of -0.04 kept | `other_build`: the averaged analyses, the patterns `X.X` for the limits, `zero_sign: kept` |
+| `rule_choice` | 14-3.13 | 21 | a count of 0 as "0 (0%)" (ad hoc template 1) against "0" (CSR) | `other_build`: the template `{n}` |
+| `rule_choice` | 14-3.13 | 3 | the CMH p-values with 3 decimals (template) against 4 (CSR) | `other_pattern`: `X.XXXX` |
+
+No other cell differs. The classes are the executor's proposal; the owner
+reviews them at N2 (ADR-012). `gold/exceptions.yaml` holds the CSR's text of
+each of these cells, as the proofs need; for 14-3.11 that is all 12 numbers
+of the model (not the counts of the header).
+
+## The decisions
+
+Ten records added to `kits/cdiscpilot01/gold/decisions/efficacy.jsonl` (18
+in all), each fitting decision-record.schema.json:
+
+| Record | Unit | Value | Status, class | Source |
+| --- | --- | --- | --- | --- |
+| `custom:eff-mmrm-records` | mod-bds-visits | observed records of weeks 8, 16, 24 (ANL01FL = Y, no DTYPE) | conflict | SAP 8.1 (LOCF in general), 10.1.1 (likelihood-based), template 10 (title without LOCF) |
+| `custom:eff-mmrm-terms` | tfl-efficacy-ancova | treatment, SITEGR1, week, treatment by week; BASE, BASE by week | stated, document_rule | SAP 10.1.1, 7.1, template 10 |
+| `custom:eff-mmrm-covariance` | tfl-efficacy-ancova | unstructured; Toeplitz on a singularity (not met, not implemented) | stated, document_rule | SAP 10.1.1 |
+| `custom:eff-mmrm-df` | tfl-efficacy-ancova | REML, Kenward-Roger with linear parameters | asked, gold_quirk | none; E22, the CSR's numbers |
+| `custom:eff-mmrm-visit` | tfl-efficacy-ancova | the LS means at the last week, Week 24 | stated, document_rule | SAP 10.1.1, template 10 |
+| `custom:eff-mmrm-display` | tfl-efficacy-ancova | template 10: LS mean 1, SE 2, p 3, difference 1, CI 2 | stated, document_rule | template 10 |
+| `custom:eff-cibic-records` | mod-bds-visits | weeks 8, 16, 24, ANL01FL = Y, LOCF included | stated, document_rule | SAP 10.1.2, ad hoc template 1 |
+| `custom:eff-cibic-categories` | tfl-efficacy-categorical | all seven categories; the percent of the subjects of the week | stated, document_rule | SAP 14.1.2, ad hoc template 1 |
+| `custom:eff-cmh` | tfl-efficacy-categorical | row mean scores, table scores, strata SITEGR1 | asked, gold_quirk | SAP 16.1, ad hoc template 1, 7.1 |
+| `custom:eff-cibic-display` | tfl-efficacy-categorical | template: "xx (xx%)" also for 0, p 3 decimals | stated, document_rule | ad hoc template 1 |
+
+The Define-XML has no analysis results metadata for these two tables; the
+SAP is their only document. The gate check `decisions` holds the options
+the records set (99 in all) against the two events.
+
+## Where the documents are silent or disagree (section 4.5; for the owner)
+
+- The records of the mixed model. SAP 8.1 imputes missing efficacy values
+  by LOCF; SAP 10.1.1 calls the analysis likelihood-based; template 10's
+  title has no LOCF. The CSR's numbers follow the observed records only.
+- Its degrees of freedom and estimation: no document says. Atorus's notes
+  name Kenward-Roger; the CSR's standard errors follow Kenward-Roger with
+  linear parameters.
+- The CMH statistic. SAP 16.1 says the CMH test controlling for site; the
+  footnote of ad hoc template 1 adds "Pearson Chi-Square", which names no
+  CMH statistic. The CSR's p-values are those of row mean scores with the
+  CIBIC+ values as scores (general association gives 0.478, 0.770 and
+  0.869).
+- "Site" in the SAP, "site group" in the CSR: SAP 7.1 pools the sites
+  (SITEGR1), as in real-5a.
+- Template 10 says Week 24 and the CSR averages over the weeks (section
+  "The hint of E22").
+
+## The gate
+
+`specfirst gate real-5b`: 19 checks, those of real-5a without the grids of
+the ARS example (real-3a's gate holds them) and with two more, `E22 hint`
+and `CMH`; `efficacy` counts the two tables of real-5b; `planted defects`
+requires D11 and D12. The gate real-5a counts its own three tables (a
+table of another part is judged by the same function and counted by its
+own gate).
+
+It ran on a clean clone of `10c6bbc` (a fresh clone, a fresh install of the
+Python environment and the R library, a fresh fetch), under the shared lock:
+
+```text
+$ scripts/clean_clone_gate.sh real-5b /mnt/d/trial_work/specfirst/.git 10c6bbc
+clean clone gate real-5b
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     10c6bbc
+...
+1196 passed, 30 deselected in 486.69s (0:08:06)
+...
+P1 determinism: 56 of 56 files have the same SHA-256 in both builds
+...
+grid Out14-3-11: 24 cells, 15 print a number; 15 of the 15 cells with results have a complete path to SDTM columns
+grid Out14-3-13: 100 cells, 78 print a number; 78 of the 78 cells with results have a complete path to SDTM columns
+...
+results efficacy-cibic, engines: 141 results in both, 0 disagree; largest relative difference 9.7e-16 (allowed 1e-09)
+...
+grid Out14-3-11 against CSR Table 14-3.11: 24 cells, 15 of them printed in the CSR; 12 equal the CSR, 12 differ, 12 of them with one class and a proof that holds
+  cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)' (rule_choice)
+...
+  cell:Out14-3-11/r4/c2: ours '-0.6 (1.02)', CSR '-0.0 (0.70)' (rule_choice)
+...
+grid Out14-3-11: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-13 against CSR Table 14-3.13: 100 cells, 78 of them printed in the CSR; 76 equal the CSR, 24 differ, 24 of them with one class and a proof that holds
+...
+grid Out14-3-13: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+efficacy: 2 tables, 124 cells; 88 equal the CSR; classified differences: 36 rule_choice
+-- PASS efficacy (3.7 s)
+...
+CMH: ard:An_CIBIC_W08_Cmh/Mth_Cmh_1_pval/*: Python 0.2727284040371243, R 0.27272840403712434
+CMH: ard:An_CIBIC_W16_Cmh/Mth_Cmh_1_pval/*: Python 0.40031471449145817, R 0.40031471449145856
+CMH: ard:An_CIBIC_W24_Cmh/Mth_Cmh_1_pval/*: Python 0.6180439310104722, R 0.6180439310104722
+CMH: 3 results in both engines; largest relative difference 9.7e-16 (allowed 1e-09)
+-- PASS CMH (0.0 s)
+...
+decisions: 18 records, 18 IDs; 99 options of analyses held against the decisions that set them; 0 problems
+decisions: by class: 12 document_rule, 2 gold_quirk, 3 no class (conflict), 1 study_input; by status: 3 asked, 3 conflict, 12 stated
+decisions: pass
+...
+PASS  environment          0.5 s
+PASS  pins                 1.4 s
+PASS  lint                 0.1 s
+PASS  registry             0.1 s
+PASS  unit tests         487.4 s
+PASS  method vectors      15.1 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      56.8 s
+PASS  P2 reproduction      0.6 s
+PASS  trace                1.9 s
+PASS  results              4.7 s
+PASS  efficacy             3.7 s
+PASS  E22 hint             3.8 s
+PASS  CMH                  0.0 s
+PASS  decisions            0.7 s
+PASS  pilot tests         75.3 s
+PASS  planted defects    141.4 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-5b: PASS
+```
+
+The complete output is `docs/reports/real-5b.clean-clone.gate.log` (685
+lines). The 124 cells of the two tables are 24 of 14-3.11 (3 counts in the
+header, 21 in 7 rows of 3 columns, 9 of them empty as in the CSR) and 100 of
+14-3.13 (4 in the header, the fourth empty; per week 8 rows of 4 columns).
+
+## Planted defects (rule R5)
+
+D11-efficacy-5b plants in the two reporting events, run by both engines,
+in the CSR's parse and in the exceptions, and holds the decision records
+against the planted events; every plant must fail the check the gate
+calls. D12-cmh-engines plants in the R engine's input alone: the engines
+must be seen to disagree on CMH.
+
+```text
+$ SPECFIRST_STRICT=1 pytest tests/defects -s -q   (the gate's check "planted defects" on the clean clone of 10c6bbc)
+...
+--- D11-efficacy-5b
+unchanged, efficacy-adas: 0 problems
+unchanged, efficacy-cibic: 0 problems
+planted, the mixed model with the records LOCF adds: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.60)', CSR '1.6 (0.49)': the proof does not hold: with the other build the cell is '1.5 (0.48)'
+planted, Satterthwaite in place of Kenward-Roger: 2 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c3: ours '1.5 (0.83)', CSR '1.1 (0.56)': the proof does not hold: with the other build the cell is '1.1 (0.55)'
+planted, a Toeplitz covariance: 12 problems, for example: ...
+planted, no baseline by week: 5 problems, for example: ...
+planted, the site in place of the pooled site group: 10 problems, for example: ...
+planted, gold takes the LS means averaged over the weeks, as the CSR does: 8 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: an exception for a cell that does not differ from the CSR
+planted, the CMH test of general association: 3 problems, for example: Out14-3-13: cell:Out14-3-13/r10/c4: ours '0.770', CSR '0.4003': the proof does not hold: with the other patterns the cell is '0.7699'
+planted, the CMH test without strata: 3 problems, for example: ...
+planted, the CMH test with rank scores: 3 problems, for example: ...
+planted, week 24 with the observed records only, without LOCF: 18 problems, for example: Out14-3-13: cell:Out14-3-13/r18/c1: ours '66', CSR '79': a difference with no class
+planted, the percent of the efficacy population in place of the subjects of the week: 3 problems, for example: Out14-3-13: cell:Out14-3-13/r5/c1: ours '19 (24%)', CSR '19 ( 25%)': a difference with no class
+decision records, unchanged: 0 problems
+decision records, gold takes the LS means averaged over the weeks: 3 problems, for example: custom:eff-mmrm-visit: ars:An_ADAS_MMRM_LSM has at = 'average', the decision rule = 'last'
+decision records, the CMH test of general association: 3 problems, for example: custom:eff-cmh: ars:An_CIBIC_W08_Cmh has statistic = 'general_association', the decision rule = 'row_mean_scores'
+planted, a p-value of the CSR changed (0.2727 to 0.2737): 1 problems, for example: ...
+planted, an other_build proof that names the analysis at Week 24 itself: 1 problems, for example: ...
+planted, the proof of '-0.0' without the sign kept: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r4/c2: ours '-0.6 (1.02)', CSR '-0.0 (0.70)': the proof does not hold: with the other build the cell is '0.0 (0.70)'
+planted, a count of 0 proved by another pattern, not by the template: 1 problems, for example: ...
+planted, an exception of 14-3.13 left out: 1 problems, for example: ...
+--- D12-cmh-engines
+unchanged: engines: 141 results in both, 0 disagree; largest relative difference 9.7e-16 (allowed 1e-09)
+R engine alone, general association: 3 CMH results disagree
+R engine alone, no strata: 3 CMH results disagree
+R engine alone, rank scores: 3 CMH results disagree
+R engine alone, week 24 with the observed records only, without LOCF: 1 CMH results disagree
+63 passed in 140.96s (0:02:20)
+-- PASS planted defects (141.4 s)
+```
+
+Satterthwaite's standard errors move 2 cells, not 12: the other 10 still
+show the CSR's text at its printed precision, so the planted model is seen
+only where the CSR prints a digit it changes. The last plant of D12 is no
+option of the test, so the rows' stamps stay the same and the values
+differ.
+
+D9, D10 and the rest are unchanged in what they plant; D9 now plants in the
+ANCOVA analyses only (their IDs start with An_ADAS_W), since the event holds
+the mixed model too, and holds the records against both events.
+
+The unit tests (`tests/unit/test_efficacy_5b.py`, without R and without the
+cache) plant: a line of three labels and a text between two counts (2
+cases), nine proofs other_build that prove nothing and two more of their
+form, extra columns and groups blocks that do not fit their event (6) or
+have another form (6). `tests/unit/test_gates.py` plants three ways the
+hint of E22 is not shown.
+
+## Generated kits and reader task folders
+
+The brief asks to say so when the change alters the files of a generated
+kit or anything a reader's task folder holds. It does:
+
+- The method registry has three more entries and display.pattern one more
+  option. No catalog entry, house file, schema or skill changes.
+- Every generated kit pins `registry_sha256` in its kit.yaml, so every
+  generated kit's kit.yaml changes; their data, gold and documents do not
+  (no generated kit uses the new methods).
+- Every reader task folder copies `standard/methods/registry.json`, so
+  every task folder, and its task ID, changes. read-2a's kept dry run of arm
+  R (`src/specfirst/harness/kept/R-task-04119188ff71`) is tied to those
+  bytes: on this branch the gate read-2a fails its check "arm R, kept dry
+  run" (section "The gates on clean clones").
+
+The owner's answer (section "For the base session"): real-5b merges after
+the read track's ADR that ties a kept run to versions is approved and on
+`main`, and read-2a's gate passes under it; the kept run is not made again
+without the owner's word.
+
+## What the checks do not cover
+
+- The Toeplitz fallback of SAP 10.1.1 is not implemented; on the pilot the
+  unstructured fit reaches its maximum, so it is not met.
+- The vectors of the mixed model agree with the R implementation to about
+  1e-8, the precision of two optimizations; they are held to 1e-6.
+- The averaged analyses of 14-3.11 are in the gold ARD (they are results of
+  our event), although no row shows them.
+- The CMH vectors and the pilot have full-rank and rank-deficient W, but no
+  table whose columns are text with table scores (refused, statement 6).
+- The header of the row labels of 14-3.13 ("Assessment") is parsed and not
+  compared, like the population line (review of real-5a, F7).
+- What real-5a's report lists stays: footnotes not compared, blanks not
+  compared, and the proofs' decision records held for existence only.
+
+## Proposals for `catalog@2`
+
+Next to those of real-5a (docs/reports/real-5a.md), for the std track;
+nothing is added to `catalog@1`.
+
+1. In the family `tfl-efficacy-ancova` (real-5a's proposal), the decisions
+   of a model for repeated measures: the records (observed, LOCF), the
+   covariance (unstructured, Toeplitz, compound symmetry; a fallback), the
+   degrees of freedom (Kenward-Roger, Satterthwaite, between-within), the
+   interactions with the visit (treatment, baseline, site), and the visit of
+   the LS means (the last visit, averaged over the visits).
+2. A family `tfl-efficacy-categorical` (a categorical efficacy endpoint by
+   visit, counts and percents, with a stratified test), owning: the
+   categories shown (all, those with subjects), the denominator of a
+   percent (the subjects with a value at the visit, the population), the
+   test (CMH general association, row mean scores, correlation; Fisher;
+   chi-square), its scores (the values, ranks, ridits) and strata, and its
+   display (a count of 0 with or without its percent, the decimals of a
+   p-value).
+3. In `mod-bds-visits`: whether LOCF records enter an analysis, per
+   analysis (real-5a proposed the imputation rule itself).
+
+## The gates on clean clones
+
+real-5b on a clean clone of `10c6bbc`: PASS, 19 of 19 (section "The
+gate"). The other gates the brief names run on clean clones of the commit
+that holds the review; they are recorded in the next version of this
+report.
+
+## For the base session
+
+The base session's message of 2026-11-19, in its words: "The owner says
+start real-5b now. Its merge waits for the read track's version-binding
+ADR." The owner's answer was given in Chinese; this file stays ASCII (rule
+R10), so it is quoted as "[in Chinese: both in parallel] (Recommended)",
+with the option as the base session translated it: "real track starts real-5b (MMRM 14-3.11, CMH 14-3.13). After
+the slice report merges, the read track drafts an ADR that binds kept reader
+runs to versions instead of bytes. real-5b merges after that ADR is
+settled, so there is no further ~USD 0.6 re-record."
+
+What was done with it, and what is left for the base session:
+
+1. `track/real` was brought to `main` `548c0f5`, and later to `1ef7636`
+   (the read track's slice-ae-summary, ADR-016), without conflict.
+2. real-5b is done per ADR-012, with its gate on a clean clone and the
+   review (section "Review").
+3. Before the merge: the read track's ADR that ties a kept run to versions
+   must be approved and on `main`, and read-2a's gate must pass under it.
+   On `1ef7636` it is not: ADR-016 is the read track's first scores, and
+   docs/state/read.md still lists the binding as Open. By the brief, the
+   executor stops there and tells the base session; the kept run is not
+   made again.
+
+## Review
+
+By a fresh-context reviewer (rule R7); `docs/reports/real-5b.review.md`
+has it in full.
+
+## For the owner
+
+- The classes of the 36 differences (N2), and the three records the
+  documents do not settle (section "Where the documents are silent or
+  disagree"); ADR-015's amendment of real-5b lists them.
+- The binding ADR of the read track, before the merge of real-5b.
