@@ -80,16 +80,36 @@ CELL = "cell:Out1/r2/c2"
 SHOWN = (grid.Shown("d", "ard:A_PW/M_d/G_2", "X.X", "A_PW"),
          grid.Shown("se", "ard:A_PW/M_se/G_2", "X.XX", "A_PW"))
 OURS = {"ard:A_PW/M_d/G_2": -0.59, "ard:A_PW/M_se/G_2": 1.02,
-        "ard:A_PW_Avg/M_d/G_2": -0.04, "ard:A_PW_Avg/M_se/G_2": 0.70}
-ENTRY = {"cell": CELL, "csr": "-0.0 (0.70)", "class": "rule_choice", "decision": "custom:d",
+        "ard:A_PW_Avg/M_d/G_2": -0.04, "ard:A_PW_Avg/M_se/G_2": 0.70,
+        "ard:A_PW_90/M_d/G_2": -0.04, "ard:A_PW_90/M_se/G_2": 0.70}
+VISIT = "custom:eff-mmrm-visit"  # a decision that sets the option `at` (decisions.PARAMETERS)
+
+
+def pairwise(analysis_id: str, at: str, level: str = "95") -> dict:
+    return {"id": analysis_id, "name": analysis_id, "methodId": "M_PW", "dataset": "ADX",
+            "variable": "CHG", "programmingCode": {"context": "specfirst method registry",
+                                                  "parameters": [
+                                                      {"name": "at", "value": [at]},
+                                                      {"name": "confidence_level",
+                                                       "value": [level]}]}}
+
+
+ANALYSES = {"A_PW": pairwise("A_PW", "last"), "A_PW_Avg": pairwise("A_PW_Avg", "average"),
+            "A_PW_90": pairwise("A_PW_90", "average", "90")}
+RECORDS = {VISIT: {"id": VISIT, "binds": ["ars:A_PW"]},
+           "custom:shown": {"id": "custom:shown", "binds": ["ars:M_PW"]},
+           "custom:other": {"id": "custom:other", "binds": ["ars:A_OTHER"]}}
+ENTRY = {"cell": CELL, "csr": "-0.0 (0.70)", "class": "rule_choice",
+         "decision": [VISIT, "custom:shown"],
          "proof": {"kind": "other_build", "analyses": {"A_PW": "A_PW_Avg"},
-                   "display": {"zero_sign": "kept"}}}
+                   "display": "display.pattern.signed"}}
 
 
 def judged(entry: dict, ours: str = "-0.6 (1.02)", theirs: str = "-0.0 (0.70)",
-           shown=SHOWN, template: str = "{d} ({se})") -> csr.Comparison:
+           shown=SHOWN, template: str = "{d} ({se})", records=RECORDS,
+           analyses=ANALYSES) -> csr.Comparison:
     found = csr.Comparison("Out1", "9-3.11", differing={CELL: (ours, theirs)})
-    csr.judge(found, [entry], {CELL: (template, shown)}, OURS, {"custom:d"})
+    csr.judge(found, [entry], {CELL: (template, shown)}, OURS, records, analyses)
     return found
 
 
@@ -108,15 +128,22 @@ def test_a_difference_is_proved_by_another_build():
 @pytest.mark.parametrize(("proof", "message"), [
     ({"kind": "other_build", "analyses": {"A_PW": "A_PW_Avg"}},
      "with the other build the cell is '0.0 (0.70)'"),
-    ({"kind": "other_build", "analyses": {"A_PW": "A_PW"}, "display": {"zero_sign": "kept"}},
+    ({"kind": "other_build", "analyses": {"A_PW": "A_PW"}, "display": "display.pattern.signed"},
      "with the other build the cell is"),
-    ({"kind": "other_build", "analyses": {"A_PW": "A_NONE"}}, "no result ard:A_NONE/M_d/G_2"),
+    ({"kind": "other_build", "analyses": {"A_PW": "A_NONE"}}, "no analysis A_NONE"),
     ({"kind": "other_build", "analyses": {"A_X": "A_PW_Avg"}}, "'analyses' must map analyses"),
     ({"kind": "other_build", "patterns": {"x": "X.X"}}, "'patterns' must give parts"),
     ({"kind": "other_build", "note": "x"}, "other_build takes"),
     ({"kind": "other_build"}, "other_build takes"),
-    ({"kind": "other_build", "display": {"zero_sign": "maybe"}}, "cannot be shown"),
-    ({"kind": "other_build", "template": "{n}"}, "cannot be filled"),
+    ({"kind": "other_build", "display": "display.pattern.other"}, "'display' must be a display"),
+    # Review of real-5b, F1: the other analysis differs in more than the decision's option;
+    # a template that shows no part, or adds text, is no build.
+    ({"kind": "other_build", "analyses": {"A_PW": "A_PW_90"},
+      "display": "display.pattern.signed"}, "differs from A_PW in more than the options at"),
+    ({"kind": "other_build", "template": "-0.0 (0.70)"}, "must show parts of the cell"),
+    ({"kind": "other_build", "template": "{n}"}, "must show parts of the cell"),
+    ({"kind": "other_build", "template": "-{d} ({se})", "analyses": {"A_PW": "A_PW_Avg"}},
+     "add no text"),
 ])
 def test_an_other_build_that_proves_nothing(proof, message):
     found = judged(dict(ENTRY, proof=proof))
@@ -128,6 +155,21 @@ def test_an_other_build_proves_a_rule_choice_and_changes_something():
     assert any("other_build proves a rule_choice" in p for p in found.problems)
     found = judged(ENTRY, ours="-0.0 (0.70)")
     assert any("the other build changes nothing" in p for p in found.problems)
+
+
+def test_the_decisions_of_an_entry_bind_the_cell_and_set_what_the_build_changes():
+    # A decision that binds neither the cell's analysis nor its method (F1, F3 of real-5a).
+    found = judged(dict(ENTRY, decision=[VISIT, "custom:other"]))
+    assert any("custom:other binds no analysis of the cell nor its method" in p
+               for p in found.problems), found.problems
+    # Decisions that set no option of an analysis cannot justify an other analysis.
+    found = judged(dict(ENTRY, decision="custom:shown"))
+    assert any("set no option of an analysis" in p for p in found.problems), found.problems
+    # Without the records and the event an other analysis is not held, so it does not pass.
+    found = judged(ENTRY, records={VISIT: {}, "custom:shown": {}}, analyses=None)
+    assert any("which the check was not given" in p for p in found.problems), found.problems
+    found = judged(dict(ENTRY, decision="custom:none"))
+    assert any("no decision record custom:none" in p for p in found.problems)
 
 
 # ---- extra columns and the block kind `groups` ------------------------------------------

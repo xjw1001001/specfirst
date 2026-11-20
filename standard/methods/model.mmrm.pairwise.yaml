@@ -46,7 +46,9 @@ semantics:
     model.mmrm.lsmeans, statement 9.
   - >-
     A group or a reference without model records, or a fit that gives missing
-    results (model.mmrm.lsmeans, statements 3 and 5), gives missing results.
+    results (model.mmrm.lsmeans, statements 3, 5 and 11), gives missing
+    results. So does the reference when it is the only group with model
+    records.
 options:
   factors:
     takes: columns

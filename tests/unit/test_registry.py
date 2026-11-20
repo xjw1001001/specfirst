@@ -15,7 +15,8 @@ EMPTY_OPTIONS = "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8
 def test_the_registry_of_this_repository_is_valid(root):
     known = registry.load(root)
     assert sorted(known.methods) == [
-        "count.subjects", "display.pattern", "display.round.half_away_from_zero",
+        "count.subjects", "display.pattern", "display.pattern.signed",
+        "display.round.half_away_from_zero",
         "display.round.half_even", "model.ancova.dose_response", "model.ancova.lsmeans",
         "model.ancova.pairwise", "model.mmrm.lsmeans", "model.mmrm.pairwise",
         "percent.subjects", "summary.continuous", "test.anova.oneway", "test.chisq",

@@ -17,6 +17,7 @@ Version 0, started by real-2 (ADR-002).
 | `display.round.half_away_from_zero` | display | text |
 | `display.round.half_even` | display | text |
 | `display.pattern` | display | text |
+| `display.pattern.signed` | display | text |
 | `model.ancova.lsmeans` | model | lsmean, se, lower_cl, upper_cl |
 | `model.ancova.pairwise` | model | estimate, se, lower_cl, upper_cl, p_value |
 | `model.ancova.dose_response` | model | p_value, estimate |

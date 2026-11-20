@@ -85,6 +85,8 @@ class Model:
         self.present = [g for g in groups if g in set(self.group)]
         self.n = len(keep)
         t = len(self.visits)
+        if t < 2:
+            raise NotFitted("fewer than two visits (statement 11)")
         # The columns of the design, each with a function of a reference-grid point.
         cols: list[tuple[str, object]] = [("mu", lambda p: 1.0)]
         for g in self.present[1:]:
@@ -224,6 +226,8 @@ class Model:
                     raise NotFitted("the restricted likelihood does not increase")
             change = np.max(np.abs(trial - theta)) / max(1.0, np.max(np.abs(theta)))
             theta, parts, value = trial, trial_parts, self._loglik(trial_parts)
+            # On a flat ridge of the likelihood theta wanders and this does not converge
+            # (review of real-5b, F4): the vectors keep away from such data.
             if change < 1e-14:
                 break
         else:

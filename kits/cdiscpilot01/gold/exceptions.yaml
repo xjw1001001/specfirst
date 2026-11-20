@@ -297,11 +297,13 @@ results:
 # real-5b (amendment of real-5b to ADR-015). A second proof kind:
 #               other_build    the cell built again with the results of other
 #                              analyses of the same event (`analyses`: an
-#                              analysis of the cell -> the other one), other
-#                              `patterns`, another cell `template` or other
-#                              options of display.pattern (`display`) gives
-#                              the CSR's text, and ours is another (the proof
-#                              of a rule_choice)
+#                              analysis of the cell -> the other one, which
+#                              may differ from it only in the options its
+#                              decisions set), other `patterns`, another cell
+#                              `template` (parts of the cell, no text of its
+#                              own) or another display rule of the registry
+#                              (`display`) gives the CSR's text, and ours is
+#                              another (the proof of a rule_choice)
 #
 # Table 14-3.11: gold takes the LS means and their differences at Week 24, as
 # SAP 10.1.1 and the title of template 10 say (custom:eff-mmrm-visit). The CSR's
@@ -309,7 +311,9 @@ results:
 # E22): the analyses An_ADAS_MMRM_*_Avg of the event compute them, and with
 # their results every one of the 12 cells is the CSR's text. The limits of the
 # confidence intervals are shown with 1 decimal as well (template 10 has 2, the
-# CSR 1), and the CSR keeps the sign of -0.04 shown as "-0.0".
+# CSR 1), and the CSR keeps the sign of -0.04 shown as "-0.0" (the display rule
+# display.pattern.signed; gold's display.pattern drops it, custom:eff-mmrm-display).
+# Those four entries name both decisions (decision may be a list, real-5b).
 #
 # Table 14-3.13: SAP ad hoc template 1 shows every count as "xx (xx%)" and a
 # p-value as "x.xxx" (custom:eff-cibic-display). The CSR prints a count of 0
@@ -392,8 +396,8 @@ cells:
     - cell: cell:Out14-3-11/r4/c2
       csr: "-0.0 (0.70)"
       class: rule_choice
-      decision: custom:eff-mmrm-visit
-      proof: {kind: other_build, analyses: {An_ADAS_MMRM_PwPbo: An_ADAS_MMRM_PwPbo_Avg}, display: {zero_sign: kept}}
+      decision: [custom:eff-mmrm-visit, custom:eff-mmrm-display]
+      proof: {kind: other_build, analyses: {An_ADAS_MMRM_PwPbo: An_ADAS_MMRM_PwPbo_Avg}, display: display.pattern.signed}
     - cell: cell:Out14-3-11/r4/c3
       csr: "-0.4 (0.72)"
       class: rule_choice
@@ -402,12 +406,12 @@ cells:
     - cell: cell:Out14-3-11/r5/c2
       csr: "(-1.4;1.3)"
       class: rule_choice
-      decision: custom:eff-mmrm-visit
+      decision: [custom:eff-mmrm-visit, custom:eff-mmrm-display]
       proof: {kind: other_build, analyses: {An_ADAS_MMRM_PwPbo: An_ADAS_MMRM_PwPbo_Avg}, patterns: {lower: X.X, upper: X.X}}
     - cell: cell:Out14-3-11/r5/c3
       csr: "(-1.9;1.0)"
       class: rule_choice
-      decision: custom:eff-mmrm-visit
+      decision: [custom:eff-mmrm-visit, custom:eff-mmrm-display]
       proof: {kind: other_build, analyses: {An_ADAS_MMRM_PwPbo: An_ADAS_MMRM_PwPbo_Avg}, patterns: {lower: X.X, upper: X.X}}
     - cell: cell:Out14-3-11/r6/c3
       csr: "0.606"
@@ -422,7 +426,7 @@ cells:
     - cell: cell:Out14-3-11/r8/c3
       csr: "(-1.9;1.1)"
       class: rule_choice
-      decision: custom:eff-mmrm-visit
+      decision: [custom:eff-mmrm-visit, custom:eff-mmrm-display]
       proof: {kind: other_build, analyses: {An_ADAS_MMRM_PwLow: An_ADAS_MMRM_PwLow_Avg}, patterns: {lower: X.X, upper: X.X}}
   Out14-3-13:
     - cell: cell:Out14-3-13/r2/c4

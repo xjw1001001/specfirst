@@ -80,6 +80,11 @@ semantics:
     distribution with the degrees of freedom of statement 8.
   - >-
     A group without model records gives missing results.
+  - >-
+    With fewer than two visits on the model records there is no model for
+    repeated measures: every result is missing. With one group of model
+    records the model has no term tau, and that group has its lsmean
+    (statement 6); the others are missing (statement 10).
 options:
   factors:
     takes: columns

@@ -1,0 +1,12 @@
+{
+  "method": "display.pattern.signed",
+  "cases": [
+    {"name": "a negative number that rounds to zero keeps its sign (CSR Table 14-3.11)", "statements": [1], "input": {"value": -0.0399, "pattern": "X.X"}, "expected": {"text": "-0.0"}},
+    {"name": "the sign stands before the padding", "statements": [1], "input": {"value": -0.04, "pattern": "XX.X"}, "expected": {"text": "- 0.0"}},
+    {"name": "a negative number that does not round to zero, as display.pattern", "statements": [1], "input": {"value": -3.26, "pattern": "XX.X"}, "expected": {"text": "- 3.3"}},
+    {"name": "half even, as display.pattern with that option", "statements": [1], "input": {"value": -0.05, "pattern": "X.X"}, "options": {"rounding": "half_even"}, "expected": {"text": "-0.0"}},
+    {"name": "0 has no sign", "statements": [2], "input": {"value": 0.0, "pattern": "X.X"}, "expected": {"text": "0.0"}},
+    {"name": "a positive number that rounds to zero has no sign", "statements": [2], "input": {"value": 0.04, "pattern": "X.X"}, "expected": {"text": "0.0"}},
+    {"name": "a missing number, as display.pattern", "statements": [1], "input": {"value": null, "pattern": "X.X"}, "expected": {"text": null}}
+  ]
+}

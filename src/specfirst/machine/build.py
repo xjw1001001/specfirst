@@ -489,22 +489,26 @@ def csr_comparison(root: Path, kit: kits.Kit, folder: Path, display: kits.Displa
     reference = display.reference
     table = csr.read_table(folder / reference.file, reference.page, reference.table)
     write_json(csr_reference_dir(root, kit.id) / f"{reference.table}.json", table)
-    decisions = set()
+    decisions: dict[str, dict] = {}
     if kit.decisions:
-        decisions = {record["id"] for record in read_jsonl(folder / kit.decisions)}
+        decisions = {record["id"]: record for record in read_jsonl(folder / kit.decisions)}
     return csr_against(made, table, event, layout, rows, entries, decisions)
 
 
 def csr_against(made: dict, table: dict, event: ars.Event, layout: layouts.Layout,
-                rows: results.Rows, entries: list[dict], decisions: set[str]) -> csr.Comparison:
-    """A grid against a parsed CSR table, each difference held against its entry."""
+                rows: results.Rows, entries: list[dict],
+                decisions: set[str] | dict[str, dict]) -> csr.Comparison:
+    """A grid against a parsed CSR table, each difference held against its entry.
+
+    `decisions`: the kit's decision records by ID (or their IDs alone, which
+    holds neither what a record binds nor an other analysis of a proof)."""
     compared = csr.compare(made, table)
     planned = grid.plan(event, layout, rows)
     cells = {f"cell:{made['output_id']}/r{number}/{cell.column}":
              (grid.template_of(row, cell), cell.shown)
              for number, row in enumerate(planned.rows, start=1) for cell in row.cells}
     csr.judge(compared, entries, cells, {key: row["raw_value"] for key, row in rows.items()},
-              decisions)
+              decisions, event.analyses)
     return compared
 
 

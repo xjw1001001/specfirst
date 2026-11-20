@@ -787,7 +787,7 @@ class Efficacy:
     layouts: dict[str, layouts.Layout]  # output -> layout
     tables: dict[str, dict]  # output -> its CSR table, parsed from the page of the build's CSR
     entries: dict[str, list[dict]]  # output -> the kit's exceptions for its cells
-    decisions: set[str]
+    decisions: dict[str, dict]  # the kit's decision records by ID
     gold: results.Rows  # the gold ARD of the build
 
 
@@ -807,7 +807,7 @@ def efficacy(pilot: Pilot) -> Efficacy:
             spec, inputs.event, {key: value[0] for key, value in found.items()},
             {key: value[1] for key, value in found.items()},
             csr.load_exceptions(pilot.folder / kit.exceptions),
-            {record["id"] for record in results_jsonl(pilot.folder / kit.decisions)},
+            {record["id"]: record for record in results_jsonl(pilot.folder / kit.decisions)},
             results.by_id(results_jsonl(pilot.folder / build.ARD / f"{EFFICACY}.jsonl")))
     return _EFFICACY[id(pilot)]
 
@@ -1109,7 +1109,7 @@ def efficacy_5b(pilot: Pilot) -> dict[str, Efficacy]:
                 {d.output: csr.read_table(pilot.folder / d.reference.file, d.reference.page,
                                           d.reference.table) for d in displays},
                 csr.load_exceptions(pilot.folder / kit.exceptions),
-                {record["id"] for record in results_jsonl(pilot.folder / kit.decisions)},
+                {record["id"]: record for record in results_jsonl(pilot.folder / kit.decisions)},
                 results.by_id(results_jsonl(pilot.folder / build.ARD / f"{set_id}.jsonl")))
         _EFFICACY_5B[id(pilot)] = made
     return _EFFICACY_5B[id(pilot)]
@@ -1175,7 +1175,26 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
                     item["analysisId"] = "An_CIBIC_EFF_N"
         return value
 
+    def week24_alone_on_locf(value: dict) -> dict:
+        """Gold's analyses on the records LOCF adds; the averaged ones as they are."""
+        subset = copy.deepcopy(next(s for s in value["dataSubsets"]
+                                    if s["id"] == "DS_ADAS_MMRM"))
+        subset["id"] = "DS_ADAS_MMRM_LOCF"
+        subset["compoundExpression"]["whereClauses"] = locf_too(
+            subset["compoundExpression"]["whereClauses"])
+        value["dataSubsets"].append(subset)
+        for analysis in value["analyses"]:
+            if analysis["id"] in (f"{MMRM}_LSM", f"{MMRM}_PwPbo", f"{MMRM}_PwLow"):
+                analysis["dataSubsetId"] = "DS_ADAS_MMRM_LOCF"
+        return value
+
     in_adas = {
+        # Gold's analyses alone, the averaged ones the proofs read as they are (review of
+        # real-5b, F1): the proofs must not stand in for gold.
+        "gold's analyses alone at 90% confidence": mmrm(
+            lambda ps: [*ps, {"name": "confidence_level", "value": ["90"]}], averaged=False),
+        "gold's analyses alone on the records LOCF adds":
+            week24_alone_on_locf(copy.deepcopy(adas.event.data)),
         "the mixed model with the records LOCF adds":
             _with_subset(copy.deepcopy(adas.event.data), "DS_ADAS_MMRM", locf_too),
         "Satterthwaite in place of Kenward-Roger": mmrm(option("df", ["satterthwaite"])),
@@ -1254,6 +1273,17 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
         "an exception of 14-3.13 left out":
             lambda: efficacy_problems(cibic, cibic.gold, entries={
                 **cibic.entries, "Out14-3-13": cibic.entries["Out14-3-13"][1:]}),
+        "a proof whose template is the CSR's text": lambda: efficacy_problems(
+            adas, adas.gold, entries=replaced(adas, "Out14-3-11", 0, dict(
+                entries_11[0], proof={"kind": "other_build",
+                                      "template": entries_11[0]["csr"]}))),
+        "a proof whose template adds text ('{lsm} (0.49)')": lambda: efficacy_problems(
+            adas, adas.gold, entries=replaced(adas, "Out14-3-11", 0, dict(
+                entries_11[0], proof={"kind": "other_build", "template": "{lsm} (0.49)",
+                                      "analyses": entries_11[0]["proof"]["analyses"]}))),
+        "an entry that names an unrelated decision (custom:eff-cmh)": lambda: efficacy_problems(
+            adas, adas.gold, entries=replaced(adas, "Out14-3-11", 0, dict(
+                entries_11[0], decision="custom:eff-cmh"))),
     }
     for name, check in planted.items():
         _seen(name, check(), problems)

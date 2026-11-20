@@ -49,12 +49,12 @@ reader task folders").
 | --- | --- |
 | The mixed model for repeated measures, R only, `mmrm`, with its covariance structure and degrees-of-freedom method as options | `standard/methods/model.mmrm.lsmeans.yaml` (10 statements), `model.mmrm.pairwise.yaml` (7); options `factors`, `covariates`, `visit`, `by_visit`, `treatment_by_visit`, `covariance` (unstructured, toeplitz), `df` (kenward_roger_linear, satterthwaite), `at` (last, average), `confidence_level`, `reference`; R in `r/specfirstr/R/models.R` (mmrm 0.3.19 with nlminb, emmeans 2.0.4) |
 | CMH, Python and R, with its scores and strata; the start is the spike | `standard/methods/test.cmh.yaml` (7 statements); options `statistic` (general_association, row_mean_scores), `scores` (table, rank), `strata` (columns); `specfirst.machine.methods.cmh_p`, `m_cmh_p` in `r/specfirstr/R/methods.R`; rule I12d in both engines |
-| Test vectors | `tests/methods/test_cmh.json` (12 cases, fractions), `model_mmrm_lsmeans.json` (13), `model_mmrm_pairwise.json` (7), from `tests/methods/oracle_mmrm.py` |
+| Test vectors | `tests/methods/test_cmh.json` (12 cases, fractions), `model_mmrm_lsmeans.json` (15), `model_mmrm_pairwise.json` (8), from `tests/methods/oracle_mmrm.py`; `display_pattern_signed.json` (7) |
 | Tables 14-3.11 (repeated measures) and 14-3.13 (CIBIC+, CMH controlling for site group) | `kits/cdiscpilot01/gold/events/efficacy-adas.json` (6 analyses added), `gold/events/efficacy-cibic.json` (new, 10 analyses), `gold/layout/Out14-3-11.yaml`, `Out14-3-13.yaml` |
 | The cell rule of real-5a for the two tables | the gate check `efficacy` (section "The gate") |
 | The two engines agree on CMH (R11) | the gate checks `results` and `CMH` |
 | The hint of E22 on the LS means of 14-3.11 tested and its result recorded | the gate check `E22 hint`; section "The hint of E22"; `custom:eff-mmrm-visit` |
-| The F5 edge cases of the R implementation (review of real-5a) | fixed in `models.R`, a vector each (section "The methods") |
+| The F5 edge cases of the R implementation (review of real-5a) | fixed in `models.R` for ANCOVA and, after review pass 1 (F3), for the mixed model; a vector each (section "The methods") |
 | Nothing added to `catalog@1`; proposals for `catalog@2` | nothing added; section "Proposals for catalog@2" |
 
 ## The methods
@@ -86,9 +86,9 @@ now in the statements or the code:
   an LS mean moves from 0.49233568 to 0.49234173. The R implementation runs
   nlminb; then mmrm and the oracle agree to 8 digits (0.49234173 both).
 - mmrm's Kenward-Roger degrees of freedom are its Satterthwaite degrees of
-  freedom (179.903645 both, on the CSR's data): W is the inverse of the
-  observed information, not of the expected one Kenward and Roger (1997)
-  write. Statement 8 says so; for one contrast Kenward and Roger's lambda
+  freedom (on the CSR's data 179.903645 both with the default optimizer,
+  179.899745 both with nlminb): W is the inverse of the observed
+  information, not of the expected one Kenward and Roger (1997) write. Statement 8 says so; for one contrast Kenward and Roger's lambda
   is 1 and their degrees of freedom are 2 (l'Vl)^2 / (g'Wg).
 - `Kenward-Roger-Linear` leaves out the second derivatives of the
   covariance, so its adjusted covariance does not depend on how mmrm
@@ -124,9 +124,13 @@ statements; the vectors are computed in fractions, the rank and the
 generalized inverse by exact elimination (`tests/methods/oracle.py`), and
 the two engines agree with them within 3.5e-15.
 
-### The edge cases of real-5a (review, F5)
+### The edge cases of real-5a (review, F5) and of the mixed model
 
-Each with a vector in `model_ancova_lsmeans.json` or
+The mixed model had the first of them too (review of real-5b, F3): with
+one group of model records it now gives that group its LS mean (the model
+without the group term), with the reference alone missing comparisons,
+and with fewer than two visits missing results (statement 11); a vector
+each. Those of ANCOVA, each with a vector in `model_ancova_lsmeans.json` or
 `model_ancova_pairwise.json`: one group with model records gives its LS
 mean (the model without the group term) and the others missing, where R
 stopped; group IDs with a minus sign give their comparisons, which emmeans
@@ -191,16 +195,17 @@ E22: the LS means of Table 14-3.11 are averages over the weeks: the hint holds
 -- PASS E22 hint (3.8 s)
 ```
 
-Two details of the same reproduction: with Satterthwaite's standard errors,
-or Kenward-Roger's in another parametrization, one standard error is 0.55
-where the CSR prints 0.56 (`custom:eff-mmrm-df`, D11); with the records LOCF
-adds, nothing matches (`custom:eff-mmrm-records`, D11).
+Two details of the same reproduction: with Satterthwaite's standard errors
+two printed cells differ, a standard error of 0.55 where the CSR prints
+0.56 and a p-value of 0.605 where it prints 0.606 (`custom:eff-mmrm-df`,
+D11); with the records LOCF adds, nothing matches
+(`custom:eff-mmrm-records`, D11).
 
 ## The classified differences (for N2)
 
 | Class | Table | Cells | What | Proof |
 | --- | --- | --- | --- | --- |
-| `rule_choice` | 14-3.11 | 12 | the LS means and their differences at Week 24 (SAP) against their average over the weeks (CSR); 3 confidence intervals also with 1 decimal (template 10: 2) and one difference with the sign of -0.04 kept | `other_build`: the averaged analyses, the patterns `X.X` for the limits, `zero_sign: kept` |
+| `rule_choice` | 14-3.11 | 12 | the LS means and their differences at Week 24 (SAP) against their average over the weeks (CSR); 3 confidence intervals also with 1 decimal (template 10: 2) and one difference with the sign of -0.04 kept; those 4 entries name `custom:eff-mmrm-visit` and `custom:eff-mmrm-display` | `other_build`: the averaged analyses, the patterns `X.X` for the limits, the display rule `display.pattern.signed` |
 | `rule_choice` | 14-3.13 | 21 | a count of 0 as "0 (0%)" (ad hoc template 1) against "0" (CSR) | `other_build`: the template `{n}` |
 | `rule_choice` | 14-3.13 | 3 | the CMH p-values with 3 decimals (template) against 4 (CSR) | `other_pattern`: `X.XXXX` |
 
@@ -221,10 +226,10 @@ in all), each fitting decision-record.schema.json:
 | `custom:eff-mmrm-covariance` | tfl-efficacy-ancova | unstructured; Toeplitz on a singularity (not met, not implemented) | stated, document_rule | SAP 10.1.1 |
 | `custom:eff-mmrm-df` | tfl-efficacy-ancova | REML, Kenward-Roger with linear parameters | asked, gold_quirk | none; E22, the CSR's numbers |
 | `custom:eff-mmrm-visit` | tfl-efficacy-ancova | the LS means at the last week, Week 24 | stated, document_rule | SAP 10.1.1, template 10 |
-| `custom:eff-mmrm-display` | tfl-efficacy-ancova | template 10: LS mean 1, SE 2, p 3, difference 1, CI 2 | stated, document_rule | template 10 |
-| `custom:eff-cibic-records` | mod-bds-visits | weeks 8, 16, 24, ANL01FL = Y, LOCF included | stated, document_rule | SAP 10.1.2, ad hoc template 1 |
-| `custom:eff-cibic-categories` | tfl-efficacy-categorical | all seven categories; the percent of the subjects of the week | stated, document_rule | SAP 14.1.2, ad hoc template 1 |
-| `custom:eff-cmh` | tfl-efficacy-categorical | row mean scores, table scores, strata SITEGR1 | asked, gold_quirk | SAP 16.1, ad hoc template 1, 7.1 |
+| `custom:eff-mmrm-display` | tfl-efficacy-ancova | template 10: LS mean 1, SE 2, p 3, difference 1, CI 2; no sign on a number that rounds to zero | stated, document_rule | template 10 |
+| `custom:eff-cibic-records` | mod-bds-visits | weeks 8, 16, 24, ANL01FL = Y, LOCF included | stated, document_rule | SAP 10.1.2 (its LOCF sentence), ad hoc template 1 |
+| `custom:eff-cibic-categories` | tfl-efficacy-categorical | all seven categories; the percent of the subjects of the week | stated, document_rule | SAP 14.1.2, ad hoc template 1 (its row N under each week; the denominator is a reading) |
+| `custom:eff-cmh` | tfl-efficacy-categorical | row mean scores, table scores, strata SITEGR1 | asked, gold_quirk | SAP 16.1, ad hoc template 1, 7.1; both readings of "Pearson Chi-Square" given |
 | `custom:eff-cibic-display` | tfl-efficacy-categorical | template: "xx (xx%)" also for 0, p 3 decimals | stated, document_rule | ad hoc template 1 |
 
 The Define-XML has no analysis results metadata for these two tables; the
@@ -240,10 +245,13 @@ the records set (99 in all) against the two events.
   name Kenward-Roger; the CSR's standard errors follow Kenward-Roger with
   linear parameters.
 - The CMH statistic. SAP 16.1 says the CMH test controlling for site; the
-  footnote of ad hoc template 1 adds "Pearson Chi-Square", which names no
-  CMH statistic. The CSR's p-values are those of row mean scores with the
-  CIBIC+ values as scores (general association gives 0.478, 0.770 and
-  0.869).
+  footnote of ad hoc template 1 adds "Pearson Chi-Square". Read as a name
+  of no CMH statistic, the documents are silent, and the CSR's p-values are
+  those of row mean scores with the CIBIC+ values as scores. Read as general
+  association (for one stratum (n - 1)/n times Pearson's chi-square), the
+  documents decide, gold would be general association (0.478, 0.770 and
+  0.868) and the CSR's three p-values rule_choice differences. The record
+  gives both readings (review, F5).
 - "Site" in the SAP, "site group" in the CSR: SAP 7.1 pools the sites
   (SITEGR1), as in real-5a.
 - Template 10 says Week 24 and the CSR averages over the weeks (section
@@ -390,8 +398,13 @@ hint of E22 is not shown.
 The brief asks to say so when the change alters the files of a generated
 kit or anything a reader's task folder holds. It does:
 
-- The method registry has three more entries and display.pattern one more
-  option. No catalog entry, house file, schema or skill changes.
+- The method registry has four more entries (`model.mmrm.lsmeans`,
+  `model.mmrm.pairwise`, `test.cmh`, `display.pattern.signed`). The entries
+  the read track's slice reaches (count.subjects, percent.subjects,
+  display.pattern, the rounding rules) do not change (ADR-017; the first
+  version of real-5b gave display.pattern an option, which review pass 1
+  saw and the second moved to an entry of its own). No catalog entry,
+  house file, schema or skill changes.
 - Every generated kit pins `registry_sha256` in its kit.yaml, so every
   generated kit's kit.yaml changes; their data, gold and documents do not
   (no generated kit uses the new methods).
@@ -411,7 +424,16 @@ without the owner's word.
 - The Toeplitz fallback of SAP 10.1.1 is not implemented; on the pilot the
   unstructured fit reaches its maximum, so it is not met.
 - The vectors of the mixed model agree with the R implementation to about
-  1e-8, the precision of two optimizations; they are held to 1e-6.
+  1e-8, the precision of two optimizations; they are held to 1e-6. On a flat
+  likelihood (monotone dropout) the oracle does not converge and the two
+  agree to about 1e-5 only (review, F4); the vectors keep away from such
+  data.
+- The values of the records that set no registry option are held by no
+  check: of real-5b eff-mmrm-records, eff-cibic-records,
+  eff-cibic-categories, eff-mmrm-display and eff-cibic-display (review, F5;
+  decisions.py lists them). The proofs now ask that every decision an
+  entry names binds an analysis of the cell or its method, and an other
+  analysis may differ only in the options its decisions set.
 - The averaged analyses of 14-3.11 are in the gold ARD (they are results of
   our event), although no row shows them.
 - The CMH vectors and the pilot have full-rank and rank-deficient W, but no

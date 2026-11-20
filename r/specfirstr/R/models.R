@@ -286,13 +286,17 @@ mmrm_frame <- function(y, group, groups, visit, subject, factors, covariates, by
   list(frame = frame, terms = terms, visits = as.character(visits))
 }
 
-# Statements 3 to 5: the fit, or NULL when it gives missing results.
+# Statements 3 to 5 and 11: the fit, or NULL when it gives missing results. With one
+# group of model records the model has no group term, and that group its LS mean
+# (review of real-5b, F3).
 mmrm_fit <- function(m, treatment_by_visit, covariance, df) {
-  if (nrow(m$frame) == 0) return(NULL)
-  lead <- c(".g", ".v", if (treatment_by_visit == "yes") ".g:.v")
+  if (nrow(m$frame) == 0 || length(m$visits) < 2) return(NULL)
+  grouped <- nlevels(m$frame$.g) >= 2
+  lead <- c(if (grouped) ".g", ".v", if (grouped && treatment_by_visit == "yes") ".g:.v")
   fixed <- paste(".y ~", paste(c(lead, m$terms), collapse = " + "))
-  design <- stats::model.matrix(stats::as.formula(fixed), data = m$frame)
-  if (qr(design)$rank < ncol(design)) return(NULL)
+  design <- tryCatch(stats::model.matrix(stats::as.formula(fixed), data = m$frame),
+                     error = function(e) NULL)
+  if (is.null(design) || qr(design)$rank < ncol(design)) return(NULL)
   structure <- switch(covariance, unstructured = "us", toeplitz = "toep",
                       fail("unknown covariance '", covariance, "'"))
   formula <- stats::as.formula(paste0(fixed, " + ", structure, "(.v | .s)"))
@@ -310,15 +314,17 @@ mmrm_fit <- function(m, treatment_by_visit, covariance, df) {
   fit
 }
 
-# Statement 6: the LS means at the last visit or averaged over the visits.
+# Statement 6: the LS means at the last visit or averaged over the visits. Without a
+# group term the one LS mean is that of the whole model (specs ~ 1).
 mmrm_emmeans <- function(fit, m, at) {
+  specs <- if (nlevels(m$frame$.g) >= 2) ".g" else ~ 1
   if (at == "last") {
     grid <- list(.v = utils::tail(m$visits, 1))
-    return(suppressMessages(emmeans::emmeans(fit, specs = ".g", by = ".v", at = grid,
+    return(suppressMessages(emmeans::emmeans(fit, specs = specs, by = ".v", at = grid,
                                              weights = "equal")))
   }
   if (at != "average") fail("unknown at '", at, "'")
-  suppressMessages(emmeans::emmeans(fit, specs = ".g", weights = "equal"))
+  suppressMessages(emmeans::emmeans(fit, specs = specs, weights = "equal"))
 }
 
 m_mmrm_lsmeans <- function(y, group, groups, visit, subject, factors = list(),
@@ -331,6 +337,15 @@ m_mmrm_lsmeans <- function(y, group, groups, visit, subject, factors = list(),
   fit <- mmrm_fit(m, treatment_by_visit, covariance, df)
   if (is.null(fit)) return(out)
   table <- emm_table(mmrm_emmeans(fit, m, at), confidence_level, FALSE)
+  if (nlevels(m$frame$.g) == 1) {
+    only <- levels(m$frame$.g)
+    row <- rownames(table)[1]
+    out[[only]] <- list(lsmean = value_of(table, row, "emmean"),
+                        se = value_of(table, row, "SE"),
+                        lower_cl = value_of(table, row, "lower"),
+                        upper_cl = value_of(table, row, "upper"))
+    return(out)
+  }
   for (id in groups) {
     out[[id]] <- list(lsmean = value_of(table, id, "emmean"), se = value_of(table, id, "SE"),
                       lower_cl = value_of(table, id, "lower"),
@@ -348,7 +363,8 @@ m_mmrm_pairwise <- function(y, group, groups, visit, subject, reference, factors
   others <- setdiff(groups, reference)
   out <- na_by_group(others, operations)
   m <- mmrm_frame(y, group, groups, visit, subject, factors, covariates, by_visit)
-  if (!reference %in% levels(m$frame$.g)) return(out)
+  # Statement 7: without the reference, or with the reference alone, nothing to compare.
+  if (!reference %in% levels(m$frame$.g) || nlevels(m$frame$.g) < 2) return(out)
   fit <- mmrm_fit(m, treatment_by_visit, covariance, df)
   if (is.null(fit)) return(out)
   emm <- mmrm_emmeans(fit, m, at)

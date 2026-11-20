@@ -360,8 +360,9 @@ def pattern_text(value: float | int | None, pattern: str, mock: bool = False,
     """display.pattern: a number as the text a result pattern asks for.
 
     With `mock` the mask itself is shown, in lower case, in place of the
-    number: the text of a mock shell. `rounding` and `zero_sign` are the
-    options of those names.
+    number: the text of a mock shell. `rounding` is the option of
+    display.pattern; zero_sign "kept" gives display.pattern.signed (real-5b), an
+    entry of its own, not an option of display.pattern.
     """
     before, mask, after = pattern_mask(pattern)
     if rounding not in ROUNDING_RULES:
@@ -374,7 +375,7 @@ def pattern_text(value: float | int | None, pattern: str, mock: bool = False,
         return None
     rounded = _rounded(value, len(mask.partition(".")[2]), rounding)
     sign = "-" if rounded.startswith("-") else ""
-    if zero_sign == "kept" and value < 0 and not sign:  # statement 9
+    if zero_sign == "kept" and value < 0 and not sign:  # display.pattern.signed, statement 1
         sign = "-"
     digits = rounded.removeprefix("-")
     if "." in mask:

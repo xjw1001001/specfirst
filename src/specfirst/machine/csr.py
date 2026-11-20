@@ -39,13 +39,17 @@ the other alternative, in which the cell equals the reference).
 CSR's text. It is the first real case of a difference of display (ADR-003,
 decision 5): SAP template 5 shows the limits of a confidence interval with 2
 decimals, the CSR with 1 (ADR-015). `other_build` (real-5b): the cell built
-again with any of the results of other analyses of the same event (an
-analysis that follows the other alternative of the decision; its ARD rows
-are those of the cell with the analysis's ID replaced), other patterns,
-another cell template and other options of display.pattern gives the CSR's
-text. The titles are compared like labels. The footnotes
-are not compared: the layouts state the methods in words of their own, and
-the CSR's footnotes are not copied into git.
+again with any of the results of other analyses of the same event, other
+patterns, another cell template and another display rule gives the CSR's
+text. It is held to "a build with that alternative" (review of real-5b, F1):
+an other analysis is the cell's analysis but for the options its decision
+records set (`decisions.PARAMETERS`; its ARD rows are those of the cell with
+the analysis's ID replaced); another template shows parts of the cell and
+adds no text the cell's template has not; and with the kit's records at hand
+every decision an entry names binds an analysis of the cell or its method.
+The titles are compared like labels. The footnotes are not compared: the
+layouts state the methods in words of their own, and the CSR's footnotes
+are not copied into git.
 """
 
 from __future__ import annotations
@@ -214,6 +218,11 @@ CLASSES = ("rule_choice", "reference_error", "data_difference")
 PROOFS = ("other_pattern", "other_build")
 # The keys of an other_build proof besides its kind; at least one is given.
 BUILD_KEYS = ("analyses", "patterns", "template", "display")
+# The display rules an other_build may show a cell by: the registry entry and what
+# methods.pattern_text needs for it.
+DISPLAYS = {"display.pattern": {}, "display.pattern.signed": {"zero_sign": "kept"}}
+# What an other analysis may differ in besides the options its decisions set.
+_NAMING = ("id", "name", "reason", "purpose")
 
 
 def load_exceptions(path: Path) -> dict[str, list[dict]]:
@@ -243,6 +252,10 @@ def load_exceptions(path: Path) -> dict[str, list[dict]]:
                 problems.append(f"{where}: an entry has exactly cell, csr, class, decision and "
                                 "proof")
                 continue
+            named = entry["decision"]
+            if not (isinstance(named, str) or (isinstance(named, list) and named and all(
+                    isinstance(item, str) for item in named))):
+                problems.append(f"{where}: 'decision' is a record's ID or a list of them")
             if not isinstance(entry["cell"], str) or not entry["cell"].startswith(
                     f"cell:{output}/"):
                 problems.append(f"{where}: 'cell' must be the ID of a cell of {output}")
@@ -259,13 +272,23 @@ def load_exceptions(path: Path) -> dict[str, list[dict]]:
     return {str(output): list(entries) for output, entries in sets.items()}
 
 
+def names_of(entry: dict) -> list[str]:
+    """The decision records an entry names: one ID or a list of them (real-5b)."""
+    named = entry["decision"]
+    return [named] if isinstance(named, str) else list(named)
+
+
 def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, tuple]],
-          ours: dict[str, float | int | None], decisions: set[str]) -> None:
+          ours: dict[str, float | int | None], decisions: set[str] | dict[str, dict],
+          analyses: dict[str, dict] | None = None) -> None:
     """Hold every differing cell of a comparison against its one entry; record the classes.
 
     `planned`: cell ID -> (template, shown parts), from the plan of the grid;
     `ours`: ARD row ID -> raw value; `decisions`: the IDs of the kit's
-    decision records. A differing cell without an entry, an entry whose proof
+    decision records, or the records by ID; `analyses`: the analyses of the
+    event by ID. With records and analyses, every decision an entry names must
+    bind an analysis of the cell or its method, and an other_build may name
+    other analyses. A differing cell without an entry, an entry whose proof
     does not hold, and an entry for a cell that does not differ are problems.
     """
     from specfirst.machine import methods
@@ -283,10 +306,18 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
         reasons = []
         if squeeze(str(entry["csr"])) != squeeze(theirs):
             reasons.append(f"the entry says the CSR prints {entry['csr']!r}")
-        if entry["decision"] not in decisions:
-            reasons.append(f"no decision record {entry['decision']}")
         proof = entry["proof"]
         template, shown = planned.get(cell_id, ("", ()))
+        for name in names_of(entry):
+            if name not in decisions:
+                reasons.append(f"no decision record {name}")
+            elif isinstance(decisions, dict) and analyses is not None:
+                bound = set(decisions[name].get("binds") or [])
+                own = {f"ars:{item.analysis}" for item in shown} | {
+                    f"ars:{analyses[item.analysis].get('methodId')}" for item in shown
+                    if item.analysis in analyses}
+                if not bound & own:
+                    reasons.append(f"{name} binds no analysis of the cell nor its method")
         if proof["kind"] == "other_pattern":
             patterns = proof.get("patterns")
             names = {item.name for item in shown}
@@ -309,16 +340,51 @@ def judge(found: Comparison, entries: list[dict], planned: dict[str, tuple[str, 
                     if squeeze(other) == squeeze(text):
                         reasons.append("the other patterns change nothing")
         elif proof["kind"] == "other_build":
-            reasons += _other_build(entry, proof, template, shown, ours, text, theirs)
+            reasons += _other_build(entry, proof, template, shown, ours, text, theirs,
+                                    decisions if isinstance(decisions, dict) else None,
+                                    analyses)
         if reasons:
             found.problems.append(f"{where}: the proof does not hold: " + "; ".join(reasons))
         else:
             found.classified[cell_id] = entry["class"]
 
 
+def _stripped(analysis: dict, options: set[str]) -> dict:
+    """An analysis without its naming and without the parameters `options` names."""
+    kept = {key: value for key, value in analysis.items() if key not in _NAMING}
+    code = kept.get("programmingCode")
+    if isinstance(code, dict):
+        kept["programmingCode"] = dict(code, parameters=[
+            parameter for parameter in code.get("parameters") or []
+            if parameter.get("name") not in options])
+    return kept
+
+
+def _template_names(template: str) -> list[str]:
+    """The part names of a cell template (as specfirst.machine.layout.template_names)."""
+    from string import Formatter
+
+    return [name for _, name, _, _ in Formatter().parse(template) if name is not None]
+
+
+def _literal(template: str) -> str:
+    """The text of a cell template without its parts."""
+    from string import Formatter
+
+    return "".join(text for text, _, _, _ in Formatter().parse(template))
+
+
+def _subsequence(short: str, long: str) -> bool:
+    left = iter(long)
+    return all(character in left for character in short)
+
+
 def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
-                 ours: dict[str, float | int | None], text: str, theirs: str) -> list[str]:
+                 ours: dict[str, float | int | None], text: str, theirs: str,
+                 records: dict[str, dict] | None = None,
+                 events: dict[str, dict] | None = None) -> list[str]:
     """Why an other_build proof does not hold; nothing when it does."""
+    from specfirst.machine import decisions as records_module
     from specfirst.machine import methods
 
     reasons = []
@@ -329,16 +395,45 @@ def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
         return reasons + [f"other_build takes {', '.join(BUILD_KEYS)}, at least one"]
     analyses = proof.get("analyses") or {}
     patterns = proof.get("patterns") or {}
-    display = proof.get("display") or {}
+    display = proof.get("display", "display.pattern")
     names = {item.name for item in shown}
     if not isinstance(analyses, dict) or set(analyses) - {item.analysis for item in shown}:
         reasons.append("'analyses' must map analyses of the cell to other analyses")
     if not isinstance(patterns, dict) or set(patterns) - names:
         reasons.append(f"'patterns' must give parts of the cell ({', '.join(sorted(names))})")
-    if not isinstance(display, dict):
-        reasons.append("'display' must give options of display.pattern")
+    if display not in DISPLAYS:
+        reasons.append(f"'display' must be a display rule of the registry: "
+                       f"{', '.join(sorted(DISPLAYS))}")
+    if "template" in proof:
+        other_template = proof["template"]
+        try:
+            other_names = set(_template_names(str(other_template)))
+            literal = _literal(str(other_template))
+        except ValueError as error:
+            return reasons + [f"the other template cannot be filled: {error}"]
+        if not other_names or other_names - names or not _subsequence(literal,
+                                                                     _literal(template)):
+            reasons.append("the other template must show parts of the cell and add no text "
+                           "the cell's template has not")
     if reasons:
         return reasons
+    # "A build with that alternative": an other analysis differs from the cell's only in
+    # the options the entry's decisions set (review of real-5b, F1).
+    if analyses:
+        if records is None or events is None:
+            return ["an other analysis is held against the event and the decision records, "
+                    "which the check was not given"]
+        options = {option for name in names_of(entry)
+                   for option in records_module.PARAMETERS.get(name, {}).values()}
+        if not options:
+            return [f"{', '.join(names_of(entry))} set no option of an analysis, so no other "
+                    "analysis follows their other alternative"]
+        for mine, other in analyses.items():
+            if other not in events or mine not in events:
+                return [f"no analysis {other} in the event"]
+            if _stripped(events[mine], options) != _stripped(events[other], options):
+                return [f"{other} differs from {mine} in more than the options "
+                        f"{', '.join(sorted(options))} of {', '.join(names_of(entry))}"]
     texts = {}
     for item in shown:
         ard = item.ard
@@ -349,7 +444,7 @@ def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
                 return [f"no result {ard} of the other analysis"]
         try:
             texts[item.name] = methods.pattern_text(
-                ours.get(ard), patterns.get(item.name, item.pattern), **display) or ""
+                ours.get(ard), patterns.get(item.name, item.pattern), **DISPLAYS[display]) or ""
         except (methods.MethodError, TypeError) as error:
             return [f"the other build cannot be shown: {error}"]
     try:

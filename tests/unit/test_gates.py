@@ -288,6 +288,41 @@ def test_real5b_gate_has_the_checks_of_adr_012(tmp_path, monkeypatch):
     assert any("the hint holds" in line for line in said)
 
 
+def test_the_cmh_check_of_real5b_sees_a_disagreement(tmp_path):
+    """The gate check `CMH` (rule R11) on ARD files of its own, with planted defects
+    (review of real-5b, F2): a value moved, a row left out, a missing value."""
+    import json
+
+    folder = tmp_path / "build" / "p1" / gates.PILOT / "first" / "gold" / "ard"
+    folder.mkdir(parents=True)
+
+    def row(week: str, value) -> dict:
+        return {"id": f"ard:An_CIBIC_{week}_Cmh/Mth_Cmh_1_pval/*", "method_id": "test.cmh",
+                "raw_value": value}
+
+    python = [row("W08", 0.2727284040371243), row("W16", 0.40031471449145817),
+              row("W24", 0.6180439310104722),
+              {"id": "ard:An_CIBIC_W08_N/Mth_Count_1_n/Grp_Pbo", "method_id": "count.subjects",
+               "raw_value": 77}]
+
+    def check(r_rows: list[dict]) -> bool:
+        for name, rows in (("efficacy-cibic.jsonl", python), ("efficacy-cibic.r.jsonl", r_rows)):
+            (folder / name).write_text("".join(json.dumps(r) + "\n" for r in rows),
+                                       encoding="ascii")
+        ctx = gates.Context(tmp_path, "demo", lambda line: None)
+        try:
+            return gates._cmh_engines(ctx)
+        finally:
+            ctx.close()
+
+    assert check(python) is True
+    assert check([dict(r, raw_value=r["raw_value"] * (1 + 5e-10)) for r in python]) is True
+    assert check([dict(r, raw_value=r["raw_value"] * (1 + 2e-9)) if "W16" in r["id"] else r
+                  for r in python]) is False
+    assert check([r for r in python if "W24" not in r["id"]]) is False
+    assert check([dict(r, raw_value=None) if "W08" in r["id"] else r for r in python]) is False
+
+
 def test_std1_gate_has_the_checks_of_the_plan():
     """PLAN.md section 13.4: round trip, yamaa check, ARS schema, public sources."""
     names = [check.name for check in gates.GATES["std-1"]]

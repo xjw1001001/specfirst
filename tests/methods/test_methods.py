@@ -71,6 +71,9 @@ def python_result(method: str, case: dict) -> dict:
     if method == "display.pattern":
         return {"text": methods.pattern_text(given["value"], given["pattern"],
                                              mock=given.get("mock", False), **options)}
+    if method == "display.pattern.signed":
+        return {"text": methods.pattern_text(given["value"], given["pattern"], zero_sign="kept",
+                                             **options)}
     raise AssertionError(f"no Python implementation of {method}")
 
 
