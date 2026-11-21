@@ -2,19 +2,23 @@
 
 Per script, on its syntax tree (Python) or on the tokens of R's own parser:
 
-- Python: its imports, the builtins it names and the attributes it takes are
-  in allow-lists; it names no dunder, binds no imported name again, has no
-  global or nonlocal, and reads `sys` only as `sys.argv[1]` or
-  `sys.argv[2]`. R: its calls are in an allow-list; it names nothing that
+- Python: its imports are exactly the templates' statements, the builtins
+  it names and the attributes it takes are in allow-lists; it names no
+  dunder, defines no class, has no global or nonlocal, binds none of the
+  names the templates use (Path, sys, pd, np, stats, product, adam, out,
+  num) but in the templates' own lines, and reads `sys` only as
+  `sys.argv[1]` or `sys.argv[2]`. R: its calls are in an allow-list; it names nothing that
   runs other code (source, eval, get, ...), calls no string, hands apply and
   sapply a function written in place (`function(...)`), the model functions
   a formula written in place, update only `df = ...`, and uses no qualified
   function or file.path as a value.
 - Each call of its one reader has one form, a dataset of its plan in the
   folder of its first argument: `pd.read_parquet(adam / "<d>.parquet")` with
-  `adam` bound once by `adam, out = Path(sys.argv[1]), sys.argv[2]` (Path is
-  named nowhere else), or `utils::read.csv(file.path(adam, "<d>.csv"), ...)`
-  with `adam <- args[1]` and `args <- commandArgs(trailingOnly = TRUE)`.
+  `adam` bound only by `adam, out = Path(sys.argv[1]), sys.argv[2]`, or
+  `utils::read.csv(file.path(adam, "<d>.csv"), ...)` with `adam <- args[1]`
+  and `args <- commandArgs(trailingOnly = TRUE)`; its one write is that of
+  its output, `.to_csv(out, index=False)` or `utils::write.csv(rows,
+  args[2], ...)`.
 - No text holds a path, "..", a file name other than those datasets, or a
   number; every number is one the ARS states for the analysis or one of a
   few small constants.
@@ -33,8 +37,6 @@ import io
 import subprocess
 from pathlib import Path
 
-PY_IMPORTS = {"sys": None, "itertools": {"product"}, "pathlib": {"Path"}, "numpy": None,
-              "pandas": None, "scipy": {"stats"}}
 # The builtins a script may name; any other name must be bound in the script itself.
 PY_BUILTINS = {"abs", "all", "any", "bool", "dict", "enumerate", "float", "int", "len", "list",
                "map", "max", "min", "object", "range", "repr", "set", "sorted", "str", "sum",
@@ -45,9 +47,18 @@ PY_ATTRIBUTES = {
     "fillna", "index", "isin", "items", "loc", "max", "mean", "min", "nunique", "pvalue",
     "quantile", "read_parquet", "shape", "sort", "std", "sum", "to_csv", "to_numpy", "tolist",
     "values"}
-# The one binding of the data folder, and the one form of a read.
+# The imports a script may have, exactly as the templates write them.
+PY_IMPORT_TREES = {ast.dump(ast.parse(text).body[0]) for text in (
+    "import sys", "from itertools import product", "from pathlib import Path",
+    "import numpy as np", "import pandas as pd", "from scipy import stats")}
+# The names the templates use, bound nowhere but in the one binding of the data folder and the
+# output, and in the template's own writer of a number.
+PY_RESERVED = {"Path", "sys", "pd", "np", "stats", "product", "adam", "out", "num"}
 PY_ADAM = "adam, out = Path(sys.argv[1]), sys.argv[2]"
 PY_ADAM_TREE = ast.dump(ast.parse(PY_ADAM).body[0])
+PY_NUM_TREE = ast.dump(ast.parse(
+    'def num(value):\n    return "" if value is None or value != value else repr(float(value))\n'
+).body[0])
 SMALL = {0.0, 1.0, 2.0, 100.0, 0.25, 0.5, 0.75, float("inf")}  # inf: R's Inf, no data
 FILE_LIKE = (".parquet", ".csv", ".json", ".jsonl", ".py", ".r", ".txt", ".yaml", ".yml", ".rds",
              ".rdata", ".xpt", ".sas7bdat")
@@ -131,6 +142,14 @@ def python_read(node: ast.Call, files: set[str]) -> bool:
         isinstance(arg.right, ast.Constant) and arg.right.value in files
 
 
+def python_write(node: ast.Call) -> bool:
+    """`<frame>.to_csv(out, index=False)`, the one form of the write of the output."""
+    return len(node.args) == 1 and isinstance(node.args[0], ast.Name) and \
+        node.args[0].id == "out" and len(node.keywords) == 1 and \
+        node.keywords[0].arg == "index" and isinstance(node.keywords[0].value, ast.Constant) \
+        and node.keywords[0].value.value is False
+
+
 def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list[str]:
     problems: list[str] = []
     try:
@@ -140,8 +159,6 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
     allowed = SMALL | numbers
     files = {f"{d.lower()}.parquet" for d in datasets}
     bound = bound_names(tree)
-    imported = {(alias.asname or alias.name).split(".")[0] for node in ast.walk(tree)
-                if isinstance(node, ast.Import | ast.ImportFrom) for alias in node.names}
     parent = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
 
     def statement(node: ast.AST) -> ast.AST:
@@ -161,41 +178,40 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
         line = f"line {getattr(node, 'lineno', '?')}"
         if isinstance(node, ast.Global | ast.Nonlocal):
             problems.append(f"{line}: a global or nonlocal statement")
-        elif isinstance(node, ast.arg) and node.arg in imported | {"adam"}:
-            problems.append(f"{line}: the name {node.arg} as an argument")
-        elif isinstance(node, ast.FunctionDef | ast.ClassDef) and node.name in imported:
-            problems.append(f"{line}: the imported name {node.name} bound again")
-        elif isinstance(node, ast.Import):
-            for alias in node.names:
-                top = alias.name.split(".")[0]
-                if top not in PY_IMPORTS or (PY_IMPORTS[top] is not None and alias.name != top):
-                    problems.append(f"{line}: import {alias.name}")
-        elif isinstance(node, ast.ImportFrom):
-            module = node.module or ""
-            names = PY_IMPORTS.get(module, set()) if module in PY_IMPORTS else set()
-            if module not in PY_IMPORTS or node.level or names is None or \
-                    any(alias.name not in names for alias in node.names):
-                problems.append(f"{line}: from {module} import "
-                                + ", ".join(a.name for a in node.names))
+        elif isinstance(node, ast.ClassDef):
+            problems.append(f"{line}: a class")
+        elif isinstance(node, ast.arg) and node.arg in PY_RESERVED:
+            problems.append(f"{line}: the name {node.arg} of the template as an argument")
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and \
+                node.name in PY_RESERVED and ast.dump(node) != PY_NUM_TREE:
+            problems.append(f"{line}: the name {node.name} of the template bound again")
+        elif isinstance(node, ast.Import | ast.ImportFrom):
+            if ast.dump(node) not in PY_IMPORT_TREES:
+                problems.append(f"{line}: the import `{ast.unparse(node)}`, which is not one "
+                                "of the templates'")
         elif isinstance(node, ast.Name):
             if node.id.startswith("__"):
                 problems.append(f"{line}: the name {node.id}")
             elif isinstance(node.ctx, ast.Load) and node.id not in bound | PY_BUILTINS:
                 problems.append(f"{line}: the name {node.id}")
-            elif not isinstance(node.ctx, ast.Load) and node.id in imported:
-                problems.append(f"{line}: the imported name {node.id} bound again")
+            elif not isinstance(node.ctx, ast.Load) and node.id in PY_RESERVED:
+                if not (node.id in ("adam", "out") and
+                        ast.dump(statement(node)) == PY_ADAM_TREE):
+                    problems.append(f"{line}: the name {node.id} of the template bound again")
             elif node.id == "Path" and ast.dump(statement(node)) != PY_ADAM_TREE:
                 problems.append(f"{line}: Path used otherwise than in `{PY_ADAM}`")
             elif node.id == "sys" and not (isinstance(parent[node], ast.Attribute) and
                                            argument(parent[node])):
                 problems.append(f"{line}: sys used otherwise than as `sys.argv[1]` or "
                                 "`sys.argv[2]`, read")
-            elif node.id == "adam":
-                if isinstance(node.ctx, ast.Store):
-                    if ast.dump(statement(node)) != PY_ADAM_TREE:
-                        problems.append(f"{line}: the data folder bound otherwise than "
-                                        f"`{PY_ADAM}`")
-                elif not (isinstance(parent[node], ast.BinOp) and
+            elif node.id == "out" and not (
+                    isinstance(parent[node], ast.Call) and
+                    isinstance(parent[node].func, ast.Attribute) and
+                    parent[node].func.attr == "to_csv" and python_write(parent[node])):
+                problems.append(f"{line}: the output used otherwise than in "
+                                "`.to_csv(out, index=False)`")
+            elif node.id == "adam" and isinstance(node.ctx, ast.Load):
+                if not (isinstance(parent[node], ast.BinOp) and
                           isinstance(parent[parent[node]], ast.Call) and
                           isinstance(parent[parent[node]].func, ast.Attribute) and
                           parent[parent[node]].func.attr == "read_parquet" and
@@ -210,6 +226,10 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
                     python_read(parent[node], files)):
                 problems.append(f"{line}: a read other than `adam / \"<dataset>.parquet\"` of "
                                 "a dataset of the plan")
+            elif node.attr == "to_csv" and not (
+                    isinstance(parent[node], ast.Call) and parent[node].func is node and
+                    python_write(parent[node])):
+                problems.append(f"{line}: a write other than `.to_csv(out, index=False)`")
         elif isinstance(node, ast.Constant):
             value = node.value
             if isinstance(value, str):
@@ -271,6 +291,9 @@ def r_call_problems(name: str, arguments: list[list[tuple[str, str]]]) -> list[s
             problems.append(f"the function of {name} is not written in place: `function(...)`")
     if name in R_FORMULA and not any(t == "~" for _, t in arguments[0]):
         problems.append(f"the first argument of {name} is not a formula written in place")
+    if name == "write.csv" and (len(arguments) < 2 or
+                                [t for _, t in arguments[1]] != ["args", "[", "2", "]"]):
+        problems.append("a write other than that of the output, `write.csv(rows, args[2], ...)`")
     if name == "update":
         for argument in arguments[1:]:
             if len(argument) < 2 or argument[0][0] != "SYMBOL_SUB" or \
@@ -312,7 +335,7 @@ def r_problems(tokens: list[tuple[str, str]], datasets: list[str], numbers: set[
                     at(i + 5)[1] == ")"):
                 problems.append("a file other than `file.path(adam, \"<dataset>.csv\")` of a "
                                 "dataset of the plan")
-            if text in R_APPLY | R_FORMULA | {"update"}:
+            if text in R_APPLY | R_FORMULA | {"update", "write.csv"}:
                 problems += r_call_problems(text, r_arguments(tokens, i))
         elif token in ("SYMBOL", "SYMBOL_FUNCTION_CALL", "SYMBOL_SUB") and text in R_FORBIDDEN:
             problems.append(f"the name {text}")

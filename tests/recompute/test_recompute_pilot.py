@@ -301,6 +301,11 @@ def checker_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
             bind, 's = sys.argv[1][0]\nsys.argv[1] = sys.argv[1] + s + "." + "." + s + "." '
                   '+ "."\n' + bind),
         "N2, Path bound again": python.replace(bind, "Path = lambda p: p\n" + bind),
+        "N2c, Path imported under another name and defined": python.replace(
+            "from pathlib import Path\n", "from pathlib import Path as Q\n").replace(
+            bind, "def Path(p):\n    return Q(p) / ('.' + '.')\n\n\n" + bind),
+        "a write elsewhere": python.replace(
+            "to_csv(out, index=False)", "to_csv(sys.argv[1] + 'x', index=False)"),
     }
     for name, text in planted_py.items():
         problems = static.python_problems(text, age["datasets"], allowed_py)
@@ -333,6 +338,8 @@ def checker_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
         "RN3, a reader name built for sapply": r.replace(
             "num <- function", 'x <- sapply(colnames(adsl), paste0("read", "Lines"))\n'
                                "num <- function"),
+        "a write elsewhere": r.replace("utils::write.csv(rows, args[2]",
+                                      'utils::write.csv(rows, paste0(args[1], "x")'),
     }
     paths = [tmp_path / "lsm.R"]
     paths[0].write_text(r, encoding="ascii")

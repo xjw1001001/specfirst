@@ -261,6 +261,18 @@ def test_static_check_python():
     before = "s = sys.argv[1][0]\nsys.argv[1] = sys.argv[1] + s + '.' + '.'\n"  # N1
     assert static.python_problems(PY_HEAD.replace("adam, out", before + "adam, out"),
                                   ["adsl"], allowed)
+    # pass 2 at 0e06dd4 (N2c): Path imported under another name, and a Path of the script's own
+    n2c = PY_HEAD.replace("from pathlib import Path", "from pathlib import Path as Q").replace(
+        "adam, out", "def Path(p):\n    return Q(p) / ('.' + '.')\n\n\nadam, out")
+    assert static.python_problems(n2c, ["adsl"], allowed)
+    own = {
+        "a class Path": "class Path:\n    pass\n",
+        "num defined otherwise": "def num(value):\n    return 1\n",
+        "a write elsewhere": "pd.DataFrame([]).to_csv(sys.argv[1] + 'x', index=False)\n",
+        "the output handed on": "o = out\n",
+    }
+    for name, text in own.items():
+        assert static.python_problems(PY_HEAD + text, ["adsl"], allowed), name
 
 
 def test_static_check_r_tokens():
@@ -321,6 +333,7 @@ def test_static_check_r_parse(tmp_path):
                                '"adsl.csv"))\n',
         "the arguments rebound": 'args <- c(args[1], "x")\n',
         "an argument rewritten": 'args[1] <- "x"\n',
+        "a write elsewhere": 'utils::write.csv(adsl, paste0(args[1], "x"), row.names = FALSE)\n',
     }
     paths = [tmp_path / "good.R"]
     paths[0].write_text(good, encoding="ascii")
