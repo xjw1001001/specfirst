@@ -84,6 +84,40 @@
       }
     },
     {
+      "name": "a fixed rule whose ID is not a lower-case name",
+      "why": "a fixed rule is anchored as <entry>/<id>, and an ID is a lower-case name",
+      "instance": {
+        "id": "ae.teae.start",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does an adverse event start treatment emergence?",
+        "fixed_rules": [{ "id": "F1", "text": "An event without a start date is treatment-emergent." }],
+        "alternatives": [{ "id": "on_or_after_first_dose_date", "statement": "An adverse event is treatment-emergent when it starts on or after the first dose date." }],
+        "compile": "templates/ae.teae.start.yaml",
+        "phrasings": "phrasings/ae.teae.start.yaml",
+        "reading": "knowledge/ae.teae.start.md",
+        "probes": ["ae_on_first_dose_date_without_time"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "a fixed rule that is not a sentence",
+      "why": "the text of a fixed rule starts with a capital letter and ends with a period",
+      "instance": {
+        "id": "ae.teae.start",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does an adverse event start treatment emergence?",
+        "fixed_rules": [{ "id": "no_start_date", "text": "no start date: emergent" }],
+        "alternatives": [{ "id": "on_or_after_first_dose_date", "statement": "An adverse event is treatment-emergent when it starts on or after the first dose date." }],
+        "compile": "templates/ae.teae.start.yaml",
+        "phrasings": "phrasings/ae.teae.start.yaml",
+        "reading": "knowledge/ae.teae.start.md",
+        "probes": ["ae_on_first_dose_date_without_time"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
       "name": "an evidence level that is not known",
       "why": "a citation is cited, read or probed",
       "instance": {

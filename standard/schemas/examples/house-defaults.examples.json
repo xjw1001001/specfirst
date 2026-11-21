@@ -67,6 +67,22 @@
       }
     },
     {
+      "name": "a case whose condition is not a predicate of design features",
+      "why": "`when` joins feature names with and, or, not and parentheses only",
+      "instance": {
+        "house": "open-default@2",
+        "catalog": "catalog@2",
+        "defaults": {
+          "pop.safety.rule": {
+            "cases": [
+              { "when": "design.randomized == true", "rule": "randomized_and_dosed" },
+              { "rule": "at_least_one_dose" }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "an unknown field in a choice",
       "why": "a choice holds rule, values and sources only",
       "instance": {
