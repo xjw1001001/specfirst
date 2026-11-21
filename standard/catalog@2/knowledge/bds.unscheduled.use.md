@@ -30,4 +30,4 @@ baseline or the analyzed record of a visit, or is kept out of both.
   visit gets no analysis visit whatever is chosen here; this entry then still decides
   whether it can be baseline.
 - Use of unscheduled values in listings is outside this entry.
-- Silent documents: use the house default `compete` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

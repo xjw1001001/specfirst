@@ -31,5 +31,4 @@ from baseline and the Baseline row of the by-visit tables.
   `scheduled_baseline_visit`, which uses one visit only. Report the passage with the answer.
 - Whether records of unscheduled visits may be baseline is `bds.unscheduled.use`. An average
   of several pre-dose values matches no alternative; report the passage.
-- Silent documents: use the house default `last_before_first_dose` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.

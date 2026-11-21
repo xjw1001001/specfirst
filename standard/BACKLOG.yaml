@@ -78,6 +78,9 @@ records:
      target: tfl.ae.socpt.sort/descending_frequency_highest_dose, kind: replace an alternative,
      status: accepted, version: catalog@2, adr: ADR-020,
      reason: "organ classes alphabetical, terms by descending frequency in a stated column; the owner's answer to question 3"}
+  - {id: i09.layout-column, issue: 9, layer: house, target: layout/ae-soc-pt.yaml,
+     kind: change templates, status: accepted, version: open-default@2, adr: ADR-020,
+     reason: "the layout reads the column that orders the terms"}
   - {id: i09.citations, issue: 9, layer: catalog, target: tfl.ae.socpt.sort,
      kind: fix a source, status: accepted, version: catalog@2, adr: ADR-020}
   - {id: i09.alphabetical, issue: 9, layer: catalog, target: tfl.ae.socpt.sort,
@@ -137,7 +140,7 @@ records:
      reason: "the definition states AVISITN 9999; the record carries the unit of the value it repeats"}
   - {id: i17.positions-refused, issue: 17, layer: house, target: adam/advs.yaml,
      kind: change parent specs, status: waits, for: std-2, adr: ADR-020,
-     reason: "refusing several positions or time points reads VSPOS and VSTPT, which the generated and the tiny SDTM do not hold (VSTPT), so every such build would fail; std-2 with the SDTM-aware compile of ADR-014, or ATPT and BASETYPE"}
+     reason: "refusing several positions or time points reads VSPOS and VSTPT; the generated VS holds VSPOS but no VSTPT, the tiny study neither, and the run check compiles without the SDTM's columns, so every such build would fail; std-2 with the SDTM-aware compile of ADR-014, or ATPT and BASETYPE"}
   - {id: i17.dtype-null, issue: 17, layer: house, target: adam/advs.yaml,
      kind: change parent specs, status: waits, for: std-2, adr: ADR-020,
      reason: "DTYPE is a key of ADVS and yamaa refuses a missing key value (missing_key); another key of ADVS comes first"}
@@ -187,7 +190,13 @@ records:
      reason: "race grouped by a stated map (admiral); the owner's answer to question 3"}
   - {id: i21.unscheduled, issue: 21, layer: catalog, target: bds.unscheduled.use,
      kind: fix a definition, status: accepted, version: catalog@2, adr: ADR-020,
-     reason: "unscheduled when VISITDY is missing, or, without VISITDY, when VISIT contains UNSCHED"}
+     reason: "as built: unscheduled when VISITDY is missing or when VISIT contains UNSCHED, always (admiral's reading); a departure from the approved wording, put to the owner"}
+  - {id: i21.unscheduled-house, issue: 21, layer: house, target: adam/advs.yaml,
+     kind: change parent specs, status: accepted, version: open-default@2, adr: ADR-020,
+     reason: "_SCHED by the fixed rule unscheduled_visit"}
+  - {id: i21.no-visitdy, issue: 21, layer: catalog, target: bds.unscheduled.use,
+     kind: fix a definition, status: waits, for: std-2, adr: ADR-020,
+     reason: "the approved fallback for an SDTM without the variable VISITDY needs a build that knows the SDTM's columns (the SDTM-aware compile of ADR-014)"}
   - {id: i21.kept-answers, issue: 21, layer: docs, target: docs/decisions/ADR-020.md,
      kind: record answers, status: done, version: catalog@2, adr: ADR-020,
      reason: "the answers to N1 questions 1, 2, 3, 8 and 9 kept"}
@@ -195,6 +204,9 @@ records:
   - {id: i22.quantiles, issue: 22, layer: catalog, target: tfl.quantile.definition,
      kind: change units, status: accepted, version: catalog@2, adr: ADR-020,
      reason: "it leaves the vital signs table; its probe needs quartiles in demographics; (R type 2) in the statement"}
+  - {id: i22.vitals-fixed, issue: 22, layer: house, target: ars/vitals-by-visit.yaml and layout/vitals-by-visit.yaml,
+     kind: change templates, status: accepted, version: open-default@2, adr: ADR-020,
+     reason: "the quantile parameter of the vital signs table fixed to sas5: it shows no quartile, and both definitions give the same median"}
   # #23 gaps that do not block catalog@1
   - {id: i23.reading-words, issue: 23, layer: catalog, target: knowledge/ and tfl.rounding.rule,
      kind: fix reading notes, status: accepted, version: catalog@2, adr: ADR-020,
@@ -209,6 +221,12 @@ records:
   - {id: i24.last-end-any-record, issue: 24, layer: catalog, target: trt.end.source,
      kind: add an alternative, status: accepted, version: catalog@2, adr: ADR-020,
      reason: "the counterpart of first_ex_record: the last end date of any exposure record"}
+  - {id: i24.build-check, issue: 24, layer: code, target: specfirst.score,
+     kind: add a check, status: done, version: catalog@1, adr: ADR-014,
+     reason: "done by std-issues: the scorer's build stops after ADaM when no subject has TRTSDT, naming the decision and its filter"}
+  - {id: i24.probe-no-exdose, issue: 24, layer: code, target: specfirst.gen.probes,
+     kind: add a probe, status: waits, for: the generator (gen track), adr: ADR-020,
+     reason: "an EX with EXDOSE missing on every record"}
   # #28 the catalog and the houses apart, versioned, with this backlog
   - {id: i28.defaults-move, issue: 28, layer: schema, target: house-defaults.schema.json,
      kind: move the defaults, status: done, version: catalog@2, adr: ADR-020,

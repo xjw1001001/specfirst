@@ -29,4 +29,4 @@ treatment. It matters only for subjects dosed with something other than their pl
   the lowest sequence number on a tie.
 - Rules such as "the treatment received for most of the study" or "the highest dose received"
   match no alternative. Report the passage instead of picking the nearest one.
-- Silent documents: use the house default `dm_actarm` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

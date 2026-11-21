@@ -404,10 +404,14 @@ class StandardForm:
 
         Every anchored line must be a statement of the catalog, in the section
         of its unit. Each record has `id`, `unit`, `value`, `statement` and
-        `anchor`. The cases of a decision by design and the fixed rules are
-        checked and left out (`parse_full` gives them).
+        `anchor`. The fixed rules are checked and left out; a document that
+        states a decision by its cases is refused here (`parse_full` reads it).
         """
-        doc, records, _, _ = self.parse_full(text)
+        doc, records, cases, _ = self.parse_full(text)
+        if cases:
+            raise StandardFormError(
+                f"the document states {len(cases)} decisions by design, which need the design's "
+                "features: read it with parse_full")
         return doc, records
 
     def parse_full(self, text: str) -> tuple[str, list[dict], dict, list[str]]:
@@ -420,6 +424,9 @@ class StandardForm:
         cases: dict[tuple[str, str], list[dict]] = {}
         fixed: list[str] = []
         current_unit = None
+        style = None  # one anchor style per document
+        texts = {" ".join(str(rule["text"]).split()): f"{entry.id}/{rule['id']}"
+                 for entry in self.catalog.entries.values() for rule in entry.fixed_rules}
         catalog = None
         section_unit: dict[str, str] = {}
         records: list[dict] = []
@@ -455,11 +462,25 @@ class StandardForm:
                 if bare and not line.startswith(("#", *NOTE_PREFIXES)) and self.matches(bare):
                     raise StandardFormError(f"line {number}: a statement without its anchor: "
                                             f"{line}")
+                if " ".join(bare.split()) in texts:
+                    raise StandardFormError(f"line {number}: the fixed rule "
+                                            f"{texts[' '.join(bare.split())]} without its anchor")
                 continue
             anchor, statement = match.groups()
+            kind = "position" if _POSITION.match(anchor) else "entry"
+            if style is None:
+                style = kind
+            elif kind != style:
+                raise StandardFormError(f"line {number}: the anchor {anchor} is by {kind}, the "
+                                        f"document's anchors are by {style}")
             if not _POSITION.match(anchor):
                 rule = self._fixed_rule(anchor)
                 if rule is not None:
+                    owner = self.catalog.entries[anchor.split("/")[0]]
+                    if current_unit not in owner.units:
+                        raise StandardFormError(f"line {number}: the fixed rule {anchor} stands "
+                                                f"in the section of {current_unit}, not of its "
+                                                "entry's unit")
                     if " ".join(statement.split()) != " ".join(str(rule["text"]).split()):
                         raise StandardFormError(f"line {number}: the fixed rule {anchor} is not "
                                                 "stated as the catalog states it")

@@ -8,6 +8,11 @@ to exercise one rule of the house parent specs or of a catalog decision.
     S2  randomized to Placebo and dosed from 2024-03-12; partial dates
     S3  randomized to Low Dose and never dosed
     S4  dosed without being randomized; no exposure end date
+
+"Randomized" above is by the planned arm code, the rule of open-default@1.
+From open-default@2 a subject is randomized by a disposition record
+RANDOMIZED when the study has one (ADR-020, #10): here only S1 has it, so
+under that house S2 and S3 are not randomized.
 """
 
 from __future__ import annotations

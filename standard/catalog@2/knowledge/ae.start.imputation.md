@@ -28,5 +28,4 @@ with an incomplete start date counts as treatment-emergent.
 - Under `not_completed` the event has no analysis start date, and `ae.teae.start` then counts
   it as treatment-emergent. Not completed does not mean not treatment-emergent.
 - Rules for end dates (last day of the month) and for medication dates are other topics.
-- Silent documents: use the house default `first_of_month_not_before_first_dose` and cite
-  the house standard.
+- Silent documents: use the house default and cite the house standard.

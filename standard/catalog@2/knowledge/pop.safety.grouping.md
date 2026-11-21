@@ -26,4 +26,4 @@ when the treatment received differs from the treatment assigned.
   `planned`.
 - If protocol and SAP disagree, cite both passages; the SAP, as the later and more detailed
   document, normally governs the analysis.
-- Silent documents: use the house default `actual` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

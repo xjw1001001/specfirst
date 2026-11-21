@@ -13,7 +13,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from specfirst.compile import checks
+from specfirst.compile import catalog as catalogs
+from specfirst.compile import checks, migration
 from specfirst.compile import house as houses
 from specfirst.compile.standard_form import StandardForm
 
@@ -22,6 +23,8 @@ from specfirst.compile.standard_form import StandardForm
 def clean(root, tmp_path_factory) -> Path:
     base = tmp_path_factory.mktemp("catalog2") / "root"
     shutil.copytree(root / "standard", base / "standard")
+    (base / "third_party").mkdir()
+    shutil.copy(root / "third_party" / "sources.yaml", base / "third_party" / "sources.yaml")
     return base
 
 
@@ -41,12 +44,22 @@ def change(path: Path, plant) -> None:
 
 def problems(work: Path) -> dict[str, list[str]]:
     catalog, house = houses.load_pair(work, "catalog@2", "open-default@2")
+    old = catalogs.load(catalogs.default_dir(work, "catalog@1"))
     return {"catalog": checks.catalog_problems(catalog, work),
-            "house": checks.house_problems(catalog, house, work)}
+            "house": checks.house_problems(catalog, house, work),
+            "sources": checks.source_problems(catalog, work, None),
+            "migration": migration.problems(old, catalog, {
+                "i18.terms", *[r for r in _accepted(work)]})}
+
+
+def _accepted(work: Path) -> set[str]:
+    from specfirst.compile import backlog
+
+    return backlog.accepted_for(backlog.load(work), "catalog@2")
 
 
 def test_the_clean_copy_passes(work):
-    assert problems(work) == {"catalog": [], "house": []}
+    assert problems(work) == {"catalog": [], "house": [], "sources": [], "migration": []}
 
 
 @pytest.mark.parametrize("cut, words", [
@@ -86,7 +99,35 @@ def _entry(work: Path, entry_id: str) -> Path:
     return work / "standard" / "catalog@2" / "entries" / f"{entry_id}.yaml"
 
 
+def _note(work: Path) -> None:
+    path = work / "standard" / "catalog@2" / "knowledge" / "ae.teae.end.md"
+    path.write_text(path.read_text(encoding="ascii")
+                    + "- Silent documents: use the house default `no_end`.\n", encoding="ascii")
+
+
+def _defaults(work: Path) -> Path:
+    return work / "standard" / "houses" / "open-default@2" / "defaults.yaml"
+
+
 DEFECTS = [
+    ("a reading note that names a house default", _note,
+     "catalog", "ae.teae.end: knowledge/ae.teae.end.md, line"),
+    ("a fixed rule ID that is a unit",
+     lambda w: change(_entry(w, "ae.teae.start"), lambda d: d["fixed_rules"].append(
+         {"id": "mod-ae-emergence", "text": "Another rule."})),
+     "catalog", "ae.teae.start: a fixed rule ID is used twice, or is a unit"),
+    ("a fixed rule that cites an unknown source",
+     lambda w: change(_entry(w, "ae.teae.start"), lambda d: d["fixed_rules"][2]["sources"].append(
+         {"ref": "nowhere", "where": "a page"})),
+     "sources", "ae.teae.start/no_start_date: the source 'nowhere' is not in sources.yaml"),
+    ("a default that cites an unknown source",
+     lambda w: change(_defaults(w), lambda d: d["defaults"]["ae.teae.end"]["sources"].append(
+         {"ref": "nowhere", "where": "a page"})),
+     "house", "ae.teae.end: the source 'nowhere' is not in sources.yaml of the catalog"),
+    ("a term added without a line",
+     lambda w: change(_catalog_yaml(w), lambda d: d["terms"].__setitem__(
+         "end of study", {"entry": "disp.status.record", "text": "the date of the last record"})),
+     "migration", "the term 'end of study' is added in catalog@2, and migration.yaml has no line"),
     ("a term that names no entry",
      lambda w: change(_catalog_yaml(w), lambda d: d["terms"].__setitem__(
          "end of study", {"entry": "disp.nowhere", "text": "the end"})),

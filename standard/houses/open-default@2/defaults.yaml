@@ -23,7 +23,8 @@ defaults:
       - when: design.randomized
         rule: randomized_and_dosed
         sources:
-          - {ref: fda-stf, where: "section 2.1.1, page 5: all subjects exposed to at least one dose of randomized treatment (the review of #2, 2026-11-11)", evidence: cited}
+          - {ref: p7, path: cdiscpilot01/spec/yamaa/adsl.yaml, find: "Y if ITTFL='Y' and TRTSDT ne missing", where: "SAFFL of the pilot ADSL: randomized and dosed"}
+          - {ref: fda-stf, where: "section 2.1.1, page 5: all subjects exposed to at least one dose of randomized treatment, one reading of an ambiguous sentence (the review of #2, 2026-11-11)", evidence: cited}
       - rule: at_least_one_dose
         sources:
           - {ref: ich-e9, where: "section 6.3: the safety set, subjects who received at least one dose"}

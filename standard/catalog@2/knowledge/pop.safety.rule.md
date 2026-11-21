@@ -33,4 +33,4 @@ differ only for a subject who was dosed without being randomized.
 - Added conditions such as "and at least one post-dose safety assessment" match no
   alternative; report the passage.
 - Whether the set is grouped as treated or as randomized is `pop.safety.grouping`.
-- Silent documents: use the house default `at_least_one_dose` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

@@ -28,4 +28,4 @@ pools. It is given once per table family.
   that leaves out more than one arm, matches no alternative; report the passage.
 - A total column is the last column. If a shell puts it elsewhere, mention that with the
   answer.
-- Silent documents: use the house default `all_arms` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

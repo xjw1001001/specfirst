@@ -25,5 +25,5 @@ columns and groups every analysis done by planned treatment.
   included; do not add entries for screen failures or subjects not assigned.
 - Pooled groups such as "all active" or "total" are columns (`tfl.columns.total`), not map
   rows. Wording on the treatment actually received belongs to `trt.actual.source`.
-- Silent documents: use the house default `dm_arm` and cite the house standard. Do not guess
+- Silent documents: use the house default and cite the house standard. Do not guess
   a map from the data.

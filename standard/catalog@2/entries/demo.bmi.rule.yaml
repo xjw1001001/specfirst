@@ -24,3 +24,4 @@ sources:
     where: "BMIBL of the pilot ADSL: derived from baseline weight and height"
   - ref: admiral
     where: "compute_bmi(): weight in kg divided by squared height in m; inst/templates/ad_advs.R derive_param_bmi() with no rounding step (the review of #12, 2026-11-11)"
+    evidence: cited

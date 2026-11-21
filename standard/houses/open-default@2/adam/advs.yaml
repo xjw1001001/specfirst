@@ -12,7 +12,9 @@
 # _ROWKIND tells the two kinds of rows apart.
 #
 #   baseline      the last row with _PRE = 'Y' among the eligible rows
-#   post-baseline a row dated after the treatment start date
+#   post-baseline a row dated after the treatment start date, or on that date,
+#                 not before the first dose (_PRE = N) and timed at or after a
+#                 timed first dose (ADR-020, #6)
 #   AVISIT        End of Treatment, Baseline, or the visit of the decision
 #                 bds.window.table for an eligible post-baseline row
 #   ANL01FL       the baseline row, the end-of-treatment row, and the row
@@ -32,6 +34,16 @@ input:
     schema: adsl.yaml
     key: [STUDYID, USUBJID]
 base: VS
+
+# The unit of a parameter: the first non-missing standard unit of the test in
+# the study, so that PARAM is one text per PARAMCD (ADaMIG; ADR-020, #17).
+intermediates:
+  - id: VS_UNIT
+    dataset: VS
+    key: {STUDYID: STUDYID, VSTESTCD: PARAMCD}
+    filter: "VS.VSSTRESU IS NOT NULL AND VS.VSSTRESU <> ''"
+    order_by: [VS.VSSEQ]
+    keep: first
 
 output:
   path: advs.parquet
@@ -139,9 +151,9 @@ columns:
 
   - name: _PARAMU
     type: str
-    label: "Working value: the test name with its unit"
+    label: "Working value: the test name with the unit of its parameter"
     derivation:
-      str_template: {template: "{VS.VSTEST} ({AVALU})", missing: null}
+      str_template: {template: "{VS.VSTEST} ({VS_UNIT.VSSTRESU})", missing: null}
 
   - name: PARAM
     type: str

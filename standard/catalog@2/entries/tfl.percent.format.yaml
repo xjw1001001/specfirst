@@ -38,3 +38,4 @@ sources:
   - ref: p6
     path: documents/CSR.pdf
     where: "Table 14-2.01: whole-number percentages; Table 14-5.01: one decimal (the review of #1, 2026-11-11)"
+    evidence: cited

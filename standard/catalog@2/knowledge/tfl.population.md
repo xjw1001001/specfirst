@@ -32,6 +32,5 @@ The answer is given once per table family.
   ICH E3 section 11.2; kept at node N1, question 1, and by ADR-020). The public alternative
   is the safety set: the FDA guide's Table 2, the ARS example's demographics analyses
   (AnalysisSet_02_SAF) and cardinal's Table 2 use it.
-- Silent documents: the house default depends on the table family. It is `randomized` for the
-  demographics table and `safety` for the two adverse event tables and the vital signs table.
-  Cite the house standard.
+- Silent documents: the house default depends on the table family; take the default of the
+  output's family and cite the house standard.

@@ -37,7 +37,7 @@ terms:
     text: the value of a parameter that a change from baseline starts from; for weight and height in ADSL, as demo.baseline.record says
   post-baseline:
     entry: bds.baseline.rule
-    text: a record dated after the treatment start date, or on that date and timed after the first dose when the baseline rule compares times
+    text: a record dated after the treatment start date, or one on that date that is not before the first dose and is timed at or after a timed first dose (as bds.baseline.rule says)
 
 # The units that own decisions (PLAN.md section 10), in the order of the
 # standard form. A table family has a phrase: how a statement names its

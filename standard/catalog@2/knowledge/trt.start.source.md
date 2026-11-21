@@ -31,4 +31,4 @@ who counts as dosed. Another source moves all of them for the subjects it affect
   date are matters for `date.studyday.origin`, not for this entry.
 - This entry gives a date. Comparisons with the time of the first dose are decided in
   `ae.teae.start` and `bds.baseline.rule`.
-- Silent documents: use the house default `first_ex_with_dose` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

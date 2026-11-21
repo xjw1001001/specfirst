@@ -1,6 +1,6 @@
 # What the step from catalog@1 to catalog@2 keeps (ADR-020, decision 4).
 #
-# One line per alternative or unit that is added, removed (with its
+# One line per alternative, unit or defined term that is added, removed (with its
 # replacement, or none), renamed, or changed in meaning. The meaning of an
 # alternative is the hash of specfirst.compile.migration.meanings: its
 # question, applies_when, statement, definition, slots, the entry's
@@ -53,3 +53,15 @@ changes:
   - {alternative: tfl.rounding.rule/half_even, change: changed, backlog: i23.reading-words}
   # units
   - {unit: tfl.quantile.definition@tfl-vitals-by-visit, change: removed, backlog: i22.quantiles}
+  - {alternative: bds.window.table/protocol_windows, change: changed, backlog: i06.first-dose-day}
+  - {alternative: bds.window.table/midpoint_windows, change: changed, backlog: i06.first-dose-day}
+  - {alternative: bds.window.table/nominal_visit, change: changed, backlog: i06.first-dose-day}
+  # terms (#18)
+  - {term: treatment start date, change: added, backlog: i18.terms}
+  - {term: treatment end date, change: added, backlog: i18.terms}
+  - {term: randomized subject, change: added, backlog: i18.terms}
+  - {term: safety set, change: added, backlog: i18.terms}
+  - {term: study day, change: added, backlog: i18.terms}
+  - {term: treatment-emergent, change: added, backlog: i18.terms}
+  - {term: baseline, change: added, backlog: i18.terms}
+  - {term: post-baseline, change: added, backlog: i18.terms}

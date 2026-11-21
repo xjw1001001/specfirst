@@ -81,6 +81,13 @@ def catalog_problems(catalog: Catalog, root: Path) -> list[str]:
         ids = [rule.get("id") for rule in entry.fixed_rules]
         if len(set(ids)) != len(ids) or set(ids) & set(entry.units):
             problems.append(f"{entry.id}: a fixed rule ID is used twice, or is a unit")
+        reading = catalog.directory / entry.reading if entry.reading else None
+        if not catalog.has_defaults and reading is not None and reading.is_file():
+            # From catalog@2 the defaults are a house's: a note names none (ADR-020).
+            for number, line in enumerate(reading.read_text(encoding="ascii").splitlines(), 1):
+                if re.search(r"house default\W*`", line):
+                    problems.append(f"{entry.id}: {entry.reading}, line {number}, names a house "
+                                    "default; the defaults are the house's (defaults.yaml)")
     phrases: dict[str, str] = {}
     for unit in catalog.units.values():
         if unit.kind not in ("module", "table_family"):

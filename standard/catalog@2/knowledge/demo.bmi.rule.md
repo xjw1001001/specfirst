@@ -29,4 +29,4 @@ baseline weight and height or taken from the value recorded at the site.
 - `as_collected` selects the collected value by the same rule as baseline weight and height
   (`demo.baseline.record`); it is not the screening value by default.
 - A formula written with height in cm and a factor of 10000 is the same rule as `derived`.
-- Silent documents: use the house default `derived` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

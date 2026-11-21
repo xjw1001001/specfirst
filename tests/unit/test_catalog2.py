@@ -68,6 +68,37 @@ def test_a_document_anchored_by_entry_refuses_a_planted_defect(pair, change, wor
         form.parse_full(planted)
 
 
+@pytest.mark.parametrize("change, words", [
+    (lambda t: t.replace("[trt.start.source] The", "[1/s1] The"), "the document's anchors are by"),
+    (lambda t: t.replace("[ae.teae.start/no_start_date] An adverse event without an analysis "
+                         "start date is treatment-emergent.",
+                         "An adverse event without an analysis start date is treatment-emergent."),
+     "without its anchor"),
+])
+def test_a_document_refuses_mixed_anchors_and_a_rule_without_its_anchor(pair, change, words):
+    form, text = _document(pair)
+    planted = change(text)
+    assert planted != text
+    with pytest.raises(StandardFormError, match=words):
+        form.parse_full(planted)
+
+
+def test_a_fixed_rule_stands_in_the_section_of_its_entry(pair):
+    form, text = _document(pair)
+    line = ("[ae.teae.start/no_start_date] An adverse event without an analysis start date is "
+            "treatment-emergent.")
+    moved = text.replace(line + "\n", "").replace(
+        "[trt.start.source] ", line + "\n\n[trt.start.source] ", 1)
+    with pytest.raises(StandardFormError, match="stands in the section of mod-treatment"):
+        form.parse_full(moved)
+
+
+def test_parse_document_refuses_cases(pair):
+    form, text = _document(pair)
+    with pytest.raises(StandardFormError, match="read it with parse_full"):
+        form.parse_document(text)
+
+
 def test_a_positional_document_is_as_before(root):
     catalog, house = houses.load_pair(root)
     text = houses.standards_document(catalog, house)

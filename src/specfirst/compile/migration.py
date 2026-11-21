@@ -12,6 +12,7 @@ changed in meaning, each line with its record of standard/BACKLOG.yaml:
       - {alternative: ENTRY/ID, change: renamed, to: ENTRY/ID, backlog: ...}
       - {alternative: ENTRY/ID, change: changed, backlog: ...}
       - {unit: ENTRY@UNIT, change: added | removed, backlog: ...}
+      - {term: NAME, change: added | removed | changed, backlog: ...}
 
 The meaning of an alternative is a hash, computed here, of what a reader and
 the compiler see of it: the entry's question, `applies_when`, notes and
@@ -72,6 +73,12 @@ class Differences:
     changed: set[str]
     units_added: set[str]
     units_removed: set[str]
+    terms: dict[str, str]  # term -> added | removed | changed
+
+
+def terms(catalog: Catalog) -> dict[str, str]:
+    """The defined terms of catalog.yaml (from catalog@2), each as canonical text."""
+    return {str(name): _canonical(body) for name, body in (catalog.raw.get("terms") or {}).items()}
 
 
 def differences(old: Catalog, new: Catalog) -> Differences:
@@ -82,7 +89,15 @@ def differences(old: Catalog, new: Catalog) -> Differences:
         changed={key for key in set(before) & set(after) if before[key] != after[key]},
         units_added=units(new) - units(old),
         units_removed=units(old) - units(new),
+        terms=_term_changes(terms(old), terms(new)),
     )
+
+
+def _term_changes(old: dict[str, str], new: dict[str, str]) -> dict[str, str]:
+    found = {name: "added" for name in set(new) - set(old)}
+    found.update({name: "removed" for name in set(old) - set(new)})
+    found.update({name: "changed" for name in set(old) & set(new) if old[name] != new[name]})
+    return found
 
 
 def read(catalog: Catalog) -> dict:
@@ -114,6 +129,7 @@ def problems(old: Catalog, new: Catalog, accepted: set[str]) -> list[str]:
     open_units = {("added", key) for key in diff.units_added} | \
                  {("removed", key) for key in diff.units_removed}
     seen: set[tuple[str, str]] = set()
+    open_terms = dict(diff.terms)
     for number, line in enumerate(raw.get("changes") or [], 1):
         where = f"{FILE}: change {number}"
         if not isinstance(line, dict):
@@ -124,6 +140,13 @@ def problems(old: Catalog, new: Catalog, accepted: set[str]) -> list[str]:
         if record not in accepted:
             found.append(f"{where}: names the backlog record '{record}', which is not accepted "
                          f"for {new.label}")
+        if "term" in line:
+            name = str(line["term"])
+            if open_terms.get(name) != change:
+                found.append(f"{where}: the term '{name}' is not {change} in {new.label}")
+            else:
+                del open_terms[name]
+            continue
         if "unit" in line:
             key = str(line["unit"])
             if (change, key) not in open_units:
@@ -168,6 +191,8 @@ def problems(old: Catalog, new: Catalog, accepted: set[str]) -> list[str]:
         found.append(f"{key}: changed in meaning in {new.label}, and {FILE} has no line for it")
     for change, key in sorted(open_units):
         found.append(f"{key}: the unit is {change} in {new.label}, and {FILE} has no line for it")
+    for name, change in sorted(open_terms.items()):
+        found.append(f"the term '{name}' is {change} in {new.label}, and {FILE} has no line for it")
     return found
 
 
