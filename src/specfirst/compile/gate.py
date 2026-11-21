@@ -197,8 +197,11 @@ def frozen_check(root: Path, out: Out) -> bool:
     """Every frozen folder has its tree; the default pair is frozen; no draft is named."""
     known = versions.load(root)
     for label, version in known.items():
-        tree = versions.tree_hash(versions.folder(root, label)) \
-            if versions.folder(root, label).is_dir() else ""
+        try:
+            where = versions.folder(root, label)
+        except versions.VersionError:
+            where = None  # frozen_problems names it
+        tree = versions.tree_hash(where) if where is not None and where.is_dir() else ""
         out(f"{label}: {version.status}" + (f" {version.date}" if version.date else "")
             + f", tree {tree or 'none'}"
             + (f" (frozen as {version.tree})" if version.status == "frozen" else ""))

@@ -77,6 +77,23 @@ def _added_file(work: Path) -> None:
         "a note\n", encoding="ascii")
 
 
+def _folder_and_line(work: Path) -> None:
+    """One byte of catalog@1 changed, and versions.yaml given the new tree (review F1)."""
+    from specfirst.compile import versions
+
+    _one_byte(work)
+    tree = versions.tree_hash(work / "standard" / "catalog@1")
+    change(work / "standard" / "versions.yaml",
+           lambda data: data["catalogs"]["catalog@1"].__setitem__("tree", tree))
+
+
+def _copied_folder(work: Path) -> None:
+    """catalog@2 copied as catalog@3 and listed: its files still say version 2 (F2)."""
+    shutil.copytree(work / "standard" / "catalog@2", work / "standard" / "catalog@3")
+    change(work / "standard" / "versions.yaml", lambda data: data["catalogs"].__setitem__(
+        "catalog@3", {"status": "draft", "date": "2026-11-21", "by": "a plant"}))
+
+
 def _kit_names_draft(work: Path) -> None:
     kit = work / "kits" / "k1"
     kit.mkdir(parents=True)
@@ -119,6 +136,15 @@ DEFECTS = [
      "open-default@1: the folder standard/houses/open-default@1 has the tree"),
     ("a kit that names a draft version", _kit_names_draft, "frozen",
      "kits/k1/kit.yaml (catalog): names 'catalog@2', a draft version"),
+    ("a frozen folder changed with its line of versions.yaml", _folder_and_line, "frozen",
+     "catalog@1: standard/versions.yaml records the tree"),
+    ("a folder whose files are another version", _copied_folder, "frozen",
+     "catalog@3: its catalog.yaml says version 2, not catalog@3"),
+    ("a house that versions.yaml pairs with another catalog",
+     lambda w: change(w / "standard" / "versions.yaml", lambda data: data["houses"][
+         "open-default@2"].__setitem__("catalog", "catalog@1")),
+     "frozen", "open-default@2: its house.yaml needs catalog@2, standard/versions.yaml says "
+     "catalog@1"),
     ("a folder that versions.yaml does not list",
      lambda w: shutil.copytree(w / "standard" / "catalog@2", w / "standard" / "catalog@3"),
      "frozen", "catalog@3: a folder that standard/versions.yaml does not list"),
@@ -146,7 +172,14 @@ DEFECTS = [
         _defaults(w), lambda data: data["defaults"].pop("ae.teae.end")),
      "defaults", "defaults.yaml: ae.teae.end: no item"),
     ("a default that is not an alternative", _item("ae.teae.end", {"rule": "sometimes"}),
-     "defaults", "ae.teae.end"),
+     "defaults", "ae.teae.end: entry ae.teae.end has no alternative 'sometimes'"),
+    ("a default for a unit the entry does not have",
+     lambda w: change(_defaults(w), lambda data: data["defaults"]["tfl.quantile.definition"][
+         "units"].__setitem__("tfl-ae-summary", {"rule": "sas5"})),
+     "defaults", "tfl.quantile.definition: the unit tfl-ae-summary does not answer this entry"),
+    ("an entry per table family without an item",
+     lambda w: change(_defaults(w), lambda data: data["defaults"].pop("tfl.population")),
+     "defaults", "tfl.population (tfl-demographics): no item"),
     ("a case that names an unknown feature", _item("ae.teae.end", {"cases": [
         {"when": "design.on_mars", "rule": "no_end"}, {"rule": "no_end"}]}),
      "defaults", "`when` names the unknown feature 'design.on_mars'"),

@@ -38,6 +38,13 @@ VERSIONS = "standard/versions.yaml"
 DEFAULT_CATALOG = "catalog@1"
 DEFAULT_HOUSE = "open-default@1"
 STATUSES = ("draft", "frozen")
+# The tree of every frozen version, pinned here as well as in versions.yaml, so that
+# a frozen folder changed together with its line of versions.yaml still fails (review
+# of catalog-2a, F1). A freeze adds its line; nothing else changes one.
+PINNED = {
+    "catalog@1": "a25d42c08d37352131b9320a62c7fa2ce266cb9b",
+    "open-default@1": "7ac0f4fc4d76333817b6e3edf21e156afec38ef4",
+}
 _CATALOG = re.compile(r"^catalog@([1-9][0-9]*)$")
 _HOUSE = re.compile(r"^([a-z][a-z0-9-]*)@([1-9][0-9]*)$")
 
@@ -157,6 +164,10 @@ def frozen_problems(root: Path) -> list[str]:
         if not path.is_dir():
             problems.append(f"{label}: no folder {relative(label)}")
             continue
+        problems += _label_problems(label, version, path)
+        if label in PINNED and version.tree != PINNED[label]:
+            problems.append(f"{label}: {VERSIONS} records the tree {version.tree or 'none'}, "
+                            f"the code pins {PINNED[label]}: a frozen version does not change")
         if version.status == "frozen":
             if not (version.date and version.by and version.tree):
                 problems.append(f"{label}: a frozen version names its date, what froze it "
@@ -178,6 +189,39 @@ def frozen_problems(root: Path) -> list[str]:
     for label in (DEFAULT_CATALOG, DEFAULT_HOUSE):
         problems += named_problems(versions, [("the default pair", label)])
     return problems + named_problems(versions, kits_named(root))
+
+
+def _read(path: Path) -> dict:
+    try:
+        with open(path, encoding="ascii") as handle:
+            raw = yaml.safe_load(handle)
+    except (OSError, UnicodeDecodeError, yaml.YAMLError):
+        return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def _label_problems(label: str, version: Version, path: Path) -> list[str]:
+    """A folder holds the version its name says, and a house the catalog versions.yaml names.
+
+    The label of a loaded catalog or house comes from its files (catalog.yaml,
+    house.yaml); a folder copied under another name would load as the version it
+    was copied from (review of catalog-2a, F2).
+    """
+    if version.kind == "catalog":
+        index = _read(path / "catalog.yaml")
+        found = f"catalog@{index.get('version')}"
+        return [] if found == label else [
+            f"{label}: its catalog.yaml says version {index.get('version')}, not {label}"]
+    manifest = _read(path / "house.yaml")
+    problems = []
+    found = f"{manifest.get('house')}@{manifest.get('version')}"
+    if found != label:
+        problems.append(f"{label}: its house.yaml says {found}, not {label}")
+    needs = f"catalog@{manifest.get('catalog_version', 1)}"
+    if needs != version.catalog:
+        problems.append(f"{label}: its house.yaml needs {needs}, {VERSIONS} says "
+                        f"{version.catalog}")
+    return problems
 
 
 def kits_named(root: Path) -> list[tuple[str, str]]:
@@ -223,13 +267,3 @@ def require_usable(root: Path, labels: Iterable[str], where: str) -> None:
     problems = named_problems(load(root), [(where, label) for label in labels])
     if problems:
         raise VersionError("; ".join(problems))
-
-
-def pair_problems(catalog_label: str, house_label: str, versions: dict[str, Version]) -> list[str]:
-    """A house is used with the catalog version it names."""
-    house = versions.get(house_label)
-    if house is None:
-        return [f"'{house_label}' is not a house version of {VERSIONS}"]
-    if house.catalog != catalog_label:
-        return [f"{house_label} needs {house.catalog}, not {catalog_label}"]
-    return []

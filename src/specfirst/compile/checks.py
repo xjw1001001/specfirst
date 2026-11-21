@@ -618,10 +618,17 @@ def defaults_problems(catalog: Catalog, house: House, root: Path) -> list[str]:
         entry = catalog.entry(entry_id)
         where = f"house: defaults.yaml: {entry_id}" + (f" ({unit})" if entry.per_family else "")
         body = listed.get(entry_id)
+        if body is None:
+            problems.append(f"{where}: no item; state the default, or null for none")
+            continue
         if entry.per_family != (isinstance(body, dict) and "units" in body):
             problems.append(f"{where}: an entry with `units` has one item per unit, and only "
                             "such an entry")
             continue
+        if entry.per_family and unit == entry.units[0]:
+            for extra in sorted(set(body.get("units") or {}) - set(entry.units)):
+                problems.append(f"house: defaults.yaml: {entry_id}: the unit {extra} does not "
+                                "answer this entry")
         found = house_module.choices(house, entry_id, unit, entry.per_family)
         if not found:
             problems.append(f"{where}: no item; state the default, or null for none")

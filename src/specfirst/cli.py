@@ -192,9 +192,10 @@ def _house(root: Path, args: argparse.Namespace) -> int:
     pair = (args.catalog, args.house)
     if args.write:
         known, standard = _pair(root, args)
-        if versions.load(root)[standard.label].status == "frozen":
-            print(f"{standard.label} is frozen: its STANDARD.md is not written again "
-                  "(ADR-020)")
+        listed = versions.load(root).get(standard.label)
+        if listed is None or listed.status == "frozen":
+            print(f"{standard.label} is frozen or not listed in {versions.VERSIONS}: its "
+                  "STANDARD.md is not written (ADR-020)")
             return 1
         text = house.standards_document(known, standard)
         path = standard.directory / str(standard.raw["document"])
@@ -314,4 +315,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return score_command.main(root, args.rest)
     handlers = {"catalog": _catalog, "house": _house, "compile": _compile,
                 "render": _render, "parse": _parse}
-    return handlers[args.command](root, args)
+    from specfirst.compile.catalog import CatalogError
+    from specfirst.compile.house import HouseError
+    from specfirst.compile.versions import VersionError
+
+    try:
+        return handlers[args.command](root, args)
+    except (CatalogError, HouseError, VersionError) as error:
+        print(f"cannot load the catalog and the house: {error}")
+        return 1

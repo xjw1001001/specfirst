@@ -142,6 +142,63 @@ def test_a_record_maps_through_the_migration_file(house2):
         assert gone is None and "a person decides" in how
 
 
+def test_the_pinned_trees_are_those_of_the_tag():
+    """The trees of catalog@1 and open-default@1 at the tag catalog@1 (git rev-parse
+    catalog@1:standard/catalog and catalog@1:standard/houses/open-default@1)."""
+    assert versions.PINNED == {
+        "catalog@1": "a25d42c08d37352131b9320a62c7fa2ce266cb9b",
+        "open-default@1": "7ac0f4fc4d76333817b6e3edf21e156afec38ef4"}
+
+
+def test_scores_are_comparable_only_over_kept_decisions(house2):
+    _migration(house2, [
+        {"alternative": "ae.teae.end/end_of_study", "change": "removed", "replacement": None,
+         "backlog": "i03.end-of-study-removed"},
+        {"alternative": "tfl.percent.format/one_decimal_always", "change": "renamed",
+         "to": "tfl.percent.format/always", "backlog": "x"}])
+    catalog = catalogs.load(catalogs.default_dir(house2, "catalog@2"))
+    kept = [{"id": "ae.teae.end", "unit": "mod-ae-emergence", "value": {"rule": "no_end"}},
+            {"id": "tfl.percent.format", "unit": "tfl-ae-summary",
+             "value": {"rule": "one_decimal_always"}},
+            {"id": "custom:eff-x", "unit": "tfl-ae-summary", "value": {"rule": "any"}}]
+    assert migration.comparable(kept, catalog) == []
+    gone = kept + [{"id": "ae.teae.end", "unit": "mod-ae-emergence",
+                    "value": {"rule": "end_of_study"}}]
+    assert migration.comparable(gone, catalog) == [
+        "ae.teae.end (mod-ae-emergence): removed: ae.teae.end/end_of_study; a person decides"]
+
+
+def test_a_task_and_a_kit_refuse_a_draft_version(root, tmp_path):
+    from specfirst.gen import kits
+    from specfirst.harness import task
+
+    with pytest.raises(task.TaskError, match="a draft version"):
+        task.kit_catalog(root, {"catalog": {"name": "specfirst-m1", "version": 2},
+                                "house": "open-default@2"})
+    assert task.kit_catalog(root, {"catalog": {"name": "specfirst-m1", "version": 1},
+                                   "house": "open-default@1"}) == "catalog@1"
+    copy = tmp_path / "root"
+    shutil.copytree(root / "standard", copy / "standard")
+    path = copy / "standard" / "versions.yaml"
+    data = yaml.safe_load(path.read_text(encoding="ascii"))
+    data["catalogs"]["catalog@1"]["status"] = "draft"
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="ascii", newline="\n")
+    with pytest.raises(kits.KitError, match="catalog@1', a draft version"):
+        kits._generate(copy, "seed-x", tmp_path / "kit", "train", False, print, None, "full")
+
+
+def test_house_write_refuses_a_frozen_house(root, capsys):
+    from specfirst import cli
+
+    before = (root / "standard" / "houses" / "open-default@1" / "STANDARD.md").read_bytes()
+    assert cli.main(["house", "--write"]) == 1
+    assert "open-default@1 is frozen" in capsys.readouterr().out
+    after = (root / "standard" / "houses" / "open-default@1" / "STANDARD.md").read_bytes()
+    assert after == before
+    assert cli.main(["catalog", "--catalog", "catalog@2", "--house", "open-default@1"]) == 1
+    assert "cannot load the catalog and the house" in capsys.readouterr().out
+
+
 def test_the_backlog_covers_its_issues_and_prints(root):
     assert backlog.problems(root) == []
     lines = backlog.summary(root)

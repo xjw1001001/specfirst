@@ -56,6 +56,9 @@ records:
      target: demo.baseline.record and bds.baseline.rule, kind: fix a definition,
      status: accepted, version: catalog@2, adr: ADR-020,
      reason: "where a value timed after the dose on the first dose day goes"}
+  - {id: i06.post-time-aware, issue: 6, layer: house, target: adam/advs.yaml,
+     kind: change parent specs, status: accepted, version: open-default@2, adr: ADR-020,
+     reason: "under the time rule of baseline, post-baseline is time-aware too, so that no record falls between the two"}
   # #7 demo.age.groups
   - {id: i07.age-default, issue: 7, layer: house, target: demo.age.groups (default),
      kind: change a default, status: accepted, version: open-default@2, adr: ADR-020,
@@ -209,6 +212,9 @@ records:
   - {id: i28.real-kit-pins, issue: 28, layer: code, target: kits/cdiscpilot01,
      kind: name the pair, status: waits, for: real-4, adr: ADR-020,
      reason: "the real kit names no catalog and its efficacy decisions stay custom until the catalog has entries for them"}
+  - {id: i28.efficacy-entries, issue: 28, layer: catalog, target: entries for the pilot's efficacy decisions,
+     kind: add entries, status: waits, for: real-4 and std-2, adr: ADR-020,
+     reason: "the custom:eff-* decisions of the real kit (ADR-020, decision 7, the table of what waits)"}
   # #33 labels of carried variables, time-of-day variables
   - {id: i33.labels, issue: 33, layer: house, target: adam/ and STANDARD.md,
      kind: state a house rule, status: accepted, version: open-default@2, adr: ADR-020,

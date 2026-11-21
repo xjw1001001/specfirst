@@ -201,3 +201,22 @@ def migrate(record: dict, new: Catalog) -> tuple[dict | None, str]:
             return None, (f"removed: {key}" + (f"; the replacement is {replacement}"
                                                if replacement else "") + "; a person decides")
     return dict(record), "kept"
+
+
+def comparable(records: list[dict], new: Catalog) -> list[str]:
+    """Why the scores of a kit are not comparable across the step to `new`.
+
+    Two pairs are comparable on a kit only when every decision of the kit is
+    kept by the step: the same alternative with the same meaning, or one
+    renamed without a change of meaning (ADR-020, decision 4). An empty list
+    means comparable. A step of the house is judged apart: a changed default
+    changes a decision's value, which the kit's records already hold.
+    """
+    found = []
+    for record in records:
+        if not isinstance(record, dict) or str(record.get("id", "")).startswith("custom:"):
+            continue
+        _, how = migrate(record, new)
+        if how != "kept" and not how.startswith("renamed"):
+            found.append(f"{record.get('id')} ({record.get('unit')}): {how}")
+    return found

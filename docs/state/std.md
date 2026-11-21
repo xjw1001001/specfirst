@@ -90,11 +90,14 @@ section 13.4).
 
 ## Next
 
-- catalog@2 (2026-11-21): ADR-020 proposed, phase 1 only. It sets the
-  scope and the versioning of `catalog@2` and `open-default@2` (issues
-  #1 to #24, #28, #33, the comment on #23) and asks the owner five
-  questions. Nothing is carried out until the base session relays the
-  answer; then parts catalog-2a (structure) and catalog-2b (content).
+- catalog@2 (2026-11-21): ADR-020, approved by the owner the same day (A
+  to questions 1, 2, 3 and 5; B to 4: the slice moves too). Three parts:
+  catalog-2a (the structure: versioned folders, defaults in the house, the
+  checks of the versions; docs/reports/catalog-2a.md), catalog-2b (the
+  content of decision 7) and catalog-2c (the slice of ADR-005 moved to
+  version 2, last, with the plan cleared by the base session first).
+  Until catalog-2c merges, the default pair stays (`catalog@1`,
+  `open-default@1`) and version 2 is a draft no kit may name.
 - std-2 Pilot decisions, mutation and identifiability. Needs real-3.
 - Then std-3 (D1).
 
