@@ -6,7 +6,8 @@ methods, and the results to build and check. real-3a adds the grids, their
 mock shells and pages, and the trace of their cells. gen-1a adds gen, and
 gen-2a its actions kit, kits and verify; issue #30 the action separate.
 read-1a adds score. read-2a adds run (the reader harness) and ask (the
-oracle). The other commands of PLAN.md
+oracle). Issue #29 adds recompute (one standalone recomputation script per
+analysis, ADR-021). The other commands of PLAN.md
 section 12 (preview, rebuild) arrive with the work packages that build them.
 """
 
@@ -70,6 +71,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_check.add_argument(
         "--twice", action="store_true", help="first build twice and compare the hashes (P1)"
     )
+
+    p_recompute = commands.add_parser(
+        "recompute", help="write one standalone recomputation script per analysis of a built "
+                          "kit, run them sealed and compare with the ARD (issue #29)")
+    p_recompute.add_argument("kit", help="kit ID")
+    p_recompute.add_argument("--build", type=Path,
+                             help="the build to recompute; default build/kits/<kit>")
+    p_recompute.add_argument("--export", type=Path, metavar="DIR",
+                             help="also copy the bundle to DIR/recompute-<kit>")
 
     p_catalog = commands.add_parser("catalog", help="check the decision catalog")
     p_catalog.add_argument("--sources", action="store_true",
@@ -305,6 +315,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         from specfirst.machine import build
 
         return build.check(root, args.kit, folder=args.build, twice=args.twice)
+    if args.command == "recompute":
+        from specfirst.recompute import run as recompute
+
+        return recompute.main(root, args.kit, args.build, args.export)
     if args.command == "gen":
         from specfirst.gen import command
 

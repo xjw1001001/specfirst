@@ -335,6 +335,37 @@ for 3,580 of them):
 - Display rules that are not registry entries yet: p-value formats and the
   truncation of long terms (E25).
 
+## Handed over by issue #29
+
+- `specfirst recompute <kit> [--build DIR] [--export DIR]` writes, from a
+  build of the kit, one standalone script per analysis of its reporting
+  events into build/recompute/<kit>/bundle/ (with plan.json, manifest.json,
+  the gold ARD rows, adam_csv.py, compare.py, run_all.sh and README.txt; no
+  study data), runs each script sealed on copies of the reference ADaM, and
+  writes build/recompute/<kit>/run/ (outputs, logs, report.json,
+  report.txt, checks.json). ADR-021 has the design.
+- A script is written by a template per registry method: Python
+  (`specfirst.recompute.pywrite`) for count, percent, continuous summary,
+  chi-square and one-way ANOVA; R (`rwrite`) for Fisher, CMH, ANCOVA and
+  the mixed model. An analysis whose method or shape no template covers is
+  `not covered`, with the reason: a new registry method, a new kind of
+  grouping or a new comparator needs a template first. The templates cite
+  registry statements by number (`common.statement` finds an option's
+  statement by its first words): add statements at the end, as before.
+- The generator reads the ARS, kit.yaml, the decision records and
+  registry.json as plain data, with its own reading of the rules of
+  standard/methods/README.md it needs (B1 to B3, I3 to I5, I8 to I10, I12
+  to I19; `specfirst.recompute.reading` and the writers). Of specfirst it
+  imports only `specfirst.recompute`, `kit`, `paths` and `machine.canonical`
+  (`static.GENERATOR_IMPORTS`; a unit test holds it).
+- The static check (`specfirst.recompute.static`) holds the scripts to
+  allow-lists of imports and calls: a template that needs another function
+  needs it added there, and a reason.
+- The gate issue-29 holds the pilot at 69 analyses
+  (`gates.RECOMPUTE_ANALYSES`): an analysis added to a reporting event of
+  the kit changes that number. tests/recompute plants three breaks of the
+  engine and the checks' own defects (RC1 to RC6).
+
 ## Handed over by real-5b
 
 - The mixed model for repeated measures is R only (`model.mmrm.lsmeans`,

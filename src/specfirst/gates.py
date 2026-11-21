@@ -243,13 +243,14 @@ def _registry(ctx: Context) -> bool:
     return registry.run(ctx.root, out=ctx.out) == 0
 
 
-def _pytest(ctx: Context, folder: str, report: str, required: tuple[str, ...]) -> bool:
+def _pytest(ctx: Context, folder: str, report: str, required: tuple[str, ...],
+            env: dict[str, str] | None = None) -> bool:
     """Run the tests of a folder strictly: none may fail, be skipped or be missing."""
     xml = ctx.log_dir / report
     xml.unlink(missing_ok=True)
     code = ctx.command(
         [sys.executable, "-m", "pytest", folder, "-s", "-q", f"--junitxml={xml}"],
-        env={"SPECFIRST_STRICT": "1"},
+        env={"SPECFIRST_STRICT": "1", **(env or {})},
     )
     problems = junit_problems(xml, required)
     for problem in problems:
@@ -490,6 +491,115 @@ def _defects_5b(ctx: Context) -> bool:
     return _pytest(ctx, "tests/defects", "defects.xml", REAL5B_DEFECTS)
 
 
+# Issue #29 (ADR-021): one standalone recomputation script per analysis of the pilot's three
+# reporting events, run sealed on the reference ADaM and compared with the gold ARD.
+RECOMPUTE_ANALYSES = 69
+RECOMPUTE_TESTS = ("RC1-unplanted", "RC2-weights", "RC3-quantiles", "RC4-cmh", "RC5-checks",
+                   "RC6-comparison")
+
+
+def _recompute(ctx: Context) -> bool:
+    """Every analysis is reproduced by its script, and the scripts call nothing of the engine."""
+    from specfirst.recompute import run as recompute
+
+    result = recompute.recompute(ctx.root, PILOT, build=_first_build(ctx), out=ctx.out)
+    counts = result.report.get("counts", {})
+    if counts != {"reproduced": RECOMPUTE_ANALYSES}:
+        ctx.out(f"recompute: {RECOMPUTE_ANALYSES} analyses must be reproduced; the report has "
+                f"{counts}")
+    return result.passed and counts == {"reproduced": RECOMPUTE_ANALYSES}
+
+
+def _recompute_independence(ctx: Context) -> bool:
+    """The evidence that no part of the engine is called: the static check of every script,
+    the imports of the generator, the sealed runs (ADR-021, decision 5)."""
+    import json
+
+    from specfirst.recompute import generate, static
+
+    checks = json.loads((generate.recompute_dir(ctx.root, PILOT) / "run" / "checks.json")
+                        .read_text(encoding="ascii"))
+    plan = json.loads((generate.recompute_dir(ctx.root, PILOT) / "bundle" / "plan.json")
+                      .read_text(encoding="ascii"))
+    languages = [e.get("language") for e in plan["analyses"] if "not_covered" not in e]
+    bad = {name: problems for name, problems in checks["static"].items() if problems}
+    ctx.out(f"static check: {len(checks['static']) - len(bad)} of {len(checks['static'])} "
+            f"scripts ({languages.count('python')} Python, {languages.count('r')} R) import or "
+            "call only the allowed packages, name only their ADaM datasets and state only the "
+            "ARS's numbers")
+    for name, problems in sorted(bad.items()):
+        ctx.out(f"  {name}: {'; '.join(problems[:3])}")
+    generator = static.generator_problems(Path(static.__file__).resolve().parent)
+    ctx.out(f"generator: src/specfirst/recompute imports {len(generator)} modules of the "
+            "engine; its standalone files (seal.py, bundle/) import nothing of specfirst")
+    for problem in generator:
+        ctx.out(f"  {problem}")
+    ctx.out(f"sealed runs: {len(languages) - len(checks['sealed'])} of {len(languages)} "
+            "scripts ran in a fresh folder outside the checkout, on copies of the reference "
+            "ADaM, the Python ones through seal.py, which refuses specfirst and yamaa")
+    for name, why in sorted(checks["sealed"].items()):
+        ctx.out(f"  {name}: {why}")
+    return not bad and not generator and not checks["sealed"]
+
+
+def _recompute_export(ctx: Context) -> bool:
+    """The bundle is deterministic, and a reviewer's run of it by its own run_all.sh, in a
+    fresh folder, gives the same outputs byte for byte and the same report."""
+    import json
+    import shutil
+    import tempfile
+
+    from specfirst import kit as kits
+    from specfirst.recompute import generate
+    from specfirst.recompute import run as recompute
+
+    base = generate.recompute_dir(ctx.root, PILOT)
+    first = _first_build(ctx)
+    kit = kits.load_kit(ctx.root, PILOT)
+    with tempfile.TemporaryDirectory(prefix="specfirst-export-") as name:
+        tmp = Path(name)
+        commit, clean = recompute.head(ctx.root)
+        generate.generate(ctx.root, PILOT, first, tmp / "again", commit, clean,
+                          out=lambda _line: None)
+        same = generate.bundle_hashes(tmp / "again") == generate.bundle_hashes(base / "bundle")
+        ctx.out(f"export: the bundle generated again has the same bytes: {same}")
+        dest = generate.export(base / "bundle", tmp / "reviewer")
+        adam = tmp / "adam"
+        shutil.copytree(first / kit.reference, adam)
+        env = {**recompute.sealed_env(tmp), "PYTHON": sys.executable, "RSCRIPT": "Rscript"}
+        started = time.monotonic()
+        done = subprocess.run(["sh", "run_all.sh", str(adam), str(tmp / "work")], cwd=dest,
+                              env=env, capture_output=True, text=True, timeout=7200)
+        ctx.out(f"export: sh run_all.sh in a fresh copy of the bundle exited {done.returncode} "
+                f"in {time.monotonic() - started:.0f} s; its last line: "
+                f"{(done.stdout.strip().splitlines() or [''])[-1]}")
+        if done.returncode != 0:
+            ctx.out(done.stderr.strip()[-1000:])
+        mine = sorted(p.relative_to(base / "run" / "out").as_posix()
+                      for p in (base / "run" / "out").rglob("*.csv"))
+        theirs = sorted(p.relative_to(tmp / "work" / "out").as_posix()
+                        for p in (tmp / "work" / "out").rglob("*.csv")) \
+            if (tmp / "work" / "out").is_dir() else []
+        differ = [f for f in mine if f not in theirs or
+                  (base / "run" / "out" / f).read_bytes() != (tmp / "work" / "out" / f)
+                  .read_bytes()]
+        ctx.out(f"export: {len(mine) - len(differ)} of {len(mine)} outputs of the reviewer's "
+                "run have the bytes of the sealed run's")
+        for f in differ[:10]:
+            ctx.out(f"  differs: {f}")
+        report = tmp / "work" / "report.json"
+        same_report = report.is_file() and json.loads(report.read_text(encoding="ascii")) == \
+            json.loads((base / "run" / "report.json").read_text(encoding="ascii"))
+        ctx.out(f"export: the reviewer's report equals the sealed run's: {same_report}")
+    return same and done.returncode == 0 and not differ and len(theirs) == len(mine) and \
+        same_report
+
+
+def _recompute_plants(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/recompute", "recompute.xml", RECOMPUTE_TESTS,
+                   env={"SPECFIRST_RECOMPUTE_REUSE": "1"})
+
+
 def _score(name: str) -> Callable[[Context], bool]:
     """A check of the scorer (specfirst.score.gate), by its function name."""
     def run(ctx: Context) -> bool:
@@ -645,6 +755,32 @@ GATES: dict[str, tuple[Check, ...]] = {
               _decisions),
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
         Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_5b),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # Issue #29 (ADR-021), track real: a generated, standalone recomputation script per
+    # analysis of the pilot's three reporting events. Each is run sealed on the reference ADaM
+    # and reproduces the gold ARD at full precision (recompute); no script calls any part of
+    # the engine (independence); the bundle is deterministic and a reviewer's run of it gives
+    # the same bytes (export); a planted break of the engine, one swapped option, is caught by
+    # the scripts, and the checks of the scripts fail on defects planted for them (planted
+    # break).
+    "issue-29": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("recompute", f"specfirst recompute {PILOT} --build build/p1/{PILOT}/first",
+              _recompute),
+        Check("independence", "the static check of every script, the generator's imports, "
+              "the sealed runs", _recompute_independence),
+        Check("export", "the bundle generated again; its run_all.sh in a fresh folder",
+              _recompute_export),
+        Check("planted break",
+              "SPECFIRST_STRICT=1 SPECFIRST_RECOMPUTE_REUSE=1 pytest tests/recompute -s -q",
+              _recompute_plants),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
