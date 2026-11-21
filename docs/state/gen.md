@@ -41,7 +41,8 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   cdiscpilot01, report only (house standard: 9 unseparated, 7 separated, 6
   inert; with a window of 30 days, every window from 13 to 36 days gives
   the same table). Gates on clean clones: gen-2a and gen-3a of `8154075`,
-  gen-2a again of the commit with the review's test. Report:
+  gen-2a of `5356478` (the review's test) and of `db68baf` (with `main`
+  `876938f` merged). Report:
   docs/reports/issue-30.md. Review: docs/reports/issue-30.review.md
   (signed, six findings, none blocking). Generated kits do not change.
   See "P4 on a reference study".

@@ -630,8 +630,34 @@ GATE gen-2a: PASS
 clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-Zixwkz/specfirst)
 ```
 
+Then `main` moved (real-5b-answers, `876938f`: 15 files, none of them
+changed here). `main` was merged into `track/gen` (`db68baf`) and gen-2a
+ran on a clean clone of that merge, which is the tree that goes to `main`
+(the commits after it change documents only; lesson 72 says why):
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh gen-2a /mnt/d/trial_work/specfirst/.git db68baf
+commit:     db68baf
+PASS  environment          0.3 s
+PASS  pins                 0.7 s
+PASS  lint                 0.1 s
+PASS  registry             0.1 s
+PASS  unit tests         403.5 s
+PASS  method vectors      11.3 s
+PASS  pilot tests         52.2 s
+PASS  kits               174.4 s
+PASS  separation          23.8 s
+PASS  engines              0.1 s
+PASS  splits               1.3 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE gen-2a: PASS
+
+clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-e2DEpo/specfirst)
+```
+
 Logs: docs/reports/issue-30.gen-2a.gate.log, issue-30.gen-3a.gate.log,
-issue-30.gen-2a.final.gate.log.
+issue-30.gen-2a.final.gate.log, issue-30.gen-2a.merged.gate.log.
 Ruff and the ASCII check pass in both gates and in the worktree.
 
 ## The review
