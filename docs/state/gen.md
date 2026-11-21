@@ -32,13 +32,19 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   docs/reports/gen-3a.review.md (signed in pass 2). Choices:
   docs/decisions/ADR-009.md.
 
-- Issue #30 (2026-11-21): P4 on a reference study, one class per decision
-  instead of a failure (ADR-019): `separated`, `unseparated` (with the
-  values that reproduce and, for an integer slot, the interval),
-  `inert`, `separated_at_dataset_only`. The test study SEP01 and the
-  planted defects; the classes on cdiscpilot01, report only. Report:
-  docs/reports/issue-30.md. Review: docs/reports/issue-30.review.md.
-  Generated kits do not change. See "P4 on a reference study".
+- Issue #30 (2026-11-21), gates passed, review signed, merged into `main`:
+  P4 on a reference study, one class per decision instead of a failure
+  (ADR-019, the executor's; PLAN.md and the schemas unchanged):
+  `separated`, `unseparated` (with the values that reproduce and, for an
+  integer slot, the interval), `inert`, `separated_at_dataset_only`. The
+  test study SEP01 and one planted defect per class; the classes on
+  cdiscpilot01, report only (house standard: 9 unseparated, 7 separated, 6
+  inert; with a window of 30 days, every window from 13 to 36 days gives
+  the same table). Gates on clean clones: gen-2a and gen-3a of `8154075`,
+  gen-2a again of the commit with the review's test. Report:
+  docs/reports/issue-30.md. Review: docs/reports/issue-30.review.md
+  (signed, six findings, none blocking). Generated kits do not change.
+  See "P4 on a reference study".
 
 ## A kit: what the folder holds
 
