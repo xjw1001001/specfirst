@@ -1,0 +1,506 @@
+clean clone gate read-2a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     24cc6ac
+clone:      /tmp/specfirst-clean-MbhXmQ/specfirst
+environment and cache: /tmp/specfirst-clean-MbhXmQ/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-MbhXmQ/specfirst
+
+$ git -C /tmp/specfirst-clean-MbhXmQ/specfirst checkout --quiet --detach 24cc6ac
+
+$ git -C /tmp/specfirst-clean-MbhXmQ/specfirst log -1 --format=%H %s
+24cc6ac95906f990718fa8fb8f134d034c6e040e catalog-2a: five planted invalid examples for each new schema (test_schemas)
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-MbhXmQ/env/venv-specfirst-3254322765
+R library: /tmp/specfirst-clean-MbhXmQ/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-MbhXmQ/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-MbhXmQ/env/core/f3282a0d870b-d90ef34c553d
+source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
+python     3.12.3  (/tmp/specfirst-clean-MbhXmQ/env/venv-specfirst-3254322765/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-MbhXmQ/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate read-2a --clean
+gate read-2a at commit 24cc6ac95906f990718fa8fb8f134d034c6e040e (clean)
+
+== [1/19] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-MbhXmQ/env/venv-specfirst-3254322765/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+-- PASS environment (0.5 s)
+
+== [2/19] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-MbhXmQ/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (1.6 s)
+
+== [3/19] lint: ruff check .
+All checks passed!
+-- PASS lint (0.1 s)
+
+== [4/19] unit tests: pytest -m "not evidence" -q
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 16%]
+........................................................................ [ 22%]
+........................................................................ [ 27%]
+........................................................................ [ 33%]
+........................................................................ [ 39%]
+........................................................................ [ 44%]
+........................................................................ [ 50%]
+........................................................................ [ 55%]
+........................................................................ [ 61%]
+........................................................................ [ 66%]
+........................................................................ [ 72%]
+........................................................................ [ 78%]
+........................................................................ [ 83%]
+........................................................................ [ 89%]
+........................................................................ [ 94%]
+....................................................................     [100%]
+1292 passed, 30 deselected in 536.63s (0:08:56)
+-- PASS unit tests (537.4 s)
+
+== [5/19] kit: specfirst.harness.gate.kit: kit 4 of the seed of the gate gen-2a, written again; its gold built again
+kit 4 of the set of the seed 'gen-2a': sfrrl2uh, split train, generator gen-3a.2, tier ask, kit.yaml 75addb7d7b70d358
+the gold built again is the gold of the kit: yes
+-- PASS kit (15.9 s)
+
+== [6/19] skills: specfirst run skills: core-reader and the reading notes v0 of the four units; the leak check
+skill core-reader: 115 lines, written by hand
+skill mod-treatment: 252 lines, rendered from the catalog
+skill mod-populations: 206 lines, rendered from the catalog
+skill mod-ae-emergence: 176 lines, rendered from the catalog
+skill tfl-ae-summary: 281 lines, rendered from the catalog
+leak check: 117 kit, study and subject IDs and the seed of kit 4; 71 paragraphs of the store
+  planted, a skill that names the kit: found (mod-treatment: names 'sfrrl2uh')
+  planted, a skill that names the subject SFRRL2UH-101-001: found (mod-treatment: names 'SFRRL2UH-101-001')
+  planted, a skill that quotes the store: found (mod-treatment: quotes the paragraph 'The study will be conducted in accordance with the principle...')
+  planted, notes that are not their rendering: found (mod-treatment: SKILL.md is not the rendering of the catalog (`specfirst run skills --write`))
+  planted, a SKILL.md without a name: found (mod-treatment: the front matter names 'None')
+  planted, core-reader without a description: found (core-reader: the front matter has no description)
+skills: no problem
+-- PASS skills (1.5 s)
+
+== [7/19] task: specfirst run task: the task folder of the kit, twice; stage T
+task task-9ce7b749071b: 92 files, 22 decisions of mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary; built twice in two folders: the same files
+TASK.md names no kit and no seed
+stage T, condition catalog: task task-f0b1ad4c2075, 7 decisions of tfl-ae-summary, knowledge ['knowledge/core-reader/SKILL.md'], ADaM of gold ['inputs/data/adam/adae.parquet', 'inputs/data/adam/adsl.parquet']; only what a reader may see
+  planted, the oracle file of the kit in a task: found (inputs/docs/o.yaml: the file gold/oracle.yaml of the kit)
+  planted, a file outside the allow list: found (notes.txt: not a file a task holds)
+  planted, a TASK.md that names the kit: found (names 'sfrrl2uh')
+  planted, a TASK.md that names the seed: found (names 'gen-2a/kit-4')
+-- PASS task (0.2 s)
+
+== [8/19] oracle: specfirst ask: every decision of the task, and an entry the catalog lacks
+the oracle file of kit 4 lists 2 decisions: pop.efficacy.rule (mod-populations), ae.related.values (mod-ae-emergence)
+asked about 23 decisions (every decision of the task and one entry the catalog lacks): answered 2: pop.efficacy.rule (mod-populations): answered, ae.related.values (mod-ae-emergence): answered
+  planted, an oracle that answers every decision: found (trt.planned.source (mod-treatment): answered True, the oracle lists it False)
+-- PASS oracle (0.1 s)
+
+== [9/19] adapter: specfirst.harness.adapter: the command line and the deny rules
+Windows reader: 30 arguments, 54 deny rules on 10 folders: as ADR-010 says
+Linux reader: 29 arguments, 22 deny rules on 4 folders: as ADR-010 says
+command: claude -p "Read TASK.md in the current folder and do the task it describes." --output-format stream-json --verbose --model claude-opus-5-5 --max-turns 100 --max-budget-usd 10 --permission-mode manual --permission-prompts none --tools Read,Glob,Grep,Write,Edit,Bash --allowedTools "Read,Glob,Grep,Write,Edit,Bash(bin/ask *),Bash(bin/ask:*),Bash(./bin/ask *),Bash(./bin/ask:*),Bash(bin/check *),Bash(bin/check:*),Bash(./bin/check *),Bash(./bin/check:*)" --disallowedTools Agent,Task,WebFetch,WebSearch,NotebookEdit,Skill,SlashCommand,BashOutput,KillShell --settings <run>/settings.json --setting-sources "" --strict-mcp-config --disable-slash-commands --no-session-persistence
+  planted, settings without the deny rule of the store: found (the settings do not deny the file tools on /tmp/specfirst-clean-MbhXmQ/specfirst/src/specfirst/gen/rewrites)
+  planted, settings that let the reader write bin/: found (the settings let the reader write the tools in /tmp/specfirst-read2a-_bh3j4lb/tasks/task-x/bin)
+  planted, no --strict-mcp-config: found (no --strict-mcp-config)
+  planted, an --add-dir: found (the command widens the reader's reach)
+  planted, another model: found (--model is 'claude-sonnet-5-5', not 'claude-opus-5-5')
+  planted, Bash allowed for every command: found (--allowedTools is ['Bash', 'Bash(./bin/ask *)', 'Bash(./bin/ask:*)', 'Bash(./bin/check *)', 'Bash(./bin/check:*)', 'Bash(bin/ask *)', 'Bash(bin/check *)', 'Bash(bin/check:*)', 'Edit', 'Glob', 'Grep', 'Read', 'Write'])
+  planted, --max-turns over the budget: found (--max-turns is '500', not '100')
+-- PASS adapter (0.0 s)
+
+== [10/19] budget: specfirst.harness.record: a run record against its budget
+a run of 40 turns, 1200 s, 2,000 input, 40,000 output, 150,000 cache write and 4,000,000 cache read tokens of claude-opus-5-5: USD 2.36 against the budget Budget(turns=100, seconds=2700, usd=10.0): within
+  planted, 101 turns: found (turns: 101 is over the budget of 100)
+  planted, 46 minutes: found (seconds: 2760 is over the budget of 2700)
+  planted, USD 10.01: found (usd: 10.01 is over the budget of 10.0)
+  planted, an error at the end: found (the reader ended with an error: None)
+  planted, stopped at the time limit: found (the harness stopped the reader at its time limit)
+  planted, no result event: found (the reader did not end with a result event)
+  planted, a model without a price: found (no price for claude-unknown-9)
+-- PASS budget (0.0 s)
+
+== [11/19] output files: specfirst run validate: the rules of ADR-010, decision 6
+the output files of a reader that reads gold right: 22 records, 2 questions, 1 unmapped: valid
+  planted, a line that is not JSON: found (decisions.jsonl:1: not JSON (Expecting property name enclosed in double quotes))
+  planted, a record without a status: found (decisions.jsonl:1: <root>: 'status' is a required property)
+  planted, a decision the task does not ask for: found (decisions.jsonl:23: demo.age.groups (mod-demographics) is not a decision this task asks for)
+  planted, a second record of a decision: found (decisions.jsonl:23: a second record of trt.planned.source (mod-treatment))
+  planted, binds filled: found (decisions.jsonl:1: `binds` is filled by the machine, not the reader)
+  planted, identifiable filled: found (decisions.jsonl:1: `identifiable` is filled by the machine, not the reader)
+  planted, an alternative the entry lacks: found (decisions.jsonl:1: the value is not one of trt.planned.source: entry trt.planned.source has no alternative 'nonsense')
+  planted, a slot left out: found (decisions.jsonl:7: the value is not one of pop.randomized.rule: pop.randomized.rule/randomized_with_postbaseline: needs the slots ['test'], got [])
+  planted, a citation of another document: found (decisions.jsonl:2: citation 1: cites the document 'sap-standard'; a run cites house, protocol, sap)
+  planted, a citation of an anchor that is not there: found (decisions.jsonl:2: citation 1: the document 'sap' has no anchor '99/p9')
+  planted, a question about no entry: found (questions.jsonl:3: the catalog has no entry 'no.such')
+  planted, questions that are not the ask log: found (questions.jsonl: 1 lines, the ask log of the run has 2; they must be the same questions in the same order)
+  planted, an unmapped anchor that is not there: found (unmapped.jsonl:1: the document 'sap' has no anchor '99/p1')
+  planted, no unmapped.jsonl: found (unmapped.jsonl: missing)
+-- PASS output files (0.2 s)
+
+== [12/19] canary scan: specfirst.harness.canary: the canaries of each protected kind
+29348 canaries from 81 sources: kit:gold/ard 80, kit:gold/ars 171, kit:gold/decisions.jsonl 68, kit:gold/design.yaml 23, kit:gold/docs 63, kit:gold/graph 1206, kit:gold/grid 67, kit:gold/identifiability.json 124, kit:gold/oracle.yaml 5, kit:gold/out 46, kit:gold/probes.jsonl 563, kit:gold/reference 9, kit:gold/resolved 2470, kit:gold/spec 206, kit:gold/summary.md 41, kit:gold/truth 7176, kit:kit.yaml 168, kit:study.json 66, kit:twin/data 7698, kit:twin/gold 411, kit:twin/truth 7899, planted:planted 3, seed:seed 1, store:README.md 43, store:calls.jsonl 18, store:calls/readback-1.answer.json 71, store:calls/readback-1.message.txt 3, store:calls/readback-1.request.json 215, store:calls/readback-2.answer.json 1, store:calls/readback-2.message.txt 2, store:calls/readback-2.request.json 1, store:calls/rewrite-1.answer.json 72, store:calls/rewrite-1.message.txt 1, store:calls/rewrite-1.request.json 109, store:filler.jsonl 21, store:paragraphs.jsonl 227
+  planted, a transcript that read gold/decisions.jsonl: found (91 canaries, e.g. kit:gold/decisions.jsonl:29)
+  planted, a transcript that read gold/docs/sap.md: found (10 canaries, e.g. kit:gold/docs/protocol.md:6)
+  planted, a transcript that read gold/oracle.yaml: found (5 canaries, e.g. kit:gold/oracle.yaml:10)
+  planted, a transcript that read gold/summary.md: found (41 canaries, e.g. kit:gold/summary.md:4)
+  planted, a transcript that read twin/data/sdtm/ae.json: found (254 canaries, e.g. kit:twin/data/sdtm/ae.json:150)
+  planted, a transcript that read twin/gold/ard/reporting-event.jsonl: found (79 canaries, e.g. kit:gold/ard/reporting-event.jsonl:1)
+  planted, a transcript that read kit.yaml: found (168 canaries, e.g. kit:kit.yaml:93)
+  planted, a transcript that read store paragraphs.jsonl: found (316 canaries, e.g. store:paragraphs.jsonl:7)
+  planted, a transcript that read the run's private/oracle.json: found (2 canaries, e.g. planted:any private file)
+  planted, a transcript that names the seed: found (transcript:1: holds 'gen-2a/kit-4' (from seed))
+  planted, a workspace file with a line of gold: found (workspace:out/notes.txt: holds 'se_default","id":"trt.planned.source","identifiable":"separated","stat' (from kit:gold/decisions.jsonl:1))
+a transcript of 131 events with every file of the task, the oracle's answers, the records of a reader that reads gold right and their statements: no canary
+a reader that writes pop.efficacy.rule (mod-populations) as {'rule': 'attended_visit', 'visit': 'WEEK 4'}, a value that a statement of the store holds: no canary
+  planted, the same record judged without the reader's records (the case exists): found (store:calls/rewrite-1.request.json:35)
+  planted, a statement typed from the store: found (store:paragraphs.jsonl:1)
+  planted, 3 lines of gold/summary.md as the values of ae.related.values: found (| Decision | Value | Status | Where | Twin |)
+-- PASS canary scan (5.8 s)
+
+== [13/19] arm S: specfirst run arm KIT --arm S --score
+run S-task-9ce7b749071b: arm S, stage C, condition notes, kit sfrrl2uh (train), task task-9ce7b749071b (22 decisions)
+  reader: none
+  cost: 0 turns, 0.0 s wall, 0.0 s API, tokens in 0 out 0 cache write 0 cache read 0, USD 0.0000 (CLI: 0)
+  budget: {'turns': 0, 'seconds': 600, 'usd': 0.0}: within
+  outputs: decisions.jsonl 0 lines, questions.jsonl 0 lines, unmapped.jsonl 0 lines
+  asks: 0, answered 0
+  output files: valid
+  task folder: holds only what a reader may see
+  canary scan: 29348 canaries from 81 files; clean
+  RUN S-task-9ce7b749071b: PASS
+score (report only):
+  case sfrrl2uh, arm S, stage C
+  reading score: 22 gold decisions of the units mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary
+    by class:                     decisions  value       status      quote       span        
+      document_rule                       7  0 of 7      0 of 7      7 of 7      0 of 7      
+      house_default                      13  13 of 13    13 of 13    13 of 13    13 of 13    
+      study_input                         2  0 of 2      0 of 2      -           -           
+    by unit:                      decisions  value       status      quote       span        
+      mod-ae-emergence                    4  2 of 4      2 of 4      3 of 3      2 of 3      
+      mod-populations                     5  3 of 5      3 of 5      4 of 4      3 of 4      
+      mod-treatment                       6  4 of 6      4 of 6      6 of 6      4 of 6      
+      tfl-ae-summary                      7  4 of 7      4 of 7      7 of 7      4 of 7      
+    (value and status: right, of the decisions scored on it; quote: every quote stands in its document; span: a quote stands inside an anchor that gold cites)
+    asks: 0 given, 2 in gold (decisions with the status asked), 0 of them right; precision none to judge, recall 0.00
+    unmapped: 0 given, 0 in gold (what the catalog lacks), 0 of them right; precision none to judge, recall none to judge
+    decisions a reviewer would have to change: 9
+      trt.actual.source (mod-treatment), document_rule: gold {"rule": "same_as_planned"}; the candidate (default) has {"rule": "dm_actarm"}
+      trt.start.source (mod-treatment), document_rule: gold {"rule": "first_ex_record"}; the candidate (default) has {"rule": "first_ex_with_dose"}
+      pop.randomized.rule (mod-populations), document_rule: gold {"rule": "randomized_with_postbaseline", "test": "SYSBP"}; the candidate (default) has {"rule": "all_randomized"}
+      pop.efficacy.rule (mod-populations), study_input: gold {"rule": "baseline_and_postbaseline", "test": "WEIGHT"}; the candidate (open) has nothing
+      ae.start.imputation (mod-ae-emergence), document_rule: gold {"rule": "first_of_month"}; the candidate (default) has {"rule": "first_of_month_not_before_first_dose"}
+      ae.related.values (mod-ae-emergence), study_input: gold {"rule": "stated_list", "values": ["PROBABLY RELATED", "RELATED"]}; the candidate (open) has nothing
+      tfl.population (tfl-ae-summary), document_rule: gold {"rule": "efficacy"}; the candidate (default) has {"rule": "safety"}
+      tfl.columns.total (tfl-ae-summary), document_rule: gold {"control": "Placebo", "rule": "active_arms"}; the candidate (default) has {"rule": "all_arms"}
+      tfl.ae.summary.rows (tfl-ae-summary), document_rule: gold {"rows": ["FATAL", "SERIOUS", "RELATED", "ANY"], "rule": "stated_rows"}; the candidate (default) has {"rule": "standard_rows"}
+      trt.actual.source (mod-treatment): wrong in status, span: cites house#1/s2; gold cites sap#2/p2, sap-standard#1/s1
+      trt.start.source (mod-treatment): wrong in status, span: cites house#1/s3; gold cites sap#2/p1, sap-standard#1/s2
+      pop.randomized.rule (mod-populations): wrong in status, span: cites house#2/s1; gold cites protocol#5.1/p2, protocol-standard#1/s1
+      pop.efficacy.rule (mod-populations): wrong in status
+      ae.start.imputation (mod-ae-emergence): wrong in status, span: cites house#4/s1; gold cites sap#3/p1, sap-standard#2/s1
+      ae.related.values (mod-ae-emergence): wrong in status
+      tfl.population (tfl-ae-summary): wrong in status, span: cites house#7/s2; gold cites sap#4.1/p2, sap-standard#4/s1
+      tfl.columns.total (tfl-ae-summary): wrong in status, span: cites house#7/s4; gold cites sap#4.1/p3, sap-standard#4/s2
+      tfl.ae.summary.rows (tfl-ae-summary): wrong in status, span: cites house#7/s7; gold cites sap#4.1/p1, sap-standard#4/s3
+    unseparated in gold, compared by value only: 8 trt.actual.source (wrong), trt.end.source (right), date.studyday.origin (right), pop.randomized.rule (wrong), pop.safety.rule (right), pop.safety.grouping (right), disp.status.record (right), tfl.rounding.rule (right)
+  build score:
+    visible: valid: yes
+    visible: produced: 1 of 1 outputs in gold
+    visible: cells correct: 4 of 12 gold cells of the rows that gold and the candidate both have
+    visible: cells correct: 4 of 12 gold cells of the outputs produced
+    visible: cells correct: 4 of 12 gold cells (an output that was not produced counts as wrong)
+    visible: whole output, strict: 0 of 1 outputs in gold (both axes equal and every cell equal)
+    visible: whole output, lenient: 0 of 1 outputs in gold (every gold cell present and equal)
+    visible: pending: 3 gold cells, neither right nor wrong and in no denominator above, wait for a decision without a value: ae.related.values (3 cells)
+    twin: valid: yes
+    twin: produced: 1 of 1 outputs in gold
+    twin: cells correct: 3 of 12 gold cells of the rows that gold and the candidate both have
+    twin: cells correct: 3 of 12 gold cells of the outputs produced
+    twin: cells correct: 3 of 12 gold cells (an output that was not produced counts as wrong)
+    twin: whole output, strict: 0 of 1 outputs in gold (both axes equal and every cell equal)
+    twin: whole output, lenient: 0 of 1 outputs in gold (every gold cell present and equal)
+    twin: pending: 3 gold cells, neither right nor wrong and in no denominator above, wait for a decision without a value: ae.related.values (3 cells)
+  attribution, visible: 8 wrong cells
+    layer  unit               decision                 cells  confirmed  first element that differs
+    L4     mod-populations    pop.efficacy.rule, ae.start.imputation, tfl.population      1  1 of 1     adam:ADAE.ASTDT
+    L4     mod-populations    pop.efficacy.rule, ae.start.imputation, tfl.population, tfl.columns.total      1  1 of 1     adam:ADAE.ASTDT
+    L4     mod-populations    pop.efficacy.rule, tfl.population      4  4 of 4     adam:ADSL.EFFFL
+    L4     mod-populations    pop.efficacy.rule, tfl.population, tfl.columns.total      2  2 of 2     adam:ADSL.EFFFL
+    axis rows of Out_AESUM: layer L5, decision tfl.ae.summary.rows, confirmed yes, first element that differs ars:An_AESUM_N
+  attribution, twin: 9 wrong cells
+    layer  unit               decision                 cells  confirmed  first element that differs
+    L4     mod-treatment      trt.start.source, ae.start.imputation, pop.efficacy.rule, tfl.population      1  1 of 1     adam:ADAE.ASTDT
+    L4     mod-treatment      trt.start.source, ae.start.imputation, pop.efficacy.rule, tfl.population, tfl.columns.total      1  1 of 1     adam:ADAE.ASTDT
+    L5     mod-populations    pop.efficacy.rule, tfl.population      5  5 of 5     ars:An_AESUM_N
+    L5     mod-populations    pop.efficacy.rule, tfl.population, tfl.columns.total      2  2 of 2     ars:An_AESUM_N_Tot
+    axis rows of Out_AESUM: layer L5, decision tfl.ae.summary.rows, confirmed yes, first element that differs ars:An_AESUM_N
+  wrong by value, and these data cannot show it (alone, on gold, it changes no cell and no axis of any dataset): trt.actual.source (mod-treatment), pop.randomized.rule (mod-populations)
+  pending: ae.related.values (mod-ae-emergence) has no value, and the build left out what it binds (ADR-014); gold cells that wait for it: 3 of visible, 3 of twin
+  case sfrrl2uh, arm S: not every score is 100%
+-- PASS arm S (26.3 s)
+
+== [14/19] arm C: specfirst run arm KIT --arm C --score
+run C-task-9ce7b749071b: arm C, stage C, condition notes, kit sfrrl2uh (train), task task-9ce7b749071b (22 decisions)
+  reader: none
+  cost: 0 turns, 0.1 s wall, 0.0 s API, tokens in 0 out 0 cache write 0 cache read 0, USD 0.0000 (CLI: 0)
+  budget: {'turns': 0, 'seconds': 600, 'usd': 0.0}: within
+  outputs: decisions.jsonl 22 lines, questions.jsonl 2 lines, unmapped.jsonl 0 lines
+  asks: 2, answered 2; ae.related.values (mod-ae-emergence); pop.efficacy.rule (mod-populations)
+  output files: valid
+  task folder: holds only what a reader may see
+  canary scan: 29334 canaries from 79 files; clean
+  RUN C-task-9ce7b749071b: PASS
+score (report only):
+  case sfrrl2uh, arm C, stage C
+  reading score: 22 gold decisions of the units mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary
+    by class:                     decisions  value       status      quote       span        
+      document_rule                       7  7 of 7      7 of 7      7 of 7      7 of 7      
+      house_default                      13  13 of 13    13 of 13    13 of 13    13 of 13    
+      study_input                         2  2 of 2      2 of 2      -           -           
+    by unit:                      decisions  value       status      quote       span        
+      mod-ae-emergence                    4  4 of 4      4 of 4      3 of 3      3 of 3      
+      mod-populations                     5  5 of 5      5 of 5      4 of 4      4 of 4      
+      mod-treatment                       6  6 of 6      6 of 6      6 of 6      6 of 6      
+      tfl-ae-summary                      7  7 of 7      7 of 7      7 of 7      7 of 7      
+    (value and status: right, of the decisions scored on it; quote: every quote stands in its document; span: a quote stands inside an anchor that gold cites)
+    asks: 2 given, 2 in gold (decisions with the status asked), 2 of them right; precision 1.00, recall 1.00
+    unmapped: 0 given, 0 in gold (what the catalog lacks), 0 of them right; precision none to judge, recall none to judge
+    decisions a reviewer would have to change: 0
+    unseparated in gold, compared by value only: 8 trt.actual.source (right), trt.end.source (right), date.studyday.origin (right), pop.randomized.rule (right), pop.safety.rule (right), pop.safety.grouping (right), disp.status.record (right), tfl.rounding.rule (right)
+  build score:
+    visible: valid: yes
+    visible: produced: 1 of 1 outputs in gold
+    visible: cells correct: 15 of 15 gold cells of the rows that gold and the candidate both have
+    visible: cells correct: 15 of 15 gold cells of the outputs produced
+    visible: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+    visible: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
+    visible: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
+    twin: valid: yes
+    twin: produced: 1 of 1 outputs in gold
+    twin: cells correct: 15 of 15 gold cells of the rows that gold and the candidate both have
+    twin: cells correct: 15 of 15 gold cells of the outputs produced
+    twin: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+    twin: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
+    twin: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
+  case sfrrl2uh, arm C: every score is 100%
+-- PASS arm C (2.5 s)
+
+== [15/19] arm R, stub reader: specfirst run arm KIT --arm R --stub PLAN --score; the run kept and checked
+run R-stub: arm R, stage C, condition notes, kit sfrrl2uh (train), task task-9ce7b749071b (22 decisions)
+  reader: stub, model claude-opus-5-5, used ['claude-opus-5-5'], CLI stub
+  cost: 6 turns, 1.1 s wall, 0.0 s API, tokens in 10 out 20 cache write 0 cache read 0, USD 0.0004 (CLI: 0)
+  budget: {'turns': 100, 'seconds': 2700, 'usd': 10.0}: within
+  outputs: decisions.jsonl 22 lines, questions.jsonl 2 lines, unmapped.jsonl 0 lines
+  asks: 2, answered 2; pop.efficacy.rule (mod-populations); ae.related.values (mod-ae-emergence)
+  output files: valid
+  task folder: holds only what a reader may see
+  canary scan: 29348 canaries from 81 files; clean
+  RUN R-stub: PASS
+score (report only):
+  case sfrrl2uh, arm R, stage C
+  reading score: 22 gold decisions of the units mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary
+    by class:                     decisions  value       status      quote       span        
+      document_rule                       7  7 of 7      7 of 7      7 of 7      7 of 7      
+      house_default                      13  13 of 13    13 of 13    13 of 13    13 of 13    
+      study_input                         2  2 of 2      2 of 2      -           -           
+    by unit:                      decisions  value       status      quote       span        
+      mod-ae-emergence                    4  4 of 4      4 of 4      3 of 3      3 of 3      
+      mod-populations                     5  5 of 5      5 of 5      4 of 4      4 of 4      
+      mod-treatment                       6  6 of 6      6 of 6      6 of 6      6 of 6      
+      tfl-ae-summary                      7  7 of 7      7 of 7      7 of 7      7 of 7      
+    (value and status: right, of the decisions scored on it; quote: every quote stands in its document; span: a quote stands inside an anchor that gold cites)
+    asks: 2 given, 2 in gold (decisions with the status asked), 2 of them right; precision 1.00, recall 1.00
+    unmapped: 0 given, 0 in gold (what the catalog lacks), 0 of them right; precision none to judge, recall none to judge
+    decisions a reviewer would have to change: 0
+    unseparated in gold, compared by value only: 8 trt.actual.source (right), trt.end.source (right), date.studyday.origin (right), pop.randomized.rule (right), pop.safety.rule (right), pop.safety.grouping (right), disp.status.record (right), tfl.rounding.rule (right)
+  build score:
+    visible: valid: yes
+    visible: produced: 1 of 1 outputs in gold
+    visible: cells correct: 15 of 15 gold cells of the rows that gold and the candidate both have
+    visible: cells correct: 15 of 15 gold cells of the outputs produced
+    visible: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+    visible: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
+    visible: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
+    twin: valid: yes
+    twin: produced: 1 of 1 outputs in gold
+    twin: cells correct: 15 of 15 gold cells of the rows that gold and the candidate both have
+    twin: cells correct: 15 of 15 gold cells of the outputs produced
+    twin: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+    twin: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
+    twin: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
+  case sfrrl2uh, arm R: every score is 100%
+the stub asked through bin/ask about [('ae.related.values', 'mod-ae-emergence'), ('pop.efficacy.rule', 'mod-populations')]; gold marks asked [('ae.related.values', 'mod-ae-emergence'), ('pop.efficacy.rule', 'mod-populations')]
+the stub run kept and checked again: no problem
+  planted, a stub that rewrites bin/check: found (tools rewritten: ['bin/check'])
+  planted, a kept record with its budget raised with its cost: found (budget: {'seconds': 2700, 'turns': 100, 'usd': 100.0} is not the budget of arm R (ADR-010, decision 8))
+  planted, a kept transcript that writes bin/check: found (tools: transcript:13: Write <task>\bin\check)
+  planted, a kept run whose task differs by one file: found (task: built again, 1 files differ from the task the run read, for example TASK.md)
+  planted, a kept transcript that read gold/summary.md: found (transcript:13: holds 'Arms in protocol order: MVK50 (Active, dose 50), PBO (Placebo, dose 0)' (from kit:gold/summary.md:4))
+  planted, a kept record over budget: found (cost: usd is 99.0 in the record, 0.00044 from the transcript)
+  planted, a file of the task built now changed (knowledge/core-reader/SKILL.md), the kept run as it is: found (task: built again, 1 files differ from the task the run read, for example knowledge/core-reader/SKILL.md)
+  planted, a kept record edited where no other check reads, its binding file not made again: found (kept: run.json is not the file keep wrote)
+  planted, a kept record that names other outputs than the transcript writes, its binding file made again: found (outputs: out/decisions.jsonl written again from the transcript is not the file the record names)
+  planted, an entry the slice reaches, changed (count.subjects): found (registry: the entry count.subjects is not the one the run read)
+  planted, a file of the kit changed (gold/design.yaml, and its line in kit.yaml): found (kit: kit.yaml without pins is not the one the run read; it differs in files)
+  planted, a file of the kit changed (gold/design.yaml), and not its line in kit.yaml: found (kit: 1 files of the kit are not those its kit.yaml lists, for example gold/design.yaml)
+  planted, a binding file that holds an entry the slice does not reach (test.chisq): found (registry: the binding holds test.chisq, which the slice no longer reaches)
+  planted, a kept run without binding.json: found (binding: no binding.json beside the record (ADR-017, decision 4))
+  planted, a binding file whose entries lack count.subjects, which the slice reaches: found (registry: the slice now reaches count.subjects, which the binding of the run does not hold)
+  planted, a kept decisions.jsonl with one record left out (K4), its binding file made again: found (outputs: out/decisions.jsonl kept is not the file the transcript wrote)
+  planted, a kept decisions.jsonl with tfl.percent.format changed to the other valid value (K4), its binding file made again: found (outputs: out/decisions.jsonl kept is not the file the transcript wrote)
+  planted, an entry of kind model added to the registry, and registry_sha256 of kit.yaml with it: passes, as the clean run does
+  planted, the versions of the engines changed in `pins` of kit.yaml: passes, as the clean run does
+  planted, the versions of the engines changed in `pins` of kit.yaml, and a kept transcript that holds the canary of the run's private/oracle.json: found (transcript:13: holds 'specfirst-canary-' (from planted:any private file))
+  planted, that canary in a kept transcript, and the record's kit.yaml SHA-256 edited, its binding file made again: found (transcript:13: holds 'specfirst-canary-' (from planted:any private file))
+-- PASS arm R, stub reader (33.7 s)
+
+== [16/19] arm R, kept dry run: specfirst run check src/specfirst/harness/kept/R-... --kit KIT --score
+kept run R-task-04119188ff71: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  task task-04119188ff71, built again now: task-9ce7b749071b, the same on every bound part (ADR-017)
+  cost: 23 turns, 73.8 s, tokens {'cache_read': 375403, 'cache_write': 44168, 'input': 24, 'output': 7585}, USD 0.5802 (CLI 0.5802206); budget {'seconds': 2700, 'turns': 100, 'usd': 10.0}
+  asks: [('pop.efficacy.rule', 'mod-populations', True), ('ae.related.values', 'mod-ae-emergence', True)]
+  permission denials: 2
+  a task that agrees with the task it read on every bound part, within budget, valid output files that are the run's own, canary scan clean against the canaries of the kit written now: yes
+  score (report only):
+    case sfrrl2uh, arm R, stage C
+    reading score: 22 gold decisions of the units mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary
+      by class:                     decisions  value       status      quote       span        
+        document_rule                       7  7 of 7      7 of 7      7 of 7      7 of 7      
+        house_default                      13  13 of 13    13 of 13    13 of 13    13 of 13    
+        study_input                         2  2 of 2      2 of 2      -           -           
+      by unit:                      decisions  value       status      quote       span        
+        mod-ae-emergence                    4  4 of 4      4 of 4      3 of 3      3 of 3      
+        mod-populations                     5  5 of 5      5 of 5      4 of 4      4 of 4      
+        mod-treatment                       6  6 of 6      6 of 6      6 of 6      6 of 6      
+        tfl-ae-summary                      7  7 of 7      7 of 7      7 of 7      7 of 7      
+      (value and status: right, of the decisions scored on it; quote: every quote stands in its document; span: a quote stands inside an anchor that gold cites)
+      asks: 2 given, 2 in gold (decisions with the status asked), 2 of them right; precision 1.00, recall 1.00
+      unmapped: 0 given, 0 in gold (what the catalog lacks), 0 of them right; precision none to judge, recall none to judge
+      decisions a reviewer would have to change: 0
+      unseparated in gold, compared by value only: 8 trt.actual.source (right), trt.end.source (right), date.studyday.origin (right), pop.randomized.rule (right), pop.safety.rule (right), pop.safety.grouping (right), disp.status.record (right), tfl.rounding.rule (right)
+    build score:
+      visible: valid: yes
+      visible: produced: 1 of 1 outputs in gold
+      visible: cells correct: 15 of 15 gold cells of the rows that gold and the candidate both have
+      visible: cells correct: 15 of 15 gold cells of the outputs produced
+      visible: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+      visible: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
+      visible: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
+      twin: valid: yes
+      twin: produced: 1 of 1 outputs in gold
+      twin: cells correct: 15 of 15 gold cells of the rows that gold and the candidate both have
+      twin: cells correct: 15 of 15 gold cells of the outputs produced
+      twin: cells correct: 15 of 15 gold cells (an output that was not produced counts as wrong)
+      twin: whole output, strict: 1 of 1 outputs in gold (both axes equal and every cell equal)
+      twin: whole output, lenient: 1 of 1 outputs in gold (every gold cell present and equal)
+    case sfrrl2uh, arm R: every score is 100%
+-- PASS arm R, kept dry run (2.4 s)
+
+== [17/19] scratch removed: the kit, tasks and runs of the gate
+the kit, the tasks and the runs of the gate are removed
+-- PASS scratch removed (0.1 s)
+
+== [18/19] cache untouched: specfirst fetch --verify
+cache: /tmp/specfirst-clean-MbhXmQ/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS cache untouched (0.1 s)
+
+== [19/19] ASCII: python -m specfirst.asciicheck
+ASCII check: 825 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.5 s
+PASS  pins                 1.6 s
+PASS  lint                 0.1 s
+PASS  unit tests         537.4 s
+PASS  kit                 15.9 s
+PASS  skills               1.5 s
+PASS  task                 0.2 s
+PASS  oracle               0.1 s
+PASS  adapter              0.0 s
+PASS  budget               0.0 s
+PASS  output files         0.2 s
+PASS  canary scan          5.8 s
+PASS  arm S               26.3 s
+PASS  arm C                2.5 s
+PASS  arm R, stub reader     33.7 s
+PASS  arm R, kept dry run      2.4 s
+PASS  scratch removed      0.1 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE read-2a: PASS
+
+clean clone gate read-2a: PASS (clone: /tmp/specfirst-clean-MbhXmQ/specfirst)
+The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
+minute after the last command ends. Copy what must be kept in the same command that
+runs this script (docs/lessons.md, lesson 39). The log is in build/gates/read-2a/ here.
