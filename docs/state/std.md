@@ -90,6 +90,11 @@ section 13.4).
 
 ## Next
 
+- catalog@2 (2026-11-21): ADR-020 proposed, phase 1 only. It sets the
+  scope and the versioning of `catalog@2` and `open-default@2` (issues
+  #1 to #24, #28, #33, the comment on #23) and asks the owner five
+  questions. Nothing is carried out until the base session relays the
+  answer; then parts catalog-2a (structure) and catalog-2b (content).
 - std-2 Pilot decisions, mutation and identifiability. Needs real-3.
 - Then std-3 (D1).
 
