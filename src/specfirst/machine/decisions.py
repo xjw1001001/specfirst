@@ -13,11 +13,20 @@ holds them together:
 - every element a record `binds` is in a reporting event of the kit: an
   analysis, an analysis set, a data subset, a grouping or a method;
 - where a decision sets an option of the method registry (`PARAMETERS`),
-  every analysis it binds resolves that option to the decision's value.
+  every analysis it binds resolves that option to the decision's value;
+- the visit of the LS means of the mixed model (`LAST_VISIT`): on the
+  model records of every analysis the decision binds, the last visit, in
+  the order models.R gives the visits, is the one the decision names.
 
 A changed parameter in the reporting event, or a changed value in a record,
-is seen by the last rule; tests/unit/test_efficacy.py plants both, and
+is seen by the rule of `PARAMETERS`; tests/unit/test_efficacy.py plants both, and
 tests/defects (D9-efficacy) plants the first on the pilot.
+
+The last rule closes G2 of the review of real-5b (the owner's answer of
+2026-11-20, ADR-015): with the visits taken from AVISIT, text, Week 8 is
+the last visit, and the LS means of Week 8 stood in the table "to Week 24"
+with every option as its decision says. It needs the built ADaM data: the
+gate's check `decisions` hands them over (specfirst.machine.build).
 
 What it does not hold (review of real-5a, F4; review of real-5b, F5): the
 values of the records that set no registry option are held against
@@ -30,8 +39,9 @@ and a record's binds are held only for existence and for the options it
 sets. Since real-5b the proofs of the CSR's exceptions ask that every
 decision an entry names binds an analysis of the cell or its method, and
 an other analysis of a proof may differ only in the options its decisions
-set (specfirst.machine.csr). A record in conflict keeps the value the
-build uses until a person decides.
+set, and not in those whose values are columns (K1, specfirst.machine.csr).
+A record in conflict keeps the value the build uses until a person
+decides; the owner decided those of the pilot on 2026-11-20 (ADR-015).
 """
 
 from __future__ import annotations
@@ -39,8 +49,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
+
 from specfirst import schemas
-from specfirst.machine import ars
+from specfirst.machine import ard, ars
 from specfirst.machine.registry import Registry
 
 # Decision -> {key of its value: the registry option it sets}. The custom
@@ -60,15 +72,114 @@ PARAMETERS: dict[str, dict[str, str]] = {
     "custom:eff-cmh": {"rule": "statistic", "scores": "scores", "strata": "strata"},
 }
 
+# The decision whose rule `last` names the visit of the LS means: `label` is a column of
+# the model records and `last` its value on every model record of the last visit (review
+# of real-5b, G2; the owner's answer of 2026-11-20).
+LAST_VISIT = "custom:eff-mmrm-visit"
+
 
 def load(path: Path) -> list[dict]:
     with open(path, encoding="ascii") as handle:
         return [json.loads(line) for line in handle if line.strip()]
 
 
+def model_records(engine: ard.Engine, analysis: dict, options: dict) -> np.ndarray:
+    """The records of the mixed model of an analysis, as models.R takes them.
+
+    Statement 1 of model.mmrm.lsmeans and mmrm_frame in r/specfirstr/R/models.R:
+    the records of the analysis set and the data subset with a value of the
+    analysis variable, the visit column, the subject key and every factor and
+    covariate, in a group of every grouping of the analysis.
+    """
+    dataset = analysis["dataset"]
+    keep = np.ones(engine.table(dataset).rows, dtype=bool)
+    if analysis.get("analysisSetId"):
+        keep &= engine.where(dataset, engine.event.sets[analysis["analysisSetId"]])
+    if analysis.get("dataSubsetId"):
+        keep &= engine.where(dataset, engine.event.subsets[analysis["dataSubsetId"]])
+    names = [analysis["variable"], engine.subject_key, *options.get("visit", []),
+             *options.get("factors", []), *options.get("covariates", [])]
+    for name in names:
+        values, kind = engine.column(dataset, name)
+        keep &= ~np.isnan(values) if kind == "number" else values != ""
+    rows = np.flatnonzero(keep)
+    for entry in engine.event.groupings_of(analysis):
+        inside = np.zeros(len(rows), dtype=bool)
+        for _, _, member in engine.members(dataset, engine.event.groupings[entry["groupingId"]],
+                                           rows):
+            inside |= member
+        rows = rows[inside]
+    return rows
+
+
+def last_visit(engine: ard.Engine, analysis: dict, options: dict,
+               label: str) -> tuple[str, list[str]]:
+    """The last visit of the model records of an analysis and the labels on its records.
+
+    Statement 2 of model.mmrm.lsmeans: the visits in the order of the visit
+    column, as numbers when it holds numbers, else by their characters (R's
+    radix sort, the order of Python's for ASCII text); `at: last` takes the
+    last of them. The visit is given as text, as a group value is (rule I9).
+    """
+    dataset = analysis["dataset"]
+    rows = model_records(engine, analysis, options)
+    if not len(rows):
+        return "", []
+    name = options["visit"][0]
+    values = engine.column(dataset, name)[0][rows]
+    last = max(values.tolist())
+    at_last = rows[values == last]
+    labels = engine.text(dataset, label)[at_last]
+    return engine.text(dataset, name)[at_last][0], sorted(set(labels.tolist()))
+
+
+def _last_visit_problems(record: dict, elements: dict, engines: dict) -> tuple[int, list[str]]:
+    """The record of the visit of the LS means against the model records it binds."""
+    value = record.get("value") or {}
+    if value.get("rule") != "last":
+        return 0, []
+    label, wanted = value.get("label"), value.get("last")
+    if not isinstance(label, str) or not isinstance(wanted, str):
+        return 0, [f"{LAST_VISIT}: the rule last names no visit (a column `label` and its "
+                   f"value `last`)"]
+    held, found = 0, []
+    for element in record.get("binds") or []:
+        if element not in elements:
+            continue
+        event, binding = elements[element]
+        analysis_id = element[len("ars:"):]
+        analysis = event.analyses.get(analysis_id)
+        engine = engines.get(id(event))
+        if analysis is None or engine is None:
+            found.append(f"{LAST_VISIT}: {element} is no analysis with data to hold its last "
+                         f"visit against")
+            continue
+        chosen = [options for options in binding.options.get(analysis_id, {}).values()
+                  if options.get("visit")]
+        if not chosen:
+            found.append(f"{LAST_VISIT}: {element} has no option visit")
+            continue
+        try:
+            visit, labels = last_visit(engine, analysis, chosen[0], label)
+        except ard.EngineError as error:
+            found.append(f"{LAST_VISIT}: {element}: {error}")
+            continue
+        held += 1
+        if labels != [wanted]:
+            found.append(f"{LAST_VISIT}: the last visit of the model records of {element} is "
+                         f"{chosen[0]['visit'][0]} = {visit!r}, where {label} is "
+                         f"{labels or 'missing'}; the decision names {label} = {wanted!r}")
+    return held, found
+
+
 def problems(root: Path, records: list[dict], events: list[tuple[ars.Event, ars.Binding]],
-             registry: Registry) -> tuple[list[str], list[str]]:
-    """Lines to print and the problems of the records against the events."""
+             registry: Registry,
+             engines: list[ard.Engine] | None = None) -> tuple[list[str], list[str]]:
+    """Lines to print and the problems of the records against the events.
+
+    `engines` are the Python engines of the events, in their order, on the
+    built ADaM data; the visit of the LS means is held on them (`LAST_VISIT`).
+    """
     lines, found = [], []
     seen: set[str] = set()
     elements: dict[str, tuple[ars.Event, ars.Binding]] = {}
@@ -108,6 +219,19 @@ def problems(root: Path, records: list[dict], events: list[tuple[ars.Event, ars.
                                  f"{key} = {wanted!r}")
     missing = sorted(set(PARAMETERS) - seen)
     found += [f"{name}: no record, and the reporting event needs it" for name in missing]
+    held = 0
+    for record in records:
+        if record.get("id") != LAST_VISIT:
+            continue
+        if engines is None:
+            found.append(f"{LAST_VISIT}: the last visit is held on the built data, and none "
+                         f"was handed over")
+            continue
+        by_event = {id(event): engine for (event, _), engine in zip(events, engines, strict=True)}
+        count, more = _last_visit_problems(record, elements, by_event)
+        held += count
+        found += more
     lines.append(f"decisions: {len(records)} records, {len(seen)} IDs; {checked} options of "
-                 f"analyses held against the decisions that set them; {len(found)} problems")
+                 f"analyses held against the decisions that set them; the last visit held on "
+                 f"the model records of {held} analyses; {len(found)} problems")
     return lines, found

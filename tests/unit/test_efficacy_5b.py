@@ -3,8 +3,10 @@
 A CSR page with a column without a count, the header of the row labels and
 a section heading on the line of its first row; a note in place of
 footnotes; the proof other_build; the extra columns and the block kind
-`groups` of layout spec v0 (amendment of real-5b to ADR-003 and ADR-015).
-The pages and the events are invented.
+`groups` of layout spec v0 (amendment of real-5b to ADR-003 and ADR-015);
+the last visit of the mixed model (G2) and an other analysis in other
+columns (K1), the owner's answers of 2026-11-20. The pages and the events
+are invented.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ import pytest
 import toy_displays as displays
 import toy_results as toy
 
-from specfirst.machine import ars, csr, grid
+from specfirst.machine import ars, csr, decisions, grid
 from specfirst.machine import layout as layouts
 
 # ---- a CSR page of the shape of Table 14-3.13, invented ---------------------------------
@@ -160,6 +162,34 @@ def test_an_other_build_that_proves_nothing(proof, message):
     assert any(message in problem for problem in found.problems), found.problems
 
 
+def test_an_other_analysis_may_not_differ_in_an_option_whose_values_are_columns():
+    # Review of real-5b, K1: other strata are no other alternative of custom:eff-cmh, which
+    # sets the statistic, the scores and the strata (decisions.PARAMETERS).
+    cmh = "custom:eff-cmh"
+
+    def stratified(analysis_id: str, at: str, strata: list, statistic: str) -> dict:
+        made = pairwise(analysis_id, "last")
+        made["programmingCode"]["parameters"] += [{"name": "strata", "value": strata},
+                                                  {"name": "statistic", "value": [statistic]}]
+        return made
+
+    analyses = {"A_PW": stratified("A_PW", "last", ["SITE"], "row_mean_scores"),
+                "A_PW_Avg": stratified("A_PW_Avg", "last", ["SEX"], "row_mean_scores"),
+                "A_PW_90": stratified("A_PW_90", "last", ["SITE"], "general_association")}
+    records = dict(RECORDS, **{cmh: {"id": cmh, "binds": ["ars:A_PW"]}})
+    entry = dict(ENTRY, decision=[cmh, "custom:shown"])
+    found = judged(entry, records=records, analyses=analyses)
+    assert any("A_PW_Avg differs from A_PW in an option whose values are columns (strata)" in p
+               for p in found.problems), found.problems
+    # An option of the record that takes no columns may still differ.
+    other = dict(entry, proof=dict(ENTRY["proof"], analyses={"A_PW": "A_PW_90"}))
+    assert judged(other, records=records, analyses=analyses).classified == {CELL: "rule_choice"}
+    # And with strata and the statistic both other, the first message still names the strata.
+    analyses["A_PW_90"]["programmingCode"]["parameters"][2]["value"] = ["SEX"]
+    found = judged(other, records=records, analyses=analyses)
+    assert any("an option whose values are columns" in p for p in found.problems), found.problems
+
+
 def test_an_other_build_proves_a_rule_choice_and_changes_something():
     found = judged(dict(ENTRY, **{"class": "reference_error"}))
     assert any("other_build proves a rule_choice" in p for p in found.problems)
@@ -180,6 +210,30 @@ def test_the_decisions_of_an_entry_bind_the_cell_and_set_what_the_build_changes(
     assert any("which the check was not given" in p for p in found.problems), found.problems
     found = judged(dict(ENTRY, decision="custom:none"))
     assert any("no decision record custom:none" in p for p in found.problems)
+
+
+# ---- the last visit of the mixed model (review of real-5b, G2) ---------------------------
+
+def test_the_last_visit_of_the_model_records_follows_the_order_of_the_visit_column(root):
+    adsl = dict(toy.ADSL, VISN=[8.0, 16.0, 24.0, 24.0, 8.0, 16.0, 8.0, 24.0],
+                VIS=["Week 8", "Week 16", "Week 24", "Week 24", "Week 8", "Week 16", "Week 8",
+                     "Week 24"])
+    engine = toy.engine(root, given=toy.tables(adsl=adsl))
+    analysis = toy.analysis("A_V", "M_X", "ADSL", "AGE", [("ARM", True)], analysisSetId="SAF")
+    # As numbers Week 24 is last: S3. S4 has no AGE and S8 is outside the set, so neither is
+    # a model record.
+    assert list(decisions.model_records(engine, analysis, {"visit": ["VISN"]})) == [
+        0, 1, 2, 4, 5, 6]
+    assert decisions.last_visit(engine, analysis, {"visit": ["VISN"]}, "VIS") == (
+        "24", ["Week 24"])
+    # As text "Week 8" sorts last (G2).
+    assert decisions.last_visit(engine, analysis, {"visit": ["VIS"]}, "VIS") == (
+        "Week 8", ["Week 8"])
+    # A factor without a value leaves the record out: S3, and with it Week 24.
+    adsl["SEX"] = ["F", "F", None, "M", "F", "M", "M", None]
+    engine = toy.engine(root, given=toy.tables(adsl=adsl))
+    assert decisions.last_visit(engine, analysis, {"visit": ["VISN"], "factors": ["SEX"]},
+                                "VIS") == ("16", ["Week 16"])
 
 
 # ---- extra columns and the block kind `groups` ------------------------------------------
