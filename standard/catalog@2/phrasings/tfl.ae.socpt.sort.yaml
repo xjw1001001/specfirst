@@ -9,7 +9,7 @@ alternatives:
     plain: "System organ classes and preferred terms appear from the most frequent to the least frequent over all arms, and in alphabetical order when frequencies are equal."
     formal: "System organ classes and preferred terms shall be sorted by descending frequency over all arms; ties shall be sorted alphabetically."
     brief: "System organ classes and preferred terms: descending frequency over all arms, alphabetical on a tie."
-  descending_frequency_highest_dose:
-    plain: "System organ classes and preferred terms appear from the most frequent to the least frequent in the arm with the highest dose, and in alphabetical order when frequencies are equal."
-    formal: "System organ classes and preferred terms shall be sorted by descending frequency in the arm with the highest dose; ties shall be sorted alphabetically."
-    brief: "System organ classes and preferred terms: descending frequency in the arm with the highest dose, alphabetical on a tie."
+  soc_alpha_pt_descending_in_column:
+    plain: "System organ classes appear in alphabetical order, and within each the preferred terms from the most to the least frequent in the column {column}, alphabetically when frequencies are equal."
+    formal: "System organ classes shall be presented alphabetically; preferred terms within them shall be sorted by descending frequency in the column {column}, with ties sorted alphabetically."
+    brief: "Organ classes alphabetical; preferred terms by descending frequency in {column}, alphabetical on a tie."

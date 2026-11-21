@@ -4,9 +4,28 @@ applies_when: design.always
 question: How are percentages displayed?
 alternatives:
   - id: one_decimal_zero_blank
-    statement: "Percentages in {output} have one decimal, and a count of zero is shown without a percentage."
+    statement: "Percentages in {output} have {decimals} decimals, and a count of zero is shown without a percentage."
+    definition: >-
+      With 0 decimals a percentage is a whole number. A count above zero
+      always has its percentage.
+    slots:
+      decimals: {type: int, min: 0, max: 2, examples: [1, 0]}
+    sources:
+      - ref: p6
+        path: documents/CSR.pdf
+        where: "Table 14-5.01: zero counts printed without a percentage, one decimal (PLAN.md, E25)"
   - id: one_decimal_always
-    statement: "Percentages in {output} have one decimal, and a count of zero is shown with its percentage."
+    statement: "Percentages in {output} have {decimals} decimals, and a count of zero is shown with its percentage."
+    definition: >-
+      With 0 decimals a percentage is a whole number. A count of zero shows
+      a percentage of zero with the same decimals.
+    slots:
+      decimals: {type: int, min: 0, max: 2, examples: [1, 0]}
+    sources:
+      - ref: ars
+        path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+        find: "(  0.0)"
+        where: "every count of 0 has its formatted percentage (  0.0), one decimal"
 compile: templates/tfl.percent.format.yaml
 phrasings: phrasings/tfl.percent.format.yaml
 reading: knowledge/tfl.percent.format.md
@@ -18,4 +37,4 @@ sources:
     where: "result pattern of a percentage: one decimal"
   - ref: p6
     path: documents/CSR.pdf
-    where: "Table 14-5.01: zero counts printed without a percentage (PLAN.md, E25)"
+    where: "Table 14-2.01: whole-number percentages; Table 14-5.01: one decimal (the review of #1, 2026-11-11)"

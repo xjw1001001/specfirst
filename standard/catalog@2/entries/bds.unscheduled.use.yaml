@@ -7,7 +7,16 @@ alternatives:
     statement: "Records of unscheduled visits compete for baseline and for analysis visits."
   - id: excluded
     statement: "Records of unscheduled visits are not used for baseline or for analysis visits."
-notes: A visit is unscheduled when it has no planned study day (VISITDY is missing).
+fixed_rules:
+  - id: unscheduled_visit
+    text: >-
+      A visit is unscheduled when it has no planned study day (VISITDY is
+      missing, as in an SDTM that does not fill it) or when its name (VISIT)
+      contains UNSCHED.
+    sources:
+      - ref: admiral
+        where: "inst/templates/ad_advs.R: unscheduled visits detected from the VISIT text, str_detect(VISIT, UNSCHED) (the review of #21, 2026-11-11)"
+        evidence: cited
 compile: templates/bds.unscheduled.use.yaml
 phrasings: phrasings/bds.unscheduled.use.yaml
 reading: knowledge/bds.unscheduled.use.md

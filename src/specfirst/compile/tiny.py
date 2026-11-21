@@ -112,7 +112,7 @@ def tables() -> dict[str, pa.Table]:
 
     dm = [(STUDY, usubjid, usubjid[1:], "01", age, "YEARS", *rest)
           for usubjid, age, *rest in DM]
-    ae = [(STUDY, usubjid, seq, decod.title(), decod, soc, "MILD", ser, rel, acn,
+    ae = [(STUDY, usubjid, seq, decod.title(), decod, soc, soc, "MILD", ser, rel, acn,
            "RECOVERED/RESOLVED", dth, start, end)
           for usubjid, seq, decod, soc, ser, rel, acn, dth, start, end in AE]
     vs = [(STUDY, usubjid, seq, code, test, value, "", dtc, visit, visitnum, visitdy)
@@ -131,7 +131,8 @@ def tables() -> dict[str, pa.Table]:
                       "VSSTRESU", "VSDTC", "VISIT", "VISITNUM", "VISITDY"], vs,
                      {"VSSEQ": integer, "VSSTRESN": number, "VISITNUM": number,
                       "VISITDY": number}),
-        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AESOC", "AESEV",
+        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AEBODSYS", "AESOC",
+                      "AESEV",
                       "AESER", "AEREL", "AEACN", "AEOUT", "AESDTH", "AESTDTC", "AEENDTC"], ae,
                      {"AESEQ": integer}),
     }

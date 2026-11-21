@@ -18,6 +18,8 @@ who counts as dosed. Another source moves all of them for the subjects it affect
   "first entry of the drug administration log, whatever the dose".
 - `dm_rfxstdtc`: "date of first exposure as recorded in demographics", "reference first
   treatment date", or the variable RFXSTDTC named directly.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ## Traps
 

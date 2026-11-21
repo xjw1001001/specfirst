@@ -4,17 +4,24 @@ applies_when: design.has_bds_parameters
 question: Which record is the baseline of each parameter?
 alternatives:
   - id: last_before_first_dose
-    statement: "Baseline is the last non-missing value before the first dose."
+    statement: "Baseline is the last non-missing value before the first dose, comparing times where both were collected and dates otherwise."
     definition: >-
       A value is before the first dose when its date is before the treatment
       start date. A value on that date is before the first dose unless both
       its time and the time of the first dose were collected and its time is
-      not earlier.
+      not earlier; such a value, timed at or after the dose, is
+      post-baseline.
   - id: last_on_or_before_first_dose_date
     statement: "Baseline is the last non-missing value on or before the treatment start date."
-    definition: Dates are compared; times are ignored.
+    definition: >-
+      Dates are compared; times are ignored. A value on the treatment start
+      date may be baseline whatever its time, and is never post-baseline.
   - id: scheduled_baseline_visit
     statement: "Baseline is the last non-missing value at the scheduled visit {visit}."
+    definition: >-
+      A value dated after the treatment start date is post-baseline, and so
+      is a value on that date at another visit when both its time and the
+      time of the first dose were collected and its time is not earlier.
     slots:
       visit: {type: text, examples: ["BASELINE", "Screening"]}
 notes: >-

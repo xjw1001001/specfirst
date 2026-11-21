@@ -65,11 +65,18 @@ def test_a_house_that_does_not_fit_is_refused(root, pair):
         houses.load_pair(root, *pair)
 
 
-def test_version_2_has_the_defaults_of_version_1(root):
-    old = houses.load_pair(root)
-    new = houses.load_pair(root, "catalog@2", "open-default@2")
-    assert houses.defaults(*old) == houses.defaults(*new)
-    assert houses.without_default(*old) == houses.without_default(*new)
+def test_version_2_changes_the_defaults_the_owner_took(root):
+    """The defaults of open-default@2 are those of open-default@1 but for the eight
+    of ADR-020, question 2 (#1, #2, #3, #6, #7, #8, #11, #13) and #22."""
+    old = {(r["id"], r["unit"]): r["value"] for r in houses.defaults(*houses.load_pair(root))}
+    new = {(r["id"], r["unit"]): r["value"] for r in houses.defaults(
+        *houses.load_pair(root, "catalog@2", "open-default@2"))}
+    changed = {key for key in set(old) | set(new) if old.get(key) != new.get(key)}
+    assert {entry for entry, _ in changed} == {
+        "tfl.percent.format", "pop.safety.rule", "ae.teae.end", "bds.baseline.rule",
+        "demo.age.groups", "tfl.columns.total", "bds.window.tiebreak", "tfl.quantile.definition"}
+    assert new[("ae.teae.end", "mod-ae-emergence")] == {"rule": "last_dose_plus_days", "days": 30}
+    assert ("pop.safety.rule", "mod-populations") not in new  # by design: needs the features
 
 
 def test_draft_versions_may_not_be_named(root):

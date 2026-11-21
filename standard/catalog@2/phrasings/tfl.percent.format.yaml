@@ -2,10 +2,10 @@
 entry: tfl.percent.format
 alternatives:
   one_decimal_zero_blank:
-    plain: "In {output}, percentages are shown with one decimal; when a count is zero, no percentage is shown with it."
-    formal: "Percentages in {output} shall be presented to one decimal place; a count of zero shall be presented without a percentage."
-    brief: "Percentages in {output}: one decimal; zero count shown without a percentage."
+    plain: "In {output}, percentages are shown with {decimals} decimals; when a count is zero, no percentage is shown with it."
+    formal: "Percentages in {output} shall be presented to {decimals} decimal places; a count of zero shall be presented without a percentage."
+    brief: "Percentages in {output}: {decimals} decimals; zero count shown without a percentage."
   one_decimal_always:
-    plain: "In {output}, percentages are shown with one decimal; when a count is zero, its percentage is shown as well."
-    formal: "Percentages in {output} shall be presented to one decimal place; a count of zero shall be presented with its percentage."
-    brief: "Percentages in {output}: one decimal; zero count shown with its percentage."
+    plain: "In {output}, percentages are shown with {decimals} decimals; when a count is zero, its percentage is shown as well."
+    formal: "Percentages in {output} shall be presented to {decimals} decimal places; a count of zero shall be presented with its percentage."
+    brief: "Percentages in {output}: {decimals} decimals; zero count shown with its percentage."

@@ -5,7 +5,7 @@ alternatives:
     plain: "Race is shown in the categories as collected, and no categories are pooled."
     formal: "Race categories shall be presented as collected; no pooling of race categories shall be performed."
     brief: "Race categories: as collected, not pooled."
-  pooled_below_count:
-    plain: "When a race category has fewer than {count} subjects, it is pooled into the category OTHER."
-    formal: "Any race category with fewer than {count} subjects shall be pooled into the category OTHER."
-    brief: "Race category with fewer than {count} subjects: pooled into the category OTHER."
+  fixed_groups:
+    plain: "Race is regrouped by a fixed map, and every value the map does not name goes to {other}: {map}."
+    formal: "Race shall be regrouped according to the following map, any other value being grouped as {other}: {map}."
+    brief: "Race groups ({other} for any value not listed): {map}."

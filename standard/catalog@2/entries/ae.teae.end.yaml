@@ -5,22 +5,29 @@ question: When does treatment emergence end?
 alternatives:
   - id: no_end
     statement: "Treatment emergence has no end date."
-  - id: last_dose_plus_days
-    statement: "Treatment emergence ends {days} days after the treatment end date."
     definition: >-
-      An event that starts on the last day of the window is still
-      treatment-emergent. A subject without a treatment end date has no end.
+      Every event that starts on or after the start of treatment emergence
+      is treatment-emergent, however long after the treatment end date
+      (the on-study reading of the FDA guide).
+  - id: last_dose_plus_days
+    statement: "Treatment emergence ends {days} days after the treatment end date, that day included."
+    definition: >-
+      An event that starts later than that many days after the treatment end
+      date is not treatment-emergent; one that starts on the last day of the
+      window still is.
     slots:
       days: {type: int, min: 0, examples: [30, 7]}
-  - id: end_of_study
-    statement: "Treatment emergence ends at the end-of-study date."
-    definition: >-
-      An event that starts on the end-of-study date is still
-      treatment-emergent. A subject without an end-of-study date has no end.
+    sources:
+      - ref: admiral
+        where: "inst/templates/ad_adae.R, derive_var_trtemfl(end_window = 30); R/derive_var_trtemfl.R: flagged when on or before trt_end_date + end_window days"
+        evidence: cited
+fixed_rules:
+  - id: no_end_date
+    text: A subject without a treatment end date has no end of treatment emergence.
 compile: templates/ae.teae.end.yaml
 phrasings: phrasings/ae.teae.end.yaml
 reading: knowledge/ae.teae.end.md
-probes: [ae_starts_after_emergence_window, ae_starts_after_end_of_study, ae_between_window_end_and_end_of_study]
+probes: [ae_starts_after_emergence_window]
 sources:
   - ref: admiral
     where: "derive_var_trtemfl(), end_window: events starting more than the given days after end of treatment are not flagged"
@@ -28,3 +35,6 @@ sources:
     path: benchmarks/adam-adae-onset-emergence/spec.yaml
     find: "TEENDDTM"
     where: "the benchmark of treatment emergence timing: a window after last exposure"
+  - ref: fda-stf
+    where: "section 2.2, page 15: on-study versus on-treatment analyses (the review of #3, 2026-11-11)"
+    evidence: cited

@@ -1,4 +1,4 @@
-# House standard open-default@1: layout template of the table of vital
+# House standard open-default@2: layout template of the table of vital
 # signs by visit. Layout draft 0; see layout/demographics.yaml for the
 # parts.
 output:
@@ -33,4 +33,4 @@ rows:
 formats:
   rounding: {$get: rounding}
   decimals: {$get: decimals}
-  quantile_definition: {$get: quantile_definition}
+  quantile_definition: sas5  # fixed: no quartile is shown (ADR-020, #22)

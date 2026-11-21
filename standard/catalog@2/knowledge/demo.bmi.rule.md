@@ -21,9 +21,11 @@ baseline weight and height or taken from the value recorded at the site.
 
 - A protocol that has sites calculate the index for an inclusion criterion does not say that
   the table uses that value. Only a statement about the analysis counts.
-- `derived` uses the baseline weight and height of `demo.baseline.record` and rounds to one
-  decimal, half away from zero. A SAP that asks for another precision is not covered; report
-  the passage.
+- `derived` uses the baseline weight and height of `demo.baseline.record` and keeps the value
+  at full precision (catalog@1 rounded it to one decimal in ADSL). A SAP that asks for a
+  rounded BMIBL in the data is not covered; report the passage. The decimals a table shows
+  are `tfl.decimals.rule`.
+- Weight in kg and height in cm are assumed; other units are not converted.
 - `as_collected` selects the collected value by the same rule as baseline weight and height
   (`demo.baseline.record`); it is not the screening value by default.
 - A formula written with height in cm and a factor of 10000 is the same rule as `derived`.

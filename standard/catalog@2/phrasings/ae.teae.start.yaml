@@ -9,3 +9,7 @@ alternatives:
     plain: "An adverse event that starts at the date and time of the first dose or later is treatment-emergent."
     formal: "An adverse event shall be considered treatment-emergent if it starts at or after the date and time of the first dose."
     brief: "Treatment-emergent: adverse event starting at or after the date and time of the first dose."
+  by_time_when_collected:
+    plain: "An adverse event that starts on or after the first dose is treatment-emergent; date and time are compared where both were collected, and dates otherwise."
+    formal: "An adverse event shall be considered treatment-emergent if it starts on or after the first dose, comparing date and time where both were collected and dates otherwise."
+    brief: "Treatment-emergent: adverse event starting on or after the first dose (date and time where both collected, else date)."

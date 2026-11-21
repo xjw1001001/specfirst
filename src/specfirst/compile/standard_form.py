@@ -13,6 +13,15 @@ decision, each line starting with its anchor:
     [3/s2] Treatment emergence ends 30 days after the last dose date.
 
 The anchor `3/s2` (section 3, statement 2) is what a citation names.
+
+A document may instead anchor each statement by its entry, `[ae.teae.end]`,
+or `[tfl.population/tfl-demographics]` for an entry answered per table
+family, so that an anchor does not move when an entry is added (the house
+standard from open-default@2, ADR-020 and #15). Such a document may also
+state the fixed rules of an entry, `[ae.teae.start/no_start_date] <text>`,
+which hold for every alternative and are not decisions, and a decision whose
+value depends on the design, one numbered line per case,
+`[pop.safety.rule/1] <statement>`, each after a line that says when it holds.
 """
 
 from __future__ import annotations
@@ -25,8 +34,13 @@ from specfirst.compile.slots import Slot, SlotError, parse_value, render_value
 
 OUTPUT_SLOT = "output"
 _PLACEHOLDER = re.compile(r"\{([^{}]*)\}")
-_ANCHORED = re.compile(r"^\[([0-9]+/s[0-9]+)\] (.*)$")
-_ANCHOR = re.compile(r"\[[0-9]+/s[0-9]+\]")
+_ENTRY_ANCHOR = r"[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+(?:/[a-z0-9_-]+)*"
+_ANCHORED = re.compile(r"^\[([0-9]+/s[0-9]+|" + _ENTRY_ANCHOR + r")\] (.*)$")
+_ANCHOR = re.compile(r"\[(?:[0-9]+/s[0-9]+|" + _ENTRY_ANCHOR + r")\]")
+_POSITION = re.compile(r"^[0-9]+/s[0-9]+$")
+ANCHOR_STYLES = ("position", "entry")
+# Lines of a document that say more about a statement; the parser skips them.
+NOTE_PREFIXES = ("Meaning: ", "Source: ")
 _CATALOG = re.compile(r"^Catalog: (\S+) (\S+)$")
 _LEAD = re.compile(r"^[^A-Z]*")  # what may stand before the first capital letter of a line
 _SECTION = re.compile(r"^## ([0-9]+) (.+) \(([a-z0-9-]+)\)$")
@@ -284,17 +298,32 @@ class StandardForm:
 
         return sorted(records, key=key)
 
+    def anchor_of(self, entry_id: str, unit: str) -> str:
+        """The anchor of a decision in a document anchored by entry."""
+        entry = self.catalog.entries[entry_id]
+        return f"{entry_id}/{unit}" if entry.per_family else entry_id
+
     def render_document(
         self, doc: str, title: str, records: list[dict], preface: tuple[str, ...] = (),
-        explain: bool = False,
+        explain: bool = False, anchors: str = "position", after=None, fixed: bool = False,
+        sections: tuple[tuple[str, tuple[str, ...]], ...] = (),
     ) -> str:
         """A standard-form document stating the given decisions, one anchor each.
 
-        `records` need `id`, `unit` and `value`. With `explain`, each statement
-        is followed by a line "Meaning:" with the definition of its
-        alternative and the notes of its entry; the parser skips such lines.
-        Returns the Markdown text.
+        `records` need `id`, `unit` and `value`; in place of `value`, `cases`
+        lists `{when, value}` for a decision that depends on the design (anchors
+        by entry only). With `explain`, each statement is followed by a line
+        "Meaning:" with the definition of its alternative and the notes of its
+        entry; `after(record, value)` gives more such lines (they start with
+        "Source: "). The parser skips them. With `anchors="entry"` every anchor
+        names its entry, and with `fixed` the fixed rules of the entries of a
+        unit follow its statements. `sections` are (heading, paragraphs) put
+        before the first unit. Returns the Markdown text.
         """
+        if anchors not in ANCHOR_STYLES:
+            raise StandardFormError(f"anchors are one of {', '.join(ANCHOR_STYLES)}")
+        if anchors == "position" and (fixed or any("cases" in r for r in records)):
+            raise StandardFormError("fixed rules and cases need anchors by entry")
         if not _DOCUMENT.match(f"Document: {doc}"):
             raise StandardFormError(f"'{doc}' is not a document ID")
         seen = set()
@@ -307,26 +336,67 @@ class StandardForm:
                  f"Catalog: {self.catalog.name} {self.catalog.version}", ""]
         for paragraph in preface:
             lines += [paragraph, ""]
+        for heading, paragraphs in sections:
+            lines += [f"## {heading}", ""]
+            for paragraph in paragraphs:
+                lines += [paragraph, ""]
         section = 0
         current = None
         number = 0
-        for record in self.order(records):
+        ordered = self.order(records)
+
+        def explained(record: dict, value: dict) -> list[str]:
+            found = []
+            if explain:
+                entry = self.catalog.entries[record["id"]]
+                meaning = " ".join(" ".join(str(part).split()) for part in (
+                    entry.alternative(value["rule"]).definition,
+                    entry.raw.get("notes"),
+                ) if part)
+                if meaning:
+                    found += [f"Meaning: {meaning}", ""]
+            if after is not None:
+                for line in after(record, value):
+                    if not line.startswith(NOTE_PREFIXES):
+                        raise StandardFormError(f"a note line starts with one of {NOTE_PREFIXES}")
+                    found += [line, ""]
+            return found
+
+        def fixed_lines(unit: str) -> list[str]:
+            found = []
+            for entry in self.catalog.entries.values():
+                if unit in entry.units and entry.fixed_rules and not (
+                        entry.per_family and unit != entry.units[0]):
+                    found += [f"Fixed rules of `{entry.id}`, for every alternative:", ""]
+                    for rule in entry.fixed_rules:
+                        said = " ".join(str(rule["text"]).split())
+                        found += [f"[{entry.id}/{rule['id']}] {said}", ""]
+            return found
+
+        for index, record in enumerate(ordered):
             if record["unit"] != current:
                 current = record["unit"]
                 section += 1
                 number = 0
                 lines += [f"## {section} {self.catalog.units[current].title} ({current})", ""]
             number += 1
-            statement = self.render(record["id"], record["unit"], record["value"])
-            lines += [f"[{section}/s{number}] {statement}", ""]
-            if explain:
-                entry = self.catalog.entries[record["id"]]
-                meaning = " ".join(" ".join(str(part).split()) for part in (
-                    entry.alternative(record["value"]["rule"]).definition,
-                    entry.raw.get("notes"),
-                ) if part)
-                if meaning:
-                    lines += [f"Meaning: {meaning}", ""]
+            if anchors == "position":
+                anchor = f"{section}/s{number}"
+            else:
+                anchor = self.anchor_of(record["id"], record["unit"])
+            if "cases" in record:
+                for count, case in enumerate(record["cases"], start=1):
+                    lines += [case["say"], ""]
+                    statement = self.render(record["id"], record["unit"], case["value"])
+                    lines += [f"[{anchor}/{count}] {statement}", ""]
+                    lines += explained(record, case["value"])
+            else:
+                statement = self.render(record["id"], record["unit"], record["value"])
+                lines += [f"[{anchor}] {statement}", ""]
+                lines += explained(record, record["value"])
+            last = index == len(ordered) - 1 or ordered[index + 1]["unit"] != current
+            if fixed and last:
+                lines += fixed_lines(current)
         return "\n".join(lines)
 
     def parse_document(self, text: str) -> tuple[str, list[dict]]:
@@ -334,9 +404,22 @@ class StandardForm:
 
         Every anchored line must be a statement of the catalog, in the section
         of its unit. Each record has `id`, `unit`, `value`, `statement` and
-        `anchor`.
+        `anchor`. The cases of a decision by design and the fixed rules are
+        checked and left out (`parse_full` gives them).
+        """
+        doc, records, _, _ = self.parse_full(text)
+        return doc, records
+
+    def parse_full(self, text: str) -> tuple[str, list[dict], dict, list[str]]:
+        """`parse_document`, with the cases by decision and the fixed rules stated.
+
+        Cases: (entry, unit) -> the records of its numbered lines, in order.
+        Fixed rules: the anchors `<entry>/<rule>`, each stated with its text.
         """
         doc = None
+        cases: dict[tuple[str, str], list[dict]] = {}
+        fixed: list[str] = []
+        current_unit = None
         catalog = None
         section_unit: dict[str, str] = {}
         records: list[dict] = []
@@ -360,6 +443,7 @@ class StandardForm:
             match = _SECTION.match(line)
             if match:
                 section_unit[match.group(1)] = match.group(3)
+                current_unit = match.group(3)
                 continue
             match = _ANCHORED.match(line)
             if not match:
@@ -368,20 +452,48 @@ class StandardForm:
                 if line.startswith("[") or _ANCHOR.search(line):
                     raise StandardFormError(f"line {number}: not an anchored statement: {line}")
                 bare = _LEAD.sub("", line).rstrip("*_` ")
-                if bare and not line.startswith(("#", "Meaning: ")) and self.matches(bare):
+                if bare and not line.startswith(("#", *NOTE_PREFIXES)) and self.matches(bare):
                     raise StandardFormError(f"line {number}: a statement without its anchor: "
                                             f"{line}")
                 continue
             anchor, statement = match.groups()
+            if not _POSITION.match(anchor):
+                rule = self._fixed_rule(anchor)
+                if rule is not None:
+                    if " ".join(statement.split()) != " ".join(str(rule["text"]).split()):
+                        raise StandardFormError(f"line {number}: the fixed rule {anchor} is not "
+                                                "stated as the catalog states it")
+                    if anchor in fixed:
+                        raise StandardFormError(f"line {number}: anchor {anchor} is used twice")
+                    fixed.append(anchor)
+                    continue
             try:
                 entry_id, unit, value = self.parse(statement)
             except StandardFormError as error:
                 raise StandardFormError(f"line {number}: {error}") from None
-            section = anchor.split("/")[0]
-            if section_unit.get(section) != unit:
-                raise StandardFormError(
-                    f"line {number}: {entry_id} belongs to unit {unit}, not to section {section}"
-                )
+            if _POSITION.match(anchor):
+                section = anchor.split("/")[0]
+                if section_unit.get(section) != unit:
+                    raise StandardFormError(
+                        f"line {number}: {entry_id} belongs to unit {unit}, not to section "
+                        f"{section}")
+            else:
+                if current_unit != unit:
+                    raise StandardFormError(
+                        f"line {number}: {entry_id} belongs to unit {unit}, not to the section "
+                        f"of {current_unit}")
+                base = self.anchor_of(entry_id, unit)
+                tail = anchor[len(base) + 1:] if anchor.startswith(base + "/") else ""
+                if tail.isdigit():
+                    found = cases.setdefault((entry_id, unit), [])
+                    if int(tail) != len(found) + 1:
+                        raise StandardFormError(f"line {number}: case {anchor} is out of order")
+                    found.append({"id": entry_id, "unit": unit, "value": value,
+                                  "statement": statement, "anchor": anchor})
+                    continue
+                if anchor != base:
+                    raise StandardFormError(f"line {number}: the anchor {anchor} does not name "
+                                            f"{base}")
             if anchor in seen.values():
                 raise StandardFormError(f"line {number}: anchor {anchor} is used twice")
             if (entry_id, unit) in seen:
@@ -396,7 +508,18 @@ class StandardForm:
             raise StandardFormError("the document has no 'Document: <id>' line")
         if catalog is None:
             raise StandardFormError("the document has no 'Catalog: <name> <version>' line")
-        return doc, records
+        for key in cases:
+            if key in seen:
+                raise StandardFormError(f"{key[0]} ({key[1]}) is stated both alone and by cases")
+        return doc, records, cases, fixed
+
+    def _fixed_rule(self, anchor: str) -> dict | None:
+        """The fixed rule an anchor `<entry>/<rule>` names, or None."""
+        entry_id, _, rule_id = anchor.partition("/")
+        entry = self.catalog.entries.get(entry_id)
+        if entry is None or not rule_id or rule_id in entry.units:
+            return None
+        return next((rule for rule in entry.fixed_rules if rule.get("id") == rule_id), None)
 
 
 def decision_record(parsed: dict, doc: str, status: str, decision_class: str) -> dict:

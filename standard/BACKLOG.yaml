@@ -128,7 +128,19 @@ records:
   # #17 parent specs
   - {id: i17.conformance, issue: 17, layer: house, target: adam/,
      kind: change parent specs, status: accepted, version: open-default@2, adr: ADR-020,
-     reason: "AEBODSYS; PARAM with the unit and AVALU; several positions refused; no end-of-study status for a screen failure; first occurrence by date then sequence; DTYPE null; the conformance rules listed"}
+     reason: "AEBODSYS; PARAM with the unit and AVALU; no end-of-study status for a screen failure; first occurrence by date then sequence; the conformance rules listed in STANDARD.md"}
+  - {id: i17.screen-failure, issue: 17, layer: catalog, target: disp.status.record,
+     kind: lift rules into fixed rules, status: accepted, version: catalog@2, adr: ADR-020,
+     reason: "the status words as a fixed rule, with no status for a SCREEN FAILURE record (admiral format_eosstt)"}
+  - {id: i17.eot-record, issue: 17, layer: catalog, target: bds.eot.record,
+     kind: fix a definition, status: accepted, version: catalog@2, adr: ADR-020,
+     reason: "the definition states AVISITN 9999; the record carries the unit of the value it repeats"}
+  - {id: i17.positions-refused, issue: 17, layer: house, target: adam/advs.yaml,
+     kind: change parent specs, status: waits, for: std-2, adr: ADR-020,
+     reason: "refusing several positions or time points reads VSPOS and VSTPT, which the generated and the tiny SDTM do not hold (VSTPT), so every such build would fail; std-2 with the SDTM-aware compile of ADR-014, or ATPT and BASETYPE"}
+  - {id: i17.dtype-null, issue: 17, layer: house, target: adam/advs.yaml,
+     kind: change parent specs, status: waits, for: std-2, adr: ADR-020,
+     reason: "DTYPE is a key of ADVS and yamaa refuses a missing key value (missing_key); another key of ADVS comes first"}
   - {id: i17.dose-order, issue: 17, layer: house, target: adam/adsl.yaml,
      kind: add a variable, status: waits, for: a decision on the dose order of the arms, adr: ADR-020,
      reason: "TRT01PN and TRT01AN need the dose order, which the design holds, not the SDTM"}

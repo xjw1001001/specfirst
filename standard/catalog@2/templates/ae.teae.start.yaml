@@ -35,3 +35,33 @@ alternatives:
                 - when: "_AESTTM IS NULL AND ASTDT = TRTSDT AND _TRTSSEC = 0"
                   then: "'Y'"
                 - otherwise: "'N'"
+  by_time_when_collected:
+    adam:
+      ADAE:
+        columns:
+          - name: _AESTPREC
+            type: str
+            label: "Working value: collected precision of the start date and time"
+            derivation:
+              precision: {type: datetime, source: AE.AESTDTC, invalid: null}
+          - name: _AESTTM
+            type: datetime
+            label: "Working value: collected start date and time, 00:00 without a time"
+            derivation:
+              impute: {type: datetime, source: AE.AESTDTC, time: first, invalid: null}
+          - name: _TRTSTMF
+            type: str
+            label: "Working value: the time of the first dose was imputed"
+            derivation: ADSL.TRTSTMF
+          - name: _TESTART
+            type: str
+            label: "Working value: the event starts within treatment emergence"
+            derivation:
+              case:
+                - when: "ASTDT > TRTSDT"
+                  then: "'Y'"
+                - when: "ASTDT = TRTSDT AND _AESTPREC IN ('hour', 'minute', 'second') AND _TRTSTMF IS NULL AND _AESTTM < TRTSDTM"
+                  then: "'N'"
+                - when: "ASTDT = TRTSDT"
+                  then: "'Y'"
+                - otherwise: "'N'"

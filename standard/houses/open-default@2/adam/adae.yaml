@@ -1,4 +1,4 @@
-# House standard open-default@1: parent spec of ADAE, one record per
+# House standard open-default@2: parent spec of ADAE, one record per
 # adverse event.
 #
 # This layer holds what no decision changes. It reads columns that decisions
@@ -117,6 +117,12 @@ columns:
     label: Primary System Organ Class
     derivation: AE.AESOC
 
+  # Carried from AE (OCCDS 1.1; ADR-020, #17); the tables group by AESOC.
+  - name: AEBODSYS
+    type: str
+    label: Body System or Organ Class
+    derivation: AE.AEBODSYS
+
   - name: AESEV
     type: str
     label: Severity/Intensity
@@ -178,7 +184,7 @@ columns:
       row_number:
         window:
           group_by: [STUDYID, USUBJID]
-          order_by: [AESEQ]
+          order_by: [ASTDT, AESEQ]
           filter: "TRTEMFL = 'Y'"
 
   - name: AOCCFL
@@ -194,7 +200,7 @@ columns:
       row_number:
         window:
           group_by: [STUDYID, USUBJID, AESOC]
-          order_by: [AESEQ]
+          order_by: [ASTDT, AESEQ]
           filter: "TRTEMFL = 'Y'"
 
   - name: AOCCSFL
@@ -210,7 +216,7 @@ columns:
       row_number:
         window:
           group_by: [STUDYID, USUBJID, AEDECOD]
-          order_by: [AESEQ]
+          order_by: [ASTDT, AESEQ]
           filter: "TRTEMFL = 'Y'"
 
   - name: AOCCPFL

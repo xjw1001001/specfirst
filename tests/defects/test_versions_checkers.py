@@ -94,6 +94,20 @@ def _copied_folder(work: Path) -> None:
         "catalog@3", {"status": "draft", "date": "2026-11-21", "by": "a plant"}))
 
 
+def _pinned_made_draft(work: Path) -> None:
+    """catalog@1 called a draft and changed: the pin holds it, whatever the default (G1)."""
+    _one_byte(work)
+    change(work / "standard" / "versions.yaml",
+           lambda data: data["catalogs"]["catalog@1"].__setitem__("status", "draft"))
+
+
+def _fn_mapping(work: Path) -> None:
+    def plant(data):
+        data["alternatives"]["no_end"]["adam"]["ADAE"]["columns"][0]["derivation"] = {
+            "$fn": {"name": "cut_labels"}, "args": []}
+    change(work / "standard" / "catalog@2" / "templates" / "ae.teae.end.yaml", plant)
+
+
 def _kit_names_draft(work: Path) -> None:
     kit = work / "kits" / "k1"
     kit.mkdir(parents=True)
@@ -104,8 +118,8 @@ def _kit_names_draft(work: Path) -> None:
 
 def _definition(work: Path) -> None:
     def plant(data):
-        data["alternatives"][1]["definition"] = "An event on the last day is not emergent."
-    change(_entry(work, "ae.teae.end"), plant)
+        data["alternatives"][0]["definition"] = "The arm as the sponsor last recorded it."
+    change(_entry(work, "trt.planned.source"), plant)
 
 
 def _line(entry: dict):
@@ -145,18 +159,25 @@ DEFECTS = [
          "open-default@2"].__setitem__("catalog", "catalog@1")),
      "frozen", "open-default@2: its house.yaml needs catalog@2, standard/versions.yaml says "
      "catalog@1"),
+    ("a pinned version made a draft and changed", _pinned_made_draft, "frozen",
+     "catalog@1: the folder standard/catalog@1 has the tree"),
+    ("a pinned version made a draft", lambda w: change(
+        w / "standard" / "versions.yaml",
+        lambda data: data["catalogs"]["catalog@1"].__setitem__("status", "draft")),
+     "frozen", "catalog@1: pinned as frozen, and standard/versions.yaml calls it draft"),
     ("a folder that versions.yaml does not list",
      lambda w: shutil.copytree(w / "standard" / "catalog@2", w / "standard" / "catalog@3"),
      "frozen", "catalog@3: a folder that standard/versions.yaml does not list"),
     ("a definition changed without a line", _definition, "migration",
-     "ae.teae.end/last_dose_plus_days: changed in meaning in catalog@2, and migration.yaml has "
+     "trt.planned.source/dm_arm: changed in meaning in catalog@2, and migration.yaml has "
      "no line for it"),
     ("a line for an alternative that did not change",
-     _line({"alternative": "ae.teae.end/no_end", "change": "changed",
+     _line({"alternative": "trt.planned.source/dm_arm", "change": "changed",
             "backlog": "i03.window-default"}),
-     "migration", "change 1: ae.teae.end/no_end does not change in meaning"),
+     "migration", "change 1: trt.planned.source/dm_arm does not change in meaning"),
     ("a line with no accepted record",
-     _line({"alternative": "ae.teae.end/no_end", "change": "changed", "backlog": "i99.nothing"}),
+     _line({"alternative": "trt.planned.source/dm_arm", "change": "changed",
+            "backlog": "i99.nothing"}),
      "migration", "names the backlog record 'i99.nothing', which is not accepted"),
     ("a record with an unknown status",
      _record(lambda records: records[0].__setitem__("status", "maybe")), "backlog",
@@ -174,9 +195,9 @@ DEFECTS = [
     ("a default that is not an alternative", _item("ae.teae.end", {"rule": "sometimes"}),
      "defaults", "ae.teae.end: entry ae.teae.end has no alternative 'sometimes'"),
     ("a default for a unit the entry does not have",
-     lambda w: change(_defaults(w), lambda data: data["defaults"]["tfl.quantile.definition"][
-         "units"].__setitem__("tfl-ae-summary", {"rule": "sas5"})),
-     "defaults", "tfl.quantile.definition: the unit tfl-ae-summary does not answer this entry"),
+     lambda w: change(_defaults(w), lambda data: data["defaults"]["tfl.percent.format"][
+         "units"].__setitem__("tfl-vitals-by-visit", {"rule": "one_decimal_always"})),
+     "defaults", "tfl.percent.format: the unit tfl-vitals-by-visit does not answer this entry"),
     ("an entry per table family without an item",
      lambda w: change(_defaults(w), lambda data: data["defaults"].pop("tfl.population")),
      "defaults", "tfl.population (tfl-demographics): no item"),
@@ -189,6 +210,8 @@ DEFECTS = [
      "defaults", "every case but the last has `when`"),
     ("an unknown helper in a branch no example reaches", _template, "templates",
      "unknown helper 'no_such_helper'"),
+    ("a mapping as the name of a helper", _fn_mapping, "templates",
+     "unknown helper '{'name'"),
 ]
 
 

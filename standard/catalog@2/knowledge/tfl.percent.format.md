@@ -1,7 +1,8 @@
 # How are percentages displayed? (`tfl.percent.format`)
 
-The answer decides what a cell with a count of zero shows: the count alone, or the count
-with its percentage. It is given once per table family.
+The answer decides how many decimals a percentage has, and what a cell with a count of
+zero shows: the count alone, or the count with its percentage. It is given once per table
+family.
 
 ## Where it is stated
 
@@ -11,20 +12,24 @@ with its percentage. It is given once per table family.
 
 ## Words to look for
 
-- `one_decimal_zero_blank`: "percentages are shown to one decimal place; no percentage is
-  shown for a count of zero", shell cells written "0" where others are "xx (xx.x)".
-- `one_decimal_always`: "percentages are shown to one decimal place" together with zero
-  cells written "0 (0.0)", or "a percentage is always displayed".
+- The decimals: "percentages are shown to one decimal place", "rounded to the nearest whole
+  percent" (0 decimals), "xx.x" or "xx" in the shells.
+- `one_decimal_zero_blank`: "no percentage is shown for a count of zero", shell cells
+  written "0" where others are "xx (xx.x)".
+- `one_decimal_always`: zero cells written "0 (0.0)", or "a percentage is always
+  displayed".
 
 ## Traps
 
-- Both alternatives have one decimal. A SAP that asks for whole-number percentages or for
-  two decimals matches no alternative; report the passage.
-- "One decimal place" alone does not say what happens at zero. Use the house default then,
-  and say that only the decimal was stated.
-- Special displays such as "<0.1" for small percentages, or "100" without a decimal, are not
-  covered; report them.
+- The IDs of the alternatives say "one decimal" for historical reasons (catalog@1); from
+  catalog@2 the decimals are the slot `decimals`, 0 to 2.
+- "One decimal place" alone does not say what happens at zero. Use the house default for
+  the zero, take the decimals from the document, and say that only the decimals were
+  stated.
+- One document may use whole numbers in one table and one decimal in another (the pilot:
+  Table 14-2.01 and Table 14-5.01): the decision is per table family.
+- Special displays such as "(<1%)" for a small percentage that rounds to 0, or "100" without
+  a decimal, are not covered; report them.
 - A shell is a layout sketch: "xx (xx.x)" in every cell does not prove that a zero count gets
   a percentage.
-- Silent documents: use the house default `one_decimal_zero_blank` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.

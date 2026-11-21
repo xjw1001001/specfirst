@@ -1,4 +1,4 @@
-# House standard open-default@1: what every ARS reporting event of a study
+# House standard open-default@2: what every ARS reporting event of a study
 # has in common. Names follow the CDISC ARS v1 model and its example
 # "Common Safety Displays". The compiler drops the analysis sets, groupings,
 # data subsets and methods that no analysis of the study uses. Operations

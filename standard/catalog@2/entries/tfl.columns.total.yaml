@@ -22,4 +22,5 @@ sources:
     path: documents/CSR.pdf
     where: "Table 14-2.01 with a Total column; Table 14-5.01 without one"
   - ref: fda-stf
-    where: "demographic table with a total column; pooled active arms as an option of the safety tables"
+    where: "Table 2, page 8: the demographics table with a column Total Population; Table 7, page 17, and Table 15, page 27: the arms without a total (the review of #14, 2026-11-11)"
+    evidence: cited

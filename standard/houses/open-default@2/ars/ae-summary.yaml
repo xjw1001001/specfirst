@@ -1,4 +1,4 @@
-# House standard open-default@1: ARS template of the adverse event summary
+# House standard open-default@2: ARS template of the adverse event summary
 # table (unit tfl-ae-summary). Every row counts the subjects with at least
 # one treatment-emergent event of its kind; the data subsets follow the
 # CDISC ARS example "Common Safety Displays".
@@ -27,6 +27,15 @@ define:
           label: Adverse event leading to discontinuation of study treatment
           subset: Dss_TEAE_Discontinuation
         FATAL: {code: FATAL, label: Fatal adverse event, subset: Dss_TEAE_Fatal}
+        SERIOUS_RELATED:
+          code: SERIOUS_RELATED
+          label: Serious related adverse event
+          subset: Dss_TEAE_SeriousRelated
+        FATAL_RELATED: {code: FATAL_RELATED, label: Fatal related adverse event, subset: Dss_TEAE_FatalRelated}
+        DOSE_MODIFIED:
+          code: DOSE_MODIFIED
+          label: Adverse event leading to dose modification
+          subset: Dss_TEAE_DoseModified
 
 analysisGroupings:
   - id: "Grp_${trt_var}"
@@ -97,6 +106,35 @@ dataSubsets:
       whereClauses:
         - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
         - {level: 2, order: 2, condition: {dataset: ADAE, variable: AESDTH, comparator: EQ, value: ["Y"]}}
+  - id: Dss_TEAE_SeriousRelated
+    name: Serious related treatment-emergent adverse events
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADAE, variable: AESER, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 3, condition: {dataset: ADAE, variable: RELGR1, comparator: EQ, value: [RELATED]}}
+  - id: Dss_TEAE_FatalRelated
+    name: Fatal related treatment-emergent adverse events
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADAE, variable: AESDTH, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 3, condition: {dataset: ADAE, variable: RELGR1, comparator: EQ, value: [RELATED]}}
+  - id: Dss_TEAE_DoseModified
+    name: Treatment-emergent adverse events leading to dose modification
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADAE, variable: AEACN, comparator: IN, value: [DOSE REDUCED, DRUG INTERRUPTED]}}
 
 analyses:
   - $for: v

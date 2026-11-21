@@ -5,20 +5,37 @@ question: How are system organ classes and preferred terms sorted?
 alternatives:
   - id: alphabetical
     statement: "System organ classes and preferred terms are sorted alphabetically."
+    sources:
+      - ref: ars
+        path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+        find: "AnlsGrouping_07_Pt"
+        where: "organ class and term groupings data-driven on AESOC and AEDECOD, in no frequency order"
   - id: descending_frequency_total
     statement: "System organ classes and preferred terms are sorted by descending frequency over all arms, and alphabetically on a tie."
-  - id: descending_frequency_highest_dose
-    statement: "System organ classes and preferred terms are sorted by descending frequency in the arm with the highest dose, and alphabetically on a tie."
+  - id: soc_alpha_pt_descending_in_column
+    statement: "System organ classes are sorted alphabetically, and preferred terms within them by descending frequency in the column {column}, and alphabetically on a tie."
+    definition: >-
+      The column is a treatment arm by its label, or Total for all arms
+      together.
+    slots:
+      column: {type: text, examples: ["Xanomeline High Dose", "Total"]}
+    sources:
+      - ref: p6
+        path: documents/CSR.pdf
+        where: "Table 14-5.01, PDF page 63: organ classes alphabetical; within CARDIAC DISORDERS the terms by descending count in the high-dose column (the review of #9, 2026-11-11)"
+        evidence: cited
 notes: >-
   Frequency is the number of subjects. Preferred terms are sorted within
-  their system organ class.
+  their system organ class. Alphabetical order compares the upper-cased
+  text, then the text itself.
 compile: templates/tfl.ae.socpt.sort.yaml
 phrasings: phrasings/tfl.ae.socpt.sort.yaml
 reading: knowledge/tfl.ae.socpt.sort.md
-probes: [term_frequency_order_not_alphabetical, term_order_differs_between_total_and_highest_dose, terms_with_equal_frequency]
+probes: [term_frequency_order_not_alphabetical, term_order_differs_between_columns, soc_frequency_order_not_alphabetical, terms_with_equal_frequency]
 sources:
   - ref: p6
     path: documents/CSR.pdf
-    where: "Table 14-5.01: organ classes and terms in alphabetical order (PLAN.md, E25)"
+    where: "Table 14-5.01: organ classes alphabetical, terms by descending frequency in one column (PLAN.md, E25; the review of #9, 2026-11-11)"
   - ref: fda-stf
-    where: "adverse event tables sorted by descending frequency"
+    where: "section 2.2, page 15: AE terms are ordered by decreasing risk difference, which no alternative of this version states (the review of #14, 2026-11-11)"
+    evidence: cited

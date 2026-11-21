@@ -1,4 +1,4 @@
-# House standard open-default@1: layout template of the table of adverse
+# House standard open-default@2: layout template of the table of adverse
 # events by system organ class and preferred term. Layout draft 0; see
 # layout/demographics.yaml for the parts.
 output:
@@ -41,6 +41,10 @@ rows:
       else: null
 sort:
   rule: {$get: term_sort}
+  # From catalog@2: the column whose frequency orders the terms (tfl.ae.socpt.sort).
+  column:
+    $if: {get: term_sort, eq: soc_alpha_pt_descending_in_column}
+    then: {$get: term_sort_column}
   levels: [Grp_AESOC, Grp_AEDECOD]
   measure: subjects
 threshold: {$get: term_threshold}

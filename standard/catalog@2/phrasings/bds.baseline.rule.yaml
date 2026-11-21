@@ -2,9 +2,9 @@
 entry: bds.baseline.rule
 alternatives:
   last_before_first_dose:
-    plain: "The last non-missing value before the first dose is used as baseline."
-    formal: "Baseline shall be defined as the last non-missing value prior to the first dose."
-    brief: "Baseline: last non-missing value before the first dose."
+    plain: "The last non-missing value before the first dose is used as baseline; times are compared where both were collected, dates otherwise."
+    formal: "Baseline shall be defined as the last non-missing value prior to the first dose, comparing times where both were collected and dates otherwise."
+    brief: "Baseline: last non-missing value before the first dose (times where both collected, else dates)."
   last_on_or_before_first_dose_date:
     plain: "The last non-missing value on or before the treatment start date is used as baseline."
     formal: "Baseline shall be defined as the last non-missing value on or prior to the treatment start date."

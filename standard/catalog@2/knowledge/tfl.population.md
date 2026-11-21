@@ -17,6 +17,8 @@ The answer is given once per table family.
   "randomized set".
 - `efficacy`: "efficacy-evaluable set", "evaluable population", when it is the set that
   `pop.efficacy.rule` defines.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ## Traps
 
@@ -26,6 +28,10 @@ The answer is given once per table family.
   if the text names several and no main one, report the passage.
 - If a shell subtitle and the SAP text disagree, cite both passages in the answer.
 - "All enrolled" or "all screened" subjects match no alternative; report the passage.
+- For the demographics table the house takes the randomized set (the pilot CSR Table 14-2.01,
+  ICH E3 section 11.2; kept at node N1, question 1, and by ADR-020). The public alternative
+  is the safety set: the FDA guide's Table 2, the ARS example's demographics analyses
+  (AnalysisSet_02_SAF) and cardinal's Table 2 use it.
 - Silent documents: the house default depends on the table family. It is `randomized` for the
   demographics table and `safety` for the two adverse event tables and the vital signs table.
   Cite the house standard.
