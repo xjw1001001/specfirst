@@ -1,11 +1,24 @@
-"""The static check that a recomputation script calls no part of the engine (ADR-021, decision 5).
+"""The static check of a recomputation script (ADR-021, decision 5).
 
-Per script: its imports (Python) or calls (R) are in an allow-list; nothing
-that runs other code (exec, eval, source, system, ...), reads another kind of
-file or walks the file system; no path in a text; the only files it names are
-the ADaM datasets of its plan; and every number in it is a number the ARS
-states for the analysis or one of a few small constants. So no line of the
-engine and no number of the ARD can stand in a script.
+Per script, on its syntax tree (Python) or on the tokens of R's own parser:
+
+- Python: its imports, the builtins it names and the attributes it takes are
+  in allow-lists, and it names no dunder; R: its calls are in an allow-list,
+  it names nothing that runs other code (source, eval, get, ...), calls no
+  string and hands no string to apply or sapply, and uses no qualified
+  function or file.path as a value.
+- Its only reads are of the ADaM datasets of its plan, in the folder of its
+  first argument, in one fixed form: `pd.read_parquet(adam / "<d>.parquet")`
+  with `adam` bound once to `Path(sys.argv[1])`, or
+  `utils::read.csv(file.path(adam, "<d>.csv"), ...)` with `adam <- args[1]`.
+- No text holds a path, "..", a file name other than those datasets, or a
+  number; every number is one the ARS states for the analysis or one of a
+  few small constants.
+
+What it holds is the form of the scripts, the routes we know: a script that
+computes an ARD number from the allowed constants, or a route not listed
+here, passes it. It is a check of generated code, not a proof; the scripts
+are short so that a statistician can read them.
 """
 
 from __future__ import annotations
@@ -18,21 +31,19 @@ from pathlib import Path
 
 PY_IMPORTS = {"sys": None, "itertools": {"product"}, "pathlib": {"Path"}, "numpy": None,
               "pandas": None, "scipy": {"stats"}}
-PY_NAMES = {"exec", "eval", "compile", "open", "__import__", "getattr", "setattr", "delattr",
-            "globals", "locals", "vars", "input", "breakpoint", "help", "exit", "quit",
-            "memoryview", "classmethod", "staticmethod", "type", "super"}
+# The builtins a script may name; any other name must be bound in the script itself.
+PY_BUILTINS = {"abs", "all", "any", "bool", "dict", "enumerate", "float", "int", "len", "list",
+               "map", "max", "min", "object", "range", "repr", "set", "sorted", "str", "sum",
+               "tuple", "zip"}
+# The attributes a script may take: those of the templates (pywrite) and nothing else.
 PY_ATTRIBUTES = {
-    # other readers and writers than the Parquet reader and the CSV of the output
-    "read_csv", "read_json", "read_pickle", "read_table", "read_excel", "read_sql",
-    "read_fwf", "read_html", "read_xml", "read_feather", "read_orc", "read_sas",
-    "read_spss", "read_stata", "read_hdf", "read_clipboard", "load", "loadtxt", "genfromtxt",
-    "fromfile", "to_pickle", "to_parquet", "to_json", "tofile", "save", "savez",
-    # walking the file system
-    "parent", "parents", "resolve", "absolute", "cwd", "home", "glob", "rglob", "iterdir",
-    "expanduser", "joinpath", "with_name", "read_text", "read_bytes", "open", "readlink",
-    # the interpreter's insides
-    "system", "popen", "modules", "path", "meta_path", "__dict__", "__globals__",
-    "__builtins__", "__subclasses__", "__getattribute__", "__code__", "__class__", "f_globals"}
+    "DataFrame", "all", "append", "argv", "array", "chi2_contingency", "dropna", "f_oneway",
+    "fillna", "index", "isin", "items", "loc", "max", "mean", "min", "nunique", "pvalue",
+    "quantile", "read_parquet", "shape", "sort", "std", "sum", "to_csv", "to_numpy", "tolist",
+    "values"}
+# The one binding of the data folder, and the one form of a read.
+PY_ADAM = "adam, out = Path(sys.argv[1]), sys.argv[2]"
+PY_ADAM_TREE = ast.dump(ast.parse(PY_ADAM).body[0])
 SMALL = {0.0, 1.0, 2.0, 100.0, 0.25, 0.5, 0.75, float("inf")}  # inf: R's Inf, no data
 FILE_LIKE = (".parquet", ".csv", ".json", ".jsonl", ".py", ".r", ".txt", ".yaml", ".yml", ".rds",
              ".rdata", ".xpt", ".sas7bdat")
@@ -56,6 +67,10 @@ R_FORBIDDEN = {"source", "sys.source", "eval", "evalq", "parse", "str2lang", "st
                "readLines", "scan", "dirname", "normalizePath", "list.files", "setwd", "getwd",
                "Recall", "environment", "sys.function", "body", "assign", ".Internal",
                ".Call", ".External", "pipe", "url", "download.file"}
+R_APPLY = {"apply", "sapply"}  # their function argument may be no string (R looks a name up)
+R_AS_VALUE = {"file.path", "commandArgs"}  # functions that must not be handed on as a value
+R_OPEN = {"(", "[", "{"}
+R_CLOSE = {")", "]", "}"}
 R_TOKENS = """
 files <- commandArgs(trailingOnly = TRUE)
 for (f in files) {
@@ -66,12 +81,48 @@ for (f in files) {
 """
 
 
-def file_problem(text: str, datasets: list[str], suffix: str) -> str | None:
+def text_problem(text: str, datasets: list[str], suffix: str, allowed: set[float]
+                 ) -> str | None:
+    """A text constant holds no path, no parent folder, no other file and no number."""
     if "/" in text or "\\" in text:
         return f"a path in the text {text!r}"
+    if ".." in text:
+        return f"a parent folder in the text {text!r}"
     if text.lower().endswith(FILE_LIKE) and text not in {f"{d}{suffix}" for d in datasets}:
         return f"a file other than the ADaM datasets of the plan: {text!r}"
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    if number not in allowed:
+        return f"the number {text!r} in a text, which the ARS does not state for the analysis"
     return None
+
+
+def bound_names(tree: ast.AST) -> set[str]:
+    """The names a Python script binds itself: assignments, loop and comprehension targets,
+    arguments, functions and imports."""
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            found.add(node.id)
+        elif isinstance(node, ast.arg):
+            found.add(node.arg)
+        elif isinstance(node, ast.FunctionDef):
+            found.add(node.name)
+        elif isinstance(node, ast.alias):
+            found.add((node.asname or node.name).split(".")[0])
+    return found
+
+
+def python_read(node: ast.Call, files: set[str]) -> bool:
+    """`<frame>.read_parquet(adam / "<dataset>.parquet")`, the one form of a read."""
+    if node.keywords or len(node.args) != 1:
+        return False
+    arg = node.args[0]
+    return isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Div) and \
+        isinstance(arg.left, ast.Name) and arg.left.id == "adam" and \
+        isinstance(arg.right, ast.Constant) and arg.right.value in files
 
 
 def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list[str]:
@@ -81,32 +132,65 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
     except SyntaxError as error:
         return [f"not Python: {error}"]
     allowed = SMALL | numbers
+    files = {f"{d.lower()}.parquet" for d in datasets}
+    bound = bound_names(tree)
+    parent = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+
+    def statement(node: ast.AST) -> ast.AST:
+        while not isinstance(node, ast.stmt):
+            node = parent[node]
+        return node
+
     for node in ast.walk(tree):
+        line = f"line {getattr(node, 'lineno', '?')}"
         if isinstance(node, ast.Import):
             for alias in node.names:
                 top = alias.name.split(".")[0]
                 if top not in PY_IMPORTS or (PY_IMPORTS[top] is not None and alias.name != top):
-                    problems.append(f"line {node.lineno}: import {alias.name}")
+                    problems.append(f"{line}: import {alias.name}")
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
             names = PY_IMPORTS.get(module, set()) if module in PY_IMPORTS else set()
             if module not in PY_IMPORTS or node.level or names is None or \
                     any(alias.name not in names for alias in node.names):
-                problems.append(f"line {node.lineno}: from {module} import "
+                problems.append(f"{line}: from {module} import "
                                 + ", ".join(a.name for a in node.names))
-        elif isinstance(node, ast.Name) and node.id in PY_NAMES:
-            problems.append(f"line {node.lineno}: the name {node.id}")
-        elif isinstance(node, ast.Attribute) and node.attr in PY_ATTRIBUTES:
-            problems.append(f"line {node.lineno}: the attribute {node.attr}")
+        elif isinstance(node, ast.Name):
+            if node.id.startswith("__"):
+                problems.append(f"{line}: the name {node.id}")
+            elif isinstance(node.ctx, ast.Load) and node.id not in bound | PY_BUILTINS:
+                problems.append(f"{line}: the name {node.id}")
+            elif node.id == "adam":
+                if isinstance(node.ctx, ast.Store):
+                    if ast.dump(statement(node)) != PY_ADAM_TREE:
+                        problems.append(f"{line}: the data folder bound otherwise than "
+                                        f"`{PY_ADAM}`")
+                elif not (isinstance(parent[node], ast.BinOp) and
+                          isinstance(parent[parent[node]], ast.Call) and
+                          isinstance(parent[parent[node]].func, ast.Attribute) and
+                          parent[parent[node]].func.attr == "read_parquet" and
+                          python_read(parent[parent[node]], files)):
+                    problems.append(f"{line}: the data folder used otherwise than in a read "
+                                    "of a dataset of the plan")
+        elif isinstance(node, ast.Attribute):
+            if node.attr not in PY_ATTRIBUTES:
+                problems.append(f"{line}: the attribute {node.attr}")
+            elif node.attr == "read_parquet" and not (
+                    isinstance(parent[node], ast.Call) and parent[node].func is node and
+                    python_read(parent[node], files)):
+                problems.append(f"{line}: a read other than `adam / \"<dataset>.parquet\"` of "
+                                "a dataset of the plan")
         elif isinstance(node, ast.Constant):
             value = node.value
             if isinstance(value, str):
-                found = file_problem(value, datasets, ".parquet")
+                found = text_problem(value, datasets, ".parquet", allowed)
                 if found:
-                    problems.append(f"line {node.lineno}: {found}")
+                    problems.append(f"{line}: {found}")
+            elif isinstance(value, bytes):
+                problems.append(f"{line}: a bytes constant")
             elif isinstance(value, int | float) and not isinstance(value, bool) and \
                     float(value) not in allowed:
-                problems.append(f"line {node.lineno}: the number {value!r}, which the ARS "
+                problems.append(f"{line}: the number {value!r}, which the ARS "
                                 "does not state for the analysis")
     return problems
 
@@ -125,15 +209,38 @@ def r_tokens(paths: list[Path]) -> dict[str, list[tuple[str, str]]]:
     return found
 
 
+def r_depth_one_strings(tokens: list[tuple[str, str]], start: int) -> list[str]:
+    """The string constants at depth 1 of the call whose name is at `start`."""
+    found, depth = [], 0
+    for kind, text in tokens[start + 1:]:
+        if text in R_OPEN or kind == "LBB":
+            depth += 2 if kind == "LBB" else 1
+        elif text in R_CLOSE:
+            depth -= 1
+            if depth <= 0:
+                break
+        elif depth == 1 and kind == "STR_CONST":
+            found.append(text)
+    return found
+
+
 def r_problems(tokens: list[tuple[str, str]], datasets: list[str], numbers: set[float]
                ) -> list[str]:
     problems: list[str] = []
     allowed = SMALL | numbers
+    files = {f"{d.lower()}.csv" for d in datasets}
+    tokens = [(kind, text) for kind, text in tokens if kind != "COMMENT"]
+
+    def at(i: int) -> tuple[str, str]:
+        return tokens[i] if 0 <= i < len(tokens) else ("", "")
+
     for i, (token, text) in enumerate(tokens):
         if token == "ERROR":
             return [f"not R: {text}"]
         if token == "SYMBOL_PACKAGE" and text not in R_PACKAGES:
             problems.append(f"the package {text}")
+        elif token in ("NS_GET", "NS_GET_INT") and at(i + 1)[0] != "SYMBOL_FUNCTION_CALL":
+            problems.append(f"the function {at(i - 1)[1]}{text}{at(i + 1)[1]} used as a value")
         elif token == "SYMBOL_FUNCTION_CALL":
             qualified = i >= 2 and tokens[i - 1][0] in ("NS_GET", "NS_GET_INT")
             if qualified:
@@ -141,13 +248,37 @@ def r_problems(tokens: list[tuple[str, str]], datasets: list[str], numbers: set[
                     problems.append(f"the call {tokens[i - 2][1]}{tokens[i - 1][1]}{text}")
             elif text not in R_BASE:
                 problems.append(f"the call {text}")
+            if text == "read.csv" and [at(i + 1)[1], at(i + 2)[1]] != ["(", "file.path"]:
+                problems.append("a read other than `read.csv(file.path(adam, ...))`")
+            if text == "file.path" and not (
+                    [t for _, t in tokens[i + 1:i + 4]] == ["(", "adam", ","] and
+                    at(i + 4)[0] == "STR_CONST" and at(i + 4)[1][1:-1] in files and
+                    at(i + 5)[1] == ")"):
+                problems.append("a file other than `file.path(adam, \"<dataset>.csv\")` of a "
+                                "dataset of the plan")
+            if text in R_APPLY:
+                for string in r_depth_one_strings(tokens, i):
+                    problems.append(f"the string {string} handed to {text}")
         elif token in ("SYMBOL", "SYMBOL_FUNCTION_CALL", "SYMBOL_SUB") and text in R_FORBIDDEN:
             problems.append(f"the name {text}")
+        elif token == "SYMBOL" and text in R_AS_VALUE:
+            problems.append(f"the function {text} used as a value")
+        elif token == "SYMBOL" and text == "adam":
+            assigned = [t for _, t in tokens[i + 1:i + 6]] == ["<-", "args", "[", "1", "]"] \
+                and at(i - 1)[1] not in ("$", "@")
+            read = [at(i - 2)[1], at(i - 1)[1]] == ["file.path", "("]
+            if not (assigned or read):
+                problems.append("the data folder used otherwise than in `adam <- args[1]` and "
+                                "`file.path(adam, ...)`")
         elif token == "STR_CONST":
             value = text[1:-1]
-            found = file_problem(value, datasets, ".csv")
+            found = text_problem(value, datasets, ".csv", allowed)
             if found:
                 problems.append(found)
+            if value in R_FORBIDDEN:
+                problems.append(f"the function {value} named by a string")
+            if at(i + 1)[1] == "(":
+                problems.append(f"the call of the string {text}")
         elif token == "NUM_CONST":
             value = text.rstrip("L")
             try:

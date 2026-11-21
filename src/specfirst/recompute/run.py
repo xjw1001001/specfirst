@@ -2,10 +2,15 @@
 
 The scripts run on copies of the reference ADaM in a fresh folder outside
 every checkout, each in a folder of its own, with an environment that holds
-only what the interpreters need: Python as `python -I` through seal.py, which
-refuses every import of specfirst or yamaa; R as `Rscript --vanilla`. The
-engine's R code is not an installed package (ADR-002): a script could reach it
-only by a path, which the static check refuses.
+only what the interpreters need: Python as `python -I` through seal.py, whose
+audit hook refuses every import of specfirst or yamaa and every open by Python
+of a file in the checkout or the build; R as `Rscript --vanilla`. The sealed
+run is not a confinement: R, and a library's own C code, can read any file the
+user can. The engine's R code is not an installed package (ADR-002), and the
+static check holds every read of a script to the ADaM datasets of its plan in
+the data folder (static.py says what that check does not hold). A script that
+fails leaves no output, but <analysis>.failed with the reason, so that it is
+`differs`.
 """
 
 from __future__ import annotations
@@ -32,19 +37,6 @@ Out = Callable[[str], None]
 SEAL = Path(__file__).resolve().parent / "seal.py"
 WORKERS = 4  # at most four worker processes on the shared machine
 TIMEOUT = 900
-
-# The evidence of PLAN.md section 3 that names CDISCPILOT01 tables, and where each
-# stands here (ADR-021, decision 2; the owner's answer of 2026-11-21 to Q1).
-EVIDENCE_TABLES = {
-    "cdiscpilot01": [
-        ("E24", "CSR 14-2.01 (demographics)", "not built as a CSR table (real-4); its content "
-         "is covered by the demographics analyses of CDISC's example, Out14-1-1, on ADSL"),
-        ("E25", "CSR 14-5.01 (adverse events by organ class and term)", "not built as a CSR "
-         "table (real-4); its content is covered by the analyses of Out14-3-2-1, on ADAE"),
-        ("E26", "CSR 14-6.06 (Hy's law shifts, CMH)", "not built: no ARS analysis in the kit "
-         "(real-5); its method, test.cmh, is covered by CSR 14-3.13"),
-    ],
-}
 
 
 @dataclass
@@ -73,13 +65,16 @@ def head(root: Path) -> tuple[str, bool | None]:
     return commit or "unknown", None if status is None else status == ""
 
 
-def sealed_env(home: Path) -> dict[str, str]:
+def sealed_env(home: Path, fence: tuple[Path, ...] = ()) -> dict[str, str]:
+    """PATH, HOME, the locale, one thread, the R library, and the folders seal.py fences."""
     env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(home),
            "TMPDIR": str(home), "LC_ALL": "C.UTF-8", "LANG": "C.UTF-8",
            "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
     libs = os.environ.get("SPECFIRST_R_LIBS") or os.environ.get("R_LIBS_USER")
     if libs:
         env["R_LIBS_USER"] = libs
+    if fence:
+        env["SPECFIRST_SEAL_FENCE"] = os.pathsep.join(str(p.resolve()) for p in fence)
     return env
 
 
@@ -122,28 +117,43 @@ def data_folder(bundle: Path, adam: Path, folder: Path) -> tuple[Path, Path]:
     return parquet, csv
 
 
-def run_one(bundle: Path, entry: dict, parquet: Path, csv: Path, outputs: Path, logs: Path
-            ) -> str | None:
-    """Run one script in a fresh folder of its own. Returns why it failed, or None."""
+def run_one(bundle: Path, entry: dict, parquet: Path, csv: Path, outputs: Path, logs: Path,
+            fence: tuple[Path, ...] = ()) -> str | None:
+    """Run one script in a fresh folder of its own. Returns why it failed, or None; a failed
+    script leaves no output, but <analysis>.failed with the reason."""
     target = outputs / entry["event"] / f"{entry['analysis']}.csv"
+    failed = target.with_suffix(".failed")
     target.parent.mkdir(parents=True, exist_ok=True)
-    if target.exists():
-        target.unlink()
+    target.unlink(missing_ok=True)
+    failed.unlink(missing_ok=True)
+    why = run_sealed(bundle, entry, parquet, csv, target, logs, fence)
+    if why:
+        target.unlink(missing_ok=True)
+        failed.write_text(why + "\n", encoding="utf-8")
+    return why
+
+
+def run_sealed(bundle: Path, entry: dict, parquet: Path, csv: Path, target: Path, logs: Path,
+               fence: tuple[Path, ...]) -> str | None:
     with tempfile.TemporaryDirectory(prefix="specfirst-sealed-") as name:
         home = Path(name)
         script = home / Path(entry["file"]).name
         shutil.copyfile(bundle / entry["file"], script)
+        local = home / "output.csv"  # in the script's own folder, outside the fence
         if entry["language"] == "python":
             shutil.copyfile(SEAL, home / "seal.py")
             argv = [sys.executable, "-I", str(home / "seal.py"), str(script), str(parquet),
-                    str(target)]
+                    str(local)]
         else:
-            argv = ["Rscript", "--vanilla", str(script), str(csv), str(target)]
+            argv = ["Rscript", "--vanilla", str(script), str(csv), str(local)]
+        env = sealed_env(home, fence if entry["language"] == "python" else ())
         try:
-            done = subprocess.run(argv, cwd=home, env=sealed_env(home), capture_output=True,
+            done = subprocess.run(argv, cwd=home, env=env, capture_output=True,
                                   text=True, timeout=TIMEOUT)
         except subprocess.TimeoutExpired:
             return f"no result within {TIMEOUT} s"
+        if local.is_file():
+            shutil.copyfile(local, target)
     log = logs / entry["event"] / f"{entry['analysis']}.log"
     log.parent.mkdir(parents=True, exist_ok=True)
     log.write_text(done.stdout + done.stderr, encoding="utf-8")
@@ -155,9 +165,11 @@ def run_one(bundle: Path, entry: dict, parquet: Path, csv: Path, outputs: Path, 
 
 
 def run_bundle(bundle: Path, adam: Path, work: Path, ard: Path | None = None,
-               workers: int = WORKERS) -> tuple[dict, dict[str, str]]:
+               workers: int = WORKERS, fence: tuple[Path, ...] = ()
+               ) -> tuple[dict, dict[str, str]]:
     """Run every script of the bundle sealed on the reference ADaM and compare with `ard`
-    (default the bundle's own ARD rows). Writes work/out, work/logs and work/report.json."""
+    (default the bundle's own ARD rows). Writes work/out, work/logs and work/report.json.
+    `fence`: the folders the Python scripts may open nothing in (seal.py)."""
     plan = json.loads((bundle / "plan.json").read_text(encoding="ascii"))
     for stale in ("out", "logs", "report.json", "report.txt"):
         target = work / stale
@@ -172,7 +184,7 @@ def run_bundle(bundle: Path, adam: Path, work: Path, ard: Path | None = None,
         parquet, csv = data_folder(bundle, adam, Path(name))
         with ThreadPoolExecutor(max_workers=max(1, min(workers, WORKERS))) as pool:
             done = list(pool.map(lambda e: run_one(bundle, e, parquet, csv, work / "out",
-                                                   work / "logs"), covered))
+                                                   work / "logs", fence), covered))
     for entry, why in zip(covered, done, strict=True):
         if why:
             failed[f"{entry['event']}/{entry['analysis']}"] = why
@@ -201,7 +213,8 @@ def recompute(root: Path, kit_id: str, build: Path | None = None, out: Out = pri
     commit, clean = head(root)
     plan = generate.generate(root, kit_id, build, bundle, commit, clean, out)
     problems = static.check(bundle, plan, analysis_numbers(root, kit_id, build))
-    report, failed = run_bundle(bundle, build / kit.reference, base / "run", workers=workers)
+    report, failed = run_bundle(bundle, build / kit.reference, base / "run", workers=workers,
+                                fence=(root, build))
     result = Result(plan=plan, report=report, static=problems, sealed=failed)
     result.lines = report_lines(result, kit_id)
     write_json(base / "run" / "checks.json", {
@@ -219,9 +232,8 @@ def report_lines(result: Result, kit_id: str) -> list[str]:
     for analysis, problems in sorted(bad.items()):
         lines.append(f"static check: {analysis}: " + "; ".join(problems[:5]))
     lines.append(f"static check: {len(result.static) - len(bad)} of {len(result.static)} "
-                 "scripts call no part of the engine")
-    for evidence, table, where in EVIDENCE_TABLES.get(kit_id, []):
-        lines.append(f"{evidence} {table}: {where}")
+                 "scripts pass it (imports, calls, reads, texts and numbers; ADR-021, "
+                 "decision 5)")
     return lines
 
 

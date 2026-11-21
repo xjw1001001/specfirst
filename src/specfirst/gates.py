@@ -499,7 +499,8 @@ RECOMPUTE_TESTS = ("RC1-unplanted", "RC2-weights", "RC3-quantiles", "RC4-cmh", "
 
 
 def _recompute(ctx: Context) -> bool:
-    """Every analysis is reproduced by its script, and the scripts call nothing of the engine."""
+    """Every analysis is reproduced by its script, and every script passes the static check
+    and runs sealed."""
     from specfirst.recompute import run as recompute
 
     result = recompute.recompute(ctx.root, PILOT, build=_first_build(ctx), out=ctx.out)
@@ -511,8 +512,9 @@ def _recompute(ctx: Context) -> bool:
 
 
 def _recompute_independence(ctx: Context) -> bool:
-    """The evidence that no part of the engine is called: the static check of every script,
-    the imports of the generator, the sealed runs (ADR-021, decision 5)."""
+    """The checks that no part of the engine is called (ADR-021, decision 5): the static check
+    of every script, the imports of the generator, the sealed runs. They hold the routes
+    static.py and seal.py name, not every route (decision 5)."""
     import json
 
     from specfirst.recompute import generate, static
@@ -524,9 +526,9 @@ def _recompute_independence(ctx: Context) -> bool:
     languages = [e.get("language") for e in plan["analyses"] if "not_covered" not in e]
     bad = {name: problems for name, problems in checks["static"].items() if problems}
     ctx.out(f"static check: {len(checks['static']) - len(bad)} of {len(checks['static'])} "
-            f"scripts ({languages.count('python')} Python, {languages.count('r')} R) import or "
-            "call only the allowed packages, name only their ADaM datasets and state only the "
-            "ARS's numbers")
+            f"scripts ({languages.count('python')} Python, {languages.count('r')} R) import, "
+            "name and call only what the allow-lists hold, read only the ADaM datasets of "
+            "their plan from the data folder, and state only the ARS's numbers")
     for name, problems in sorted(bad.items()):
         ctx.out(f"  {name}: {'; '.join(problems[:3])}")
     generator = static.generator_problems(Path(static.__file__).resolve().parent)
@@ -536,7 +538,8 @@ def _recompute_independence(ctx: Context) -> bool:
         ctx.out(f"  {problem}")
     ctx.out(f"sealed runs: {len(languages) - len(checks['sealed'])} of {len(languages)} "
             "scripts ran in a fresh folder outside the checkout, on copies of the reference "
-            "ADaM, the Python ones through seal.py, which refuses specfirst and yamaa")
+            "ADaM, the Python ones through seal.py, whose audit hook refuses specfirst, yamaa "
+            "and every open of a file in the checkout or the build")
     for name, why in sorted(checks["sealed"].items()):
         ctx.out(f"  {name}: {why}")
     return not bad and not generator and not checks["sealed"]

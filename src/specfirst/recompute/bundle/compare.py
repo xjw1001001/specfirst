@@ -5,10 +5,13 @@
 Standalone: the standard library only. For each analysis of plan.json the
 output <event>/<analysis>.csv must hold exactly the rows of the ARD: the same
 operations and groups, a count exactly, any other value within the relative
-tolerance of the plan (an absolute 1e-12 near 0), and missing where the ARD is
-missing. Each analysis is reported `reproduced`, `differs` (with its rows) or
-`not covered` (with the reason). The report is JSON; a line per analysis is
-printed.
+tolerance of the plan (within an absolute 1e-12 where the ARD's value is 0),
+and missing where the ARD is missing. An analysis without ARD rows, ARD rows of
+more groupings than the plan reads, two ARD rows of one key, a script that
+failed (<analysis>.failed next to its output) or wrote no output: `differs`.
+Each analysis is reported `reproduced`, `differs` (with its rows or the
+reason) or `not covered` (with the reason). The report is JSON; a line per
+analysis is printed, then the plan's evidence lines.
 """
 
 from __future__ import annotations
@@ -44,7 +47,9 @@ def same(mine: float | None, theirs: float | None, result: str, tolerance: float
     if result == "integer":
         return mine == theirs
     gap = abs(mine - theirs)
-    return gap <= ABSOLUTE or gap <= tolerance * max(abs(mine), abs(theirs))
+    if theirs == 0:
+        return gap <= ABSOLUTE
+    return gap <= tolerance * max(abs(mine), abs(theirs))
 
 
 def relative(mine: float | None, theirs: float | None) -> float:
@@ -58,7 +63,24 @@ def judge(entry: dict, ard: list[dict], output: Path) -> dict:
     if "not_covered" in entry:
         return {**line, "status": "not covered", "reason": entry["not_covered"]}
     groupings = len(entry["groupings"])
-    expected = {ard_key(row, groupings): row for row in ard}
+    if not ard:
+        return {**line, "status": "differs", "reason": "the ARD has no row of the analysis"}
+    beyond = sorted({key for row in ard for key, value in row.items()
+                     if key.startswith("group") and key.endswith("_groupingId") and
+                     value is not None and int(key[5:-11]) > groupings})
+    if beyond:
+        return {**line, "status": "differs",
+                "reason": f"ARD rows of more groupings than the plan reads: {beyond}"}
+    expected: dict[tuple[str, ...], dict] = {}
+    for row in ard:
+        key = ard_key(row, groupings)
+        if key in expected:
+            return {**line, "status": "differs", "reason": f"two ARD rows of the key {list(key)}"}
+        expected[key] = row
+    failed = output.with_suffix(".failed")
+    if failed.is_file():
+        return {**line, "status": "differs", "rows": len(expected),
+                "reason": "the script failed: " + failed.read_text(encoding="utf-8").strip()}
     if not output.is_file():
         return {**line, "status": "differs", "reason": "no output", "rows": len(expected)}
     with open(output, encoding="utf-8", newline="") as handle:
@@ -111,7 +133,8 @@ def compare(bundle: Path, outputs: Path, ard_dir: Path) -> dict:
     counts: dict[str, int] = {}
     for line in lines:
         counts[line["status"]] = counts.get(line["status"], 0) + 1
-    return {"kit": plan["kit"], "counts": counts, "analyses": lines}
+    return {"kit": plan["kit"], "counts": counts, "analyses": lines,
+            "evidence": plan.get("evidence", [])}
 
 
 def text_lines(report: dict) -> list[str]:
@@ -132,6 +155,8 @@ def text_lines(report: dict) -> list[str]:
             lines.append(f"{head}: {line['reason']}")
     counts = ", ".join(f"{k} {v}" for k, v in sorted(report["counts"].items()))
     lines.append(f"{report['kit']}: {sum(report['counts'].values())} analyses: {counts}")
+    for item in report.get("evidence", []):
+        lines.append(f"{item['evidence']} {item['table']}: {item['where']}")
     return lines
 
 

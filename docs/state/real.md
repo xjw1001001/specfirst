@@ -359,8 +359,14 @@ for 3,580 of them):
   imports only `specfirst.recompute`, `kit`, `paths` and `machine.canonical`
   (`static.GENERATOR_IMPORTS`; a unit test holds it).
 - The static check (`specfirst.recompute.static`) holds the scripts to
-  allow-lists of imports and calls: a template that needs another function
-  needs it added there, and a reason.
+  allow-lists (Python imports, builtins and attributes; R calls) and to one
+  form of a read (`adam / "<d>.parquet"`, `file.path(adam, "<d>.csv")`): a
+  template that needs another function, attribute or form of a read needs
+  it added there, and a reason. seal.py's audit hook refuses every import
+  of specfirst or yamaa and every open by Python in the checkout and the
+  build, so a script writes its output in its own folder and run.py copies
+  it out. Neither check is a proof (ADR-021, decision 5, says what they do
+  not hold).
 - The gate issue-29 holds the pilot at 69 analyses
   (`gates.RECOMPUTE_ANALYSES`): an analysis added to a reporting event of
   the kit changes that number. tests/recompute plants three breaks of the

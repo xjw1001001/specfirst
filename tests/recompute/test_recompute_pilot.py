@@ -275,58 +275,113 @@ def checker_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
     gold = {row["id"]: row["raw_value"] for row in pilot.gold("efficacy-adas")}
     pasted = next(v for k, v in sorted(gold.items()) if "An_ADAS_W24_LSM" in k)
     assert static.python_problems(python, age["datasets"], allowed_py) == []
+    read = 'adsl = pd.read_parquet(adam / "adsl.parquet")\n'
+    bind = "adam, out = Path(sys.argv[1]), sys.argv[2]\n"
+    assert python.count(read) == 1 and python.count(bind) == 1
     planted_py = {
         "an import of the engine": python.replace("import sys\n", "import sys\nimport specfirst\n"),
         "the ARD read": python.replace('"adsl.parquet"', '"common-safety-displays.jsonl"'),
         "the built ADaM by a path": python.replace('"adsl.parquet"',
                                                    '"../data/adam/adsl.parquet"'),
         "a number of the ARD": python.replace("n = len(x)", f"n = len(x) + 0 * {pasted!r}"),
+        # the routes of the review of issue #29, pass 1 (F1)
+        "a number of the ARD in a text": python.replace(
+            "n = len(x)", f"n = len(x) + 0 * float({str(pasted)!r})"),
+        "the built ADaM by parent folders": python.replace(
+            read, 'adsl = pd.read_parquet(adam / ".." / ".." / "adsl.parquet")\n'),
+        "the root of the data folder": python.replace(bind, bind + "root = adam.anchor\n"),
+        "exec by __builtins__": python.replace(bind, bind + '__builtins__["exec"]("x = 1")\n'),
+        "a separator from chr": python.replace(bind, bind + 's = chr(ord("0") - 1)\n'),
+        "memmap": python.replace(bind, bind + 'm = np.memmap(adam / "adsl.parquet")\n'),
+        "pandas.eval": python.replace(bind, bind + 'e = pd.eval("1 + 1")\n'),
+        "the ARD's name in two parts": python.replace(
+            bind, bind + 'p = adam / ("efficacy-adas.js" + "onl")\n'),
     }
     for name, text in planted_py.items():
         problems = static.python_problems(text, age["datasets"], allowed_py)
         print(f"planted in {age['analysis']}: {name}: {problems[:1]}")
         assert problems, name
-    tokens_path = tmp_path / "lsm.R"
     planted_r = {
         "a source of the engine": r.replace(
             "args <- commandArgs", 'source("r/specfirstr/R/models.R")\nargs <- commandArgs'),
         "a library": r.replace("args <- commandArgs", "library(specfirstr)\nargs <- commandArgs"),
         "a number of the ARD": r.replace("level = 95 / 100", f"level = 95 / 100 + 0 * {pasted!r}"),
+        # the routes of the review of issue #29, pass 1 (F1)
+        "source handed to sapply as a string": r.replace(
+            "num <- function", 'x <- sapply(colnames(adsl), "source")\nnum <- function'),
+        "a call of a string": r.replace("num <- function",
+                                        '"source"(colnames(adsl))\nnum <- function'),
+        "a number of the ARD in a text": r.replace(
+            "level = 95 / 100", f'level = 95 / 100 + 0 * as.numeric("{pasted!r}")'),
+        "the ARD from the root": r.replace("num <- function", 'd <- utils::read.csv(file.path('
+                                           '"", "tmp", paste0("efficacy-adas.js", "onl")))\n'
+                                           "num <- function"),
+        "a reader as a value": r.replace("num <- function", "f <- utils::read.csv\n"
+                                         "num <- function"),
     }
-    tokens_path.write_text(r, encoding="ascii")
-    assert static.r_problems(static.r_tokens([tokens_path])[str(tokens_path)], lsm["datasets"],
-                             allowed_r) == []
-    for name, text in planted_r.items():
-        tokens_path.write_text(text, encoding="ascii")
-        problems = static.r_problems(static.r_tokens([tokens_path])[str(tokens_path)],
-                                     lsm["datasets"], allowed_r)
+    paths = [tmp_path / "lsm.R"]
+    paths[0].write_text(r, encoding="ascii")
+    for i, text in enumerate(planted_r.values()):
+        paths.append(tmp_path / f"lsm{i}.R")
+        paths[-1].write_text(text, encoding="ascii")
+    tokens = static.r_tokens(paths)
+    assert static.r_problems(tokens[str(paths[0])], lsm["datasets"], allowed_r) == []
+    for name, path in zip(planted_r, paths[1:], strict=True):
+        problems = static.r_problems(tokens[str(path)], lsm["datasets"], allowed_r)
         print(f"planted in {lsm['analysis']}: {name}: {problems[:1]}")
         assert problems, name
-    # The sealed run refuses the engine even where the static check would not look.
+    # The sealed run refuses the engine and every open by Python in the checkout and the
+    # build even where the static check would not look: an import, an import past the hook
+    # of meta_path, and a read of the ARD (the review, pass 1: S1, S4).
+    fence = (pilot.root, pilot.folder)
+    ard_file = pilot.folder / build.ARD / "common-safety-displays.jsonl"
+    sealed = {
+        "an import of the engine": planted_py["an import of the engine"],
+        "an import past the hook of meta_path": python.replace(
+            "import sys\n",
+            "import sys\nsys.meta_path.clear()\nimport specfirst.machine.methods\n"),
+        "an open of the ARD": python.replace(
+            bind, bind + f"ard = open({str(ard_file)!r}).read()\n"),
+    }
     bundle = tmp_path / "bundle"
     shutil.copytree(pilot.bundle, bundle)
-    (bundle / age["file"]).write_text(planted_py["an import of the engine"], encoding="ascii")
     with tempfile.TemporaryDirectory() as name:
         parquet, csv = recompute.data_folder(bundle, pilot.folder / pilot.kit.reference, Path(name))
-        why = recompute.run_one(bundle, age, parquet, csv, tmp_path / "out", tmp_path / "logs")
-    print(f"planted in {age['analysis']}: the sealed run: {why}")
-    assert why and "refused by the sealed run" in why
+        for what, text in sealed.items():
+            (bundle / age["file"]).write_text(text, encoding="ascii")
+            why = recompute.run_one(bundle, age, parquet, csv, tmp_path / "out",
+                                    tmp_path / "logs", fence)
+            print(f"planted in {age['analysis']}: the sealed run, {what}: {why}")
+            assert why and "refused by the sealed run" in why, what
+    print("not held by the sealed run, held by the static check above: a read by pyarrow's own "
+          "code (the built ADaM by parent folders) and any read or source in R")
 
 
 def comparison_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
-    """The comparison fails on a swapped option in a script, a lost row, an extra row and a
-    value off by a relative 1e-8."""
+    """The comparison fails on a swapped option in a script, a lost row, an extra row, a
+    value off by a relative 1e-8, a script that fails after it wrote its output, and an
+    analysis without ARD rows (the review of issue #29, pass 1: F2, F3)."""
     age = plan_entry(pilot, "An03_01_Age_Summ_ByTrt")
+    height = plan_entry(pilot, "An03_06_Height_Summ_ByTrt")
     bundle = tmp_path / "bundle"
     shutil.copytree(pilot.bundle, bundle)
     script = bundle / age["file"]
     script.write_text(script.read_text(encoding="ascii").replace(
         '"averaged_inverted_cdf"', '"linear"'), encoding="ascii")
+    script = bundle / height["file"]
+    script.write_text(script.read_text(encoding="ascii") + "raise SystemExit(3)\n",
+                      encoding="ascii")
     outputs = tmp_path / "out"
     shutil.copytree(pilot.work / "out", outputs)
     with tempfile.TemporaryDirectory() as name:
         parquet, csv = recompute.data_folder(bundle, pilot.folder / pilot.kit.reference, Path(name))
         assert recompute.run_one(bundle, age, parquet, csv, outputs, tmp_path / "logs") is None
+        why = recompute.run_one(bundle, height, parquet, csv, outputs, tmp_path / "logs")
+    assert why and not (outputs / height["event"] / f"{height['analysis']}.csv").exists()
+    cibic = bundle / "ard" / "efficacy-cibic.jsonl"
+    kept = [line for line in cibic.read_text(encoding="utf-8").splitlines(keepends=True)
+            if '"An_CIBIC_EFF_N"' not in line]
+    cibic.write_text("".join(kept), encoding="utf-8")  # an analysis without ARD rows
     lsm = outputs / "efficacy-adas" / "An_ADAS_W24_LSM.csv"
     lines = lsm.read_text(encoding="ascii").splitlines()
     lsm.write_text("\n".join(lines[:-1]) + "\n", encoding="ascii")  # a lost row
@@ -342,8 +397,9 @@ def comparison_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
     differs = sorted(k for k, v in found.items() if v == "differs")
     print(f"\nplanted in the scripts' outputs: {', '.join(differs)} differ")
     assert set(differs) == {"common-safety-displays/An03_01_Age_Summ_ByTrt",
+                            "common-safety-displays/An03_06_Height_Summ_ByTrt",
                             "efficacy-adas/An_ADAS_W24_LSM", "efficacy-adas/An_EFF_N",
-                            "efficacy-adas/An_ADAS_W24_PwPbo"}
+                            "efficacy-adas/An_ADAS_W24_PwPbo", "efficacy-cibic/An_CIBIC_EFF_N"}
 
 
 # The cases the gate issue-29 requires, by their IDs (gates.RECOMPUTE_TESTS).
