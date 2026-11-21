@@ -2,9 +2,9 @@
 entry: tfl.ae.summary.rows
 alternatives:
   standard_rows:
-    plain: "The adverse event summary table has these rows: any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
-    formal: "The adverse event summary table shall present the following rows: any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
-    brief: "Adverse event summary table rows: any event; related events; serious events; events leading to discontinuation of study treatment; fatal events."
+    plain: "The adverse event summary table has these rows: any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment."
+    formal: "The adverse event summary table shall present the following rows: any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment."
+    brief: "Adverse event summary table rows: any event; related events; serious events; serious related events; fatal events; events leading to discontinuation of study treatment."
   stated_rows:
     plain: "The adverse event summary table has the following rows, in the order given: {rows}."
     formal: "The adverse event summary table shall present the following rows, in the order listed: {rows}."

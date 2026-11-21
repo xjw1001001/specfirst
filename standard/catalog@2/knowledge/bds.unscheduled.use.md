@@ -22,10 +22,12 @@ baseline or the analyzed record of a visit, or is kept out of both.
 - One answer covers baseline and analysis visits together. Many SAPs allow unscheduled
   values for baseline but leave them out of by-visit tables; that mixed rule matches no
   alternative. Report both sentences.
-- Unscheduled here means a visit without a planned study day. Do not assume that an early
-  termination or end-of-treatment visit is unscheduled in that sense.
+- Unscheduled here means a visit without a planned study day, or one whose name contains
+  UNSCHED (fixed rule `unscheduled_visit`). Do not assume that an early termination or
+  end-of-treatment visit is unscheduled in that sense. A SAP that defines unscheduled
+  otherwise contradicts the fixed rule: cite it.
 - When records keep their collected visit (`bds.window.table`), a record of an unscheduled
   visit gets no analysis visit whatever is chosen here; this entry then still decides
   whether it can be baseline.
 - Use of unscheduled values in listings is outside this entry.
-- Silent documents: use the house default `compete` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

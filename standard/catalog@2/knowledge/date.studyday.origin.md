@@ -26,4 +26,4 @@ the assignment of records to visit windows and target days.
   footnote ties it to first dosing or to another event.
 - When first dose and reference start fall on the same day for every subject, both
   alternatives give the same days. Choose by the wording, not by that coincidence.
-- Silent documents: use the house default `treatment_start` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

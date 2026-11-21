@@ -22,7 +22,7 @@ adam:
     optional: [pop.efficacy.rule]
     columns: [STUDYID, USUBJID, SUBJID, SITEID, AGE, AGEU, AGEGR1, SEX, RACE,
               RACEGR1, ETHNIC, ARM, ARMCD, ACTARM, TRT01P, TRT01A, RFSTDTC,
-              TRTSDT, TRTSDTM, TRTSTMF, TRTEDT, RANDFL, ITTFL, SAFFL, EFFFL, EOSSTT,
+              RANDDT, TRTSDT, TRTSDTM, TRTSTMF, TRTEDT, RANDFL, ITTFL, SAFFL, EFFFL, EOSSTT,
               EOSDT, DCSREAS, HEIGHTBL, WEIGHTBL, BMIBL]
   ADAE:
     parent: adam/adae.yaml
@@ -30,7 +30,7 @@ adam:
     output: adae
     optional: []
     columns: [STUDYID, USUBJID, AESEQ, TRTP, TRTA, SAFFL, ITTFL, TRTSDT,
-              TRTEDT, AETERM, AEDECOD, AESOC, AESEV, AESER, AEREL, RELGR1,
+              TRTEDT, AETERM, AEDECOD, AEBODSYS, AESOC, AESEV, AESER, AEREL, RELGR1,
               AEACN, AEOUT, AESDTH, ASTDT, ASTDTF, ASTDY, AENDT, AENDY,
               TRTEMFL, AOCCFL, AOCCSFL, AOCCPFL]
   ADVS:
@@ -40,7 +40,7 @@ adam:
     optional: []
     columns: [STUDYID, USUBJID, TRTP, TRTA, SAFFL, ITTFL, TRTSDT, TRTEDT,
               PARAMCD, PARAM, VSSEQ, VISIT, VISITNUM, ADT, ADY, AVISIT,
-              AVISITN, AVAL, BASE, CHG, ABLFL, ANL01FL, DTYPE]
+              AVISITN, AVAL, AVALU, BASE, CHG, ABLFL, ANL01FL, DTYPE]
 
 # ARS and layout templates: one pair per table family.
 ars:
@@ -56,3 +56,39 @@ layout:
     tfl-ae-summary: layout/ae-summary.yaml
     tfl-ae-soc-pt: layout/ae-soc-pt.yaml
     tfl-vitals-by-visit: layout/vitals-by-visit.yaml
+
+# What STANDARD.md states besides the defaults (ADR-020, #15, #17, #33). Each
+# text is rendered as it stands; a change is a new version of the house.
+scope: >-
+  the analysis data sets ADSL, ADAE and ADVS and four table families (the
+  demographics table, the adverse event summary table, the adverse event
+  table by system organ class and preferred term, and the vital signs table
+  by visit) for a study of the design archetype PG-FIX (PLAN.md section 6.2:
+  randomized, parallel, placebo-controlled, fixed duration) whose SDTM holds
+  DM, EX, DS, SV, VS and AE. It does not cover efficacy analyses, laboratory
+  data, time-to-event analyses or listings.
+precedence: >-
+  a decision that the study's protocol or statistical analysis plan states
+  holds first; where they are silent and the study has reference analysis
+  data, those data decide (PLAN.md section 17, decision 17); a default of
+  this standard holds only where both are silent.
+conventions:
+  - A subject is counted once in a cell, however many records it has there.
+  - The count n of a statistic is the number of non-missing values.
+  - The standard deviation divides by n - 1; with n = 1 it cannot be computed and its cell is blank.
+  - Alphabetical order compares the upper-cased text, then the text itself.
+  - A number is rounded once, from its full precision to the displayed decimals; the method registry (standard/methods/, PLAN.md section 7.3) defines every statistic.
+conformance:
+  - "ADSL: a subject is randomized when it has a disposition record whose standardized term is RANDOMIZED; when the disposition data of the study hold no such record, when its planned arm code is present and is neither SCRNFAIL nor NOTASSGN (RANDFL; the date of that record is RANDDT)."
+  - "ADSL: the end-of-study status is that of the last disposition event; a record whose standardized term is SCREEN FAILURE gives no status."
+  - "ADAE: AEBODSYS is carried from AE, and the organ class of every table is AESOC, as in the ARS example."
+  - "ADAE: the first-occurrence flags AOCCFL, AOCCSFL and AOCCPFL take the first treatment-emergent event by analysis start date, then by sequence number."
+  - "ADVS: PARAM is the test name with the unit of its parameter in parentheses: the first non-missing standard unit of the test in the study, by subject and sequence number (the name alone when the test has no unit); AVALU is the standard unit of the record. VSPOS and VSTPT are not read: of several records of one test at one visit, one is analyzed (bds.window.tiebreak)."
+  - "ADVS: DTYPE is the empty text on a collected record, not null, because it is a key of the dataset; the end-of-treatment record has DTYPE LOV and AVISITN 9999."
+  - "ADVS: the baseline record has AVISIT Baseline and AVISITN 0; CHG is computed on post-baseline records only; ANL01FL flags the baseline record, the end-of-treatment record and the one record a post-baseline analysis visit takes (bds.window.tiebreak)."
+  - "ADAE: in the order of the first-occurrence flags, an event without an analysis start date comes after every dated event of the subject."
+  - "Labels: a variable carried from another dataset takes the label of its source; the label of the parent spec holds only for a variable it derives."
+  - "Times of day: a time of day is numeric, the seconds since midnight, as ADaMIG names *TM variables and reference datasets store them."
+change_log:
+  - {version: open-default@2, date: 2026-11-21, text: "ADR-020: the defaults moved into defaults.yaml; the new defaults of #1, #2, #3, #6, #7, #8, #11 and #13; anchors by entry ID; sources, terms, conventions and conformance rules stated; for catalog@2."}
+  - {version: open-default@1, date: 2026-11-17, text: "Delivered by std-1 (ADR-004) and accepted with catalog@1 at node N1."}

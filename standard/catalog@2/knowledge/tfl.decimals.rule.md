@@ -27,4 +27,4 @@ and maximum in continuous rows. It is given once per table family.
 - Shell patterns such as xx.x are sketches. Use them for `stated_decimals` only when the SAP
   says that the shells fix the precision, and only if all four slots can be filled.
 - One number serves minimum and maximum; quartiles are shown as the median is.
-- Silent documents: use the house default `relative_to_data` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

@@ -14,7 +14,8 @@ alternatives:
           - id: eot
             dataset: VS
             group_by: [VS.STUDYID, VS.USUBJID, VS.VSSEQ, VS.VSTESTCD, VS.VSTEST,
-                       VS.VSSTRESN, VS.VSDTC, VS.VISIT, VS.VISITNUM, VS.VISITDY]
+                       VS.VSSTRESN, VS.VSSTRESU, VS.VSDTC, VS.VISIT, VS.VISITNUM,
+                       VS.VISITDY]
             filter: "_EOTRN = 1"
             derivations:
               _ROWKIND: "'EOT'"

@@ -26,4 +26,4 @@ preferred term shows only subjects with their percentage, or also the number of 
   of events only matches no alternative; report the passage.
 - Under `subjects_and_events` the number of events follows the subjects and their percentage
   in each cell.
-- Silent documents: use the house default `subjects` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

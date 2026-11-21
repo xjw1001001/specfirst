@@ -40,7 +40,10 @@ alternatives:
     definition: >-
       The target day of the visit is its planned study day (VISITDY). A
       record of an unscheduled visit has no analysis visit.
-notes: A record is post-baseline when its date is after the treatment start date.
+notes: >-
+  A record is post-baseline as bds.baseline.rule says: dated after the
+  treatment start date, or on that date, not before the first dose, and
+  timed at or after a timed first dose.
 compile: templates/bds.window.table.yaml
 phrasings: phrasings/bds.window.table.yaml
 reading: knowledge/bds.window.table.md

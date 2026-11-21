@@ -8,6 +8,11 @@ to exercise one rule of the house parent specs or of a catalog decision.
     S2  randomized to Placebo and dosed from 2024-03-12; partial dates
     S3  randomized to Low Dose and never dosed
     S4  dosed without being randomized; no exposure end date
+
+"Randomized" above is by the planned arm code, the rule of open-default@1.
+From open-default@2 a subject is randomized by a disposition record
+RANDOMIZED when the study has one (ADR-020, #10): here only S1 has it, so
+under that house S2 and S3 are not randomized.
 """
 
 from __future__ import annotations
@@ -112,7 +117,7 @@ def tables() -> dict[str, pa.Table]:
 
     dm = [(STUDY, usubjid, usubjid[1:], "01", age, "YEARS", *rest)
           for usubjid, age, *rest in DM]
-    ae = [(STUDY, usubjid, seq, decod.title(), decod, soc, "MILD", ser, rel, acn,
+    ae = [(STUDY, usubjid, seq, decod.title(), decod, soc, soc, "MILD", ser, rel, acn,
            "RECOVERED/RESOLVED", dth, start, end)
           for usubjid, seq, decod, soc, ser, rel, acn, dth, start, end in AE]
     vs = [(STUDY, usubjid, seq, code, test, value, "", dtc, visit, visitnum, visitdy)
@@ -131,7 +136,8 @@ def tables() -> dict[str, pa.Table]:
                       "VSSTRESU", "VSDTC", "VISIT", "VISITNUM", "VISITDY"], vs,
                      {"VSSEQ": integer, "VSSTRESN": number, "VISITNUM": number,
                       "VISITDY": number}),
-        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AESOC", "AESEV",
+        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AEBODSYS", "AESOC",
+                      "AESEV",
                       "AESER", "AEREL", "AEACN", "AEOUT", "AESDTH", "AESTDTC", "AEENDTC"], ae,
                      {"AESEQ": integer}),
     }

@@ -4,5 +4,5 @@ alternatives:
     params: {term_sort: alphabetical}
   descending_frequency_total:
     params: {term_sort: descending_frequency_total}
-  descending_frequency_highest_dose:
-    params: {term_sort: descending_frequency_highest_dose}
+  soc_alpha_pt_descending_in_column:
+    params: {term_sort: soc_alpha_pt_descending_in_column, term_sort_column: {$get: column}}

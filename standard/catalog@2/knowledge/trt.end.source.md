@@ -18,15 +18,20 @@ treatment emergence window that is counted from the last dose.
   infusion was started", "start of the last dosing interval".
 - `ds_date_when_ex_missing`: a fallback sentence such as "if the date of last dose is missing,
   the date of study completion or discontinuation is used".
+- `last_ex_record_end`: "end date of the last exposure record", "the last entry of the drug
+  administration log, whatever the dose"; the counterpart of `first_ex_record` of
+  `trt.start.source`.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ## Traps
 
 - With one record per dose, start and end date agree; the first two alternatives differ only
   when a record spans several days. Plain "date of last dose" means `last_ex_end_date`.
-- Only exposure records with a dose count (a dose above zero, or a placebo record). The
-  fallback of `ds_date_when_ex_missing` applies only when no such record of the subject has
+- Except under `last_ex_record_end`, only exposure records with a dose count (a dose above
+  zero, or a placebo record). The fallback of `ds_date_when_ex_missing` applies only when no such record of the subject has
   an end date, and it takes the date of the end-of-study record (`disp.status.record`).
 - A fallback to the last visit, the last contact or a data cut-off date matches no
   alternative. Report the passage instead of picking the nearest one.
 - The date of an "end of treatment visit" is a visit date, not the treatment end date.
-- Silent documents: use the house default `last_ex_end_date` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

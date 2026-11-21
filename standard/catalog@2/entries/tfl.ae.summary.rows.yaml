@@ -4,20 +4,31 @@ applies_when: design.collects_adverse_events
 question: Which rows does the adverse event summary table have?
 alternatives:
   - id: standard_rows
-    statement: "The rows of the adverse event summary table are any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
+    statement: "The rows of the adverse event summary table are any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment."
+    definition: >-
+      The rows and their order are those of the ARS example "Common Safety
+      Displays", output Out14-3-1-1, without its rows of related fatal events
+      and of events leading to dose modification.
   - id: stated_rows
     statement: "The rows of the adverse event summary table are, in this order, {rows}."
-    definition: "Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL."
+    definition: >-
+      Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED
+      (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a
+      dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and
+      related).
     slots:
       rows:
         type: "list[name]"
-        choices: [ANY, RELATED, SERIOUS, DISCONTINUATION, FATAL]
+        choices: [ANY, RELATED, SERIOUS, SERIOUS_RELATED, DISCONTINUATION, DOSE_MODIFIED, FATAL, FATAL_RELATED]
         examples: [[ANY, SERIOUS, FATAL], [ANY], [SERIOUS, RELATED, ANY]]
 notes: >-
   Every row counts subjects with at least one treatment-emergent event of
   its kind. Related is decision ae.related.values; serious is AESER equal
-  to Y; leading to discontinuation is AEACN equal to DRUG WITHDRAWN; fatal
-  is AESDTH equal to Y.
+  to Y; leading to discontinuation is AEACN equal to DRUG WITHDRAWN;
+  leading to dose modification is AEACN equal to DOSE REDUCED or DRUG
+  INTERRUPTED; fatal is AESDTH equal to Y, as in the ARS example. An event
+  with an outcome of death (AEOUT equal to FATAL) is another rule, which
+  this version does not state.
 compile: templates/tfl.ae.summary.rows.yaml
 phrasings: phrasings/tfl.ae.summary.rows.yaml
 reading: knowledge/tfl.ae.summary.rows.md
@@ -26,6 +37,7 @@ sources:
   - ref: ars
     path: "workfiles/examples/ARS v1/Common Safety Displays.json"
     find: "Dss08_AE_Ld2TrtDsc"
-    where: "the data subsets of the adverse event overview: related, serious, leading to death, leading to discontinuation"
+    where: "the data subsets of the adverse event overview, in its order: related, serious, related serious, leading to death, related leading to death, leading to dose modification, leading to discontinuation"
   - ref: fda-stf
-    where: "overview of adverse events"
+    where: "section 2.2.1, Table 7, page 17, Overview of Adverse Events: serious events with their criteria, discontinuation, action taken, severity; its rows differ from standard_rows (the review of #14, 2026-11-11)"
+    evidence: cited

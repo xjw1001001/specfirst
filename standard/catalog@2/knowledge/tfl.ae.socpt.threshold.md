@@ -27,4 +27,4 @@ system organ class and preferred term.
   main table of the family; a threshold that belongs only to an extra table does not apply.
 - A system organ class is shown when one of its terms is shown, and its own row still counts
   every subject with an event in the class.
-- Silent documents: use the house default `none` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

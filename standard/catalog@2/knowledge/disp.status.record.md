@@ -28,4 +28,4 @@ ongoing. Rules that fall back on the end-of-study date use the same record.
   subject with no such record is ONGOING.
 - The subcategory is compared exactly. Use the text the documents or annotated forms give;
   if none is given, report that instead of inventing one.
-- Silent documents: use the house default `disposition_event` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

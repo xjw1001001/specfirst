@@ -27,5 +27,5 @@ start or end date, and so whether such a subject has study days and counts as do
   the last day of the month, or any date with the 15th, is not covered: report the passage.
 - A general sentence such as "partial dates are imputed conservatively" names no rule; treat
   it as silent.
-- Silent documents: use the house default `not_completed` and cite the house standard. Do not
+- Silent documents: use the house default and cite the house standard. Do not
   infer a rule from the data.

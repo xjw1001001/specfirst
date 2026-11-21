@@ -9,9 +9,9 @@ alternatives:
     statement: "The safety set holds every randomized subject who received at least one dose of study treatment."
 notes: >-
   A subject received a dose when the treatment start date is present. A
-  subject is randomized when the planned arm code (DM.ARMCD) is present and
-  is neither SCRNFAIL nor NOTASSGN; the rule of the randomized set
-  (pop.randomized.rule) does not enter.
+  subject is randomized as the fixed rule of pop.randomized.rule says
+  (RANDFL); which randomized subjects form the randomized set does not
+  enter.
 compile: templates/pop.safety.rule.yaml
 phrasings: phrasings/pop.safety.rule.yaml
 reading: knowledge/pop.safety.rule.md
@@ -25,3 +25,9 @@ sources:
     path: cdiscpilot01/spec/yamaa/adsl.yaml
     find: "Y if ITTFL='Y' and TRTSDT ne missing"
     where: "SAFFL of the pilot ADSL: randomized and dosed"
+  - ref: fda-stf
+    where: "section 2.1.1, page 5: all subjects exposed to at least one dose of randomized treatment; section 2.1.4, Table 4, page 10: all subjects who received at least one dose of the study drug (the review of #2, 2026-11-11)"
+    evidence: cited
+  - ref: admiral
+    where: "inst/templates/ad_adsl.R: SAFFL from any dosed EX record, with no test of randomization (the review of #2, 2026-11-11)"
+    evidence: cited

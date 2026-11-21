@@ -13,17 +13,20 @@ preferred term. The counts do not change.
 
 - `alphabetical`: "system organ classes and preferred terms in alphabetical order".
 - `descending_frequency_total`: "by decreasing frequency in the total column", "by descending
-  overall incidence", "most frequent first over all treatment groups".
-- `descending_frequency_highest_dose`: "by decreasing frequency in the highest dose group",
-  "sorted by incidence in the high dose arm".
+  overall incidence", "most frequent first over all treatment groups", for organ classes and
+  terms alike.
+- `soc_alpha_pt_descending_in_column`: "organ classes alphabetically, preferred terms by
+  decreasing frequency in the high dose group", "within each body system, terms by descending
+  incidence in the total column". The slot `column` is the arm's label, or Total.
 
 ## Traps
 
-- "By decreasing frequency" with no column named does not choose between the two frequency
-  alternatives; report that the column is not stated.
-- Mixed rules are common and match no alternative: organ classes alphabetical with terms by
-  frequency, or sorting by the frequency in one named active arm. Report the passage.
+- "By decreasing frequency" with no column named does not say which column drives the order;
+  report that the column is not stated.
+- Sorting by the risk difference (the FDA guide, section 2.2) matches no alternative of this
+  version; report the passage.
 - Frequency is the number of subjects, not of events; a tie is broken alphabetically.
   Preferred terms are sorted within their system organ class in every alternative.
+- Alphabetical order compares the upper-cased text, then the text itself.
 - A fixed, internationally agreed order of organ classes is not alphabetical order.
-- Silent documents: use the house default `alphabetical` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

@@ -27,6 +27,24 @@ alternatives:
               aggregate:
                 filter: "(EX.EXDOSE > 0 OR (EX.EXDOSE = 0 AND EX.EXTRT LIKE '%PLACEBO%')) AND EX.EXENDTC LIKE '____-__%' AND EX.EXENDTC NOT LIKE '%--%'"
                 expr: "MAX(EX.EXENDTC)"
+  last_ex_record_end:
+    adam:
+      ADSL:
+        columns:
+          - name: _TRTEDTC
+            type: str
+            label: "Working value: latest complete exposure date text"
+            derivation:
+              aggregate:
+                filter: "EX.EXENDTC LIKE '____-__-__%' AND EX.EXENDTC NOT LIKE '%--%'"
+                expr: "MAX(EX.EXENDTC)"
+          - name: _TRTEDTCM
+            type: str
+            label: "Working value: latest exposure date text with a known month"
+            derivation:
+              aggregate:
+                filter: "EX.EXENDTC LIKE '____-__%' AND EX.EXENDTC NOT LIKE '%--%'"
+                expr: "MAX(EX.EXENDTC)"
   last_ex_start_date:
     adam:
       ADSL:

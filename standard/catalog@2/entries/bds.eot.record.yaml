@@ -6,9 +6,10 @@ alternatives:
   - id: last_on_treatment_value
     statement: "An end-of-treatment record repeats the last non-missing post-baseline value on or before the treatment end date."
     definition: >-
-      The record has the analysis visit End of Treatment and the derivation
-      type LOV. A subject without a treatment end date takes the last
-      post-baseline value.
+      The record has the analysis visit End of Treatment, AVISITN 9999 and
+      the derivation type LOV, and carries the unit of the value it repeats.
+      A subject without a treatment end date takes the last post-baseline
+      value.
   - id: none
     statement: "There is no end-of-treatment record."
 compile: templates/bds.eot.record.yaml

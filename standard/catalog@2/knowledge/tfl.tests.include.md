@@ -26,4 +26,4 @@ columns, and which tests fill it.
   rule that neither alternative expresses; report the passage.
 - A stratified test for categorical data is not the chi-square test meant here.
 - Tests named for efficacy endpoints do not say that demographics are tested.
-- Silent documents: use the house default `none` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

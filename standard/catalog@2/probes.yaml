@@ -115,6 +115,14 @@ probes:
     recipe: A subject whose last exposure record ends some days after it starts.
     separates:
       trt.end.source: [[last_ex_end_date, last_ex_start_date], [last_ex_start_date, ds_date_when_ex_missing]]
+  undosed_record_after_last_dose:
+    kind: record
+    domains: [EX]
+    recipe: >-
+      A subject with an exposure record of dose zero (not placebo) that ends
+      after the last record with a dose.
+    separates:
+      trt.end.source: [[last_ex_end_date, last_ex_record_end], [last_ex_start_date, last_ex_record_end], [ds_date_when_ex_missing, last_ex_record_end]]
   no_exposure_end_date:
     kind: record
     domains: [EX, DS]
@@ -185,16 +193,16 @@ probes:
       demo.age.groups: all
     varies:
       demo.age.groups: [cuts]
-  race_category_at_pooling_count:
+  race_value_the_map_regroups:
     kind: record
     domains: [DM]
     recipe: >-
-      One race category with exactly the pooling count of subjects and one
-      with one subject fewer.
+      Subjects whose races are a value the map names and a value it does not
+      name.
     separates:
       demo.race.pooling: all
     varies:
-      demo.race.pooling: [count]
+      demo.race.pooling: [other, map]
   weight_at_screening_and_day_1:
     kind: record
     domains: [VS]
@@ -235,7 +243,15 @@ probes:
       An adverse event that starts on the first dose date with no time, for
       a subject whose first dose has a time after 00:00.
     separates:
-      ae.teae.start: all
+      ae.teae.start: [[on_or_after_first_dose_date, at_or_after_first_dose_time], [at_or_after_first_dose_time, by_time_when_collected]]
+  ae_timed_before_timed_first_dose:
+    kind: record
+    domains: [AE, EX]
+    recipe: >-
+      An adverse event that starts on the first dose date at a collected
+      time before the collected time of the first dose.
+    separates:
+      ae.teae.start: [[on_or_after_first_dose_date, at_or_after_first_dose_time], [on_or_after_first_dose_date, by_time_when_collected]]
   ae_starts_after_emergence_window:
     kind: record
     domains: [AE, EX]
@@ -244,20 +260,6 @@ probes:
       ae.teae.end: [[no_end, last_dose_plus_days]]
     varies:
       ae.teae.end: [days]
-  ae_starts_after_end_of_study:
-    kind: record
-    domains: [AE, DS]
-    recipe: An adverse event that starts after the date of the end-of-study record.
-    separates:
-      ae.teae.end: [[no_end, end_of_study]]
-  ae_between_window_end_and_end_of_study:
-    kind: record
-    domains: [AE, EX, DS]
-    recipe: >-
-      An adverse event that starts more than N days after the last dose and
-      before the end-of-study date.
-    separates:
-      ae.teae.end: [[last_dose_plus_days, end_of_study]]
   ae_with_each_causality_value:
     kind: record
     domains: [AE]
@@ -336,9 +338,14 @@ probes:
   category_with_zero_count:
     kind: record
     domains: [DM, AE]
-    recipe: A category or term that occurs in one arm and not in another.
+    recipe: >-
+      A category or term that occurs in one arm and not in another, in an arm
+      whose size makes its percentage not a whole number (1 of 3 subjects
+      gives 33.3).
     separates:
       tfl.percent.format: all
+    varies:
+      tfl.percent.format: [decimals]
   group_size_separating_quantiles:
     kind: record
     domains: [DM, VS]
@@ -347,6 +354,7 @@ probes:
       quantile definitions differ, with unequal neighbouring values.
     separates:
       tfl.quantile.definition: all
+    needs: The decision tfl.demog.stats is with_quartiles.
   statistic_at_rounding_half:
     kind: record
     domains: [DM, VS, AE]
@@ -379,17 +387,25 @@ probes:
     domains: [AE]
     recipe: >-
       Two preferred terms of one organ class whose order by frequency, over
-      all arms and in the arm with the highest dose, is not alphabetical.
+      all arms and in every arm, is not alphabetical.
     separates:
-      tfl.ae.socpt.sort: [[alphabetical, descending_frequency_total], [alphabetical, descending_frequency_highest_dose]]
-  term_order_differs_between_total_and_highest_dose:
+      tfl.ae.socpt.sort: [[alphabetical, descending_frequency_total], [alphabetical, soc_alpha_pt_descending_in_column]]
+  term_order_differs_between_columns:
     kind: record
     domains: [AE]
     recipe: >-
       Two preferred terms of one organ class, one more frequent over all
-      arms and the other more frequent in the arm with the highest dose.
+      arms and the other more frequent in one arm.
     separates:
-      tfl.ae.socpt.sort: [[descending_frequency_total, descending_frequency_highest_dose]]
+      tfl.ae.socpt.sort: [[descending_frequency_total, soc_alpha_pt_descending_in_column]]
+    varies:
+      tfl.ae.socpt.sort: [column]
+  soc_frequency_order_not_alphabetical:
+    kind: record
+    domains: [AE]
+    recipe: Two system organ classes whose order by frequency over all arms is not alphabetical.
+    separates:
+      tfl.ae.socpt.sort: [[alphabetical, descending_frequency_total], [descending_frequency_total, soc_alpha_pt_descending_in_column]]
   terms_with_equal_frequency:
     kind: record
     domains: [AE]

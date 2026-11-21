@@ -1,4 +1,4 @@
-# House standard open-default@1: ARS template of the table of vital signs
+# House standard open-default@2: ARS template of the table of vital signs
 # by visit (unit tfl-vitals-by-visit). Parameters and analysis visits are
 # the lists of the decision tfl.vs.scope; the analysis records are those
 # with ANL01FL = Y, as in the CDISC ARS example "Common Safety Displays".
@@ -124,7 +124,9 @@ analyses:
         programmingCode:
           context: specfirst method registry
           parameters:
-            - {name: quantile_definition, value: ["${quantile_definition}"]}
+            # Fixed: the table shows no quartile, and both definitions give the same
+            # median (ADR-020, #22).
+            - {name: quantile_definition, value: [sas5]}
 
 outputs:
   - id: Out_VS

@@ -18,6 +18,8 @@ who counts as dosed. Another source moves all of them for the subjects it affect
   "first entry of the drug administration log, whatever the dose".
 - `dm_rfxstdtc`: "date of first exposure as recorded in demographics", "reference first
   treatment date", or the variable RFXSTDTC named directly.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ## Traps
 
@@ -29,4 +31,4 @@ who counts as dosed. Another source moves all of them for the subjects it affect
   date are matters for `date.studyday.origin`, not for this entry.
 - This entry gives a date. Comparisons with the time of the first dose are decided in
   `ae.teae.start` and `bds.baseline.rule`.
-- Silent documents: use the house default `first_ex_with_dose` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

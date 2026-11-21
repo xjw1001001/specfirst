@@ -20,4 +20,5 @@ sources:
     find: '"groupingVariable": "TRT01A"'
     where: "the treatment grouping of the safety displays"
   - ref: fda-stf
-    where: "general conventions: safety tables by actual treatment arm"
+    where: "section 2.1.1, page 5: the safety analysis population; the guide has no sentence on actual against planned treatment (the review of #14, 2026-11-11)"
+    evidence: cited

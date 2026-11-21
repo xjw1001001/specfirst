@@ -37,6 +37,24 @@ section 13.4).
   - #24: the scorer's build stops after ADaM when no subject has TRTSDT,
     naming the decision, its alternative, its filter and the empty
     variable.
+- catalog-2a (2026-11-21): the versions of the standard (ADR-020, approved
+  by the owner the same day). Versioned folders `standard/catalog@<n>/` and
+  `standard/houses/<house>@<n>/`, listed with status and tree in
+  standard/versions.yaml; the defaults move into the house
+  (`defaults.yaml`); `migration.yaml` and standard/BACKLOG.yaml; the checks
+  of the versions. Gates on clean clones: catalog-2a, std-1, gen-2a, gen-3a,
+  read-1a, read-2a, all PASS. Evidence: docs/reports/catalog-2a.md. Review:
+  docs/reports/catalog-2a.review.md (pass 2 signed).
+- catalog-2b (2026-11-21): the content of `catalog@2` and `open-default@2`
+  (ADR-020, decision 7): issues #1 to #24, #28 and #33 of the owner-side
+  review, with the eight new house defaults and the two changed N1 answers.
+  The owner accepted three departures as built before the freeze (ADR-020,
+  "The owner's answer on the three departures"). Version 2 is frozen and
+  tagged `catalog@2` and `open-default@2`. Gates on clean clones: catalog-2b,
+  std-1, gen-2a, gen-3a, read-1a and read-2a, all PASS; then catalog-2b and
+  std-1 again on the freeze commit. Generated kits are the same bytes.
+  Evidence: docs/reports/catalog-2b.md. Review:
+  docs/reports/catalog-2b.review.md.
 
 ## For other tracks (from std-issues)
 
@@ -53,8 +71,15 @@ section 13.4).
 
 ## Open
 
-- A change of an entry, an alternative, a default or a statement of
-  `catalog@1` is a new catalog version and needs an ADR.
+- `catalog@1`, `open-default@1`, `catalog@2` and `open-default@2` are
+  frozen. A change of an entry, an alternative, a default or a statement is
+  a new version (`catalog@3`, `open-default@3`) with its own
+  `migration.yaml` and backlog records, and needs an ADR.
+- What waits, and for what, is in standard/BACKLOG.yaml (status `waits`):
+  for std-2 among others the refusal of a VS dataset with several positions
+  or time points, DTYPE null on collected records (it needs another key of
+  ADVS first), the unscheduled visit of an SDTM without VISITDY, ARS
+  templates from the decision records, and the decision record schema.
 - The four schema points of ADR-000 item 7: the owner took the
   recommendations of ADR-004. Point 3 (which records must cite) is for
   std-2 to apply; point 4 (the prefix `layout:`) for real-3 with ADR-003.
@@ -70,7 +95,10 @@ section 13.4).
   with the statement (`tests/unit/test_alternatives_on_tiny.py`). That is
   not a proof on real or generated data: std-2 checks by result on the
   pilot; gen-2 checks P4 on the twin.
-- Known limits of the house specs, for the owner and for std-2: ADVS has
+- Known limits of the house specs of `open-default@1`, for the owner and
+  for std-2 (`open-default@2` gives PARAM the unit of its parameter and
+  makes post-baseline time-aware, so that no record falls between baseline
+  and post-baseline; the rest stands there too): ADVS has
   one parameter per VSTESTCD (position and time point, VSPOS and VSTPT, are
   not read) and PARAM is VSTEST without the unit; AOCCFL, AOCCSFL and
   AOCCPFL take the first event by AESEQ; BMI assumes kg and cm; a record
@@ -85,24 +113,37 @@ section 13.4).
   same table for a given design (the kind `design` exists for that); a
   bind is complete for the values `compiler.other_values` tries, not for
   every value a slot can take.
-- Three alternatives have no public source of their own
-  (`unsourced_alternatives` in standard/catalog@1/catalog.yaml).
+- Three alternatives of `catalog@1` have no public source of their own
+  (`unsourced_alternatives` in standard/catalog@1/catalog.yaml);
+  `catalog@2` removes them (ADR-020, question 3).
 
 ## Next
 
-- catalog@2 (2026-11-21): ADR-020, approved by the owner the same day (A
-  to questions 1, 2, 3 and 5; B to 4: the slice moves too). Three parts:
-  catalog-2a (the structure: versioned folders, defaults in the house, the
-  checks of the versions; docs/reports/catalog-2a.md), catalog-2b (the
-  content of decision 7) and catalog-2c (the slice of ADR-005 moved to
-  version 2, last, with the plan cleared by the base session first).
-  Until catalog-2c merges, the default pair stays (`catalog@1`,
-  `open-default@1`) and version 2 is a draft no kit may name.
+- catalog-2c: the slice of ADR-005 moves to version 2 (ADR-020, amended
+  decision 8). The owner approved its model costs (about USD 1.6 in all:
+  the natural-form rewrite and read-back, at most 4 calls, and one dry run
+  of arm R). The std track makes all of it, the files of gen and read
+  included, in one package with one review; the gen and read tracks touch
+  none of those files while it is open. SEP01's expected values and classes
+  (`specfirst.gen.sep01`) are worked out again with
+  `specfirst gen separate sep01`. Until catalog-2c merges, the default pair
+  stays (`catalog@1`, `open-default@1`).
 - std-2 Pilot decisions, mutation and identifiability. Needs real-3.
 - Then std-3 (D1).
 
 ## For other tracks
 
+- From catalog-2a and catalog-2b: build a path to the catalog with
+  `specfirst.compile.catalog.default_dir(root, label)`, never by hand; the
+  loaders take a label (`house.load_pair(root, catalog, house)`). From
+  `catalog@2` the defaults are the house's (`house.default_value`), and a
+  default may depend on the design. STANDARD.md of `open-default@2`
+  anchors by entry ID (`[ae.teae.end]`), with fixed rules
+  (`[ae.teae.start/no_start_date]`) and one statement per case of a
+  default by design (`[pop.safety.rule/1]`). In `open-default@2` a visit is
+  unscheduled when VISITDY is missing or VISIT contains UNSCHED, a subject
+  is randomized by the disposition record first, and PARAM carries the
+  unit. What changed is in standard/catalog@2/migration.yaml.
 - gen-1 and gen-2 work from `catalog@1`. Entries, alternatives, slots
   with examples and probe recipes (`standard/catalog@1/probes.yaml`) are
   usable as they are. A probe of the kind `design` asks for a property of

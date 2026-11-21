@@ -13,3 +13,7 @@ alternatives:
     plain: "Treatment ends on the latest end date found on an exposure record with a dose; when no such record has an end date, the end-of-study disposition date is used."
     formal: "The treatment end date shall be the latest end date among the exposure records with a dose, or, when no such record has an end date, the end-of-study disposition date."
     brief: "Treatment end date: latest end date of an exposure record with a dose; if none, the end-of-study disposition date."
+  last_ex_record_end:
+    plain: "The latest end date found on any exposure record is the treatment end date."
+    formal: "The treatment end date shall be defined as the latest end date among all exposure records."
+    brief: "Treatment end date: latest end date of any exposure record."

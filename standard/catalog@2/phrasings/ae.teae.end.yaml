@@ -6,10 +6,6 @@ alternatives:
     formal: "No end date shall apply to treatment emergence."
     brief: "Treatment emergence: no end date."
   last_dose_plus_days:
-    plain: "The period of treatment emergence lasts until {days} days after the treatment end date."
-    formal: "Treatment emergence shall end {days} days following the treatment end date."
-    brief: "Treatment emergence ends: treatment end date + {days} days."
-  end_of_study:
-    plain: "The period of treatment emergence lasts until the end-of-study date."
-    formal: "Treatment emergence shall end at the end-of-study date."
-    brief: "Treatment emergence ends: end-of-study date."
+    plain: "The period of treatment emergence lasts until {days} days after the treatment end date, that last day included."
+    formal: "Treatment emergence shall end {days} days following the treatment end date, inclusive."
+    brief: "Treatment emergence ends: treatment end date + {days} days (inclusive)."

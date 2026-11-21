@@ -1,7 +1,7 @@
 # The decision catalog for the M1 families (PLAN.md section 5, appendix B).
 #
-# catalog@2 (ADR-020). A draft until catalog-2b merges, then frozen and
-# tagged; standard/versions.yaml holds its status. What changed from
+# catalog@2 (ADR-020). Frozen when catalog-2b merged, on 2026-11-21, and
+# tagged; standard/versions.yaml holds its status and tree. What changed from
 # catalog@1 is in migration.yaml, each line with its record of
 # standard/BACKLOG.yaml. The defaults are not here: a house holds them
 # (standard/houses/<house>@<n>/defaults.yaml).
@@ -9,6 +9,35 @@ catalog: specfirst-m1
 version: 2
 # The schema of the entry files (standard/schemas/).
 entry_schema: catalog-entry.v1
+
+# The defined terms of the statements (ADR-020, #18): each word has the
+# meaning the named entry gives it, in every statement. The house standard
+# prints the list once, before the first unit.
+terms:
+  treatment start date:
+    entry: trt.start.source
+    text: the date study treatment starts, from the exposure records as the entry says
+  treatment end date:
+    entry: trt.end.source
+    text: the date study treatment ends, from the exposure records as the entry says
+  randomized subject:
+    entry: pop.randomized.rule
+    text: a subject with a disposition record whose standardized term is RANDOMIZED, or, when the disposition data of the study hold no such record, with a planned arm code that is neither SCRNFAIL nor NOTASSGN
+  safety set:
+    entry: pop.safety.rule
+    text: the subjects of the safety analyses, as the entry defines them
+  study day:
+    entry: date.studyday.origin
+    text: the day counted from the origin the entry names, day 1 on that date and no day 0
+  treatment-emergent:
+    entry: ae.teae.start
+    text: an adverse event that starts within treatment emergence, which ae.teae.start begins and ae.teae.end ends
+  baseline:
+    entry: bds.baseline.rule
+    text: the value of a parameter that a change from baseline starts from; for weight and height in ADSL, as demo.baseline.record says
+  post-baseline:
+    entry: bds.baseline.rule
+    text: a record dated after the treatment start date, or one on that date that is not before the first dose and is timed at or after a timed first dose
 
 # The units that own decisions (PLAN.md section 10), in the order of the
 # standard form. A table family has a phrase: how a statement names its
@@ -106,7 +135,7 @@ entries:
   - tfl.vs.scope
   - tfl.vs.layout
 
-# Entries of appendix B that this draft leaves out, with the reason. They
+# Entries of appendix B that this version leaves out, with the reason. They
 # return with the table family or the data that makes them identifiable
 # (PLAN.md section 4.6, property P4).
 deferred:
@@ -133,20 +162,10 @@ deferred_alternatives:
     Needs a derived record (DTYPE AVERAGE) per analysis visit; kept for
     std-2 together with its yamaa row template.
 
-# Alternatives for which std-1 found no public source of their own. They come
-# from the seed list of appendix B. The entry they belong to has sources
-# (PLAN.md section 5.2, rule 5). At node N1 (2026-11-17, question 5) the
-# owner kept all three as the plan's own alternatives.
-unsourced_alternatives_kept: >-
-  Kept by the owner at node N1 on 2026-11-17 as the plan's own alternatives
-  (seed list of PLAN.md appendix B); the answer is provisional.
-unsourced_alternatives:
-  demo.race.pooling/pooled_below_count: >-
-    ADaMIG has the variable for a pooled race group (RACEGRy) and leaves the
-    rule to the sponsor. No public source states pooling below a count.
-  ae.teae.end/end_of_study: >-
-    admiral takes any treatment end date and a window after it; no cited
-    source names the end-of-study date as the end of emergence.
-  tfl.ae.socpt.sort/descending_frequency_highest_dose: >-
-    The FDA guide is cited for sorting by descending frequency; that it
-    names the arm with the highest dose was not confirmed.
+# Alternatives without a public source of their own: none in catalog@2. The
+# three of catalog@1 went at the owner's answer of 2026-11-21 (ADR-020,
+# question 3): ae.teae.end/end_of_study removed (#3),
+# tfl.ae.socpt.sort/descending_frequency_highest_dose replaced by a sourced
+# alternative (#9), demo.race.pooling/pooled_below_count replaced by a
+# stated map (#21).
+unsourced_alternatives: {}

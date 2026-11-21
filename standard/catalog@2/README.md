@@ -1,8 +1,8 @@
 # Decision catalog, version 2
 
 The closed list of questions a study answers (PLAN.md section 5, appendix
-B). Version 2, `catalog@2` (ADR-020): a draft until the part catalog-2b
-merges, then frozen and tagged; `standard/versions.yaml` holds its status.
+B). Version 2, `catalog@2` (ADR-020): frozen when the part catalog-2b merged,
+on 2026-11-21, and tagged; `standard/versions.yaml` holds its status and tree.
 Version 1 is `standard/catalog@1/`, frozen at owner node N1 on 2026-11-17
 (ADR-004). What changed from version 1 is in `migration.yaml`, each line with
 its record of `standard/BACKLOG.yaml`.
@@ -26,11 +26,8 @@ specfirst catalog --roundtrip --house open-default@2                      decisi
 specfirst catalog --sources --house open-default@2                        the cited files and texts, on the fetch cache
 specfirst catalog --yamaa --run --house open-default@2                    compile every alternative; yamaa check; build a tiny study
 specfirst catalog --tables --house open-default@2                         compile every alternative; ARS schema and layouts
-specfirst gate catalog-2a                                                 all of the above with the checks of the versions
+specfirst gate catalog-2b                                                 all of the above with the checks of the versions
 ```
 
-To change an entry while the version is a draft: edit its file, its
-template, its phrasings and its notes together, add the line of
-`migration.yaml` with its backlog record, then run the checks and
-`specfirst house --write --house open-default@2`. Once frozen, a change is a
-new version.
+This version is frozen: a change is a new version, `catalog@3`, with its
+own `migration.yaml` and backlog records (ADR-020, decision 4).

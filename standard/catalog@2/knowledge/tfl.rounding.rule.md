@@ -26,4 +26,4 @@ lies halfway between two values that can be displayed. It is given once per tabl
   the passage.
 - Truncation ("values are cut to one decimal") matches no alternative.
 - The number of decimals is not decided here (`tfl.decimals.rule`, `tfl.percent.format`).
-- Silent documents: use the house default `half_away_from_zero` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

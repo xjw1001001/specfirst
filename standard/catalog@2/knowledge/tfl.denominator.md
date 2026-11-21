@@ -25,5 +25,4 @@ some subjects have no value.
   entry is silent.
 - A convention written for adverse event tables (percent of subjects of the safety set) says
   nothing here; this entry is for the demographics table only.
-- Silent documents: use the house default `analysis_set_per_column` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.

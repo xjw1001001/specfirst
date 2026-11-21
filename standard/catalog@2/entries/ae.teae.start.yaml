@@ -11,15 +11,40 @@ alternatives:
     definition: >-
       A start or a first dose collected without a time counts from 00:00 of
       its day.
-notes: >-
-  For every alternative: an event of a subject without a treatment start
-  date is not treatment-emergent; an event that ends before the treatment
-  start date is not treatment-emergent; an event without an analysis start
-  date is treatment-emergent.
+  - id: by_time_when_collected
+    statement: "An adverse event is treatment-emergent when it starts on or after the first dose, comparing date and time where both were collected and dates otherwise."
+    definition: >-
+      On the first dose date, an event is not treatment-emergent only when
+      both its start time and the time of the first dose were collected and
+      it starts before the dose; an event on that date without a collected
+      time is treatment-emergent.
+    sources:
+      - ref: fda-stf
+        where: "section 2.2, Start Date Considerations, page 16: on the start date of drug administration, time of event versus time of start of study drug (the review of #5, 2026-11-11)"
+        evidence: cited
+fixed_rules:
+  - id: no_treatment_start
+    text: An adverse event of a subject without a treatment start date is not treatment-emergent.
+  - id: ends_before_start
+    text: An adverse event that ends before the treatment start date is not treatment-emergent.
+  - id: no_start_date
+    text: An adverse event without an analysis start date is treatment-emergent.
+    sources:
+      - ref: admiral
+        where: "R/derive_var_trtemfl.R, details: no event date, set to Y as the more conservative assumption"
+      - ref: fda-stf
+        where: "section 2.2, Start Date Considerations, page 16: a missing start date, the more conservative approach (the review of #4, 2026-11-11)"
+        evidence: cited
+  - id: no_worsening
+    text: >-
+      The worsening of an adverse event present before the treatment start
+      date does not make it treatment-emergent; the FDA guide counts
+      worsening as emergent, and the entry that would decide it is deferred
+      (ae.teae.worsening).
 compile: templates/ae.teae.start.yaml
 phrasings: phrasings/ae.teae.start.yaml
 reading: knowledge/ae.teae.start.md
-probes: [ae_on_first_dose_date_without_time]
+probes: [ae_on_first_dose_date_without_time, ae_timed_before_timed_first_dose]
 sources:
   - ref: admiral
     where: "derive_var_trtemfl(): start on or after treatment start; a missing start date is flagged"

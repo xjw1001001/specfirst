@@ -5,14 +5,33 @@ question: Who is in the randomized set?
 alternatives:
   - id: all_randomized
     statement: "The randomized set holds every randomized subject."
+    definition: >-
+      The randomized set is written to ITTFL: the FDA guide calls it the
+      randomized population, often referred to as the intent-to-treat
+      population.
   - id: randomized_with_postbaseline
     statement: "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign {test}."
-    definition: A post-baseline value is a non-missing result dated after the treatment start date.
+    definition: >-
+      A post-baseline value is a non-missing result dated after the treatment
+      start date. The set is a modified intent-to-treat set (mITT): a
+      predefined part of the randomized set, still written to ITTFL.
     slots:
       test: {type: name, examples: [SYSBP, WEIGHT]}
-notes: >-
-  A subject is randomized when the planned arm code (DM.ARMCD) is present and
-  is neither SCRNFAIL nor NOTASSGN.
+fixed_rules:
+  - id: randomized_subject
+    text: >-
+      A subject is randomized when it has a disposition record whose
+      standardized term is RANDOMIZED; when the disposition data of the study
+      hold no such record for any subject, a subject is randomized when its
+      planned arm code (DM.ARMCD) is present and is neither SCRNFAIL nor
+      NOTASSGN.
+    sources:
+      - ref: admiral
+        where: "inst/templates/ad_adsl.R: RANDDT from the DS record with DSDECOD RANDOMIZED (the review of #10, 2026-11-11)"
+        evidence: cited
+      - ref: sdtmig
+        where: "DM: ARMCD null with ARMNRS for a subject not assigned to an arm; SCRNFAIL and NOTASSGN are the convention of version 3.2 (the review of #10, 2026-11-11)"
+        evidence: cited
 compile: templates/pop.randomized.rule.yaml
 phrasings: phrasings/pop.randomized.rule.yaml
 reading: knowledge/pop.randomized.rule.md
@@ -26,3 +45,10 @@ sources:
     path: cdiscpilot01/spec/yamaa/adsl.yaml
     find: "Y if ARMCD ne"
     where: "ITTFL of the pilot ADSL"
+  - ref: fda-stf
+    where: "section 2.1.3, page 9: randomized population, often referred to as the intent-to-treat population; section 2.1.4, page 10: modified intent-to-treat population (the review of #10, 2026-11-11)"
+    evidence: cited
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "AnalysisSet_01_ITT"
+    where: "the analysis set Intent-to-Treat Population on ITTFL"
