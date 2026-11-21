@@ -199,6 +199,51 @@ The freeze commit changes versions.yaml, the pinned trees, the status of
 the backlog records and the rendered documents of version 2; the gates
 `catalog-2b` and `std-1` run again on it.
 
+### The freeze
+
+After the owner's answer on the three departures, commit `5d48e21` freezes
+version 2: `standard/versions.yaml` gives `catalog@2` and `open-default@2`
+the status `frozen` with their trees, `versions.PINNED` holds the same
+trees, the header of catalog.yaml and the README of `catalog@2` say frozen,
+STANDARD.md of `open-default@2` is rendered again (its status line only),
+and the 45 backlog records accepted for version 2 are done. Seven tests
+that needed version 2 to be a draft now build one in a copy of
+`standard/`. The trees are git's:
+
+```text
+$ git rev-parse 5d48e21:standard/catalog@2 5d48e21:standard/houses/open-default@2
+1a3dcc6575849a57f47257b8daaf5eb30d995be9
+550cb664b4d64a304f9d14bbd995379d16602601
+```
+
+From the log of the gate `catalog-2b` on a clean clone of `5d48e21`
+(docs/reports/catalog-2b.freeze.catalog-2b.gate.log):
+
+```text
+== [4/17] unit tests: pytest -m "not evidence" -q
+1337 passed, 30 deselected in 489.07s (0:08:09)
+== [5/17] frozen: specfirst.compile.gate.frozen_check
+catalog@2: frozen 2026-11-21, tree 1a3dcc6575849a57f47257b8daaf5eb30d995be9 (frozen as 1a3dcc6575849a57f47257b8daaf5eb30d995be9)
+open-default@2: frozen 2026-11-21, tree 550cb664b4d64a304f9d14bbd995379d16602601 (frozen as 550cb664b4d64a304f9d14bbd995379d16602601)
+frozen versions: 0 problems
+== [6/17] catalog: specfirst catalog --catalog catalog@2 --house open-default@2
+catalog specfirst-m1 2: 43 entries, 61 questions (entry and unit), 97 alternatives, 9 units, 51 probes
+== [14/17] backlog: specfirst.compile.gate.backlog_check
+backlog: 0 problems
+GATE catalog-2b: PASS
+```
+
+| Gate | Commit | Unit tests | Result | Log |
+| --- | --- | --- | --- | --- |
+| catalog-2b | 5d48e21 | 1337 passed, 30 deselected | GATE catalog-2b: PASS (17 checks) | docs/reports/catalog-2b.freeze.catalog-2b.gate.log |
+| std-1 | 5d48e21 | 1337 passed, 30 deselected | GATE std-1: PASS | docs/reports/catalog-2b.freeze.std-1.gate.log |
+
+The gates gen-2a, gen-3a, read-1a and read-2a are not run again: the
+freeze changes no file the slice reads (the slice names `catalog@1` and
+`open-default@1`), and in code it adds two entries to `versions.PINNED`;
+they passed on `937ae95` above. The merge into main is tagged `catalog@2`
+and `open-default@2`.
+
 ### Review
 
 `docs/reports/catalog-2b.review.md`: pass 1 not signed (F1 blocking, F2 to
@@ -211,4 +256,12 @@ for 0, 1 and 2 decimals; a term that named its entry twice; four reading
 notes that stated this house's choices; the unit of a parameter taken by
 subject, then sequence number, not by the order of the input, and the
 conformance rule that says so; a test of a visit named unscheduled that
-has a planned day.
+has a planned day. Pass 3 signed, on the same condition. The owner
+accepted the three departures as built, which answers F2. Pass 4, on the
+freeze commit `5d48e21`, signed on the condition that the gates
+`catalog-2b` and `std-1` pass on it; they do (above). Its note F16:
+docs/state/std.md still called version 2 a draft (fixed with the merge),
+and the README of `open-default@2` says STANDARD.md is "Rendered by
+`specfirst house --write`", which holds while a house is a draft; the
+README is frozen with that wording, and neither changes a check or a
+default.
