@@ -32,6 +32,21 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   docs/reports/gen-3a.review.md (signed in pass 2). Choices:
   docs/decisions/ADR-009.md.
 
+- Issue #30 (2026-11-21), gates passed, review signed, merged into `main`:
+  P4 on a reference study, one class per decision instead of a failure
+  (ADR-019, the executor's; PLAN.md and the schemas unchanged):
+  `separated`, `unseparated` (with the values that reproduce and, for an
+  integer slot, the interval), `inert`, `separated_at_dataset_only`. The
+  test study SEP01 and one planted defect per class; the classes on
+  cdiscpilot01, report only (house standard: 9 unseparated, 7 separated, 6
+  inert; with a window of 30 days, every window from 13 to 36 days gives
+  the same table). Gates on clean clones: gen-2a and gen-3a of `8154075`,
+  gen-2a of `5356478` (the review's test) and of `db68baf` (with `main`
+  `876938f` merged). Report:
+  docs/reports/issue-30.md. Review: docs/reports/issue-30.review.md
+  (signed, six findings, none blocking). Generated kits do not change.
+  See "P4 on a reference study".
+
 ## A kit: what the folder holds
 
 `specfirst gen kit --seed S --out DIR` writes one kit; `specfirst gen kits
@@ -244,6 +259,70 @@ For read-2a, from the review of gen-3a:
   score on them as dev or test kits (finding D7).
 - The store maps every natural paragraph back to its statement: keep it
   out of a task folder and under the canary scan (section 11.2).
+
+## P4 on a reference study (issue #30, ADR-019)
+
+Code: `specfirst.machine.separation` (the levels, the classes, the
+interval, the review, two matrices compared; no builds),
+`specfirst.gen.separate` (the builds by the scorer's chain, what an output
+reads, the scan, the matrix, the pilot's data and arms),
+`specfirst.gen.sep01` (the test study). Command: `specfirst gen separate
+sep01|cdiscpilot01 [--vector house|window] [--span N] [--out FILE]
+[--check FILE]`; the matrix goes to build/separation/sep01.json or
+build/separation/cdiscpilot01-<vector>.json.
+
+```python
+from specfirst.gen import separate
+from specfirst.score.candidate import Machine
+machine = Machine(root)                       # the full house: ADSL, ADAE, ADVS
+records = separate.house_vector(machine.catalog, machine.house, {key: value})
+matrix = separate.Mutation(machine, data, arms, records).matrix(study="name")
+# data: score.candidate.Data(name, sdtm={stem: Arrow table}); arms as gold.arms_of gives them
+```
+
+- Per decision: `class`, `identifiable` (for the decision record:
+  `separated` only for the class `separated`), `read`, `outputs` (that
+  read it), `values` (every value tried: `label`, `value`, `level` of
+  fails/outputs/results/adam/none, the counts `adam`, `results`, `cells`,
+  `reads`), `reproduce` (level none), `dataset_only` (results or adam),
+  `intervals` (integer slots of gold: `low`, `high`, what ends each side:
+  separated, slot_minimum, slot_maximum, scan_limit), `reason`. Then
+  `summary`, `review` (unseparated first) and `problems` (an inert
+  decision that changes an output; must be empty).
+- A generated kit keeps its own matrix (gen-2a). Its `unseparated` with
+  the reason "the output does not read what the decision sets" is `inert`
+  here; its other `unseparated` is `unseparated` or
+  `separated_at_dataset_only` here (the kit's matrix compares grids only).
+- The values tried are the catalog's examples: an example that names
+  nothing in the study can reproduce gold for that reason alone
+  (`tfl.columns.total`, control "Active Control"). Read the value that
+  reproduces before asking about it.
+- The pilot: 22 decisions of the slice, under the house standard alone
+  (`--vector house`) and with a window of 30 days (`--vector window`);
+  about 40 builds of 2 s each. Neither vector is the pilot's own rule set
+  (std-2). The custom decisions of the efficacy tables have no listed
+  alternative and are not in the matrix.
+
+For the read track (the scorer is not changed by issue #30):
+
+- The rule of the issue: an exam never credits an `unseparated` decision
+  as learned, and reports it apart. The machine's part is done: the
+  matrix marks every decision that is not `separated` `unseparated` in
+  `identifiable` (`separation.identifiable`), and `separation.credited`
+  says whether results can confirm a record. What is left for the scorer:
+  `score.reading` scores the value of an `unseparated` decision like any
+  other and `score.report` lists it apart; when the exam of section 11.4
+  is built, its "learned" must leave those out, and the report should
+  list the classes of a reference matrix apart, in the order of its
+  `review` (unseparated first, with the values that reproduce; dataset
+  only, with the outputs named).
+- `specfirst score pilot` (stage T, table decisions on the reference ADaM)
+  reads no matrix. Built from the pilot's SDTM by the chain under the house
+  standard, three table decisions are `unseparated` (`tfl.columns.arms`,
+  `tfl.columns.total`, `tfl.rounding.rule`; build/separation/
+  cdiscpilot01-house.json from `specfirst gen separate cdiscpilot01`). At
+  stage T the ADaM is the reference's, not the chain's: a matrix of stage T
+  would be made the same way, on `Data(adam=...)`, and is not made here.
 
 ## Open
 

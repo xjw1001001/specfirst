@@ -7,6 +7,7 @@
     specfirst gen kits --seed S --count N --out DIR [--first K]
     specfirst gen verify DIR [--no-mutation]
     specfirst gen natural requests|propose|readback-requests|readback|status ...
+    specfirst gen separate sep01|cdiscpilot01 [--vector house|window] [--check FILE]
 
 `gen kit` writes one kit of the slice "adverse event summary first" (data,
 decisions, gold on the visible data and on the twin) when it has the
@@ -16,6 +17,8 @@ split and its scenario. `gen verify` decides the properties of a written
 kit again from its files. `gen natural` is the loop of the natural form
 (PLAN.md section 6.6, docs/decisions/ADR-009.md): it writes the request a
 rewriter or a verifier gets, and stores and checks what they write back.
+`gen separate` is P4 by class on a reference study (issue #30,
+docs/decisions/ADR-019.md): the test study SEP01 or the pilot's SDTM.
 
 A seed is a text. `--seed-file` reads it from a file instead of the command
 line; such a file must lie outside every checkout, because the seeds of dev,
@@ -102,6 +105,20 @@ def _parser() -> argparse.ArgumentParser:
         "check", help="check a study: its files, its probes, and its SDTM with CDISC CORE")
     p_check.add_argument("folder", help="a study folder")
     p_check.add_argument("--no-core", action="store_true", help="skip CDISC CORE")
+    p_separate = actions.add_parser(
+        "separate", help="P4 by class on a reference study: separated, unseparated (with the "
+        "interval of a numeric parameter), inert, separated at dataset level only (ADR-019)")
+    p_separate.add_argument("study", choices=("sep01", "cdiscpilot01"),
+                            help="the test study of issue #30, or the pilot's SDTM")
+    p_separate.add_argument("--vector", default="house", help="cdiscpilot01: the decision "
+                            "vector, `house` (the house standard alone) or `window` (with a "
+                            "window of 30 days)")
+    p_separate.add_argument("--span", type=int, help="how far an integer slot is scanned from "
+                            "gold on each side (default 30)")
+    p_separate.add_argument("--out", help="the matrix to write; default "
+                            "build/separation/<study>[-<vector>].json")
+    p_separate.add_argument("--check", help="a matrix written before: hold it against a new "
+                            "mutation and print every difference")
     p_natural = actions.add_parser(
         "natural", help="the loop of the natural form: requests, proposals, read-back")
     p_natural.add_argument("step", choices=("requests", "propose", "readback-requests",
@@ -181,6 +198,8 @@ def main(root: Path, argv: Sequence[str]) -> int:
         return _check(root, Path(args.folder), not args.no_core)
     if args.action == "natural":
         return _natural(root, args)
+    if args.action == "separate":
+        return _separate(root, args)
     if args.action == "verify":
         from specfirst.gen import kits
 
@@ -219,6 +238,45 @@ def main(root: Path, argv: Sequence[str]) -> int:
           f"{counts['twin']['subjects']} in the twin, {len(manifest['files'])} files in "
           f"{args.out}")
     return 0
+
+
+def _separate(root: Path, args: argparse.Namespace) -> int:
+    """P4 by class on a reference study (specfirst.gen.separate, ADR-019)."""
+    import json
+
+    from specfirst.gen import sep01, separate
+    from specfirst.machine import separation
+    from specfirst.paths import build_dir
+    from specfirst.score.candidate import Machine
+
+    span = separate.SPAN if args.span is None else args.span
+    try:
+        if args.study == "sep01":
+            machine = Machine(root)
+            records = sep01.records(machine.catalog, machine.house)
+            made = separate.Mutation(machine, sep01.data(), sep01.ARMS, records, span).matrix(
+                study="sep01")
+            name = "sep01"
+        else:
+            made = separate.pilot_matrix(root, args.vector, span)
+            name = f"cdiscpilot01-{args.vector}"
+    except separate.SeparationError as error:
+        print(f"cannot make the matrix: {error}")
+        return 1
+    for line in separate.lines(made):
+        print(line)
+    if args.check:
+        with open(args.check, encoding="ascii") as handle:
+            written = json.load(handle)
+        found = separation.differences(written, made)
+        for line in found:
+            print(f"  differs: {line}")
+        print(f"the matrix {args.check} against a new mutation: {len(found)} differences")
+        return 0 if not found and not made["problems"] else 1
+    out = Path(args.out) if args.out else build_dir(root) / "separation" / f"{name}.json"
+    separate.write(made, out)
+    print(f"matrix written to {out}")
+    return 0 if not made["problems"] else 1
 
 
 def _kit_folders(folder: Path) -> list[Path]:
