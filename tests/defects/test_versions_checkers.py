@@ -109,6 +109,8 @@ def _fn_mapping(work: Path) -> None:
 
 
 def _kit_names_draft(work: Path) -> None:
+    change(work / "standard" / "versions.yaml",
+           lambda data: data["catalogs"]["catalog@2"].__setitem__("status", "draft"))
     kit = work / "kits" / "k1"
     kit.mkdir(parents=True)
     (kit / "kit.yaml").write_text(
@@ -187,8 +189,8 @@ DEFECTS = [
                                              if r["issue"] == 33]),
      "backlog", "issue #33: no record in standard/BACKLOG.yaml"),
     ("a record accepted for a frozen version",
-     _record(lambda records: records[0].__setitem__("version", "open-default@1")), "backlog",
-     "i01.zero-shown: accepted for open-default@1, which is frozen"),
+     _record(lambda records: records[0].__setitem__("status", "accepted")), "backlog",
+     "i01.zero-shown: accepted for open-default@2, which is frozen"),
     ("an entry without an item", lambda w: change(
         _defaults(w), lambda data: data["defaults"].pop("ae.teae.end")),
      "defaults", "defaults.yaml: ae.teae.end: no item"),

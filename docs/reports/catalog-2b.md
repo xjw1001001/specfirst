@@ -52,6 +52,12 @@ asked that the owner hear of them before the freeze:
    SDTM without the variable VISITDY needs a build that knows the SDTM's
    columns (i21.no-visitdy waits for std-2).
 
+The owner's answer (2026-11-21, through the base session, in translation):
+"Accept all three as built (Recommended)", option A: items 1 and 2 are
+recorded as waiting for std-2, and item 3 takes admiral's reading. ADR-020
+records it ("The owner's answer on the three departures"). Version 2 is
+frozen as built.
+
 ## Evidence
 
 ### catalog@1 and open-default@1 do not change

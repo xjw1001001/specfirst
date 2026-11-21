@@ -44,6 +44,8 @@ STATUSES = ("draft", "frozen")
 PINNED = {
     "catalog@1": "a25d42c08d37352131b9320a62c7fa2ce266cb9b",
     "open-default@1": "7ac0f4fc4d76333817b6e3edf21e156afec38ef4",
+    "catalog@2": "1a3dcc6575849a57f47257b8daaf5eb30d995be9",
+    "open-default@2": "550cb664b4d64a304f9d14bbd995379d16602601",
 }
 _CATALOG = re.compile(r"^catalog@([1-9][0-9]*)$")
 _HOUSE = re.compile(r"^([a-z][a-z0-9-]*)@([1-9][0-9]*)$")

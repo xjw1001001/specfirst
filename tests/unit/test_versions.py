@@ -28,9 +28,22 @@ def test_the_tree_hash_is_gits_on_a_small_folder(tmp_path, git):
     assert git(folder, "write-tree") == found
 
 
+def _drafted(root: Path, tmp_path: Path) -> Path:
+    """A copy of standard/ in which catalog@2 and open-default@2 are drafts again."""
+    copy = tmp_path / "drafted"
+    shutil.copytree(root / "standard", copy / "standard")
+    path = copy / "standard" / "versions.yaml"
+    data = yaml.safe_load(path.read_text(encoding="ascii"))
+    for kind, label in (("catalogs", "catalog@2"), ("houses", "open-default@2")):
+        data[kind][label]["status"] = "draft"
+        del data[kind][label]["tree"]
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="ascii", newline="\n")
+    return copy
+
+
 def test_the_frozen_folders_have_their_trees(root):
     known = versions.load(root)
-    for label in ("catalog@1", "open-default@1"):
+    for label in ("catalog@1", "open-default@1", "catalog@2", "open-default@2"):
         assert known[label].status == "frozen"
         assert versions.tree_hash(versions.folder(root, label)) == known[label].tree
     assert versions.frozen_problems(root) == []
@@ -79,10 +92,12 @@ def test_version_2_changes_the_defaults_the_owner_took(root):
     assert ("pop.safety.rule", "mod-populations") not in new  # by design: needs the features
 
 
-def test_draft_versions_may_not_be_named(root):
+def test_draft_versions_may_not_be_named(root, tmp_path):
+    drafted = _drafted(root, tmp_path)
     with pytest.raises(versions.VersionError, match="a draft version"):
-        versions.require_usable(root, ["catalog@2"], "a kit")
-    versions.require_usable(root, ["catalog@1", "open-default@1"], "a kit")
+        versions.require_usable(drafted, ["catalog@2"], "a kit")
+    versions.require_usable(drafted, ["catalog@1", "open-default@1"], "a kit")
+    versions.require_usable(root, ["catalog@2", "open-default@2"], "a kit")
     assert versions.kit_labels({"catalog": {"name": "specfirst-m1", "version": "2"},
                                 "house": "open-default@2"}) == [
         ("catalog", "catalog@2"), ("house", "open-default@2")]
@@ -151,10 +166,14 @@ def test_a_record_maps_through_the_migration_file(house2):
 
 def test_the_pinned_trees_are_those_of_the_tag():
     """The trees of catalog@1 and open-default@1 at the tag catalog@1 (git rev-parse
-    catalog@1:standard/catalog and catalog@1:standard/houses/open-default@1)."""
+    catalog@1:standard/catalog and catalog@1:standard/houses/open-default@1); those of
+    catalog@2 and open-default@2 at the tag catalog@2 (catalog@2:standard/catalog@2 and
+    catalog@2:standard/houses/open-default@2)."""
     assert versions.PINNED == {
         "catalog@1": "a25d42c08d37352131b9320a62c7fa2ce266cb9b",
-        "open-default@1": "7ac0f4fc4d76333817b6e3edf21e156afec38ef4"}
+        "open-default@1": "7ac0f4fc4d76333817b6e3edf21e156afec38ef4",
+        "catalog@2": "1a3dcc6575849a57f47257b8daaf5eb30d995be9",
+        "open-default@2": "550cb664b4d64a304f9d14bbd995379d16602601"}
 
 
 def test_scores_are_comparable_only_over_kept_decisions(house2):
@@ -180,8 +199,10 @@ def test_a_task_and_a_kit_refuse_a_draft_version(root, tmp_path):
     from specfirst.harness import task
 
     with pytest.raises(task.TaskError, match="a draft version"):
-        task.kit_catalog(root, {"catalog": {"name": "specfirst-m1", "version": 2},
-                                "house": "open-default@2"})
+        task.kit_catalog(_drafted(root, tmp_path), {
+            "catalog": {"name": "specfirst-m1", "version": 2}, "house": "open-default@2"})
+    assert task.kit_catalog(root, {"catalog": {"name": "specfirst-m1", "version": 2},
+                                   "house": "open-default@2"}) == "catalog@2"
     assert task.kit_catalog(root, {"catalog": {"name": "specfirst-m1", "version": 1},
                                    "house": "open-default@1"}) == "catalog@1"
     copy = tmp_path / "root"
@@ -210,4 +231,5 @@ def test_the_backlog_covers_its_issues_and_prints(root):
     assert backlog.problems(root) == []
     lines = backlog.summary(root)
     assert lines[0] == f"==> {backlog.FILE} <=="
-    assert any(line.startswith("house, accepted:") for line in lines)
+    assert any(line.startswith("house, waits:") for line in lines)
+    assert not any(line.endswith(", accepted:") for line in lines)  # all done at the freeze

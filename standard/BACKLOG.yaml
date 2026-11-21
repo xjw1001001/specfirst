@@ -18,111 +18,111 @@
 records:
   # #1 how a count of zero is shown (tfl.percent.format)
   - {id: i01.zero-shown, issue: 1, layer: house, target: tfl.percent.format (default),
-     kind: change a default, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change a default, status: done, version: open-default@2, adr: ADR-020,
      reason: "a percentage for every count, 0 shown as 0 (0.0); the owner's answer to question 2"}
   - {id: i01.decimals-slot, issue: 1, layer: catalog, target: tfl.percent.format,
-     kind: add a slot, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: add a slot, status: done, version: catalog@2, adr: ADR-020,
      reason: "the decimals of a percentage, 0 to 2, in both alternatives"}
   - {id: i01.below-one, issue: 1, layer: catalog, target: tfl.percent.format,
      kind: add an alternative, status: waits, for: real-4 and std-2, adr: ADR-020,
      reason: "the display (<1%) comes with the table work"}
   # #2 the safety set (pop.safety.rule)
   - {id: i02.safety-by-design, issue: 2, layer: house, target: pop.safety.rule (default),
-     kind: change a default, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change a default, status: done, version: open-default@2, adr: ADR-020,
      reason: "randomized and dosed when the study randomizes, dosed otherwise (a default by design)"}
   - {id: i02.fda-wording, issue: 2, layer: catalog, target: knowledge/pop.safety.rule.md,
-     kind: fix a reading note, status: accepted, version: catalog@2, adr: ADR-020}
+     kind: fix a reading note, status: done, version: catalog@2, adr: ADR-020}
   # #3 ae.teae.end
   - {id: i03.window-default, issue: 3, layer: house, target: ae.teae.end (default),
-     kind: change a default, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change a default, status: done, version: open-default@2, adr: ADR-020,
      reason: "emergence ends 30 days after the treatment end date (admiral's template)"}
   - {id: i03.end-of-study-removed, issue: 3, layer: catalog, target: ae.teae.end/end_of_study,
-     kind: remove an alternative, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: remove an alternative, status: done, version: catalog@2, adr: ADR-020,
      reason: "no public source; the owner's answer to question 3"}
   # #4 the rules of ae.teae.start that live only in the notes
   - {id: i04.fixed-rules, issue: 4, layer: catalog, target: ae.teae.start,
-     kind: lift rules into fixed rules, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: lift rules into fixed rules, status: done, version: catalog@2, adr: ADR-020,
      reason: "the three edge rules of emergence get anchors; the doubled 'For every alternative:' goes"}
   # #5 ae.teae.start by date and time
   - {id: i05.date-time, issue: 5, layer: catalog, target: ae.teae.start,
-     kind: add an alternative, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: add an alternative, status: done, version: catalog@2, adr: ADR-020,
      reason: "by date and time when both are collected, otherwise by date; with its probe"}
   # #6 one baseline rule
   - {id: i06.one-baseline-rule, issue: 6, layer: house,
      target: demo.baseline.record and bds.baseline.rule (defaults), kind: change a default,
-     status: accepted, version: open-default@2, adr: ADR-020,
+     status: done, version: open-default@2, adr: ADR-020,
      reason: "one rule by date for ADVS and for the weight and height of ADSL (admiral)"}
   - {id: i06.first-dose-day, issue: 6, layer: catalog,
      target: demo.baseline.record and bds.baseline.rule, kind: fix a definition,
-     status: accepted, version: catalog@2, adr: ADR-020,
+     status: done, version: catalog@2, adr: ADR-020,
      reason: "where a value timed after the dose on the first dose day goes"}
   - {id: i06.post-time-aware, issue: 6, layer: house, target: adam/advs.yaml,
-     kind: change parent specs, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change parent specs, status: done, version: open-default@2, adr: ADR-020,
      reason: "under the time rule of baseline, post-baseline is time-aware too, so that no record falls between the two"}
   # #7 demo.age.groups
   - {id: i07.age-default, issue: 7, layer: house, target: demo.age.groups (default),
-     kind: change a default, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change a default, status: done, version: open-default@2, adr: ADR-020,
      reason: "below 65 and 65 or above (the ARS example); the pilot's three groups stay an alternative"}
   - {id: i07.fda-bands, issue: 7, layer: catalog, target: demo.age.groups,
      kind: add an alternative, status: waits, for: real-4 and std-2, adr: ADR-020,
      reason: "the FDA age bands, groups closed on the right, come with the table work"}
   # #8 tfl.columns.total
   - {id: i08.total-demographics, issue: 8, layer: house, target: tfl.columns.total (default),
-     kind: change a default, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change a default, status: done, version: open-default@2, adr: ADR-020,
      reason: "a total column in the demographics table only"}
   - {id: i08.fda-citation, issue: 8, layer: catalog, target: tfl.columns.total,
-     kind: fix a source, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix a source, status: done, version: catalog@2, adr: ADR-020,
      reason: "the FDA citation for pooled active arms removed"}
   # #9 tfl.ae.socpt.sort
   - {id: i09.sort-replaced, issue: 9, layer: catalog,
      target: tfl.ae.socpt.sort/descending_frequency_highest_dose, kind: replace an alternative,
-     status: accepted, version: catalog@2, adr: ADR-020,
+     status: done, version: catalog@2, adr: ADR-020,
      reason: "organ classes alphabetical, terms by descending frequency in a stated column; the owner's answer to question 3"}
   - {id: i09.layout-column, issue: 9, layer: house, target: layout/ae-soc-pt.yaml,
-     kind: change templates, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change templates, status: done, version: open-default@2, adr: ADR-020,
      reason: "the layout reads the column that orders the terms"}
   - {id: i09.citations, issue: 9, layer: catalog, target: tfl.ae.socpt.sort,
-     kind: fix a source, status: accepted, version: catalog@2, adr: ADR-020}
+     kind: fix a source, status: done, version: catalog@2, adr: ADR-020}
   - {id: i09.alphabetical, issue: 9, layer: catalog, target: tfl.ae.socpt.sort,
-     kind: fix a definition, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix a definition, status: done, version: catalog@2, adr: ADR-020,
      reason: "alphabetical defined"}
   # #10 pop.randomized.rule
   - {id: i10.randomized-from-ds, issue: 10, layer: catalog, target: pop.randomized.rule,
-     kind: change an alternative, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: change an alternative, status: done, version: catalog@2, adr: ADR-020,
      reason: "a disposition record RANDOMIZED, the planned arm code only when DS has none; the owner's answer to question 3"}
   - {id: i10.set-names, issue: 10, layer: catalog, target: pop.randomized.rule,
-     kind: fix a definition, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix a definition, status: done, version: catalog@2, adr: ADR-020,
      reason: "the modified set named mITT in its definition"}
   - {id: i10.randdt, issue: 10, layer: house, target: adam/adsl.yaml,
-     kind: add a variable, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: add a variable, status: done, version: open-default@2, adr: ADR-020,
      reason: "RANDDT in ADSL, RANDFL by the same rule"}
   # #11 bds.window.tiebreak under nominal visits
   - {id: i11.last-record, issue: 11, layer: house, target: bds.window.tiebreak (default),
-     kind: change a default, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change a default, status: done, version: open-default@2, adr: ADR-020,
      reason: "the last record of a collected visit (admiral)"}
   # #12 demo.bmi.rule
   - {id: i12.bmi-unrounded, issue: 12, layer: catalog, target: demo.bmi.rule,
-     kind: change an alternative, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: change an alternative, status: done, version: catalog@2, adr: ADR-020,
      reason: "BMIBL not rounded in ADSL: rounding once, at display (PLAN.md 7.2); the units stated"}
   # #13 tfl.ae.summary.rows
   - {id: i13.rows-added, issue: 13, layer: catalog, target: tfl.ae.summary.rows,
-     kind: add choices, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: add choices, status: done, version: catalog@2, adr: ADR-020,
      reason: "serious and related, fatal and related, leading to dose modification; fatal defined (AESDTH)"}
   - {id: i13.standard-rows, issue: 13, layer: catalog, target: tfl.ae.summary.rows/standard_rows,
-     kind: change an alternative, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: change an alternative, status: done, version: catalog@2, adr: ADR-020,
      reason: "the rows of the ARS example in its order, with serious and related; the owner's answer to question 2"}
   - {id: i13.subsets, issue: 13, layer: house, target: ars/ae-summary.yaml,
-     kind: add data subsets, status: accepted, version: open-default@2, adr: ADR-020}
+     kind: add data subsets, status: done, version: open-default@2, adr: ADR-020}
   - {id: i13.severity-rows, issue: 13, layer: catalog, target: tfl.ae.summary.rows,
      kind: add choices, status: waits, for: real-4 and std-2, adr: ADR-020,
      reason: "severity rows and an FDA-shaped alternative come with the table work"}
   # #14 the FDA guide
   - {id: i14.fda-guide, issue: 14, layer: catalog, target: sources.yaml and five entries,
-     kind: fix a source, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix a source, status: done, version: catalog@2, adr: ADR-020,
      reason: "Version 2.0, April 2025; each citation with its section and table; three wrong claims fixed"}
   # #15 STANDARD.md as a citable document
   - {id: i15.citable-document, issue: 15, layer: house, target: STANDARD.md,
-     kind: change the document, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change the document, status: done, version: open-default@2, adr: ADR-020,
      reason: "front matter, anchors by entry ID, a source line per statement, conventions, a change log"}
   # #16 ARS templates from the decision records
   - {id: i16.ars-from-records, issue: 16, layer: house, target: ars/,
@@ -130,13 +130,13 @@ records:
      reason: "reason, purpose, documentRefs and descriptions come from the records' status and citations"}
   # #17 parent specs
   - {id: i17.conformance, issue: 17, layer: house, target: adam/,
-     kind: change parent specs, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change parent specs, status: done, version: open-default@2, adr: ADR-020,
      reason: "AEBODSYS; PARAM with the unit and AVALU; no end-of-study status for a screen failure; first occurrence by date then sequence; the conformance rules listed in STANDARD.md"}
   - {id: i17.screen-failure, issue: 17, layer: catalog, target: disp.status.record,
-     kind: lift rules into fixed rules, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: lift rules into fixed rules, status: done, version: catalog@2, adr: ADR-020,
      reason: "the status words as a fixed rule, with no status for a SCREEN FAILURE record (admiral format_eosstt)"}
   - {id: i17.eot-record, issue: 17, layer: catalog, target: bds.eot.record,
-     kind: fix a definition, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix a definition, status: done, version: catalog@2, adr: ADR-020,
      reason: "the definition states AVISITN 9999; the record carries the unit of the value it repeats"}
   - {id: i17.positions-refused, issue: 17, layer: house, target: adam/advs.yaml,
      kind: change parent specs, status: waits, for: std-2, adr: ADR-020,
@@ -149,12 +149,12 @@ records:
      reason: "TRT01PN and TRT01AN need the dose order, which the design holds, not the SDTM"}
   # #18 the standard form
   - {id: i18.boundary-words, issue: 18, layer: catalog, target: statements,
-     kind: fix statements, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix statements, status: done, version: catalog@2, adr: ADR-020,
      reason: "end of emergence, baseline and age groups in the sentence"}
   - {id: i18.fixed-rules, issue: 18, layer: catalog, target: entries,
-     kind: lift rules into fixed rules, status: accepted, version: catalog@2, adr: ADR-020}
+     kind: lift rules into fixed rules, status: done, version: catalog@2, adr: ADR-020}
   - {id: i18.terms, issue: 18, layer: catalog, target: catalog.yaml,
-     kind: add the list of terms, status: accepted, version: catalog@2, adr: ADR-020}
+     kind: add the list of terms, status: done, version: catalog@2, adr: ADR-020}
   - {id: i18.meaning-hash, issue: 18, layer: code, target: specfirst.compile.migration,
      kind: add a check, status: done, version: catalog@2, adr: ADR-020,
      reason: "the meaning of an alternative as a hash, held by the gate check migration"}
@@ -173,7 +173,7 @@ records:
      kind: move the slot values, status: done, version: open-default@2, adr: ADR-020,
      reason: "the slot values of a default stand beside it in defaults.yaml"}
   - {id: i20.alternative-sources, issue: 20, layer: house, target: STANDARD.md,
-     kind: print sources, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: print sources, status: done, version: open-default@2, adr: ADR-020,
      reason: "the source of each alternative printed in STANDARD.md"}
   - {id: i20.duration-unit, issue: 20, layer: catalog, target: duration slots,
      kind: add a slot unit, status: waits, for: the design model of the generator, adr: ADR-020,
@@ -186,13 +186,13 @@ records:
      reason: "the four schema points of ADR-004 and two citations on a conflict; std-2 owns schema point 3"}
   # #21 questions 1, 2, 3, 5, 8, 9 and 10 of N1
   - {id: i21.race-map, issue: 21, layer: catalog, target: demo.race.pooling/pooled_below_count,
-     kind: replace an alternative, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: replace an alternative, status: done, version: catalog@2, adr: ADR-020,
      reason: "race grouped by a stated map (admiral); the owner's answer to question 3"}
   - {id: i21.unscheduled, issue: 21, layer: catalog, target: bds.unscheduled.use,
-     kind: fix a definition, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix a definition, status: done, version: catalog@2, adr: ADR-020,
      reason: "as built: unscheduled when VISITDY is missing or when VISIT contains UNSCHED, always (admiral's reading); a departure from the approved wording, put to the owner"}
   - {id: i21.unscheduled-house, issue: 21, layer: house, target: adam/advs.yaml,
-     kind: change parent specs, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change parent specs, status: done, version: open-default@2, adr: ADR-020,
      reason: "_SCHED by the fixed rule unscheduled_visit"}
   - {id: i21.no-visitdy, issue: 21, layer: catalog, target: bds.unscheduled.use,
      kind: fix a definition, status: waits, for: std-2, adr: ADR-020,
@@ -202,14 +202,14 @@ records:
      reason: "the answers to N1 questions 1, 2, 3, 8 and 9 kept"}
   # #22 tfl.quantile.definition
   - {id: i22.quantiles, issue: 22, layer: catalog, target: tfl.quantile.definition,
-     kind: change units, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: change units, status: done, version: catalog@2, adr: ADR-020,
      reason: "it leaves the vital signs table; its probe needs quartiles in demographics; (R type 2) in the statement"}
   - {id: i22.vitals-fixed, issue: 22, layer: house, target: ars/vitals-by-visit.yaml and layout/vitals-by-visit.yaml,
-     kind: change templates, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: change templates, status: done, version: open-default@2, adr: ADR-020,
      reason: "the quantile parameter of the vital signs table fixed to sas5: it shows no quartile, and both definitions give the same median"}
   # #23 gaps that do not block catalog@1
   - {id: i23.reading-words, issue: 23, layer: catalog, target: knowledge/ and tfl.rounding.rule,
-     kind: fix reading notes, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: fix reading notes, status: done, version: catalog@2, adr: ADR-020,
      reason: "items 9 to 11: M1 does not count worsening; participant and study intervention; the meaning of halfway"}
   - {id: i23.table-variants, issue: 23, layer: catalog, target: table families,
      kind: add entries and families, status: waits, for: real-4 and M2, adr: ADR-020,
@@ -219,7 +219,7 @@ records:
      reason: "the comment of 2026-11-20: a missing planned output scored apart, plan what the SAP names, a person's list as input; its catalog part comes with the table variants"}
   # #24 trt.end.source without EXDOSE
   - {id: i24.last-end-any-record, issue: 24, layer: catalog, target: trt.end.source,
-     kind: add an alternative, status: accepted, version: catalog@2, adr: ADR-020,
+     kind: add an alternative, status: done, version: catalog@2, adr: ADR-020,
      reason: "the counterpart of first_ex_record: the last end date of any exposure record"}
   - {id: i24.build-check, issue: 24, layer: code, target: specfirst.score,
      kind: add a check, status: done, version: catalog@1, adr: ADR-014,
@@ -247,11 +247,11 @@ records:
      reason: "the custom:eff-* decisions of the real kit (ADR-020, decision 7, the table of what waits)"}
   # #33 labels of carried variables, time-of-day variables
   - {id: i33.labels, issue: 33, layer: house, target: adam/ and STANDARD.md,
-     kind: state a house rule, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: state a house rule, status: done, version: open-default@2, adr: ADR-020,
      reason: "a carried variable takes its source's label, a derived one the parent's"}
   - {id: i33.time-of-day, issue: 33, layer: house, target: adam/ and STANDARD.md,
-     kind: state a house rule, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: state a house rule, status: done, version: open-default@2, adr: ADR-020,
      reason: "a time of day is numeric, seconds since midnight (ADaMIG *TM)"}
   - {id: i33.compare-check, issue: 33, layer: code, target: a comparison with a reference,
-     kind: add a check, status: accepted, version: open-default@2, adr: ADR-020,
+     kind: add a check, status: done, version: open-default@2, adr: ADR-020,
      reason: "names, types and labels of a built dataset against a reference, a label-only difference classified"}

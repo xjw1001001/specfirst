@@ -31,7 +31,8 @@ def test_the_house_document_anchors_by_entry_and_parses_back(pair):
     rules = {f"{e.id}/{r['id']}" for e in catalog.entries.values() for r in e.fixed_rules}
     assert set(fixed) == rules and "ae.teae.start/no_start_date" in rules
     assert "[ae.teae.start/no_start_date] An adverse event without an analysis start date" in text
-    assert "Status: draft" in text and "Order of precedence:" in text and "## Change log" in text
+    assert "Status: frozen on 2026-11-21." in text
+    assert "Order of precedence:" in text and "## Change log" in text
 
 
 def test_a_default_by_design_cites_its_case(pair):

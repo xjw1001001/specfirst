@@ -5,7 +5,7 @@ Catalog: specfirst-m1 2
 
 This is the house standard open-default@2: an open default for analysis data and safety tables, built from public standards only.
 
-Status: draft: it may still change, and no kit, task, run or score names it. Version 2 of the house standard open-default, for the catalog catalog@2 (specfirst-m1 2). Any change of a default, a statement, a definition, a parent spec, a template or this document is a new version of the house (ADR-020; standard/versions.yaml).
+Status: frozen on 2026-11-21. Version 2 of the house standard open-default, for the catalog catalog@2 (specfirst-m1 2). Any change of a default, a statement, a definition, a parent spec, a template or this document is a new version of the house (ADR-020; standard/versions.yaml).
 
 Scope: the analysis data sets ADSL, ADAE and ADVS and four table families (the demographics table, the adverse event summary table, the adverse event table by system organ class and preferred term, and the vital signs table by visit) for a study of the design archetype PG-FIX (PLAN.md section 6.2: randomized, parallel, placebo-controlled, fixed duration) whose SDTM holds DM, EX, DS, SV, VS and AE. It does not cover efficacy analyses, laboratory data, time-to-event analyses or listings.
 

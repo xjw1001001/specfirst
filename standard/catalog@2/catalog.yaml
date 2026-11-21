@@ -1,7 +1,7 @@
 # The decision catalog for the M1 families (PLAN.md section 5, appendix B).
 #
-# catalog@2 (ADR-020). A draft until catalog-2b merges, then frozen and
-# tagged; standard/versions.yaml holds its status. What changed from
+# catalog@2 (ADR-020). Frozen when catalog-2b merged, on 2026-11-21, and
+# tagged; standard/versions.yaml holds its status and tree. What changed from
 # catalog@1 is in migration.yaml, each line with its record of
 # standard/BACKLOG.yaml. The defaults are not here: a house holds them
 # (standard/houses/<house>@<n>/defaults.yaml).
@@ -135,7 +135,7 @@ entries:
   - tfl.vs.scope
   - tfl.vs.layout
 
-# Entries of appendix B that this draft leaves out, with the reason. They
+# Entries of appendix B that this version leaves out, with the reason. They
 # return with the table family or the data that makes them identifiable
 # (PLAN.md section 4.6, property P4).
 deferred:
