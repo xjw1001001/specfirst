@@ -618,13 +618,15 @@ def decision_checks(root: Path, kit_id: str, folder: Path | None = None,
         return True
     try:
         records = decisions.load(folder / kit.decisions)
-        events = []
+        events, engines = [], []
         registry = None
         for spec in kit.results:
             inputs = result_inputs(root, folder, spec)
             events.append((inputs.event, inputs.binding))
+            engines.append(ard.Engine(inputs.event, inputs.registry, inputs.binding,
+                                      inputs.tables, spec.subject_key))
             registry = inputs.registry
-        lines, problems = decisions.problems(root, records, events, registry)
+        lines, problems = decisions.problems(root, records, events, registry, engines)
     except (ars.ArsError, registries.RegistryError, OSError, ValueError) as error:
         out(f"decisions: {error}")
         return False

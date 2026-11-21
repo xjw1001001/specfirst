@@ -63,48 +63,55 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   docs/reports/real-5b.review.md (passes 1 to 3 NOT SIGNED, their blocking
   findings F1, G1 and H1 fixed; pass 4 SIGNED). Decisions: the amendments
   "of real-5b" at the end of ADR-015.md and ADR-003.md.
+- real-5b-answers The owner's answers of 2026-11-20 on real-5a and real-5b
+  carried out: five records `stated`, G2 (the last visit of the mixed model
+  held on the model records) and K1 (no other columns in an other_build
+  proof). Gate: `scripts/clean_clone_gate.sh` exited 0 for real-5b (19 of
+  19), read-2a (19 of 19), real-5a, real-3a, real-2, gen-2a, gen-3a,
+  read-1a and std-1 on clean clones of commit `4660e8c` (2026-11-21). The
+  kept dry run of arm R was not made again. Evidence:
+  docs/reports/real-5b-answers.md, real-5b-answers.clean-clone.gate.log and
+  real-5b-answers.read-2a.gate.log. Review:
+  docs/reports/real-5b-answers.review.md (pass 1 SIGNED, four findings that
+  do not block). Decisions: ADR-015, section "The owner's answers
+  (2026-11-20)".
 
 ## Open
 
-For the owner, from real-5b (ADR-015, "For the owner" of the amendment of
-real-5b, items 1 to 7; docs/reports/real-5b.md, "For the owner"; none
-blocks):
+Answered by the owner on 2026-11-20 (ADR-015, "The owner's answers
+(2026-11-20)"; docs/reports/real-5b-answers.md):
 
-- N2: the 36 differences of Tables 14-3.11 and 14-3.13, all `rule_choice`:
-  the 12 numbers of the model (gold at Week 24 by SAP 10.1.1; the CSR
-  averages over weeks 8, 16 and 24, the hint of E22), 21 counts of 0 and 3
-  p-values of 14-3.13 (display). Four entries of 14-3.11 name two
-  decisions (the visit and the CSR's display: 1 decimal for the limits, the
-  sign of "-0.0", a registry entry of its own, display.pattern.signed).
-- Where the documents are silent or disagree: the records of the mixed
-  model (`conflict`), its degrees of freedom (`asked`), the CMH statistic
-  and scores (`asked`: "Pearson Chi-Square" read as no CMH statistic keeps
-  the CSR's row mean scores; read as general association, gold would
-  follow it, with 3 more differences).
+- The documents against the CSR: the 45 differences of the five efficacy
+  tables stay `rule_choice` (gold follows the documents), the sign of
+  "-0.0" and the LS means at Week 24 as they were, the row labels the
+  CSR's. Nothing changed.
+- The records the documents leave open or contradict:
+  `custom:eff-model-terms`, `custom:eff-pairwise` and
+  `custom:eff-mmrm-records` (were `conflict`) are `stated`,
+  `document_rule`; `custom:eff-mmrm-df` and `custom:eff-cmh` (were
+  `asked`, `gold_quirk`) are `stated`, `study_input`. Each keeps its value
+  and cites the answer (doc `answers`). No number changed.
+- G2 and K1 of the review of real-5b are closed: `custom:eff-mmrm-visit`
+  names Week 24 and the check `decisions` holds the last visit of the
+  model records against it; an other_build proof refuses an other analysis
+  that differs in a column-valued option. Each is planted in D11.
+
+Left by the review of real-5b-answers (does not block): L3, D11's K1 plant
+is also seen by the check `decisions`; pass 4's case O2 (an other analysis
+with strata RACEN, SEX and QSSEQ, rank scores) is the case only K1 sees,
+and could be added as a plant. For the owner, the class of the three former
+conflicts: `document_rule`, with `study_input` the alternative (review,
+"The owner's choices").
+
+Still open for the owner, from real-5b and real-5a (none blocks):
+
+- `custom:eff-baseline-rows` is `asked` (not in the questions): no source;
+  both readings give the same cells here.
 - The Toeplitz fallback of SAP 10.1.1 is not implemented (not met on the
   pilot). The gate real-5a counts its own three tables.
-- G2: which visit is the last one is held by no CSR cell (AVISITN puts Week
-  24 last). K1: an other analysis of a proof may differ in a column-valued
-  option at any value. Each could be closed by a small check.
-- The proposals for `catalog@2` in docs/reports/real-5b.md.
-
-For the owner, from real-5a (ADR-015 "For the owner" and
-docs/reports/real-5a.md, sections "For the owner" and "Where the documents
-disagree", say each in full):
-
-- N2: the 9 cells that differ from the CSR (the limits of the 95%
-  confidence intervals, 2 decimals by SAP template 5, 1 in the CSR) are
-  classed `rule_choice`. Also the row labels, which follow the CSR, not
-  the template (review, F8).
-- Two `conflict` records, where the documents disagree (section 4.5):
-  `custom:eff-model-terms` (the Define-XML's dose-response code leaves the
-  baseline out; the SAP and the CSR keep it) and `custom:eff-pairwise`
-  (SAP 7.3 shows the comparisons only after a significant dose response;
-  template 5 and the CSR show them anyway). Gold keeps the values under
-  which the CSR's numbers are reproduced. `custom:eff-baseline-rows` is
-  `asked`: no source; both readings give the same cells here.
-- The proposals for `catalog@2` (an efficacy table family, an imputation
-  rule in `mod-bds-visits`, the pooling of sites), for the std track.
+- The proposals for `catalog@2` in docs/reports/real-5a.md (an efficacy
+  table family, an imputation rule in `mod-bds-visits`, the pooling of
+  sites) and docs/reports/real-5b.md, for the std track.
 - The kept transcript holds the Claude Code CLI's usage event (the
   subscription's usage, no credential); the old run on `main` had it too.
   The reviewer finds it acceptable (review pass 3, K3); the owner keeps it
@@ -338,7 +345,9 @@ for 3,580 of them):
 - A second proof kind, `other_build` (csr.py): another build of the cell,
   held to "that alternative": an other analysis differs from the cell's
   only in its naming and in the options its decisions set
-  (`decisions.PARAMETERS`); an other pattern changes only the mask; an
+  (`decisions.PARAMETERS`), and never in an option whose values are
+  columns (`ars.MODEL_TERMS`; K1, the owner's answer of 2026-11-20); an
+  other pattern changes only the mask; an
   other template is a cell template of the layout (parts as {name}) and
   adds no text; every decision an entry names binds an analysis of the
   cell or its method; `decision` may be a list. `display.pattern.signed` is
@@ -348,6 +357,10 @@ for 3,580 of them):
   block kind `groups` (amendment of real-5b to ADR-003). The CSR parser
   reads a column without a count, the header of the row labels, a line of
   two labels and "Note:" as a footnote.
+- The check `decisions` holds the last visit of the model records against
+  `custom:eff-mmrm-visit` (`decisions.LAST_VISIT`; G2, the owner's answer
+  of 2026-11-20). It needs the built ADaM data: `build.decision_checks`
+  hands it the Python engines, and without them the record is a problem.
 - The gate real-5b holds the hint of E22 (`E22 hint`) and the engines' CMH
   p-values (`CMH`); the gate real-5a counts its own three tables
   (`gates.EFFICACY_GRIDS`), real-5b its two (`REAL5B_GRIDS`).

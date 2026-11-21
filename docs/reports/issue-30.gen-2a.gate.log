@@ -1,0 +1,417 @@
+clean clone gate gen-2a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     8154075
+clone:      /tmp/specfirst-clean-lxNLsT/specfirst
+environment and cache: /tmp/specfirst-clean-lxNLsT/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-lxNLsT/specfirst
+
+$ git -C /tmp/specfirst-clean-lxNLsT/specfirst checkout --quiet --detach 8154075
+
+$ git -C /tmp/specfirst-clean-lxNLsT/specfirst log -1 --format=%H %s
+8154075ff095ee6bdf0c61b83925abbe5d18502f issue-30: P4 by class on a reference study (ADR-019)
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-lxNLsT/env/venv-specfirst-144575350
+R library: /tmp/specfirst-clean-lxNLsT/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-lxNLsT/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-lxNLsT/env/core/f3282a0d870b-d90ef34c553d
+source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
+python     3.12.3  (/tmp/specfirst-clean-lxNLsT/env/venv-specfirst-144575350/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-lxNLsT/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate gen-2a --clean
+gate gen-2a at commit 8154075ff095ee6bdf0c61b83925abbe5d18502f (clean)
+
+== [1/13] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-lxNLsT/env/venv-specfirst-144575350/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+-- PASS environment (0.3 s)
+
+== [2/13] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-lxNLsT/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (0.9 s)
+
+== [3/13] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/13] registry: specfirst methods
+count.subjects                     descriptive  4 statements  python+r operations: n; options: -
+display.pattern.signed             display      2 statements  python   operations: text; options: rounding=half_away_from_zero
+display.pattern                    display      8 statements  python   operations: text; options: rounding=half_away_from_zero
+display.round.half_away_from_zero  display      5 statements  python   operations: text; options: -
+display.round.half_even            display      6 statements  python   operations: text; options: -
+model.ancova.dose_response         model        6 statements  r        operations: p_value, estimate; options: covariates=[], df=residual, dose=grouping_value, factors=[], model=continuous_dose
+model.ancova.lsmeans               model        8 statements  r        operations: lsmean, se, lower_cl, upper_cl; options: confidence_level=95, covariates=[], df=residual, factors=[], weights=equal
+model.ancova.pairwise              model        7 statements  r        operations: estimate, se, lower_cl, upper_cl, p_value; options: confidence_level=95, covariates=[], df=residual, factors=[], reference=None
+model.mmrm.lsmeans                 model       11 statements  r        operations: lsmean, se, lower_cl, upper_cl; options: at=last, by_visit=[], confidence_level=95, covariance=unstructured, covariates=[], df=kenward_roger_linear, factors=[], treatment_by_visit=yes, visit=[]
+model.mmrm.pairwise                model        7 statements  r        operations: estimate, se, lower_cl, upper_cl, p_value; options: at=last, by_visit=[], confidence_level=95, covariance=unstructured, covariates=[], df=kenward_roger_linear, factors=[], reference=None, treatment_by_visit=yes, visit=[]
+percent.subjects                   descriptive  6 statements  python+r operations: pct; options: -
+summary.continuous                 descriptive 10 statements  python+r operations: n, mean, sd, median, q1, q3, min, max; options: quantile_definition=sas5, sd_denominator=n_minus_1
+test.anova.oneway                  test         5 statements  python+r operations: p_value; options: -
+test.chisq                         test         6 statements  python+r operations: p_value; options: correction=none
+test.cmh                           test         7 statements  python+r operations: p_value; options: scores=table, statistic=general_association, strata=[]
+test.fisher.exact                  test         8 statements  python+r operations: p_value; options: alternative=two_sided
+methods: 16 entries
+-- PASS registry (0.1 s)
+
+== [5/13] unit tests: pytest -m "not evidence" -q
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 17%]
+........................................................................ [ 23%]
+........................................................................ [ 29%]
+........................................................................ [ 34%]
+........................................................................ [ 40%]
+........................................................................ [ 46%]
+........................................................................ [ 52%]
+........................................................................ [ 58%]
+........................................................................ [ 63%]
+........................................................................ [ 69%]
+........................................................................ [ 75%]
+........................................................................ [ 81%]
+........................................................................ [ 87%]
+........................................................................ [ 93%]
+........................................................................ [ 98%]
+..............                                                           [100%]
+1238 passed, 30 deselected in 393.42s (0:06:33)
+-- PASS unit tests (393.9 s)
+
+== [6/13] method vectors: SPECFIRST_STRICT=1 pytest tests/methods -s -q
+
+--- python-vectors
+Python implementations: 139 cases of 11 methods, 0 differences
+.
+--- r-vectors
+R implementations: 134 cases of 12 methods, 0 differences
+.
+--- exact-arithmetic
+expected values computed again in exact arithmetic: 134 cases, 0 differences; written by hand: 63 cases (the display rules)
+.
+--- fisher-r
+2 x 3 2 x 3                                                   Python 0.13419913419913376    R 0.13419913419913415    fisher.test 0.13419913419913387
+3 x 3 3 x 3                                                   Python 0.2671753203049479     R 0.26717532030494984    fisher.test 0.26717532030494506
+3 x 3 3 x 3 of the size of a laboratory shift table           Python 0.4464490858573885     R 0.4464490858574556     fisher.test 0.44644908585743115
+3 x 3 3 x 3 with tables of equal probability                  Python 0.999999999999996      R 1                      fisher.test 0.9999999999999984
+3 x 3 rows and columns of zeros are left out                  Python 0.4857142857142849     R 0.4857142857142856     fisher.test 0.4857142857142856
+2 x 4 2 x 4                                                   Python 0.4587455887765525     R 0.45874558877654853    fisher.test 0.4587455887765442
+4 x 2 4 x 2: the same table turned                            Python 0.4587455887765526     R 0.45874558877654853    fisher.test 0.4587455887765442
+4 x 3 4 x 3                                                   Python 0.4410161267304116     R 0.4410161267304153     fisher.test 0.44101612673041296
+2 x 3 2 x 3 with one table a relative 2.7e-07 more probable:  Python 0.06040878692449231    R 0.060408786924501114   fisher.test 0.06533690837383269  (a table 2.666e-07 more probable)
+2 x 3 2 x 3 with one table a relative 3.2e-07 more probable:  Python 0.009798846806875698   R 0.009798846806877703   fisher.test 0.011455024125087577  (a table 3.209e-07 more probable)
+tables larger than 2 x 2: 10; with a table just above the observed probability, where fisher.test is looser: 2
+.
+--- fisher-limit
+R, with a limit of 50 tables: the R vectors run exited 1: Error: test.fisher.exact: more than 50 tables to sum; the method does not approximate
+.
+--- model-vectors
+model-based methods in R: 58 cases of 5 methods, 0 differences
+planted: model.ancova.dose_response always with dose = group_rank: 7 cases differ
+planted: model.ancova.lsmeans always with weights = equal: 1 cases differ
+planted: model.ancova.pairwise always with df = residual: 1 cases differ
+planted: model.mmrm.lsmeans always with at = last: 2 cases differ
+planted: model.mmrm.pairwise always with df = kenward_roger_linear: 1 cases differ
+..
+7 passed in 11.62s
+-- PASS method vectors (11.8 s)
+
+== [7/13] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -s -q
+
+--- A1-resolve
+ADSL      composed specification equals Pilot 7's snapshot: True
+ADAE      composed specification equals Pilot 7's snapshot: True
+ADLBC     composed specification equals Pilot 7's snapshot: True
+ADLBH     composed specification equals Pilot 7's snapshot: True
+ADLBHY    composed specification equals Pilot 7's snapshot: True
+ADQSADAS  composed specification equals Pilot 7's snapshot: True
+ADQSCIBC  composed specification equals Pilot 7's snapshot: True
+ADQSNPIX  composed specification equals Pilot 7's snapshot: True
+ADTTE     composed specification equals Pilot 7's snapshot: True
+ADVS      composed specification equals Pilot 7's snapshot: True
+Pilot 7 pins yamaa at git revision c039509082b545fe913c00d1686426c3d245778c (cdiscpilot01/program/adam/python/requirements.txt)
+snapshots were made with yamaa 0.7.0 built from git revision c039509082b545fe913c00d1686426c3d245778c
+installed: yamaa 0.7.0 (wheel)
+.
+--- A2-runner
+ADSL         254 rows x  48 columns: runner equals yamaa's project run: True
+ADAE        1191 rows x  55 columns: runner equals yamaa's project run: True
+ADLBC      74264 rows x  46 columns: runner equals yamaa's project run: True
+ADLBH      49932 rows x  46 columns: runner equals yamaa's project run: True
+ADLBHY      9954 rows x  43 columns: runner equals yamaa's project run: True
+ADQSADAS   12463 rows x  40 columns: runner equals yamaa's project run: True
+ADQSCIBC     730 rows x  36 columns: runner equals yamaa's project run: True
+ADQSNPIX   31140 rows x  41 columns: runner equals yamaa's project run: True
+ADTTE        254 rows x  26 columns: runner equals yamaa's project run: True
+ADVS       32139 rows x  34 columns: runner equals yamaa's project run: True
+.
+--- A3-lineage
+ADSL       305 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADAE       167 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBC      182 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBH      184 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBHY     347 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSADAS   119 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSCIBC   102 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSNPIX   652 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADTTE      110 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADVS       152 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+.
+--- A4-unread
+SDTM columns with a node in the graph: 111; without one: 202, every one of them changed (1 all missing, filled, 70 constant, emptied, 131 rolled)
+ADaM datasets that changed: none
+.
+--- A5-adapted
+recorded as adapted: src/specfirst/machine/lineage.py shares 73 lines with cached sources
+recorded as adapted: src/specfirst/machine/runner.py shares 3 lines with cached sources
+compared 163 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 2 (allowed: 2)
+compared 6 R files of ours with 827 of 13 cached sources; the most lines a file that is not recorded shares: 2 (allowed: 2)
+.
+--- A6-engine
+Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.35 s (the spike: about 3 minutes; the target: under 10 seconds)
+embedded results: 3735; reproduced as printed: 3711
+rows per analysis: 31 analyses, 4238 rows; expected 31 analyses, 4238 rows
+.
+6 passed in 52.07s
+-- PASS pilot tests (52.3 s)
+
+== [8/13] kits: specfirst.gen.gate2.kits_pass: 10 kits, each written twice; P1 to P4
+planted defect: a build that stamps its data with a time that depends on its process: 26 files differ, for example twin/data/sdtm/vs.json: the hashes differ
+planted defect: a build whose manifest names the folder it was built in: 1 files differ, for example kit.yaml: the hashes differ
+planted defect: one changed cell of the grid: row 'Any adverse event', column 'Placebo': the grid '99 ( 81.2)', the reference '39 ( 81.2)'
+planted defect: the hand calculation follows tfl.population = randomized, the grid safety: 1 differences, for example columns: the grid ['Placebo', 'ZQR-654 5 mg once daily', 'Total'], the reference ['Placebo', 'Active', 'Total']
+planted defect: the hand calculation follows ae.teae.start = at_or_after_first_dose_time, the grid on_or_after_first_dose_date: 2 differences, for example row 'Any adverse event', column 'ZQR-654 5 mg once daily': the grid '56 ( 74.7)', the reference '54 ( 72.0)'
+planted defect: the hand calculation follows pop.safety.rule = randomized_and_dosed, the grid at_least_one_dose: 8 differences, for example row 'header', column 'ZQR-654 5 mg once daily': the grid '(N=75)', the reference '(N=74)'
+planted defect: a mock shell that shows a number: cell:Out_AESUM/r2/c1: the mock shell shows a number: '12 ( 37.5)'
+planted defect: a cell that lost a shows edge: 2 problems, for example cell:Out_AESUM/r1/c1: its shows edges are not the ARD rows of the cell
+planted defect: an analysis that lost a reads edge: 1 problems, for example ars:An_AESUM_ANY: its reads edges are not the columns the ARS file names: ['adam:ADAE.TRTEMFL']
+planted defect: a column that lost its derivation from SDTM: 17 problems, for example adam:ADAE.USUBJID: no derives_from path to an SDTM column
+planted defect: a decision without a node: 2 problems, for example edge decides decision:ae.related.values -> adam:ADAE.RELGR1: decision:ae.related.values is not a node
+kit 1: study SFPBT5ZJ, 4 arms, split train, scenario 1 (all drawn); decision vectors drawn before this one: 0
+  P1: 128 files of two builds by two processes, the manifest included: 0 differ
+kit sfpbt5zj (train): 127 files have the hashes of kit.yaml; 29 decision records fit the schema; documents of the tier full: 29 of 29 decisions recovered by the parser with the house standard and the oracle, 29 natural paragraphs pass the slot and read-back checks, 58 citations stand at their anchors, 19 visible probes found
+  visible: P2 30 of 30 cells equal the hand calculation; P3 grid Out_AESUM: 30 cells, 30 print a number; 30 of the 30 cells with results have a complete path to SDTM columns; engines: 55 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 30 of 30 cells equal the hand calculation; P3 grid Out_AESUM: 30 cells, 30 print a number; 30 of the 30 cells with results have a complete path to SDTM columns; engines: 55 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 53 builds of 22 decisions: 14 separated, 12 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.randomized.rule, trt.actual.source, trt.end.source; read without a probe: pop.safety.grouping, pop.safety.rule
+kit 2: study SFMYNCMQ, 3 arms, split train, scenario 2 {'tfl.population': 'randomized'}; decision vectors drawn before this one: 0
+  P1: 128 files of two builds by two processes, the manifest included: 0 differ
+kit sfmyncmq (train): 127 files have the hashes of kit.yaml; 29 decision records fit the schema; documents of the tier standard: 29 of 29 decisions recovered by the parser with the house standard and the oracle, 12 natural paragraphs pass the slot and read-back checks, 41 citations stand at their anchors, 20 visible probes found
+  visible: P2 18 of 18 cells equal the hand calculation; P3 grid Out_AESUM: 18 cells, 18 print a number; 18 of the 18 cells with results have a complete path to SDTM columns; engines: 33 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 18 of 18 cells equal the hand calculation; P3 grid Out_AESUM: 18 cells, 18 print a number; 18 of the 18 cells with results have a complete path to SDTM columns; engines: 33 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 52 builds of 22 decisions: 15 separated, 13 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source; read without a probe: none
+kit 3: study SFG5VBVQ, 4 arms, split train, scenario 3 {'ae.teae.end': 'last_dose_plus_days'}; decision vectors drawn before this one: 0
+  P1: 127 files of two builds by two processes, the manifest included: 0 differ
+kit sfg5vbvq (train): 126 files have the hashes of kit.yaml; 28 decision records fit the schema; documents of the tier full: 28 of 28 decisions recovered by the parser with the house standard and the oracle, 28 natural paragraphs pass the slot and read-back checks, 56 citations stand at their anchors, 15 visible probes found
+  visible: P2 16 of 16 cells equal the hand calculation; P3 grid Out_AESUM: 16 cells, 16 print a number; 16 of the 16 cells with results have a complete path to SDTM columns; engines: 28 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 16 of 16 cells equal the hand calculation; P3 grid Out_AESUM: 16 cells, 16 print a number; 16 of the 16 cells with results have a complete path to SDTM columns; engines: 28 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 50 builds of 21 decisions: 15 separated, 14 applicable, 0 applicable and unseparated; not read: ae.related.values, date.studyday.origin, disp.status.record, pop.randomized.rule; read without a probe: pop.safety.grouping, pop.safety.rule
+kit 4: study SFRRL2UH, 2 arms, split train, scenario 4 {'tfl.population': 'efficacy'}; decision vectors drawn before this one: 0
+  P1: 128 files of two builds by two processes, the manifest included: 0 differ
+kit sfrrl2uh (train): 127 files have the hashes of kit.yaml; 29 decision records fit the schema; documents of the tier ask: 29 of 29 decisions recovered by the parser with the house standard and the oracle, 10 natural paragraphs pass the slot and read-back checks, 37 citations stand at their anchors, 17 visible probes found
+  visible: P2 15 of 15 cells equal the hand calculation; P3 grid Out_AESUM: 15 cells, 15 print a number; 15 of the 15 cells with results have a complete path to SDTM columns; engines: 27 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 15 of 15 cells equal the hand calculation; P3 grid Out_AESUM: 15 cells, 15 print a number; 15 of the 15 cells with results have a complete path to SDTM columns; engines: 27 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 53 builds of 22 decisions: 14 separated, 8 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, trt.actual.source, trt.end.source; read without a probe: pop.safety.rule, tfl.rounding.rule
+kit 5: study SFLNYKVQ, 3 arms, split dev, scenario 5 {'ae.teae.end': 'end_of_study'}; decision vectors drawn before this one: 0
+  P1: 127 files of two builds by two processes, the manifest included: 0 differ
+kit sflnykvq (dev): 126 files have the hashes of kit.yaml; 28 decision records fit the schema; documents of the tier standard: 28 of 28 decisions recovered by the parser with the house standard and the oracle, 11 natural paragraphs pass the slot and read-back checks, 39 citations stand at their anchors, 19 visible probes found
+  visible: P2 20 of 20 cells equal the hand calculation; P3 grid Out_AESUM: 20 cells, 20 print a number; 20 of the 20 cells with results have a complete path to SDTM columns; engines: 36 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 20 of 20 cells equal the hand calculation; P3 grid Out_AESUM: 20 cells, 20 print a number; 20 of the 20 cells with results have a complete path to SDTM columns; engines: 36 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 50 builds of 21 decisions: 16 separated, 14 applicable, 0 applicable and unseparated; not read: date.studyday.origin, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source; read without a probe: none
+kit 6: study SFPHBKTR, 4 arms, split dev, scenario 6 {'pop.safety.grouping': 'planned'}; decision vectors drawn before this one: 0
+  P1: 127 files of two builds by two processes, the manifest included: 0 differ
+kit sfphbktr (dev): 126 files have the hashes of kit.yaml; 28 decision records fit the schema; documents of the tier full: 28 of 28 decisions recovered by the parser with the house standard and the oracle, 28 natural paragraphs pass the slot and read-back checks, 56 citations stand at their anchors, 12 visible probes found
+  visible: P2 30 of 30 cells equal the hand calculation; P3 grid Out_AESUM: 30 cells, 30 print a number; 30 of the 30 cells with results have a complete path to SDTM columns; engines: 55 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 30 of 30 cells equal the hand calculation; P3 grid Out_AESUM: 30 cells, 30 print a number; 30 of the 30 cells with results have a complete path to SDTM columns; engines: 55 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 49 builds of 21 decisions: 15 separated, 13 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.randomized.rule, trt.actual.source, trt.end.source; read without a probe: pop.safety.rule
+kit 7: study SFP6X45G, 3 arms, split dev, scenario 7 {'ae.teae.end': 'last_dose_plus_days', 'trt.end.source': 'ds_date_when_ex_missing'}; decision vectors drawn before this one: 0
+  P1: 128 files of two builds by two processes, the manifest included: 0 differ
+kit sfp6x45g (dev): 127 files have the hashes of kit.yaml; 29 decision records fit the schema; documents of the tier ask: 29 of 29 decisions recovered by the parser with the house standard and the oracle, 11 natural paragraphs pass the slot and read-back checks, 38 citations stand at their anchors, 14 visible probes found
+  visible: P2 24 of 24 cells equal the hand calculation; P3 grid Out_AESUM: 24 cells, 24 print a number; 24 of the 24 cells with results have a complete path to SDTM columns; engines: 44 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 24 of 24 cells equal the hand calculation; P3 grid Out_AESUM: 24 cells, 24 print a number; 24 of the 24 cells with results have a complete path to SDTM columns; engines: 44 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 50 builds of 22 decisions: 16 separated, 15 applicable, 0 applicable and unseparated; not read: date.studyday.origin, pop.efficacy.rule, pop.randomized.rule, trt.actual.source; read without a probe: pop.safety.rule
+kit 8: study SF6XJW92, 3 arms, split test, scenario 8 {'tfl.population': 'randomized', 'ae.teae.end': 'end_of_study'}; decision vectors drawn before this one: 0
+  P1: 127 files of two builds by two processes, the manifest included: 0 differ
+kit sf6xjw92 (test): 126 files have the hashes of kit.yaml; 28 decision records fit the schema; documents of the tier standard: 28 of 28 decisions recovered by the parser with the house standard and the oracle, 13 natural paragraphs pass the slot and read-back checks, 41 citations stand at their anchors, 13 visible probes found
+  visible: P2 16 of 16 cells equal the hand calculation; P3 grid Out_AESUM: 16 cells, 16 print a number; 16 of the 16 cells with results have a complete path to SDTM columns; engines: 28 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 16 of 16 cells equal the hand calculation; P3 grid Out_AESUM: 16 cells, 16 print a number; 16 of the 16 cells with results have a complete path to SDTM columns; engines: 28 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 50 builds of 21 decisions: 15 separated, 14 applicable, 0 applicable and unseparated; not read: ae.related.values, date.studyday.origin, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source; read without a probe: none
+kit 9: study SFYF9EKD, 3 arms, split test, scenario 9 {'tfl.population': 'efficacy', 'ae.teae.end': 'last_dose_plus_days'}; decision vectors drawn before this one: 0
+  P1: 128 files of two builds by two processes, the manifest included: 0 differ
+kit sfyf9ekd (test): 127 files have the hashes of kit.yaml; 29 decision records fit the schema; documents of the tier full: 29 of 29 decisions recovered by the parser with the house standard and the oracle, 29 natural paragraphs pass the slot and read-back checks, 58 citations stand at their anchors, 17 visible probes found
+  visible: P2 24 of 24 cells equal the hand calculation; P3 grid Out_AESUM: 24 cells, 24 print a number; 24 of the 24 cells with results have a complete path to SDTM columns; engines: 44 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 24 of 24 cells equal the hand calculation; P3 grid Out_AESUM: 24 cells, 24 print a number; 24 of the 24 cells with results have a complete path to SDTM columns; engines: 44 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 50 builds of 22 decisions: 13 separated, 8 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, trt.actual.source; read without a probe: pop.safety.rule, tfl.rounding.rule, trt.end.source
+kit 10: study SF4TVBDP, 2 arms, split test, scenario 10 {'tfl.population': 'safety', 'pop.safety.grouping': 'actual', 'trt.actual.source': 'dm_actarm'}; decision vectors drawn before this one: 0
+  P1: 128 files of two builds by two processes, the manifest included: 0 differ
+kit sf4tvbdp (test): 127 files have the hashes of kit.yaml; 29 decision records fit the schema; documents of the tier standard: 29 of 29 decisions recovered by the parser with the house standard and the oracle, 11 natural paragraphs pass the slot and read-back checks, 40 citations stand at their anchors, 16 visible probes found
+  visible: P2 18 of 18 cells equal the hand calculation; P3 grid Out_AESUM: 18 cells, 18 print a number; 18 of the 18 cells with results have a complete path to SDTM columns; engines: 33 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P2 18 of 18 cells equal the hand calculation; P3 grid Out_AESUM: 18 cells, 18 print a number; 18 of the 18 cells with results have a complete path to SDTM columns; engines: 33 results in both, 0 disagree; largest relative difference 0.0e+00 (allowed 1e-09)
+  twin: P4 52 builds of 22 decisions: 16 separated, 15 applicable, 0 applicable and unseparated; not read: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.randomized.rule, trt.end.source, trt.planned.source; read without a probe: none
+10 kits of the set 'gen-2a': P1 to P4 hold for every kit
+-- PASS kits (172.1 s)
+
+== [9/13] separation: specfirst.gen.gate2.separation: every applicable decision, and the matrix of the 10 kits
+planted defect: a log of probes that claims a difference for date.studyday.origin: date.studyday.origin: the log of probes claims that dm_rfstdtc and treatment_start differ in the output under these decisions; the two builds are the 
+planted defect: the 28 planted subjects of the twin lost their adverse events: ae.teae.start is unseparated, and the kit is unfit in 8 claims, for example: ae.teae.start: the log of probes claims that on_or_after_first_dose_date and at_or_after_first_dose_time diffe
+planted defect: a kit whose matrix, decision record and manifest call date.studyday.origin separated, with the hashes written again: the check without a mutation reports 0 problems, a new mutation 3: gold/identifiability.json is not the matrix a new mutation gives; kit.yaml: the identifiability summary is not that of a new mutation; decision date.studyday.origin: 'identifiable' is not what the matrix says
+kit 1: 22 decisions, 16 read by the output, 12 applicable (the log claims a probe for every pair), 14 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.randomized.rule, trt.actual.source, trt.end.source; unseparated, read, no probe claimed: pop.safety.grouping, pop.safety.rule
+kit 2: 22 decisions, 15 read by the output, 13 applicable (the log claims a probe for every pair), 15 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source; unseparated, read, no probe claimed: none
+kit 3: 21 decisions, 17 read by the output, 14 applicable (the log claims a probe for every pair), 15 separated; applicable and unseparated: none
+  unseparated, not read: ae.related.values, date.studyday.origin, disp.status.record, pop.randomized.rule; unseparated, read, no probe claimed: pop.safety.grouping, pop.safety.rule
+kit 4: 22 decisions, 16 read by the output, 8 applicable (the log claims a probe for every pair), 14 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, trt.actual.source, trt.end.source; unseparated, read, no probe claimed: pop.safety.rule, tfl.rounding.rule
+kit 5: 21 decisions, 16 read by the output, 14 applicable (the log claims a probe for every pair), 16 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source; unseparated, read, no probe claimed: none
+kit 6: 21 decisions, 16 read by the output, 13 applicable (the log claims a probe for every pair), 15 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, disp.status.record, pop.randomized.rule, trt.actual.source, trt.end.source; unseparated, read, no probe claimed: pop.safety.rule
+kit 7: 22 decisions, 18 read by the output, 15 applicable (the log claims a probe for every pair), 16 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, pop.efficacy.rule, pop.randomized.rule, trt.actual.source; unseparated, read, no probe claimed: pop.safety.rule
+kit 8: 21 decisions, 15 read by the output, 14 applicable (the log claims a probe for every pair), 15 separated; applicable and unseparated: none
+  unseparated, not read: ae.related.values, date.studyday.origin, pop.safety.grouping, pop.safety.rule, trt.actual.source, trt.end.source; unseparated, read, no probe claimed: none
+kit 9: 22 decisions, 17 read by the output, 8 applicable (the log claims a probe for every pair), 13 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, disp.status.record, pop.randomized.rule, pop.safety.grouping, trt.actual.source; unseparated, read, no probe claimed: pop.safety.rule, tfl.rounding.rule, trt.end.source
+kit 10: 22 decisions, 16 read by the output, 15 applicable (the log claims a probe for every pair), 16 separated; applicable and unseparated: none
+  unseparated, not read: date.studyday.origin, disp.status.record, pop.efficacy.rule, pop.randomized.rule, trt.end.source, trt.planned.source; unseparated, read, no probe claimed: none
+planted defect: matrices in which no kit separates ae.teae.end: 5 holes, for example: ae.teae.end: separated in no kit
+decision                  in read appl  sep  pairs of alternatives: kits that separate each
+trt.planned.source        10    9    9    9  dm_arm|dm_armcd_map: 1,2,3,4,5,6,7,8,9
+trt.actual.source         10    2    2    2  dm_actarm|first_ex_treatment: 3,10; dm_actarm|same_as_planned: 3,10; first_ex_treatment|same_as_planned: 3,10
+trt.start.source          10   10    8   10  first_ex_with_dose|first_ex_record: 1,2,3,4,5,6,7,8,9,10; first_ex_with_dose|dm_rfxstdtc: 1,2,3,4,5,6,7,8,9,10; first_ex_record|dm_rfxstdtc: 1,2,3,4,5,6,7,8,9,10
+trt.end.source            10    3    2    2  last_ex_end_date|last_ex_start_date: 3,7,9; last_ex_end_date|ds_date_when_ex_missing: 3,7; last_ex_start_date|ds_date_when_ex_missing: 3,7,9
+trt.date.imputation       10   10    8   10  not_completed|first_day_of_month: 1,2,3,4,5,6,7,8,9,10
+date.studyday.origin      10    0    0    0  treatment_start|dm_rfstdtc: NONE
+pop.randomized.rule       10    3    3    3  all_randomized|randomized_with_postbaseline: 2,5,8
+pop.safety.rule           10    7    1    1  at_least_one_dose|randomized_and_dosed: 10
+pop.safety.grouping       10    5    3    3  actual|planned: 6,7,10
+pop.efficacy.rule          6    2    2    2  baseline_and_postbaseline|attended_visit: 4,9
+disp.status.record        10    3    3    3  disposition_event|disposition_event_by_subcategory: 5,7,8
+ae.start.imputation       10   10    8   10  first_of_month_not_before_first_dose|first_of_month: 1,2,3,4,5,6,7,8,9,10; first_of_month_not_before_first_dose|not_completed: 1,2,3,4,5,6,7,8,9,10; first_of_month|not_completed: 1,2,3,4,5,6,7,8,9,10
+ae.teae.start             10   10    8   10  on_or_after_first_dose_date|at_or_after_first_dose_time: 1,2,3,4,5,6,7,8,9,10
+ae.teae.end               10   10    8   10  no_end|last_dose_plus_days: 1,2,3,4,5,6,7,8,9,10; no_end|end_of_study: 1,2,3,4,5,6,7,8,9,10; last_dose_plus_days|end_of_study: 1,2,3,4,5,6,7,8,9,10
+ae.related.values         10    8    0    6  one alternative; kits that separate values of its slot: 1,2,4,5,6,10
+tfl.output.include        10   10   10   10  included|not_included: 1,2,3,4,5,6,7,8,9,10
+tfl.population            10   10   10   10  safety|randomized: 1,2,3,4,5,6,7,8,9,10; safety|efficacy: 1,2,4,7,9,10; randomized|efficacy: 1,2,4,7,9,10
+tfl.columns.arms          10   10   10   10  ascending_dose_placebo_first|protocol_order: 1,2,3,4,5,6,7,8,9,10
+tfl.columns.total         10   10   10   10  all_arms|none: 1,2,3,4,5,6,7,8,9,10; all_arms|active_arms: 1,2,3,4,5,6,7,8,9,10; none|active_arms: 1,2,3,4,5,6,7,8,9,10
+tfl.percent.format        10   10   10   10  one_decimal_zero_blank|one_decimal_always: 1,2,3,4,5,6,7,8,9,10
+tfl.rounding.rule         10   10    1    8  half_away_from_zero|half_even: 1,2,3,5,6,7,8,10
+tfl.ae.summary.rows       10   10   10   10  standard_rows|stated_rows: 1,2,3,4,5,6,7,8,9,10
+not applicable to this output, and unseparated for the slice (PLAN.md section 4.7): date.studyday.origin
+separation: 0 holes in the matrix of 10 kits; every applicable decision is separated on the twin of its kit
+-- PASS separation (23.5 s)
+
+== [10/13] engines: specfirst.gen.gate2.engines: the Python and the R engine on every result
+planted defect: a result of the R engine that differs: ard:An_AESUM_ANY/Mth_CatSumm_n/Grp_TRT01P_1: Python 39, R 40, relative difference 2.5e-02
+planted defect: a result the R engine lacks: ard:An_AESUM_ANY/Mth_CatSumm_n/Grp_TRT01P_1: only the Python engine has it
+the Python engine and the R engine agree on 766 results of 20 builds (10 kits, visible and twin): yes
+-- PASS engines (0.1 s)
+
+== [11/13] splits: specfirst.gen.gate2.splits: the splits of section 6.7
+planted defect: a document of the kit that holds the seed: kit 1: inputs/docs/sap.md holds the seed
+planted defect: a manifest with the split dev: kit 1: split dev, the plan gives train
+planted defect: a manifest with the hash of another seed: kit 1: seed_sha256 is not the hash of its seed
+planted defect: the vector of kit 1 with {'tfl.columns.total': 'none', 'tfl.columns.arms': 'protocol_order'}: held out, a train kit must not have it
+200 vectors drawn for a train kit: none has the held-out combination; of 200 for a sealed kit: 83 have it
+splits of the 10 kits by their place in the set: train 4, dev 3, test 3, sealed 0; held out for an exam: an allocation ratio other than 1 to 1, and the combination {'tfl.columns.total': 'none', 'tfl.columns.arms': 'protocol_order'}; 0 problems
+-- PASS splits (1.4 s)
+
+== [12/13] cache untouched: specfirst fetch --verify
+cache: /tmp/specfirst-clean-lxNLsT/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS cache untouched (0.1 s)
+
+== [13/13] ASCII: python -m specfirst.asciicheck
+ASCII check: 603 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.3 s
+PASS  pins                 0.9 s
+PASS  lint                 0.0 s
+PASS  registry             0.1 s
+PASS  unit tests         393.9 s
+PASS  method vectors      11.8 s
+PASS  pilot tests         52.3 s
+PASS  kits               172.1 s
+PASS  separation          23.5 s
+PASS  engines              0.1 s
+PASS  splits               1.4 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE gen-2a: PASS
+
+clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-lxNLsT/specfirst)
+The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
+minute after the last command ends. Copy what must be kept in the same command that
+runs this script (docs/lessons.md, lesson 39). The log is in build/gates/gen-2a/ here.

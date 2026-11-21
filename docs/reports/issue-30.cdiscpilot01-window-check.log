@@ -1,0 +1,127 @@
+$ specfirst gen separate cdiscpilot01 --vector window --check build/separation/cdiscpilot01-window.json
+P4 by class on cdiscpilot01/sdtm (cdiscpilot01, vector window): 22 decisions of the units mod-treatment, mod-populations, mod-ae-emergence, tfl-ae-summary; outputs Out_AESUM; 67 builds; integer slots scanned up to 30 steps from gold
+  unseparated: 9: ae.start.imputation (mod-ae-emergence), ae.teae.end (mod-ae-emergence), ae.teae.start (mod-ae-emergence), pop.safety.rule (mod-populations), tfl.columns.arms (tfl-ae-summary), tfl.columns.total (tfl-ae-summary), tfl.rounding.rule (tfl-ae-summary), trt.date.imputation (mod-treatment), trt.start.source (mod-treatment)
+  separated_at_dataset_only: 1: trt.end.source (mod-treatment)
+  separated: 7: ae.related.values (mod-ae-emergence), pop.safety.grouping (mod-populations), tfl.ae.summary.rows (tfl-ae-summary), tfl.output.include (tfl-ae-summary), tfl.percent.format (tfl-ae-summary), tfl.population (tfl-ae-summary), trt.actual.source (mod-treatment)
+  inert: 5: date.studyday.origin (mod-treatment), disp.status.record (mod-populations), pop.efficacy.rule (mod-populations), pop.randomized.rule (mod-populations), trt.planned.source (mod-treatment)
+  no_alternative: 0
+  values tried, by level: fails 0, outputs 22, results 0, adam 12, none 32
+  review (unseparated first):
+    unseparated: ae.start.imputation (mod-ae-emergence); reproduce: first_of_month
+    unseparated: ae.teae.end (mod-ae-emergence); days from 13 (separated) to 36 (separated)
+    unseparated: ae.teae.start (mod-ae-emergence); reproduce: at_or_after_first_dose_time
+    unseparated: pop.safety.rule (mod-populations); reproduce: randomized_and_dosed
+    unseparated: tfl.columns.arms (tfl-ae-summary); reproduce: protocol_order
+    unseparated: tfl.columns.total (tfl-ae-summary); reproduce: active_arms(control="Active Control")
+    unseparated: tfl.rounding.rule (tfl-ae-summary); reproduce: half_even
+    unseparated: trt.date.imputation (mod-treatment); reproduce: first_day_of_month
+    unseparated: trt.start.source (mod-treatment); reproduce: dm_rfxstdtc, first_ex_record
+    separated_at_dataset_only: trt.end.source (mod-treatment); outputs: Out_AESUM
+    separated (not asked): ae.related.values (mod-ae-emergence)
+    separated (not asked): pop.safety.grouping (mod-populations)
+    separated (not asked): tfl.ae.summary.rows (tfl-ae-summary)
+    separated (not asked): tfl.output.include (tfl-ae-summary)
+    separated (not asked): tfl.percent.format (tfl-ae-summary)
+    separated (not asked): tfl.population (tfl-ae-summary)
+    separated (not asked): trt.actual.source (mod-treatment)
+    inert (not asked): date.studyday.origin (mod-treatment)
+    inert (not asked): disp.status.record (mod-populations)
+    inert (not asked): pop.efficacy.rule (mod-populations)
+    inert (not asked): pop.randomized.rule (mod-populations)
+    inert (not asked): trt.planned.source (mod-treatment)
+  decisions:
+    trt.planned.source (mod-treatment) = dm_arm: inert, identifiable unseparated; no output reads what the decision sets, under any value tried
+      dm_armcd_map(map=[{"code": "A", "label": "Drug X, 10 mg"}, {"code": "B", "label": "Placebo"}]): adam (adam 32294, results 0, cells 0)
+      dm_armcd_map(map=[{"code": "PBO", "label": "Placebo"}, {"code": "LOW", "label": "Low Dose"}, {"code": "HIGH", "label": "High Dose"}]): adam (adam 32294, results 0, cells 0)
+    trt.actual.source (mod-treatment) = dm_actarm: separated, identifiable separated; every value tried changes the outputs
+      first_ex_treatment: outputs (adam 32294, results 20, cells 17); read by Out_AESUM
+      same_as_planned: outputs (adam 569, results 15, cells 9); read by Out_AESUM
+    trt.start.source (mod-treatment) = first_ex_with_dose: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under dm_rfxstdtc, first_ex_record: the data cannot tell them apart
+      dm_rfxstdtc: none (adam 0, results 0, cells 0); read by Out_AESUM
+      first_ex_record: none (adam 0, results 0, cells 0); read by Out_AESUM
+    trt.end.source (mod-treatment) = last_ex_end_date: separated_at_dataset_only, identifiable unseparated; the outputs that read it (Out_AESUM) are the same as gold under ds_date_when_ex_missing; the ADaM datasets or the results differ
+      ds_date_when_ex_missing: adam (adam 68, results 0, cells 0); read by Out_AESUM
+      last_ex_start_date: outputs (adam 372870, results 22, cells 11); read by Out_AESUM
+    trt.date.imputation (mod-treatment) = not_completed: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under first_day_of_month: the data cannot tell them apart
+      first_day_of_month: none (adam 0, results 0, cells 0); read by Out_AESUM
+    date.studyday.origin (mod-treatment) = treatment_start: inert, identifiable unseparated; no output reads what the decision sets, under any value tried
+      dm_rfstdtc: none (adam 0, results 0, cells 0)
+    pop.randomized.rule (mod-populations) = all_randomized: inert, identifiable unseparated; no output reads what the decision sets, under any value tried
+      randomized_with_postbaseline(test="SYSBP"): adam (adam 189, results 0, cells 0)
+      randomized_with_postbaseline(test="WEIGHT"): adam (adam 234, results 0, cells 0)
+    pop.safety.rule (mod-populations) = at_least_one_dose: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under randomized_and_dosed: the data cannot tell them apart
+      randomized_and_dosed: none (adam 0, results 0, cells 0); read by Out_AESUM
+    pop.safety.grouping (mod-populations) = actual: separated, identifiable separated; every value tried changes the outputs
+      planned: outputs (adam 0, results 66, cells 9); read by Out_AESUM
+    pop.efficacy.rule (mod-populations) = baseline_and_postbaseline(test="SYSBP"): inert, identifiable unseparated; no output reads what the decision sets, under any value tried
+      attended_visit(visit="WEEK 24"): adam (adam 132, results 0, cells 0)
+      attended_visit(visit="Week 8"): adam (adam 250, results 0, cells 0)
+      baseline_and_postbaseline(test="WEIGHT"): adam (adam 1, results 0, cells 0)
+    disp.status.record (mod-populations) = disposition_event: inert, identifiable unseparated; no output reads what the decision sets, under any value tried
+      disposition_event_by_subcategory(subcategory="END OF STUDY"): adam (adam 918, results 0, cells 0)
+      disposition_event_by_subcategory(subcategory="STUDY PARTICIPATION"): adam (adam 918, results 0, cells 0)
+    ae.start.imputation (mod-ae-emergence) = first_of_month_not_before_first_dose: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under first_of_month: the data cannot tell them apart
+      first_of_month: none (adam 0, results 0, cells 0); read by Out_AESUM
+      not_completed: adam (adam 82, results 0, cells 0); read by Out_AESUM
+    ae.teae.start (mod-ae-emergence) = on_or_after_first_dose_date: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under at_or_after_first_dose_time: the data cannot tell them apart
+      at_or_after_first_dose_time: none (adam 0, results 0, cells 0); read by Out_AESUM
+    ae.teae.end (mod-ae-emergence) = last_dose_plus_days(days=30): unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under last_dose_plus_days(days=14), last_dose_plus_days(days=15), last_dose_plus_days(days=16), last_dose_plus_days(days=17), last_dose_plus_days(days=18), last_dose_plus_days(days=19), last_dose_plus_days(days=20), last_dose_plus_days(days=21), last_dose_plus_days(days=22), last_dose_plus_days(days=23), last_dose_plus_days(days=24), last_dose_plus_days(days=25), last_dose_plus_days(days=26), last_dose_plus_days(days=27), last_dose_plus_days(days=28), last_dose_plus_days(days=29), last_dose_plus_days(days=31), last_dose_plus_days(days=32), last_dose_plus_days(days=33), last_dose_plus_days(days=34), last_dose_plus_days(days=35), last_dose_plus_days(days=36): the data cannot tell them apart
+      end_of_study: outputs (adam 8, results 8, cells 4); read by Out_AESUM
+      last_dose_plus_days(days=12): outputs (adam 11, results 4, cells 2); read by Out_AESUM
+      last_dose_plus_days(days=13): adam (adam 7, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=14): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=15): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=16): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=17): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=18): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=19): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=20): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=21): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=22): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=23): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=24): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=25): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=26): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=27): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=28): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=29): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=31): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=32): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=33): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=34): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=35): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=36): none (adam 0, results 0, cells 0); read by Out_AESUM
+      last_dose_plus_days(days=37): outputs (adam 8, results 8, cells 4); read by Out_AESUM
+      last_dose_plus_days(days=7): outputs (adam 11, results 4, cells 2); read by Out_AESUM
+      no_end: outputs (adam 8, results 8, cells 4); read by Out_AESUM
+    ae.related.values (mod-ae-emergence) = stated_list(values=["POSSIBLE", "PROBABLE"]): separated, identifiable separated; every value tried changes the outputs
+      stated_list(values=["POSSIBLE"]): outputs (adam 361, results 8, cells 4); read by Out_AESUM
+      stated_list(values=["POSSIBLY RELATED", "PROBABLY RELATED", "DEFINITELY RELATED"]): outputs (adam 704, results 8, cells 4); read by Out_AESUM
+      stated_list(values=["PROBABLE"]): outputs (adam 343, results 8, cells 4); read by Out_AESUM
+      stated_list(values=["RELATED"]): outputs (adam 704, results 8, cells 4); read by Out_AESUM
+    tfl.output.include (tfl-ae-summary) = included: separated, identifiable separated; every value tried changes the outputs
+      not_included: outputs (adam 0, results 44, cells 24); read by Out_AESUM
+    tfl.population (tfl-ae-summary) = safety: separated, identifiable separated; every value tried changes the outputs
+      efficacy: outputs (adam 0, results 74, cells 17); read by Out_AESUM
+      randomized: outputs (adam 0, results 82, cells 21); read by Out_AESUM
+    tfl.columns.arms (tfl-ae-summary) = ascending_dose_placebo_first: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under protocol_order: the data cannot tell them apart
+      protocol_order: none (adam 0, results 0, cells 0); read by Out_AESUM
+    tfl.columns.total (tfl-ae-summary) = all_arms: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under active_arms(control="Active Control"): the data cannot tell them apart
+      active_arms(control="Active Control"): none (adam 0, results 0, cells 0); read by Out_AESUM
+      active_arms(control="Placebo"): outputs (adam 0, results 8, cells 5); read by Out_AESUM
+      none: outputs (adam 0, results 11, cells 7); read by Out_AESUM
+    tfl.percent.format (tfl-ae-summary) = one_decimal_zero_blank: separated, identifiable separated; every value tried changes the outputs
+      one_decimal_always: outputs (adam 0, results 0, cells 6); read by Out_AESUM
+    tfl.rounding.rule (tfl-ae-summary) = half_away_from_zero: unseparated, identifiable unseparated; the same ADaM datasets, results and outputs as gold under half_even: the data cannot tell them apart
+      half_even: none (adam 0, results 0, cells 0); read by Out_AESUM
+    tfl.ae.summary.rows (tfl-ae-summary) = standard_rows: separated, identifiable separated; every value tried changes the outputs
+      stated_rows(rows=["ANY", "SERIOUS", "FATAL"]): outputs (adam 0, results 16, cells 16); read by Out_AESUM
+      stated_rows(rows=["ANY"]): outputs (adam 0, results 32, cells 17); read by Out_AESUM
+      stated_rows(rows=["SERIOUS", "RELATED", "ANY"]): outputs (adam 0, results 16, cells 17); read by Out_AESUM
+  problems: 0
+the matrix build/separation/cdiscpilot01-window.json against a new mutation: 0 differences
+
+real	22m55.868s
+user	1m32.424s
+sys	0m4.369s
+exit 0

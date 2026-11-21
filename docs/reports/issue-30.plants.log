@@ -1,0 +1,26 @@
+$ python plants.py
+== planted against separated: L4 dosed as randomized: pop.safety.grouping no longer separates
+  pop.safety.grouping (mod-populations): separated_at_dataset_only
+  check: pop.safety.grouping (mod-populations): separated_at_dataset_only; the study states separated
+  the check of SEP01 fails: yes (1 lines)
+== planted against unseparated: an event 36 days after P3's last dose: no other window reproduces
+  ae.teae.end (mod-ae-emergence): separated; days 35 to 35
+  check: ae.teae.end (mod-ae-emergence): separated; the study states unseparated
+  check: ae.teae.end (mod-ae-emergence): the interval is [{'slot': 'days', 'gold': 35, 'low': 35, 'high': 35, 'below': 'separated', 'above': 'separated', 'same': [], 'dataset_only': []}]; the study states {'slot': 'days', 'gold': 35, 'low': 35, 'high': 38, 'below': 'separated', 'above': 'separated', 'same': [36, 37, 38], 'dataset_only': []}
+  the check of SEP01 fails: yes (2 lines)
+== planted against separated_at_dataset_only: L3's dizziness with a full date: every imputation gives the same build
+  ae.start.imputation (mod-ae-emergence): unseparated
+  check: ae.start.imputation (mod-ae-emergence): unseparated; the study states separated_at_dataset_only
+  the check of SEP01 fails: yes (1 lines)
+== planted against inert: a reach that names no element for any output: every decision looks inert, and a value that changes the table is a defect
+  date.studyday.origin (mod-treatment): inert
+  ae.teae.end (mod-ae-emergence): inert; days 35 to 38
+  check: ae.teae.end (mod-ae-emergence): inert, yet end_of_study changes the outputs
+  check: ae.teae.end (mod-ae-emergence): inert, yet last_dose_plus_days(days=30) changes the outputs
+  check: ae.teae.end (mod-ae-emergence): inert, yet last_dose_plus_days(days=34) changes the outputs
+  check: ae.teae.end (mod-ae-emergence): inert, yet last_dose_plus_days(days=39) changes the outputs
+  check: ae.teae.end (mod-ae-emergence): inert, yet last_dose_plus_days(days=7) changes the outputs
+  check: ae.teae.end (mod-ae-emergence): inert, yet no_end changes the outputs
+  check: ae.teae.end (mod-ae-emergence): inert; the study states unseparated
+  the check of SEP01 fails: yes (7 lines)
+== the study itself: the check prints 0 lines
