@@ -527,8 +527,8 @@ def _recompute_independence(ctx: Context) -> bool:
     bad = {name: problems for name, problems in checks["static"].items() if problems}
     ctx.out(f"static check: {len(checks['static']) - len(bad)} of {len(checks['static'])} "
             f"scripts ({languages.count('python')} Python, {languages.count('r')} R) import, "
-            "name and call only what the allow-lists hold, read only the ADaM datasets of "
-            "their plan from the data folder, and state only the ARS's numbers")
+            "name and call only what the allow-lists hold, call their reader only in the one "
+            "form of a read of a dataset of their plan, and state only the ARS's numbers")
     for name, problems in sorted(bad.items()):
         ctx.out(f"  {name}: {'; '.join(problems[:3])}")
     generator = static.generator_problems(Path(static.__file__).resolve().parent)

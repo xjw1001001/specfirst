@@ -7,8 +7,9 @@ audit hook refuses every import of specfirst or yamaa and every open by Python
 of a file in the checkout or the build; R as `Rscript --vanilla`. The sealed
 run is not a confinement: R, and a library's own C code, can read any file the
 user can. The engine's R code is not an installed package (ADR-002), and the
-static check holds every read of a script to the ADaM datasets of its plan in
-the data folder (static.py says what that check does not hold). A script that
+static check holds each call of a script's one reader to one form, a dataset
+of its plan in the data folder, as far as a check of the form holds (static.py
+says what it does not hold). A script that
 fails leaves no output, but <analysis>.failed with the reason, so that it is
 `differs`.
 """

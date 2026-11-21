@@ -296,6 +296,11 @@ def checker_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
         "pandas.eval": python.replace(bind, bind + 'e = pd.eval("1 + 1")\n'),
         "the ARD's name in two parts": python.replace(
             bind, bind + 'p = adam / ("efficacy-adas.js" + "onl")\n'),
+        # the routes of the review of issue #29, pass 2 (F1)
+        "N1, the arguments rewritten before the binding": python.replace(
+            bind, 's = sys.argv[1][0]\nsys.argv[1] = sys.argv[1] + s + "." + "." + s + "." '
+                  '+ "."\n' + bind),
+        "N2, Path bound again": python.replace(bind, "Path = lambda p: p\n" + bind),
     }
     for name, text in planted_py.items():
         problems = static.python_problems(text, age["datasets"], allowed_py)
@@ -318,6 +323,16 @@ def checker_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
                                            "num <- function"),
         "a reader as a value": r.replace("num <- function", "f <- utils::read.csv\n"
                                          "num <- function"),
+        # the routes of the review of issue #29, pass 2 (F1)
+        "RN1, a function name built for sapply": r.replace(
+            "num <- function", 'x <- sapply(colnames(adsl), paste0("sou", "rce"))\n'
+                               "num <- function"),
+        "RN2, a function name held for sapply": r.replace(
+            "num <- function", 'f <- paste0("sou", "rce")\nx <- sapply(colnames(adsl), f)\n'
+                               "num <- function"),
+        "RN3, a reader name built for sapply": r.replace(
+            "num <- function", 'x <- sapply(colnames(adsl), paste0("read", "Lines"))\n'
+                               "num <- function"),
     }
     paths = [tmp_path / "lsm.R"]
     paths[0].write_text(r, encoding="ascii")
@@ -353,8 +368,9 @@ def checker_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
                                     tmp_path / "logs", fence)
             print(f"planted in {age['analysis']}: the sealed run, {what}: {why}")
             assert why and "refused by the sealed run" in why, what
-    print("not held by the sealed run, held by the static check above: a read by pyarrow's own "
-          "code (the built ADaM by parent folders) and any read or source in R")
+    print("not held by the sealed run: a read by pyarrow's own code, and R; there only the "
+          "static check's form of a read stands, as far as a check of the form holds "
+          "(ADR-021, decision 5)")
 
 
 def comparison_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:

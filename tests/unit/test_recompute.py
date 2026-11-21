@@ -246,13 +246,26 @@ def test_static_check_python():
         "__file__": "p = __file__\n",
         "a bytes path": "p = b'x'\n",
         "a read with options": "x = pd.read_parquet(adam / 'adsl.parquet', filesystem=None)\n",
+        # the routes of the review of issue #29, pass 2 (F1: N1, N2 and their kin)
+        "the arguments rewritten": "sys.argv[1] = sys.argv[1] + '.' + '.'\n",
+        "the arguments sorted": "sys.argv.sort()\n",
+        "the arguments handed on": "a = sys.argv\n",
+        "Path bound again": "Path = lambda p: p\n",
+        "Path used again": "p = Path(sys.argv[1])\n",
+        "pandas bound again": "pd = np\n",
+        "a function of adam": "def f(adam):\n    return pd.read_parquet(adam / 'adsl.parquet')\n",
+        "a global": "def f():\n    global adam\n    adam = 1\n",
     }
     for name, text in planted.items():
         assert static.python_problems(PY_HEAD + text, ["adsl"], allowed), name
+    before = "s = sys.argv[1][0]\nsys.argv[1] = sys.argv[1] + s + '.' + '.'\n"  # N1
+    assert static.python_problems(PY_HEAD.replace("adam, out", before + "adam, out"),
+                                  ["adsl"], allowed)
 
 
 def test_static_check_r_tokens():
     good = [("SYMBOL_PACKAGE", "stats"), ("NS_GET", "::"), ("SYMBOL_FUNCTION_CALL", "lm"),
+            ("'('", "("), ("SYMBOL", "y"), ("'~'", "~"), ("SYMBOL", "x"), ("')'", ")"),
             ("STR_CONST", '"adsl.csv"'), ("NUM_CONST", "95"), ("NUM_CONST", "TRUE")]
     assert static.r_problems(good, ["adsl"], {95.0}) == []
     planted = {
@@ -296,6 +309,18 @@ def test_static_check_r_parse(tmp_path):
         "the data folder bound again": 'adam <- args[2]\n',
         "the data folder handed on": 'p <- paste0(adam, "x")\n',
         "a parent folder": 'p <- c("..", "x")\n',
+        # the routes of the review of issue #29, pass 2 (F1: RN1 to RN3 and their kin)
+        "a function name built for sapply": 'x <- sapply(colnames(adsl), paste0("sou", "rce"))\n',
+        "a function name held for sapply": 'f <- paste0("sou", "rce")\n'
+                                           'x <- sapply(colnames(adsl), f)\n',
+        "a reader name built for sapply": 'x <- sapply(colnames(adsl), paste0("read", "Lines"))\n',
+        "a function by name for apply": 'x <- apply(adsl, 1, print)\n',
+        "a model of a formula in a text": 'fit <- stats::lm(paste0("AGE ~ ", "1"), data = adsl)\n',
+        "a formula for update": 'fit <- update(fit, ". ~ .")\n',
+        "adam as an argument": 'f <- function(adam) utils::read.csv(file.path(adam, '
+                               '"adsl.csv"))\n',
+        "the arguments rebound": 'args <- c(args[1], "x")\n',
+        "an argument rewritten": 'args[1] <- "x"\n',
     }
     paths = [tmp_path / "good.R"]
     paths[0].write_text(good, encoding="ascii")

@@ -3,14 +3,18 @@
 Per script, on its syntax tree (Python) or on the tokens of R's own parser:
 
 - Python: its imports, the builtins it names and the attributes it takes are
-  in allow-lists, and it names no dunder; R: its calls are in an allow-list,
-  it names nothing that runs other code (source, eval, get, ...), calls no
-  string and hands no string to apply or sapply, and uses no qualified
+  in allow-lists; it names no dunder, binds no imported name again, has no
+  global or nonlocal, and reads `sys` only as `sys.argv[1]` or
+  `sys.argv[2]`. R: its calls are in an allow-list; it names nothing that
+  runs other code (source, eval, get, ...), calls no string, hands apply and
+  sapply a function written in place (`function(...)`), the model functions
+  a formula written in place, update only `df = ...`, and uses no qualified
   function or file.path as a value.
-- Its only reads are of the ADaM datasets of its plan, in the folder of its
-  first argument, in one fixed form: `pd.read_parquet(adam / "<d>.parquet")`
-  with `adam` bound once to `Path(sys.argv[1])`, or
-  `utils::read.csv(file.path(adam, "<d>.csv"), ...)` with `adam <- args[1]`.
+- Each call of its one reader has one form, a dataset of its plan in the
+  folder of its first argument: `pd.read_parquet(adam / "<d>.parquet")` with
+  `adam` bound once by `adam, out = Path(sys.argv[1]), sys.argv[2]` (Path is
+  named nowhere else), or `utils::read.csv(file.path(adam, "<d>.csv"), ...)`
+  with `adam <- args[1]` and `args <- commandArgs(trailingOnly = TRUE)`.
 - No text holds a path, "..", a file name other than those datasets, or a
   number; every number is one the ARS states for the analysis or one of a
   few small constants.
@@ -67,7 +71,9 @@ R_FORBIDDEN = {"source", "sys.source", "eval", "evalq", "parse", "str2lang", "st
                "readLines", "scan", "dirname", "normalizePath", "list.files", "setwd", "getwd",
                "Recall", "environment", "sys.function", "body", "assign", ".Internal",
                ".Call", ".External", "pipe", "url", "download.file"}
-R_APPLY = {"apply", "sapply"}  # their function argument may be no string (R looks a name up)
+R_APPLY = {"apply", "sapply"}  # their function: written in place, never a name or a string
+R_FORMULA = {"lm", "mmrm", "cmh_test"}  # their first argument: a formula written in place
+R_UPDATE_NAMES = {"df"}  # update(): its other arguments are named, and only these
 R_AS_VALUE = {"file.path", "commandArgs"}  # functions that must not be handed on as a value
 R_OPEN = {"(", "[", "{"}
 R_CLOSE = {")", "]", "}"}
@@ -134,6 +140,8 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
     allowed = SMALL | numbers
     files = {f"{d.lower()}.parquet" for d in datasets}
     bound = bound_names(tree)
+    imported = {(alias.asname or alias.name).split(".")[0] for node in ast.walk(tree)
+                if isinstance(node, ast.Import | ast.ImportFrom) for alias in node.names}
     parent = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
 
     def statement(node: ast.AST) -> ast.AST:
@@ -141,9 +149,23 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
             node = parent[node]
         return node
 
+    def argument(node: ast.Attribute) -> bool:
+        """`sys.argv[1]` or `sys.argv[2]`, read."""
+        above = parent[node]
+        return isinstance(node.value, ast.Name) and node.value.id == "sys" and \
+            isinstance(above, ast.Subscript) and above.value is node and \
+            isinstance(above.ctx, ast.Load) and isinstance(above.slice, ast.Constant) and \
+            above.slice.value in (1, 2) and not isinstance(above.slice.value, bool)
+
     for node in ast.walk(tree):
         line = f"line {getattr(node, 'lineno', '?')}"
-        if isinstance(node, ast.Import):
+        if isinstance(node, ast.Global | ast.Nonlocal):
+            problems.append(f"{line}: a global or nonlocal statement")
+        elif isinstance(node, ast.arg) and node.arg in imported | {"adam"}:
+            problems.append(f"{line}: the name {node.arg} as an argument")
+        elif isinstance(node, ast.FunctionDef | ast.ClassDef) and node.name in imported:
+            problems.append(f"{line}: the imported name {node.name} bound again")
+        elif isinstance(node, ast.Import):
             for alias in node.names:
                 top = alias.name.split(".")[0]
                 if top not in PY_IMPORTS or (PY_IMPORTS[top] is not None and alias.name != top):
@@ -160,6 +182,14 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
                 problems.append(f"{line}: the name {node.id}")
             elif isinstance(node.ctx, ast.Load) and node.id not in bound | PY_BUILTINS:
                 problems.append(f"{line}: the name {node.id}")
+            elif not isinstance(node.ctx, ast.Load) and node.id in imported:
+                problems.append(f"{line}: the imported name {node.id} bound again")
+            elif node.id == "Path" and ast.dump(statement(node)) != PY_ADAM_TREE:
+                problems.append(f"{line}: Path used otherwise than in `{PY_ADAM}`")
+            elif node.id == "sys" and not (isinstance(parent[node], ast.Attribute) and
+                                           argument(parent[node])):
+                problems.append(f"{line}: sys used otherwise than as `sys.argv[1]` or "
+                                "`sys.argv[2]`, read")
             elif node.id == "adam":
                 if isinstance(node.ctx, ast.Store):
                     if ast.dump(statement(node)) != PY_ADAM_TREE:
@@ -209,19 +239,45 @@ def r_tokens(paths: list[Path]) -> dict[str, list[tuple[str, str]]]:
     return found
 
 
-def r_depth_one_strings(tokens: list[tuple[str, str]], start: int) -> list[str]:
-    """The string constants at depth 1 of the call whose name is at `start`."""
-    found, depth = [], 0
+def r_arguments(tokens: list[tuple[str, str]], start: int) -> list[list[tuple[str, str]]]:
+    """The tokens of each argument of the call whose name is at `start`, split at the commas
+    of depth 1."""
+    arguments: list[list[tuple[str, str]]] = [[]]
+    depth = 0
     for kind, text in tokens[start + 1:]:
         if text in R_OPEN or kind == "LBB":
             depth += 2 if kind == "LBB" else 1
+            if depth == 1:
+                continue
         elif text in R_CLOSE:
             depth -= 1
             if depth <= 0:
                 break
-        elif depth == 1 and kind == "STR_CONST":
-            found.append(text)
-    return found
+        elif depth == 1 and text == ",":
+            arguments.append([])
+            continue
+        arguments[-1].append((kind, text))
+    return arguments
+
+
+def r_call_problems(name: str, arguments: list[list[tuple[str, str]]]) -> list[str]:
+    """The arguments of apply and sapply, of the model functions and of update."""
+    problems = []
+    if name in R_APPLY:
+        problems += [f"the string {a[0][1]} handed to {name}" for a in arguments
+                     if a and a[0][0] == "STR_CONST"]
+        last = arguments[-1]
+        if not last or last[0][0] != "FUNCTION":
+            problems.append(f"the function of {name} is not written in place: `function(...)`")
+    if name in R_FORMULA and not any(t == "~" for _, t in arguments[0]):
+        problems.append(f"the first argument of {name} is not a formula written in place")
+    if name == "update":
+        for argument in arguments[1:]:
+            if len(argument) < 2 or argument[0][0] != "SYMBOL_SUB" or \
+                    argument[0][1] not in R_UPDATE_NAMES or argument[1][1] != "=":
+                problems.append("an argument of update other than "
+                                + ", ".join(f"`{n} = ...`" for n in sorted(R_UPDATE_NAMES)))
+    return problems
 
 
 def r_problems(tokens: list[tuple[str, str]], datasets: list[str], numbers: set[float]
@@ -256,13 +312,24 @@ def r_problems(tokens: list[tuple[str, str]], datasets: list[str], numbers: set[
                     at(i + 5)[1] == ")"):
                 problems.append("a file other than `file.path(adam, \"<dataset>.csv\")` of a "
                                 "dataset of the plan")
-            if text in R_APPLY:
-                for string in r_depth_one_strings(tokens, i):
-                    problems.append(f"the string {string} handed to {text}")
+            if text in R_APPLY | R_FORMULA | {"update"}:
+                problems += r_call_problems(text, r_arguments(tokens, i))
         elif token in ("SYMBOL", "SYMBOL_FUNCTION_CALL", "SYMBOL_SUB") and text in R_FORBIDDEN:
             problems.append(f"the name {text}")
         elif token == "SYMBOL" and text in R_AS_VALUE:
             problems.append(f"the function {text} used as a value")
+        elif token in ("SYMBOL_FORMALS", "SYMBOL_SUB") and text in ("adam", "args"):
+            problems.append(f"the name {text} as an argument")
+        elif token == "SYMBOL" and text == "args":
+            template = [t for _, t in tokens[i + 1:i + 8]] == \
+                ["<-", "commandArgs", "(", "trailingOnly", "=", "TRUE", ")"]
+            index = [t for _, t in tokens[i + 1:i + 4]] in (["[", "1", "]"], ["[", "2", "]"])
+            stored = at(i + 4)[1] in ("<-", "<<-", "=", "->", "->>", "[", "[[", "$", "@") or \
+                at(i - 1)[1] in ("->", "->>")
+            if not (template and at(i - 1)[1] not in ("->", "->>")) and \
+                    not (index and not stored):
+                problems.append("the arguments used otherwise than in `args <- "
+                                "commandArgs(trailingOnly = TRUE)`, `args[1]` and `args[2]`")
         elif token == "SYMBOL" and text == "adam":
             assigned = [t for _, t in tokens[i + 1:i + 6]] == ["<-", "args", "[", "1", "]"] \
                 and at(i - 1)[1] not in ("$", "@")
