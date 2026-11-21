@@ -5,7 +5,8 @@ the tiny study; these cases build (catalog@2, open-default@2) on data that
 reach the rules of the parents that ADR-020 added: randomization from the
 disposition record and its study-level fallback (#10), PARAM per parameter
 and AVALU (#17), no end-of-study status for a screen failure (#17), AEBODSYS
-(#17) and the first occurrence by date, then sequence (#17).
+(#17), the first occurrence by date, then sequence (#17), and a visit named
+unscheduled that has a planned day (#21).
 """
 
 from __future__ import annotations
@@ -69,6 +70,15 @@ def _same_term_earlier_later_seq(tables: dict) -> dict:
     return {**tables, "ae": pa.Table.from_pylist(rows, schema=ae.schema)}
 
 
+def _planned_day_unscheduled(tables: dict) -> dict:
+    """S1: the unscheduled visit of sequence 5 gets a planned day."""
+    vs = tables["vs"]
+    days = [17.0 if (s, q) == ("S1", 5) else d for s, q, d in zip(
+        vs["USUBJID"].to_pylist(), vs["VSSEQ"].to_pylist(), vs["VISITDY"].to_pylist(),
+        strict=True)]
+    return {**tables, "vs": _set(vs, "VISITDY", days)}
+
+
 @pytest.fixture(scope="module")
 def build(standard, tmp_path_factory):
     catalog, house, base = standard
@@ -130,6 +140,13 @@ def test_a_screen_failure_has_no_end_of_study_status(build):
     assert adsl[("S2",)]["EOSSTT"] is None
     assert adsl[("S1",)]["EOSSTT"] == "COMPLETED"
     assert adsl[("S3",)]["EOSSTT"] == "ONGOING"
+
+
+def test_a_visit_named_unscheduled_is_unscheduled_with_a_planned_day(build):
+    advs = build("planned-day", _planned_day_unscheduled)["ADVS"]
+    assert advs[("S1", "SYSBP", 5, "")]["AVISIT"] is None  # UNSCHEDULED 3.1, day 17
+    assert advs[("S1", "SYSBP", 4, "")]["AVISIT"] == "WEEK 2"
+    assert advs[("S1", "SYSBP", 6, "")]["AVISIT"] == "WEEK 4"
 
 
 def test_aebodsys_is_carried_and_first_occurrence_is_by_date(build):

@@ -4,7 +4,7 @@ applies_when: design.always
 question: How are percentages displayed?
 alternatives:
   - id: one_decimal_zero_blank
-    statement: "Percentages in {output} have {decimals} decimals, and a count of zero is shown without a percentage."
+    statement: "The number of decimals of percentages in {output} is {decimals}, and a count of zero is shown without a percentage."
     definition: >-
       With 0 decimals a percentage is a whole number. A count above zero
       always has its percentage.
@@ -15,7 +15,7 @@ alternatives:
         path: documents/CSR.pdf
         where: "Table 14-5.01: zero counts printed without a percentage, one decimal (PLAN.md, E25)"
   - id: one_decimal_always
-    statement: "Percentages in {output} have {decimals} decimals, and a count of zero is shown with its percentage."
+    statement: "The number of decimals of percentages in {output} is {decimals}, and a count of zero is shown with its percentage."
     definition: >-
       With 0 decimals a percentage is a whole number. A count of zero shows
       a percentage of zero with the same decimals.

@@ -83,7 +83,7 @@ conformance:
   - "ADSL: the end-of-study status is that of the last disposition event; a record whose standardized term is SCREEN FAILURE gives no status."
   - "ADAE: AEBODSYS is carried from AE, and the organ class of every table is AESOC, as in the ARS example."
   - "ADAE: the first-occurrence flags AOCCFL, AOCCSFL and AOCCPFL take the first treatment-emergent event by analysis start date, then by sequence number."
-  - "ADVS: PARAM is the test name with its standard unit in parentheses (the name alone without a unit), and AVALU is the standard unit. VSPOS and VSTPT are not read: of several records of one test at one visit, one is analyzed (bds.window.tiebreak)."
+  - "ADVS: PARAM is the test name with the unit of its parameter in parentheses: the first non-missing standard unit of the test in the study, by subject and sequence number (the name alone when the test has no unit); AVALU is the standard unit of the record. VSPOS and VSTPT are not read: of several records of one test at one visit, one is analyzed (bds.window.tiebreak)."
   - "ADVS: DTYPE is the empty text on a collected record, not null, because it is a key of the dataset; the end-of-treatment record has DTYPE LOV and AVISITN 9999."
   - "ADVS: the baseline record has AVISIT Baseline and AVISITN 0; CHG is computed on post-baseline records only; ANL01FL flags the baseline record, the end-of-treatment record and the one record a post-baseline analysis visit takes (bds.window.tiebreak)."
   - "ADAE: in the order of the first-occurrence flags, an event without an analysis start date comes after every dated event of the subject."

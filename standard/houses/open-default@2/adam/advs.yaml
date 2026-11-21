@@ -36,13 +36,14 @@ input:
 base: VS
 
 # The unit of a parameter: the first non-missing standard unit of the test in
-# the study, so that PARAM is one text per PARAMCD (ADaMIG; ADR-020, #17).
+# the study, by subject and sequence number, so that PARAM is one text per
+# PARAMCD (ADaMIG; ADR-020, #17).
 intermediates:
   - id: VS_UNIT
     dataset: VS
     key: {STUDYID: STUDYID, VSTESTCD: PARAMCD}
     filter: "VS.VSSTRESU IS NOT NULL AND VS.VSSTRESU <> ''"
-    order_by: [VS.VSSEQ]
+    order_by: [VS.USUBJID, VS.VSSEQ]
     keep: first
 
 output:

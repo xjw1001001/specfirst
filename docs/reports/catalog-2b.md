@@ -8,6 +8,9 @@ this part: generated kits, the reader's tasks and the kept run are unchanged.
 
 ## What changed, by issue
 
+The column "Backlog" gives the status of each record after the freeze: a
+record accepted for version 2 is done at the freeze commit.
+
 | Issue | catalog@2 | open-default@2 | Backlog |
 | --- | --- | --- | --- |
 | #1 | `tfl.percent.format`: the slot `decimals` (0 to 2) in both alternatives; a probe varies it | default `one_decimal_always`, 1 decimal, for the three families (the ARS example) | i01.zero-shown, i01.decimals-slot done; i01.below-one waits |
@@ -28,7 +31,7 @@ this part: generated kits, the reader's tasks and the kept run are unchanged.
 | #17 | the status words with no status for a screen failure (fixed rule); `bds.eot.record` states AVISITN 9999 and carries the unit | AEBODSYS; PARAM with the unit, AVALU; first occurrence by date then sequence; the conformance rules in STANDARD.md | i17.conformance, i17.screen-failure, i17.eot-record done; i17.positions-refused, i17.dtype-null, i17.dose-order wait |
 | #18 | boundary words in the statements of `ae.teae.end`, `bds.baseline.rule`, `demo.age.groups`; fixed rules; the list of terms | the terms printed once | i18.* done |
 | #20 | (2a: the entry schema v1, the `$fn` list) | the sources of every alternative printed | i20.alternative-sources done |
-| #21 | `demo.race.pooling/fixed_groups` replaces `pooled_below_count`; the unscheduled visit as a fixed rule (no VISITDY, or UNSCHED in VISIT); the kept answer of N1 question 1 in the reading note of `tfl.population` | `_SCHED` by the fixed rule | i21.race-map, i21.unscheduled, i21.unscheduled-house, i21.kept-answers done; i21.no-visitdy waits |
+| #21 | `demo.race.pooling/fixed_groups` replaces `pooled_below_count`; the unscheduled visit as a fixed rule (no VISITDY, or UNSCHED in VISIT); the reading note of `tfl.population` names which sources use which set (the kept answers of N1 are in ADR-020) | `_SCHED` by the fixed rule | i21.race-map, i21.unscheduled, i21.unscheduled-house, i21.kept-answers done; i21.no-visitdy waits |
 | #22 | `tfl.quantile.definition` for the demographics table only; its probe needs quartiles; "(R type 2)" in the statement | the vital signs templates fix `sas5` | i22.quantiles done |
 | #23 | items 9 to 11: worsening as a fixed rule; ICH M11 words in the reading notes; the meaning of halfway | | i23.reading-words done; the rest waits |
 | #24 | `trt.end.source/last_ex_record_end` and its probe | | i24.last-end-any-record done |
@@ -195,4 +198,11 @@ the backlog records and the rendered documents of version 2; the gates
 `docs/reports/catalog-2b.review.md`: pass 1 not signed (F1 blocking, F2 to
 F10 to fix, F11 to F14 notes). `937ae95` answers F1, F3 to F9, F11, F13
 and F14; F2 is the three departures above, put to the owner; F10 is this
-section.
+section. Pass 2 signed, on the condition of the owner's answer to F2, with
+one new note (F15). The commit after it answers F15 and the rest of F13
+and F14 before the freeze: a statement of `tfl.percent.format` that reads
+for 0, 1 and 2 decimals; a term that named its entry twice; four reading
+notes that stated this house's choices; the unit of a parameter taken by
+subject, then sequence number, not by the order of the input, and the
+conformance rule that says so; a test of a visit named unscheduled that
+has a planned day.

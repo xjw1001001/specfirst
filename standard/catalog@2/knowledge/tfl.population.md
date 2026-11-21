@@ -28,9 +28,9 @@ The answer is given once per table family.
   if the text names several and no main one, report the passage.
 - If a shell subtitle and the SAP text disagree, cite both passages in the answer.
 - "All enrolled" or "all screened" subjects match no alternative; report the passage.
-- For the demographics table the house takes the randomized set (the pilot CSR Table 14-2.01,
-  ICH E3 section 11.2; kept at node N1, question 1, and by ADR-020). The public alternative
-  is the safety set: the FDA guide's Table 2, the ARS example's demographics analyses
-  (AnalysisSet_02_SAF) and cardinal's Table 2 use it.
+- For the demographics table, the pilot CSR (Table 14-2.01) and ICH E3 section 11.2 use the
+  randomized set; the FDA guide's Table 2, the ARS example's demographics analyses
+  (AnalysisSet_02_SAF) and cardinal's Table 2 use the safety set. A house may take either;
+  its house standard says which.
 - Silent documents: the house default depends on the table family; take the default of the
   output's family and cite the house standard.

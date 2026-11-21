@@ -26,7 +26,7 @@ The words below have the meaning the named entry gives them, in every statement.
 - study day: the day counted from the origin the entry names, day 1 on that date and no day 0 (`date.studyday.origin`)
 - treatment-emergent: an adverse event that starts within treatment emergence, which ae.teae.start begins and ae.teae.end ends (`ae.teae.start`)
 - baseline: the value of a parameter that a change from baseline starts from; for weight and height in ADSL, as demo.baseline.record says (`bds.baseline.rule`)
-- post-baseline: a record dated after the treatment start date, or one on that date that is not before the first dose and is timed at or after a timed first dose (as bds.baseline.rule says) (`bds.baseline.rule`)
+- post-baseline: a record dated after the treatment start date, or one on that date that is not before the first dose and is timed at or after a timed first dose (`bds.baseline.rule`)
 
 ## Conventions every table assumes
 
@@ -250,7 +250,7 @@ Source: the choice of this house, FDA Standard Safety Tables and Figures: Integr
 
 Source: the sources of the entry, CDISC Analysis Results Standard v1, model and examples: the percent operation names the analysis that gives its denominator
 
-[tfl.percent.format/tfl-demographics] Percentages in the demographics table have 1 decimals, and a count of zero is shown with its percentage.
+[tfl.percent.format/tfl-demographics] The number of decimals of percentages in the demographics table is 1, and a count of zero is shown with its percentage.
 
 Meaning: With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals.
 
@@ -312,7 +312,7 @@ Meaning: A total column is the last column.
 
 Source: the sources of the entry, R Consortium Submissions Pilot 6, CSR and SAP of CDISCPILOT01: Table 14-2.01 with a Total column; Table 14-5.01 without one; FDA Standard Safety Tables and Figures: Integrated Guide, 2.0 (April 2025): Table 2, page 8: the demographics table with a column Total Population; Table 7, page 17, and Table 15, page 27: the arms without a total (the review of #14, 2026-11-11)
 
-[tfl.percent.format/tfl-ae-summary] Percentages in the adverse event summary table have 1 decimals, and a count of zero is shown with its percentage.
+[tfl.percent.format/tfl-ae-summary] The number of decimals of percentages in the adverse event summary table is 1, and a count of zero is shown with its percentage.
 
 Meaning: With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals.
 
@@ -354,7 +354,7 @@ Meaning: A total column is the last column.
 
 Source: the sources of the entry, R Consortium Submissions Pilot 6, CSR and SAP of CDISCPILOT01: Table 14-2.01 with a Total column; Table 14-5.01 without one; FDA Standard Safety Tables and Figures: Integrated Guide, 2.0 (April 2025): Table 2, page 8: the demographics table with a column Total Population; Table 7, page 17, and Table 15, page 27: the arms without a total (the review of #14, 2026-11-11)
 
-[tfl.percent.format/tfl-ae-soc-pt] Percentages in the adverse event table by system organ class and preferred term have 1 decimals, and a count of zero is shown with its percentage.
+[tfl.percent.format/tfl-ae-soc-pt] The number of decimals of percentages in the adverse event table by system organ class and preferred term is 1, and a count of zero is shown with its percentage.
 
 Meaning: With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals.
 
@@ -439,7 +439,7 @@ The parent specs fix these rules; no decision states them.
 - ADSL: the end-of-study status is that of the last disposition event; a record whose standardized term is SCREEN FAILURE gives no status.
 - ADAE: AEBODSYS is carried from AE, and the organ class of every table is AESOC, as in the ARS example.
 - ADAE: the first-occurrence flags AOCCFL, AOCCSFL and AOCCPFL take the first treatment-emergent event by analysis start date, then by sequence number.
-- ADVS: PARAM is the test name with its standard unit in parentheses (the name alone without a unit), and AVALU is the standard unit. VSPOS and VSTPT are not read: of several records of one test at one visit, one is analyzed (bds.window.tiebreak).
+- ADVS: PARAM is the test name with the unit of its parameter in parentheses: the first non-missing standard unit of the test in the study, by subject and sequence number (the name alone when the test has no unit); AVALU is the standard unit of the record. VSPOS and VSTPT are not read: of several records of one test at one visit, one is analyzed (bds.window.tiebreak).
 - ADVS: DTYPE is the empty text on a collected record, not null, because it is a key of the dataset; the end-of-treatment record has DTYPE LOV and AVISITN 9999.
 - ADVS: the baseline record has AVISIT Baseline and AVISITN 0; CHG is computed on post-baseline records only; ANL01FL flags the baseline record, the end-of-treatment record and the one record a post-baseline analysis visit takes (bds.window.tiebreak).
 - ADAE: in the order of the first-occurrence flags, an event without an analysis start date comes after every dated event of the subject.

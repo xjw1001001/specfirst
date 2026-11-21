@@ -27,5 +27,5 @@ summary table. An event whose causality value is not in the list is not related.
   express that; report the sentence with the answer.
 - "Unlikely related" is the usual boundary case. Include it only if the text does.
 - A two-level scale (related, not related) still needs the list; it then has one value.
-- Silent documents: this entry has no house default. Do not guess from the scale;
-  a person must be asked.
+- Silent documents: when the house standard states no default for this entry, do not guess
+  from the scale; a person must be asked.
