@@ -306,6 +306,9 @@ def checker_plants(pilot: Pilot, tmp_path: Path, monkeypatch) -> None:
             bind, "def Path(p):\n    return Q(p) / ('.' + '.')\n\n\n" + bind),
         "a write elsewhere": python.replace(
             "to_csv(out, index=False)", "to_csv(sys.argv[1] + 'x', index=False)"),
+        "M3, sys bound by a capture of match to a function with an argv": python.replace(
+            bind, "def f():\n    pass\n\n\nf.argv = ['', sys.argv[1] + '.' + '.', sys.argv[2]]"
+                  "\nmatch f:\n    case sys:\n        pass\n" + bind),
     }
     for name, text in planted_py.items():
         problems = static.python_problems(text, age["datasets"], allowed_py)

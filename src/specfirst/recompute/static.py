@@ -4,9 +4,10 @@ Per script, on its syntax tree (Python) or on the tokens of R's own parser:
 
 - Python: its imports are exactly the templates' statements, the builtins
   it names and the attributes it takes are in allow-lists; it names no
-  dunder, defines no class, has no global or nonlocal, binds none of the
-  names the templates use (Path, sys, pd, np, stats, product, adam, out,
-  num) but in the templates' own lines, and reads `sys` only as
+  dunder, defines no class, has no global or nonlocal, no match, try or
+  type parameter and no store into an attribute, binds none of the names
+  the templates use (Path, sys, pd, np, stats, product, adam, out, num) but
+  in the templates' own lines, and reads `sys` only as
   `sys.argv[1]` or `sys.argv[2]`. R: its calls are in an allow-list; it names nothing that
   runs other code (source, eval, get, ...), calls no string, hands apply and
   sapply a function written in place (`function(...)`), the model functions
@@ -56,6 +57,10 @@ PY_IMPORT_TREES = {ast.dump(ast.parse(text).body[0]) for text in (
 PY_RESERVED = {"Path", "sys", "pd", "np", "stats", "product", "adam", "out", "num"}
 PY_ADAM = "adam, out = Path(sys.argv[1]), sys.argv[2]"
 PY_ADAM_TREE = ast.dump(ast.parse(PY_ADAM).body[0])
+# Statements and clauses no template writes, which bind names without an assignment.
+PY_STATEMENTS_REFUSED = tuple(getattr(ast, name) for name in (
+    "Match", "Try", "TryStar", "ExceptHandler", "TypeAlias", "TypeVar", "ParamSpec",
+    "TypeVarTuple") if hasattr(ast, name))
 PY_NUM_TREE = ast.dump(ast.parse(
     'def num(value):\n    return "" if value is None or value != value else repr(float(value))\n'
 ).body[0])
@@ -180,6 +185,12 @@ def python_problems(text: str, datasets: list[str], numbers: set[float]) -> list
             problems.append(f"{line}: a global or nonlocal statement")
         elif isinstance(node, ast.ClassDef):
             problems.append(f"{line}: a class")
+        elif isinstance(node, PY_STATEMENTS_REFUSED):
+            # They bind names without an assignment (a capture of match, `except ... as`, a
+            # type parameter), which the rules below would not see; no template writes them.
+            problems.append(f"{line}: a {type(node).__name__} statement or clause")
+        elif isinstance(node, ast.Attribute) and not isinstance(node.ctx, ast.Load):
+            problems.append(f"{line}: a store into the attribute {node.attr}")
         elif isinstance(node, ast.arg) and node.arg in PY_RESERVED:
             problems.append(f"{line}: the name {node.arg} of the template as an argument")
         elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and \

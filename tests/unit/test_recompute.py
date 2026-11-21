@@ -270,6 +270,11 @@ def test_static_check_python():
         "num defined otherwise": "def num(value):\n    return 1\n",
         "a write elsewhere": "pd.DataFrame([]).to_csv(sys.argv[1] + 'x', index=False)\n",
         "the output handed on": "o = out\n",
+        # pass 2 at ae07c86 (M3) and its kin: names bound without an assignment
+        "a capture of match": "match 1:\n    case sys:\n        pass\n",
+        "a store into an attribute": "def f():\n    pass\n\n\nf.argv = []\n",
+        "except as": "try:\n    x = 1\nexcept ValueError as sys:\n    pass\n",
+        "a type parameter": "def g[sys](x):\n    return x\n",
     }
     for name, text in own.items():
         assert static.python_problems(PY_HEAD + text, ["adsl"], allowed), name
