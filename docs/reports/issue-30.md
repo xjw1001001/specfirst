@@ -40,7 +40,9 @@ instead of failing". The route is ADR-019 (docs/decisions/ADR-019.md).
   do is a note for the read track (docs/state/gen.md, "For the read
   track"); no code of the read track is changed.
 - Unit tests, ruff and the ASCII check pass; the gates gen-2a and gen-3a
-  pass on clean clones of `8154075` (section "Gates"). Issue #30 is
+  pass on clean clones of `8154075`, and gen-2a again on `5356478` with the
+  test the review asked for (section "Gates"). The independent review
+  signs (six findings, none blocking; section "The review"). Issue #30 is
   finished as far as track gen goes; see "What is left".
 
 ## Where P4 was computed and read before this work
@@ -603,7 +605,33 @@ GATE gen-3a: PASS
 clean clone gate gen-3a: PASS (clone: /tmp/specfirst-clean-lnnobs/specfirst)
 ```
 
-Logs: docs/reports/issue-30.gen-2a.gate.log, issue-30.gen-3a.gate.log.
+After the review added a test (F1, commit `0d5c153`), gen-2a ran again on a
+clean clone of `5356478`, the code as it merges (the commits after it change
+documents only):
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh gen-2a /mnt/d/trial_work/specfirst/.git 5356478
+commit:     5356478
+PASS  environment          0.3 s
+PASS  pins                 0.9 s
+PASS  lint                 0.1 s
+PASS  registry             0.1 s
+PASS  unit tests         404.2 s
+PASS  method vectors      12.1 s
+PASS  pilot tests         52.8 s
+PASS  kits               174.4 s
+PASS  separation          23.6 s
+PASS  engines              0.1 s
+PASS  splits               1.4 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE gen-2a: PASS
+
+clean clone gate gen-2a: PASS (clone: /tmp/specfirst-clean-Zixwkz/specfirst)
+```
+
+Logs: docs/reports/issue-30.gen-2a.gate.log, issue-30.gen-3a.gate.log,
+issue-30.gen-2a.final.gate.log.
 Ruff and the ASCII check pass in both gates and in the worktree.
 
 ## The review
