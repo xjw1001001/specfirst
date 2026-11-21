@@ -129,7 +129,7 @@ def follow_up_days(design: dict) -> int:
 
 
 def features(design: dict) -> dict[str, bool]:
-    """The design features that `applies_when` may name (standard/catalog/catalog.yaml)."""
+    """The design features that `applies_when` may name (standard/catalog@<n>/catalog.yaml)."""
     body = design["studyDesign"]
     populations = {p["name"] for p in body.get("analysisPopulations") or []}
     collection = design.get("collection") or {}

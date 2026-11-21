@@ -1,0 +1,25 @@
+id: trt.date.imputation
+unit: mod-treatment
+applies_when: design.has_exposure
+question: How are partial exposure dates completed?
+alternatives:
+  - id: not_completed
+    statement: "A partial exposure date is not completed and is left out of the treatment dates."
+    definition: >-
+      The treatment start and end dates are taken from the exposure dates
+      that have a year, a month and a day. A date with a missing part in
+      the middle (a year and a day without the month) is partial.
+  - id: first_day_of_month
+    statement: "A partial exposure date with a known month is completed with the first day of that month."
+    definition: A date with an unknown month is left out of the treatment dates.
+compile: templates/trt.date.imputation.yaml
+phrasings: phrasings/trt.date.imputation.yaml
+reading: knowledge/trt.date.imputation.md
+probes: [partial_exposure_date, partial_exposure_date_not_earliest]
+sources:
+  - ref: admiral
+    where: "derive_vars_dt(), highest_imputation (default n: no imputation) and date_imputation (first)"
+  - ref: yamaa
+    path: yaml/schema_expression_date.yaml
+    find: "Day supplied to a source collected to the year or the month"
+    where: "the impute verb: a source with no day gives missing unless a day is supplied"

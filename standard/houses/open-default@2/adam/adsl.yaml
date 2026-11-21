@@ -1,0 +1,140 @@
+# House standard open-default@1: parent spec of ADSL, one record per subject.
+#
+# This layer holds what no decision changes. It reads columns that decisions
+# own (TRT01P, TRTSDT, SAFFL and the working values whose names start with
+# an underscore); the compiler adds one fragment per decision that writes
+# them. The compiled entry spec sets the paths and the output columns.
+# Variable names follow ADaMIG 1.3.
+yamaa: "1.0"
+type: spec
+model: ADaM
+domain: ADSL
+keys: [STUDYID, USUBJID]
+input:
+  DM:
+    path: ../sdtm/dm.parquet
+    relative_to: entry
+  EX:
+    path: ../sdtm/ex.parquet
+    relative_to: entry
+    key: [STUDYID, USUBJID]
+  VS:
+    path: ../sdtm/vs.parquet
+    relative_to: entry
+  DS:
+    path: ../sdtm/ds.parquet
+    relative_to: entry
+  SV:
+    path: ../sdtm/sv.parquet
+    relative_to: entry
+base: DM
+
+output:
+  path: adsl.parquet
+  relative_to: entry
+  columns: [STUDYID, USUBJID]
+  order_by: [USUBJID]
+
+columns:
+  - name: STUDYID
+    type: str
+    label: Study Identifier
+    derivation: DM.STUDYID
+
+  - name: USUBJID
+    type: str
+    label: Unique Subject Identifier
+    derivation: DM.USUBJID
+
+  - name: SUBJID
+    type: str
+    label: Subject Identifier for the Study
+    derivation: DM.SUBJID
+
+  - name: SITEID
+    type: str
+    label: Study Site Identifier
+    derivation: DM.SITEID
+
+  - name: AGE
+    type: float
+    label: Age
+    derivation: DM.AGE
+
+  - name: AGEU
+    type: str
+    label: Age Units
+    derivation: DM.AGEU
+
+  - name: SEX
+    type: str
+    label: Sex
+    derivation: DM.SEX
+
+  - name: RACE
+    type: str
+    label: Race
+    derivation: DM.RACE
+
+  - name: ETHNIC
+    type: str
+    label: Ethnicity
+    derivation: DM.ETHNIC
+
+  - name: ARM
+    type: str
+    label: Description of Planned Arm
+    derivation: DM.ARM
+
+  - name: ARMCD
+    type: str
+    label: Planned Arm Code
+    derivation: DM.ARMCD
+
+  - name: ACTARM
+    type: str
+    label: Description of Actual Arm
+    derivation: DM.ACTARM
+
+  - name: RFSTDTC
+    type: str
+    label: Subject Reference Start Date/Time
+    derivation: DM.RFSTDTC
+
+  - name: RANDFL
+    type: str
+    label: Randomized Population Flag
+    derivation:
+      flag:
+        condition: "ARMCD IS NOT NULL AND ARMCD <> '' AND ARMCD NOT IN ('SCRNFAIL', 'NOTASSGN')"
+        false_value: N
+        missing: N
+
+  - name: EOSDT
+    type: date
+    label: End of Study Date
+    derivation:
+      impute:
+        type: date
+        source: _EOSDTC
+        invalid: null
+
+  - name: EOSSTT
+    type: str
+    label: End of Study Status
+    derivation:
+      case:
+        - when: "_EOSDECOD = 'COMPLETED'"
+          then: "'COMPLETED'"
+        - when: "_EOSDECOD IS NOT NULL AND _EOSDECOD <> ''"
+          then: "'DISCONTINUED'"
+        - otherwise: "'ONGOING'"
+
+  - name: DCSREAS
+    type: str
+    label: Reason for Discontinuation from Study
+    derivation:
+      case:
+        - when: "EOSSTT = 'DISCONTINUED'"
+          then: _EOSDECOD
+        - otherwise: null

@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.decimals.rule
+alternatives:
+  relative_to_data:
+    plain: "In {output}, the mean and the median are shown with one decimal more than the data, the standard deviation with two decimals more than the data, and the minimum and the maximum with the same number of decimals as the data."
+    formal: "In {output}, the mean and the median shall be presented to one more decimal place than the data, the standard deviation to two more decimal places than the data, and the minimum and the maximum to the same number of decimal places as the data."
+    brief: "Decimals in {output}: mean and median, one more than the data; standard deviation, two more than the data; minimum and maximum, as many as the data."
+  stated_decimals:
+    plain: "In {output}, the mean is shown with {mean} decimals, the standard deviation with {sd}, the median with {median}, and the minimum and the maximum with {range}."
+    formal: "In {output}, the number of decimal places shall be {mean} for the mean, {sd} for the standard deviation, {median} for the median, and {range} for the minimum and the maximum."
+    brief: "Decimals in {output}: mean {mean}; standard deviation {sd}; median {median}; minimum and maximum {range}."

@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: bds.window.table
+alternatives:
+  protocol_windows:
+    plain: "Post-baseline records are mapped to analysis visits using the following windows of study days: {windows}."
+    formal: "Post-baseline records shall be assigned to analysis visits according to the following study day windows: {windows}."
+    brief: "Analysis visit of post-baseline records, assigned by these study day windows: {windows}."
+  midpoint_windows:
+    plain: "A post-baseline record is assigned to the analysis visit whose target day is nearest, and to the earlier visit when two target days are equally near; the visits are: {visits}."
+    formal: "Post-baseline records shall be assigned to the analysis visit with the nearest target day; in case of a tie, the earlier visit shall be used; the analysis visits are: {visits}."
+    brief: "Post-baseline records: analysis visit with the nearest target day, earlier visit on a tie; visits: {visits}."
+  nominal_visit:
+    plain: "The collected visit of a post-baseline record is used as its analysis visit."
+    formal: "For post-baseline records, the analysis visit shall be the collected visit."
+    brief: "Post-baseline records: analysis visit = collected visit."

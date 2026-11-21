@@ -1,0 +1,6 @@
+entry: tfl.quantile.definition
+alternatives:
+  sas5:
+    params: {quantile_definition: sas5}
+  r7:
+    params: {quantile_definition: r7}

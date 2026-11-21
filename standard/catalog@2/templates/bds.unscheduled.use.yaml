@@ -1,0 +1,18 @@
+entry: bds.unscheduled.use
+alternatives:
+  compete:
+    adam:
+      ADVS:
+        columns:
+          - name: _ELIG
+            type: str
+            label: "Working value: the record may be baseline or an analysis record"
+            derivation: "'Y'"
+  excluded:
+    adam:
+      ADVS:
+        columns:
+          - name: _ELIG
+            type: str
+            label: "Working value: the record may be baseline or an analysis record"
+            derivation: _SCHED

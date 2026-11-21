@@ -1,0 +1,6 @@
+entry: tfl.rounding.rule
+alternatives:
+  half_away_from_zero:
+    params: {rounding: half_away_from_zero}
+  half_even:
+    params: {rounding: half_even}

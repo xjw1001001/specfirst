@@ -1,0 +1,28 @@
+id: pop.randomized.rule
+unit: mod-populations
+applies_when: design.randomized
+question: Who is in the randomized set?
+alternatives:
+  - id: all_randomized
+    statement: "The randomized set holds every randomized subject."
+  - id: randomized_with_postbaseline
+    statement: "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign {test}."
+    definition: A post-baseline value is a non-missing result dated after the treatment start date.
+    slots:
+      test: {type: name, examples: [SYSBP, WEIGHT]}
+notes: >-
+  A subject is randomized when the planned arm code (DM.ARMCD) is present and
+  is neither SCRNFAIL nor NOTASSGN.
+compile: templates/pop.randomized.rule.yaml
+phrasings: phrasings/pop.randomized.rule.yaml
+reading: knowledge/pop.randomized.rule.md
+probes: [randomized_without_postbaseline_value]
+sources:
+  - ref: ich-e9
+    where: "section 5.2.1, full analysis set: all randomised subjects; lack of any data post randomisation as a possible exclusion"
+  - ref: adamig
+    where: "ADSL population flags, ITTFL and RANDFL"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "Y if ARMCD ne"
+    where: "ITTFL of the pilot ADSL"

@@ -1,0 +1,42 @@
+entry: pop.randomized.rule
+alternatives:
+  all_randomized:
+    adam:
+      ADSL:
+        columns:
+          - name: ITTFL
+            type: str
+            label: Intent-To-Treat Population Flag
+            derivation:
+              flag: {condition: "RANDFL = 'Y'", false_value: N, missing: N}
+  randomized_with_postbaseline:
+    adam:
+      ADSL:
+        intermediates:
+          # A value dated after the treatment start date: TRTSDT <= date - 1.
+          - id: VS_ITTPOST
+            dataset: VS
+            key: [STUDYID, USUBJID]
+            filter: "VS.VSTESTCD = ${test|q} AND VS.VSSTRESN IS NOT NULL"
+            derivations:
+              VSDT:
+                impute: {type: date, source: VSDTC, invalid: null}
+              DAYBEFORE:
+                shift: {type: date, source: VSDT, days: -1}
+              FIRSTDT: "DATE '0001-01-01'"
+            between: {value: TRTSDT, lower: FIRSTDT, upper: DAYBEFORE}
+            order_by: [VS.VSSEQ]
+            keep: first
+        columns:
+          - name: _ITTPOSTSEQ
+            type: int
+            label: "Working value: sequence number of a post-baseline value of the test"
+            derivation: VS_ITTPOST.VSSEQ
+          - name: ITTFL
+            type: str
+            label: Intent-To-Treat Population Flag
+            derivation:
+              flag:
+                condition: "RANDFL = 'Y' AND _ITTPOSTSEQ IS NOT NULL"
+                false_value: N
+                missing: N

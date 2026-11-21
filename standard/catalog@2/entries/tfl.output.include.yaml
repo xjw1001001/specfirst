@@ -1,0 +1,21 @@
+id: tfl.output.include
+units: [tfl-demographics, tfl-ae-summary, tfl-ae-soc-pt, tfl-vitals-by-visit]
+applies_when: design.always
+question: Is the output part of the planned outputs of the study?
+alternatives:
+  - id: included
+    statement: "The planned outputs include {output}."
+  - id: not_included
+    statement: "The planned outputs do not include {output}."
+    definition: No other decision of the table family applies then.
+compile: templates/tfl.output.include.yaml
+phrasings: phrasings/tfl.output.include.yaml
+reading: knowledge/tfl.output.include.md
+probes: [output_shape]
+sources:
+  - ref: ich-e3
+    where: "section 14: 14.1 demographic data, 14.3.1 displays of adverse events; section 12.5 vital signs"
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "mainListOfContents"
+    where: "the list of planned analyses and outputs of a reporting event"

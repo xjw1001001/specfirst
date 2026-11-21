@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.ae.socpt.counts
+alternatives:
+  subjects:
+    plain: "The counts in the adverse event table by system organ class and preferred term are counts of subjects."
+    formal: "The adverse event table by system organ class and preferred term shall present counts of subjects."
+    brief: "Adverse event table by system organ class and preferred term: counts of subjects."
+  subjects_and_events:
+    plain: "The counts in the adverse event table by system organ class and preferred term are counts of subjects and counts of events."
+    formal: "The adverse event table by system organ class and preferred term shall present counts of subjects and counts of events."
+    brief: "Adverse event table by system organ class and preferred term: counts of subjects and of events."

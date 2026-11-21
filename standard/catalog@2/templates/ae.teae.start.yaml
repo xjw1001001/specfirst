@@ -1,0 +1,37 @@
+entry: ae.teae.start
+alternatives:
+  on_or_after_first_dose_date:
+    adam:
+      ADAE:
+        columns:
+          - name: _TESTART
+            type: str
+            label: "Working value: the event starts within treatment emergence"
+            derivation:
+              flag: {condition: "ASTDT >= TRTSDT", false_value: N, missing: N}
+  at_or_after_first_dose_time:
+    adam:
+      ADAE:
+        columns:
+          - name: _AESTTM
+            type: datetime
+            label: "Working value: collected start date and time, 00:00 without a time"
+            derivation:
+              impute: {type: datetime, source: AE.AESTDTC, time: first, invalid: null}
+          - name: _TRTSSEC
+            type: int
+            label: "Working value: time of the first dose, in seconds since 00:00"
+            derivation:
+              time_of_day: {source: TRTSDTM}
+          - name: _TESTART
+            type: str
+            label: "Working value: the event starts within treatment emergence"
+            derivation:
+              case:
+                - when: "_AESTTM IS NOT NULL AND _AESTTM >= TRTSDTM"
+                  then: "'Y'"
+                - when: "_AESTTM IS NULL AND ASTDT > TRTSDT"
+                  then: "'Y'"
+                - when: "_AESTTM IS NULL AND ASTDT = TRTSDT AND _TRTSSEC = 0"
+                  then: "'Y'"
+                - otherwise: "'N'"

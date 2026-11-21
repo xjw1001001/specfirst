@@ -4,6 +4,11 @@ Gate: the round trip decisions to statements to decisions is exact for every
 alternative; compiled fragments pass `yamaa check` and the ARS schema; every
 entry has at least one public source. Each function prints what it counted,
 so the gate log is the evidence of the report (rule R8).
+
+Each check takes a pair of version labels (ADR-020): without them, the
+default pair of specfirst.compile.versions. The gates catalog-2a and
+catalog-2b run them on (catalog@2, open-default@2), with the checks of the
+versions themselves at the end of this module.
 """
 
 from __future__ import annotations
@@ -14,8 +19,8 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
+from specfirst.compile import backlog, checks, migration, tiny, versions
 from specfirst.compile import catalog as catalog_module
-from specfirst.compile import checks, tiny
 from specfirst.compile import house as house_module
 from specfirst.paths import cache_dir
 
@@ -30,14 +35,13 @@ def _report(out: Out, problems: list[str], limit: int = 40) -> bool:
     return not problems
 
 
-def _load(root: Path):
-    catalog = catalog_module.load(catalog_module.default_dir(root))
-    house = house_module.load(house_module.default_dir(root))
-    return catalog, house
+def _load(root: Path, pair: tuple[str | None, str | None] = (None, None)):
+    """The catalog and the house of a pair of labels; a house that does not fit is refused."""
+    return house_module.load_pair(root, *pair)
 
 
-def catalog_check(root: Path, out: Out) -> bool:
-    catalog, house = _load(root)
+def catalog_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
+    catalog, house = _load(root, pair)
     alternatives = sum(len(entry.alternatives) for entry in catalog.entries.values())
     out(f"catalog {catalog.name} {catalog.version}: {len(catalog.entries)} entries, "
         f"{len(catalog.keys())} questions (entry and unit), {alternatives} alternatives, "
@@ -57,8 +61,8 @@ def catalog_check(root: Path, out: Out) -> bool:
     return passed
 
 
-def sources_check(root: Path, out: Out) -> bool:
-    catalog, _ = _load(root)
+def sources_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
+    catalog, _ = _load(root, pair)
     cache = cache_dir(root)
     if not cache.is_dir():
         out(f"no fetch cache at {cache}: run `specfirst fetch`")
@@ -76,8 +80,8 @@ def sources_check(root: Path, out: Out) -> bool:
     return _report(out, problems)
 
 
-def roundtrip_check(root: Path, out: Out) -> bool:
-    catalog, house = _load(root)
+def roundtrip_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
+    catalog, house = _load(root, pair)
     problems, tried = checks.roundtrip_problems(catalog)
     alternatives = sum(len(e.alternatives) * len(e.units) for e in catalog.entries.values())
     out(f"{tried} statements rendered and parsed back, for {alternatives} alternatives "
@@ -93,15 +97,17 @@ def roundtrip_check(root: Path, out: Out) -> bool:
 _COMPILED: dict[str, tuple[list[checks.Variant], Path]] = {}
 
 
-def _variants(root: Path, out: Out) -> tuple[list[checks.Variant], Path]:
+def _variants(root: Path, out: Out, pair: tuple = (None, None)
+              ) -> tuple[list[checks.Variant], Path]:
     """Every decision vector, compiled once per process and checkout.
 
     The files go to a new folder under the system's temporary folder, not
     into the checkout: yamaa refuses to save a dataset on a Windows drive
     under WSL (`target_changed`), and the checkout of this project is on one.
     """
-    if str(root) not in _COMPILED:
-        catalog, house = _load(root)
+    key = f"{root} {pair[0] or versions.DEFAULT_CATALOG} {pair[1] or versions.DEFAULT_HOUSE}"
+    if key not in _COMPILED:
+        catalog, house = _load(root, pair)
         work = Path(tempfile.mkdtemp(prefix="specfirst-std1-"))
         atexit.register(shutil.rmtree, work, ignore_errors=True)
         out(f"compiled files and built datasets: {work} (removed when the command ends)")
@@ -116,14 +122,14 @@ def _variants(root: Path, out: Out) -> tuple[list[checks.Variant], Path]:
         out(f"every alternative compiles and changes the compiled files: "
             f"{len(problems)} problems")
         _report(out, problems)
-        _COMPILED[str(root)] = (found if not problems else [], work)
+        _COMPILED[key] = (found if not problems else [], work)
     else:
-        out(f"{len(_COMPILED[str(root)][0])} decision vectors, compiled by an earlier check")
-    return _COMPILED[str(root)]
+        out(f"{len(_COMPILED[key][0])} decision vectors, compiled by an earlier check")
+    return _COMPILED[key]
 
 
-def yamaa_check(root: Path, out: Out) -> bool:
-    found, work = _variants(root, out)
+def yamaa_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
+    found, work = _variants(root, out, pair)
     if not found:
         return False
     problems, checked = checks.yamaa_problems(found, work)
@@ -134,8 +140,8 @@ def yamaa_check(root: Path, out: Out) -> bool:
     return _report(out, problems)
 
 
-def run_check(root: Path, out: Out) -> bool:
-    found, work = _variants(root, out)
+def run_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
+    found, work = _variants(root, out, pair)
     if not found:
         return False
     problems, ran = checks.run_problems(found, work)
@@ -147,8 +153,8 @@ def run_check(root: Path, out: Out) -> bool:
     return _report(out, problems)
 
 
-def tables_check(root: Path, out: Out) -> bool:
-    found, _ = _variants(root, out)
+def tables_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
+    found, _ = _variants(root, out, pair)
     if not found:
         return False
     cache = cache_dir(root)
@@ -169,12 +175,84 @@ def tables_check(root: Path, out: Out) -> bool:
     return _report(out, problems)
 
 
-def house_check(root: Path, out: Out) -> bool:
-    catalog, house = _load(root)
+def house_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
+    catalog, house = _load(root, pair)
     problems = checks.house_problems(catalog, house, root)
     defaults = house_module.defaults(catalog, house)
     out(f"house standard {house.label}: {len(defaults)} defaults, "
-        f"{len(house_module.without_default(catalog))} decisions without a default, "
+        f"{len(house_module.without_default(catalog, house))} decisions without a default, "
         f"{len(house.adam)} parent specs, {len(house.ars.get('families') or {})} table families")
     out(f"house standard: {len(problems)} problems")
+    return _report(out, problems)
+
+
+# -- the versions of the standard (ADR-020) ----------------------------------
+
+# The pair the gates catalog-2a and catalog-2b check, and the version before it.
+NEXT = ("catalog@2", "open-default@2")
+BEFORE = "catalog@1"
+
+
+def frozen_check(root: Path, out: Out) -> bool:
+    """Every frozen folder has its tree; the default pair is frozen; no draft is named."""
+    known = versions.load(root)
+    for label, version in known.items():
+        try:
+            where = versions.folder(root, label)
+        except versions.VersionError:
+            where = None  # frozen_problems names it
+        tree = versions.tree_hash(where) if where is not None and where.is_dir() else ""
+        out(f"{label}: {version.status}" + (f" {version.date}" if version.date else "")
+            + f", tree {tree or 'none'}"
+            + (f" (frozen as {version.tree})" if version.status == "frozen" else ""))
+    problems = versions.frozen_problems(root)
+    out(f"default pair: {versions.DEFAULT_CATALOG}, {versions.DEFAULT_HOUSE}; "
+        f"{len(versions.kits_named(root))} labels named by the kits of the repository")
+    out(f"frozen versions: {len(problems)} problems")
+    return _report(out, problems)
+
+
+def migration_check(root: Path, out: Out, pair: tuple = NEXT, before: str = BEFORE) -> bool:
+    old = catalog_module.load(catalog_module.default_dir(root, before))
+    new = catalog_module.load(catalog_module.default_dir(root, pair[0]))
+    diff = migration.differences(old, new)
+    lines = migration.read(new).get("changes") or []
+    out(f"{before} to {pair[0]}: {len(migration.meanings(old))} and "
+        f"{len(migration.meanings(new))} alternatives; {len(diff.added)} added, "
+        f"{len(diff.removed)} removed, {len(diff.changed)} changed in meaning; units "
+        f"{len(diff.units_added)} added, {len(diff.units_removed)} removed; "
+        f"{len(lines)} lines in {migration.FILE}")
+    problems = migration.problems(old, new, backlog.accepted_for(backlog.load(root), pair[0]))
+    out(f"migration: {len(problems)} problems")
+    return _report(out, problems)
+
+
+def backlog_check(root: Path, out: Out) -> bool:
+    records = backlog.load(root)
+    by_status = {status: sum(1 for r in records if r.get("status") == status)
+                 for status in backlog.STATUSES}
+    out(f"{backlog.FILE}: {len(records)} records for {len({r.get('issue') for r in records})} "
+        "issues; " + ", ".join(f"{n} {s}" for s, n in by_status.items() if n))
+    problems = backlog.problems(root)
+    out(f"backlog: {len(problems)} problems")
+    return _report(out, problems)
+
+
+def defaults_check(root: Path, out: Out, pair: tuple = NEXT) -> bool:
+    catalog, house = _load(root, pair)
+    problems = checks.defaults_problems(catalog, house, root)
+    by_design = [key for key in catalog.keys() if house_module.by_design(catalog, house, *key)]
+    out(f"{house.label} for {catalog.label}: {len(catalog.keys())} questions (entry and unit), "
+        f"{len(house_module.defaults(catalog, house))} defaults, {len(by_design)} by design, "
+        f"{len(house_module.without_default(catalog, house))} stated as none")
+    out(f"defaults: {len(problems)} problems")
+    return _report(out, problems)
+
+
+def templates_check(root: Path, out: Out, pair: tuple = NEXT) -> bool:
+    catalog, house = _load(root, pair)
+    problems = checks.template_directive_problems(catalog, house)
+    out(f"{catalog.label} and {house.label}: every directive of the compile and house "
+        f"templates read whole; directives {', '.join(checks.DIRECTIVES)}")
+    out(f"templates: {len(problems)} problems")
     return _report(out, problems)

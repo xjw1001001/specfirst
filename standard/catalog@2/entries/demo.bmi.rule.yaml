@@ -1,0 +1,22 @@
+id: demo.bmi.rule
+unit: mod-demographics
+applies_when: design.collects_vital_signs
+question: How is baseline body mass index obtained?
+alternatives:
+  - id: derived
+    statement: "Baseline body mass index is derived from baseline weight and height and rounded to one decimal."
+    definition: "Weight in kg divided by the square of height in m; rounding is half away from zero."
+  - id: as_collected
+    statement: "Baseline body mass index is the collected body mass index, selected by the rule for baseline weight and height."
+    definition: The collected value is the vital sign with VSTESTCD equal to BMI.
+compile: templates/demo.bmi.rule.yaml
+phrasings: phrasings/demo.bmi.rule.yaml
+reading: knowledge/demo.bmi.rule.md
+probes: [collected_bmi_differs_from_derived]
+sources:
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "WEIGHTBL / ((HEIGHTBL"
+    where: "BMIBL of the pilot ADSL: derived from baseline weight and height"
+  - ref: admiral
+    where: "compute_bmi(): weight in kg divided by squared height in m"

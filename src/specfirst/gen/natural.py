@@ -15,7 +15,7 @@ deterministic checks (rule R1):
                check compares it with the alternative)
 
 A statement whose rewrite fails three times gets its phrasing template: the
-`plain` family of `standard/catalog/phrasings/`, rendered with the slots of
+`plain` family of `standard/catalog@<n>/phrasings/`, rendered with the slots of
 its value. It is read back like any rewrite.
 
 The store (`rewrites/`, or the folder `SPECFIRST_REWRITES` names):

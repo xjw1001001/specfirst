@@ -1,0 +1,91 @@
+# The defaults of the house standard open-default@2 (ADR-020, decision 2).
+#
+# One item per entry of the catalog it needs, in catalog order: the
+# alternative (`rule`; null: no default, the documents state it or a
+# person is asked), the slot values it needs (`values`) and the public
+# source of the choice (`sources`). An entry answered per table family
+# has one item per unit under `units`. In place of `rule`, `cases` lists
+# choices by design: each but the last has `when`, a predicate over the
+# design features of the catalog; the first that holds is the default.
+# Schema: standard/schemas/house-defaults.schema.json.
+house: open-default@2
+catalog: catalog@2
+defaults:
+  trt.planned.source: {rule: dm_arm}
+  trt.actual.source: {rule: dm_actarm}
+  trt.start.source: {rule: first_ex_with_dose}
+  trt.end.source: {rule: last_ex_end_date}
+  trt.date.imputation: {rule: not_completed}
+  date.studyday.origin: {rule: treatment_start}
+  pop.randomized.rule: {rule: all_randomized}
+  pop.safety.rule: {rule: at_least_one_dose}
+  pop.safety.grouping: {rule: actual}
+  pop.efficacy.rule: {rule: null}
+  disp.status.record: {rule: disposition_event}
+  demo.age.groups: {rule: lt65_65to80_gt80}
+  demo.race.pooling: {rule: not_pooled}
+  demo.baseline.record: {rule: last_on_or_before_first_dose}
+  demo.bmi.rule: {rule: derived}
+  ae.start.imputation: {rule: first_of_month_not_before_first_dose}
+  ae.teae.start: {rule: on_or_after_first_dose_date}
+  ae.teae.end: {rule: no_end}
+  ae.related.values: {rule: null}
+  bds.baseline.rule: {rule: last_before_first_dose}
+  bds.window.table: {rule: nominal_visit}
+  bds.window.tiebreak: {rule: closest_then_earlier}
+  bds.unscheduled.use: {rule: compete}
+  bds.eot.record: {rule: last_on_treatment_value}
+  tfl.output.include:
+    units:
+      tfl-demographics: {rule: included}
+      tfl-ae-summary: {rule: included}
+      tfl-ae-soc-pt: {rule: included}
+      tfl-vitals-by-visit: {rule: included}
+  tfl.population:
+    units:
+      tfl-demographics: {rule: randomized}
+      tfl-ae-summary: {rule: safety}
+      tfl-ae-soc-pt: {rule: safety}
+      tfl-vitals-by-visit: {rule: safety}
+  tfl.columns.arms:
+    units:
+      tfl-demographics: {rule: ascending_dose_placebo_first}
+      tfl-ae-summary: {rule: ascending_dose_placebo_first}
+      tfl-ae-soc-pt: {rule: ascending_dose_placebo_first}
+      tfl-vitals-by-visit: {rule: ascending_dose_placebo_first}
+  tfl.columns.total:
+    units:
+      tfl-demographics: {rule: all_arms}
+      tfl-ae-summary: {rule: all_arms}
+      tfl-ae-soc-pt: {rule: all_arms}
+      tfl-vitals-by-visit: {rule: all_arms}
+  tfl.denominator: {rule: analysis_set_per_column}
+  tfl.percent.format:
+    units:
+      tfl-demographics: {rule: one_decimal_zero_blank}
+      tfl-ae-summary: {rule: one_decimal_zero_blank}
+      tfl-ae-soc-pt: {rule: one_decimal_zero_blank}
+  tfl.quantile.definition:
+    units:
+      tfl-demographics: {rule: sas5}
+      tfl-vitals-by-visit: {rule: sas5}
+  tfl.rounding.rule:
+    units:
+      tfl-demographics: {rule: half_away_from_zero}
+      tfl-ae-summary: {rule: half_away_from_zero}
+      tfl-ae-soc-pt: {rule: half_away_from_zero}
+      tfl-vitals-by-visit: {rule: half_away_from_zero}
+  tfl.decimals.rule:
+    units:
+      tfl-demographics: {rule: relative_to_data}
+      tfl-vitals-by-visit: {rule: relative_to_data}
+  tfl.pvalue.format: {rule: three_decimals}
+  tfl.demog.rows: {rule: null}
+  tfl.demog.stats: {rule: n_mean_sd_median_min_max}
+  tfl.tests.include: {rule: none}
+  tfl.ae.summary.rows: {rule: standard_rows}
+  tfl.ae.socpt.sort: {rule: alphabetical}
+  tfl.ae.socpt.threshold: {rule: none}
+  tfl.ae.socpt.counts: {rule: subjects}
+  tfl.vs.scope: {rule: null}
+  tfl.vs.layout: {rule: side_by_side}

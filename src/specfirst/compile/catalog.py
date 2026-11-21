@@ -1,8 +1,12 @@
 """Load the decision catalog (PLAN.md section 5).
 
-The catalog is a folder:
+A catalog version is a folder, `standard/catalog@<n>/` (ADR-020); its label
+is `catalog@<n>`, and `specfirst.compile.versions` says which versions are
+frozen and which pair a loader takes by default:
 
     catalog.yaml          name, version, units, design features, entry order
+                          (from catalog@2: the entry schema, the terms)
+    migration.yaml        from catalog@2: what the step from the version before keeps
     sources.yaml          the public sources that entries cite
     probes.yaml           probe recipes (section 6.5)
     entries/<id>.yaml     one entry per file (section 5.1)
@@ -22,8 +26,12 @@ from pathlib import Path
 
 import yaml
 
+from specfirst.compile import versions
 from specfirst.compile.slots import Slot, SlotError, slot_from_spec
 from specfirst.paths import repo_root
+
+# The schema of the entry files when catalog.yaml names none (catalog@1).
+ENTRY_SCHEMA = "catalog-entry"
 
 
 class CatalogError(ValueError):
@@ -53,13 +61,16 @@ class Entry:
     applies_when: str
     question: str
     alternatives: tuple[Alternative, ...]
-    house_default: object  # an alternative ID, a mapping unit -> ID, or None
+    # catalog@1: an alternative ID, a mapping unit -> ID, or None. From catalog@2 an
+    # entry has none: the house holds the defaults (specfirst.compile.house).
+    house_default: object
     compile: str
     phrasings: str
     reading: str
     probes: tuple[str, ...]
     sources: tuple[dict, ...]
     raw: dict = field(compare=False, default_factory=dict)
+    fixed_rules: tuple[dict, ...] = ()  # from catalog@2: {id, text, sources}
 
     def alternative(self, rule: str) -> Alternative:
         for alternative in self.alternatives:
@@ -95,6 +106,21 @@ class Catalog:
     raw: dict = field(compare=False, default_factory=dict)
     load_problems: tuple[str, ...] = ()
 
+    @property
+    def label(self) -> str:
+        """The version label: `catalog@<version>`."""
+        return f"catalog@{self.version}"
+
+    @property
+    def entry_schema(self) -> str:
+        """The schema of its entry files (standard/schemas/)."""
+        return str(self.raw.get("entry_schema") or ENTRY_SCHEMA)
+
+    @property
+    def has_defaults(self) -> bool:
+        """catalog@1 holds the house defaults in its entries; later versions do not."""
+        return self.entry_schema == ENTRY_SCHEMA
+
     def entry(self, entry_id: str) -> Entry:
         if entry_id not in self.entries:
             raise KeyError(f"the catalog has no entry '{entry_id}'")
@@ -121,8 +147,11 @@ def read_yaml(path: Path) -> object:
     return copy.deepcopy(_YAML_CACHE[key])
 
 
-def default_dir(root: Path | None = None) -> Path:
-    return (root or repo_root()) / "standard" / "catalog"
+def default_dir(root: Path | None = None, label: str | None = None) -> Path:
+    """The folder of a catalog version; without a label, the default (versions.DEFAULT_CATALOG)."""
+    label = label or versions.DEFAULT_CATALOG
+    versions.catalog_number(label)
+    return versions.folder(root or repo_root(), label)
 
 
 def _alternative(entry_id: str, raw: dict, problems: list[str]) -> Alternative:
@@ -164,6 +193,7 @@ def _entry(raw: dict, problems: list[str]) -> Entry:
         probes=tuple(str(p) for p in (raw.get("probes") or ())),
         sources=tuple(s for s in (raw.get("sources") or []) if isinstance(s, dict)),
         raw=raw,
+        fixed_rules=tuple(r for r in (raw.get("fixed_rules") or []) if isinstance(r, dict)),
     )
 
 

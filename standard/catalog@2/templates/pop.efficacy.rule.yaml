@@ -1,0 +1,72 @@
+entry: pop.efficacy.rule
+alternatives:
+  baseline_and_postbaseline:
+    adam:
+      ADSL:
+        intermediates:
+          # A value dated on or before the treatment start date.
+          - id: VS_EFFBL
+            dataset: VS
+            key: [STUDYID, USUBJID]
+            filter: "VS.VSTESTCD = ${test|q} AND VS.VSSTRESN IS NOT NULL"
+            derivations:
+              VSDT:
+                impute: {type: date, source: VSDTC, invalid: null}
+              LASTDT: "DATE '9999-12-31'"
+            between: {value: TRTSDT, lower: VSDT, upper: LASTDT}
+            order_by: [VS.VSSEQ]
+            keep: first
+          # A value dated after the treatment start date: TRTSDT <= date - 1.
+          - id: VS_EFFPOST
+            dataset: VS
+            key: [STUDYID, USUBJID]
+            filter: "VS.VSTESTCD = ${test|q} AND VS.VSSTRESN IS NOT NULL"
+            derivations:
+              VSDT:
+                impute: {type: date, source: VSDTC, invalid: null}
+              DAYBEFORE:
+                shift: {type: date, source: VSDT, days: -1}
+              FIRSTDT: "DATE '0001-01-01'"
+            between: {value: TRTSDT, lower: FIRSTDT, upper: DAYBEFORE}
+            order_by: [VS.VSSEQ]
+            keep: first
+        columns:
+          - name: _EFFBLSEQ
+            type: int
+            label: "Working value: sequence number of a baseline value of the test"
+            derivation: VS_EFFBL.VSSEQ
+          - name: _EFFPOSTSEQ
+            type: int
+            label: "Working value: sequence number of a post-baseline value of the test"
+            derivation: VS_EFFPOST.VSSEQ
+          - name: EFFFL
+            type: str
+            label: Efficacy Population Flag
+            derivation:
+              flag:
+                condition: "SAFFL = 'Y' AND _EFFBLSEQ IS NOT NULL AND _EFFPOSTSEQ IS NOT NULL"
+                false_value: N
+                missing: N
+  attended_visit:
+    adam:
+      ADSL:
+        intermediates:
+          - id: SV_EFF
+            dataset: SV
+            key: [STUDYID, USUBJID]
+            filter: "SV.VISIT = ${visit|q}"
+            order_by: [SV.VISITNUM]
+            keep: first
+        columns:
+          - name: _EFFVISIT
+            type: str
+            label: "Working value: the named visit, when the subject attended it"
+            derivation: SV_EFF.VISIT
+          - name: EFFFL
+            type: str
+            label: Efficacy Population Flag
+            derivation:
+              flag:
+                condition: "SAFFL = 'Y' AND _EFFVISIT IS NOT NULL"
+                false_value: N
+                missing: N

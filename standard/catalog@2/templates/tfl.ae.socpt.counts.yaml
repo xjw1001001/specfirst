@@ -1,0 +1,6 @@
+entry: tfl.ae.socpt.counts
+alternatives:
+  subjects:
+    params: {term_counts: subjects}
+  subjects_and_events:
+    params: {term_counts: subjects_and_events}

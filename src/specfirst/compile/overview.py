@@ -16,22 +16,33 @@ def _cell(text: str) -> str:
     return " ".join(str(text).split()).replace("|", "/")
 
 
-def _default(entry: Entry) -> str:
-    if entry.house_default is None:
+def _rule(catalog: Catalog, house: House, entry: Entry, unit: str) -> str:
+    if house_module.by_design(catalog, house, entry.id, unit):
+        cases = house_module.choices(house, entry.id, unit, entry.per_family)
+        return ", ".join(f"`{case.get('rule')}`" + (f" when {case['when']}" if "when" in case
+                                                       else " otherwise") for case in cases)
+    value = house_module.default_value(catalog, house, entry.id, unit)
+    return f"`{value['rule']}`" if value else "none"
+
+
+def _default(catalog: Catalog, house: House, entry: Entry) -> str:
+    rules = {unit: _rule(catalog, house, entry, unit) for unit in entry.units}
+    if set(rules.values()) == {"none"}:
         return "none: the documents state it, or a person is asked"
-    if isinstance(entry.house_default, dict):
-        return "; ".join(f"`{rule}` for {unit}" for unit, rule in entry.house_default.items())
-    return f"`{entry.house_default}`"
+    if entry.per_family:
+        return "; ".join(f"{rule} for {unit}" for unit, rule in rules.items())
+    return rules[entry.units[0]]
 
 
 def render(catalog: Catalog, house: House) -> str:
     """The overview as Markdown text."""
     alternatives = sum(len(entry.alternatives) for entry in catalog.entries.values())
-    without = house_module.without_default(catalog)
+    without = house_module.without_default(catalog, house)
     lines = [
         f"# Decision catalog {catalog.name} {catalog.version}: overview",
         "",
-        f"Rendered by `specfirst catalog --overview` from `standard/catalog/` and the house "
+        f"Rendered by `specfirst catalog --overview` from `standard/{catalog.directory.name}/` "
+        "and the house "
         f"standard {house.label}. {len(catalog.entries)} entries, {len(catalog.keys())} "
         f"questions when an entry is counted once per unit, {alternatives} alternatives, "
         f"{len(without)} questions without a default.",
@@ -49,7 +60,8 @@ def render(catalog: Catalog, house: House) -> str:
             current = group
             lines += [f"## {group}", ""]
         lines += [f"### `{entry.id}`: {entry.question}", "",
-                  f"Applies when: `{entry.applies_when}`. Default: {_default(entry)}.", "",
+                  f"Applies when: `{entry.applies_when}`. "
+                  f"Default: {_default(catalog, house, entry)}.", "",
                   "| Alternative | Statement | Meaning |", "| --- | --- | --- |"]
         for alternative in entry.alternatives:
             lines.append(f"| `{alternative.id}` | {_cell(alternative.statement)} | "

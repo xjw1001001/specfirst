@@ -103,7 +103,7 @@ def skills(root: Path, out: Out) -> bool:
         """knowledge.problems on a copy of the catalog and the skills, one SKILL.md
         changed: the check itself, not a stand-in for it."""
         copy_root = _scratch() / f"skills-root-{len(list(_scratch().glob('skills-root-*')))}"
-        shutil.copytree(root / "standard" / "catalog", copy_root / "standard" / "catalog")
+        shutil.copytree(catalogs.default_dir(root), catalogs.default_dir(copy_root))
         shutil.copytree(root / tasks.SKILLS, copy_root / tasks.SKILLS)
         path = tasks.skill_path(copy_root, name)
         path.write_text(change(path.read_text(encoding="ascii")), encoding="ascii")

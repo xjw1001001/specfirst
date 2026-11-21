@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "specfirst:schemas/1/catalog-entry",
+  "title": "Catalog entry",
+  "description": "One question of the decision catalog with its alternatives (PLAN.md section 5.1). One entry per file in standard/catalog@<n>/entries/, from catalog@2. Version 1 (ADR-020): version 0 without house_default (a house holds the defaults, in its defaults.yaml), with fixed_rules, and with an evidence level on a citation. A change needs an ADR.",
+  "type": "object",
+  "required": [
+    "id",
+    "applies_when",
+    "question",
+    "alternatives",
+    "compile",
+    "phrasings",
+    "reading",
+    "probes",
+    "sources"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "The catalog ID, as a decision record names it.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"
+    },
+    "unit": {
+      "description": "The owning unit (PLAN.md section 10): a module or one table family.",
+      "$ref": "#/$defs/unit"
+    },
+    "units": {
+      "description": "In place of `unit`: the table families that each answer the question for their own output. A decision record names one of them, and a statement names the output as {output}.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/table_family"
+      },
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "applies_when": {
+      "description": "A predicate over design features (PLAN.md section 6.2): names of catalog.yaml joined with and, or, not and parentheses.",
+      "type": "string",
+      "pattern": "^[a-z0-9_.() ]+$"
+    },
+    "question": {
+      "type": "string",
+      "pattern": "^[A-Z][ -~]*\\?$"
+    },
+    "notes": {
+      "description": "Rules that hold for every alternative of the entry.",
+      "$ref": "#/$defs/prose"
+    },
+    "fixed_rules": {
+      "description": "Rules that hold for every alternative of the entry, each with an ID that the standards document anchors, so that a record can cite one (ADR-020, #4 and #18).",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fixed_rule"
+      },
+      "minItems": 1
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/alternative"
+      },
+      "minItems": 1
+    },
+    "compile": {
+      "description": "The compile template, relative to the catalog folder: one fragment per alternative.",
+      "type": "string",
+      "pattern": "^templates/[a-z0-9_.]+\\.yaml$"
+    },
+    "phrasings": {
+      "description": "Natural variants of every statement, relative to the catalog folder.",
+      "type": "string",
+      "pattern": "^phrasings/[a-z0-9_.]+\\.yaml$"
+    },
+    "reading": {
+      "description": "Reading notes, relative to the catalog folder.",
+      "type": "string",
+      "pattern": "^knowledge/[a-z0-9_.]+\\.md$"
+    },
+    "probes": {
+      "description": "IDs of probe recipes in probes.yaml (PLAN.md section 6.5).",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      },
+      "minItems": 1
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "unit"
+      ],
+      "not": {
+        "required": [
+          "units"
+        ]
+      }
+    },
+    {
+      "required": [
+        "units"
+      ],
+      "not": {
+        "required": [
+          "unit"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "unit": {
+      "type": "string",
+      "pattern": "^(mod|tfl)-[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "table_family": {
+      "type": "string",
+      "pattern": "^tfl-[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "alternative_id": {
+      "description": "The `rule` of a decision value.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "prose": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[ -~\\n]+$"
+    },
+    "alternative": {
+      "type": "object",
+      "required": [
+        "id",
+        "statement"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/alternative_id"
+        },
+        "statement": {
+          "description": "The statement template (PLAN.md section 4.4): one sentence of controlled English with typed slots written as {name}.",
+          "type": "string",
+          "pattern": "^[A-Z][ -~]*\\.$"
+        },
+        "definition": {
+          "description": "What the statement means where the sentence alone leaves room.",
+          "$ref": "#/$defs/prose"
+        },
+        "slots": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "not": {
+              "enum": [
+                "rule",
+                "output"
+              ]
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/slot"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "required": [
+        "type",
+        "examples"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "int",
+            "number",
+            "text",
+            "name",
+            "list[int]",
+            "list[number]",
+            "list[text]",
+            "list[name]",
+            "records"
+          ]
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "choices": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "fields": {
+          "description": "Type records: the fields of one record.",
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "enum": [
+              "int",
+              "number",
+              "text",
+              "name"
+            ]
+          }
+        },
+        "item": {
+          "description": "Type records: the text of one record, with every field as {field}.",
+          "type": "string",
+          "minLength": 1
+        },
+        "ascending": {
+          "description": "A list: true when its items must ascend. Type records: the field whose values must ascend strictly.",
+          "type": [
+            "boolean",
+            "string"
+          ]
+        },
+        "unique": {
+          "description": "Type records: fields whose values may not repeat.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "ranges": {
+          "description": "Type records: the fields that hold the limits of a range (low, high) and a value that must lie in it (inside). Ranges ascend and do not overlap.",
+          "type": "object",
+          "required": [
+            "low",
+            "high"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "low": {
+              "type": "string"
+            },
+            "high": {
+              "type": "string"
+            },
+            "inside": {
+              "type": "string"
+            }
+          }
+        },
+        "field_min": {
+          "description": "Type records: the lowest value of a field.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "examples": {
+          "description": "Values for tests: the round trip and the compile check run on each.",
+          "type": "array",
+          "minItems": 2
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "records"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fields",
+              "item"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "fields"
+                  ]
+                },
+                {
+                  "required": [
+                    "item"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "source": {
+      "description": "A public source: a key of sources.yaml and the place in it. A pinned source also names a file of the fetched repository and may name a text that stands in it.",
+      "type": "object",
+      "required": [
+        "ref",
+        "where"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "where": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[ -~]+$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^/\\\\][ -~]*$"
+        },
+        "find": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[ -~]+$"
+        },
+        "evidence": {
+          "description": "How the citation is known to hold: cited (taken from a secondary text, the source not opened), read (the place was opened and read), probed (a probe or a run showed it). Without it, the level of the document in sources.yaml holds.",
+          "enum": [
+            "cited",
+            "read",
+            "probed"
+          ]
+        }
+      },
+      "dependentRequired": {
+        "find": [
+          "path"
+        ]
+      }
+    },
+    "fixed_rule": {
+      "type": "object",
+      "required": [
+        "id",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "text": {
+          "description": "One or more sentences of plain English.",
+          "type": "string",
+          "pattern": "^[A-Z][ -~\\n]*\\.$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

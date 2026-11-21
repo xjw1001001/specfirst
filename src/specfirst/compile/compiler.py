@@ -2,7 +2,7 @@
 
 For a catalog decision the fragment is a pure function of the decision
 value. Each alternative of an entry has one fragment in the entry's compile
-template (`standard/catalog/templates/<id>.yaml`):
+template (`standard/catalog@<n>/templates/<id>.yaml`):
 
     alternatives:
       <alternative>:

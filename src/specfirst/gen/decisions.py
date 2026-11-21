@@ -192,7 +192,7 @@ def defaults(catalog: catalogs.Catalog, house: houses.House, design: dict) -> Va
     found = {}
     for entry in entries(catalog, design):
         unit = OUTPUT_UNIT if entry.per_family else entry.units[0]
-        value = houses.default_value(catalog, house, entry.id, unit)
+        value = houses.default_value(catalog, house, entry.id, unit, designs.features(design))
         if value is not None:
             found[entry.id] = value
     return found
@@ -307,7 +307,7 @@ def vector(catalog: catalogs.Catalog, house: houses.House, design: dict,
                                                            and unit in SLICE_UNITS)):
             found.append({"id": entry_id, "unit": unit, "value": values[entry_id]})
         elif unit in DEFAULT_UNITS:
-            value = houses.default_value(catalog, house, entry_id, unit)
+            value = houses.default_value(catalog, house, entry_id, unit, features)
             if value is None:
                 raise DecisionError(f"{entry_id}: the slice needs a house default for it")
             found.append({"id": entry_id, "unit": unit, "value": value})

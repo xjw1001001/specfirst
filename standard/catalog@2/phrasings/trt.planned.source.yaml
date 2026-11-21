@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: trt.planned.source
+alternatives:
+  dm_arm:
+    plain: "The planned arm of the subject (DM.ARM) is used as planned treatment."
+    formal: "Planned treatment shall be taken as the planned arm of the subject (DM.ARM)."
+    brief: "Planned treatment: planned arm of the subject (DM.ARM)."
+  dm_armcd_map:
+    plain: "The planned arm code (DM.ARMCD) is translated into planned treatment in this way: {map}."
+    formal: "Planned treatment shall be derived by decoding the planned arm code (DM.ARMCD) according to the following list: {map}."
+    brief: "Planned treatment, decoded from the planned arm code (DM.ARMCD): {map}."

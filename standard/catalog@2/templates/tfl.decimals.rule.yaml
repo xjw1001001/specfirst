@@ -1,0 +1,13 @@
+entry: tfl.decimals.rule
+alternatives:
+  relative_to_data:
+    params:
+      decimals: {rule: relative_to_data, mean: 1, sd: 2, median: 1, range: 0}
+  stated_decimals:
+    params:
+      decimals:
+        rule: stated
+        mean: {$get: mean}
+        sd: {$get: sd}
+        median: {$get: median}
+        range: {$get: range}

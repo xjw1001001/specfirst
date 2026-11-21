@@ -58,7 +58,7 @@ section 13.4).
 - The four schema points of ADR-000 item 7: the owner took the
   recommendations of ADR-004. Point 3 (which records must cite) is for
   std-2 to apply; point 4 (the prefix `layout:`) for real-3 with ADR-003.
-- Deferred by std-1 (standard/catalog/catalog.yaml, `deferred`): four
+- Deferred by std-1 (standard/catalog@1/catalog.yaml, `deferred`): four
   entries of appendix B and two alternatives that need a derived record by
   aggregation.
 - The layout files are layout draft 0. real-3 fixes the format (ADR-003);
@@ -86,17 +86,25 @@ section 13.4).
   bind is complete for the values `compiler.other_values` tries, not for
   every value a slot can take.
 - Three alternatives have no public source of their own
-  (`unsourced_alternatives` in standard/catalog/catalog.yaml).
+  (`unsourced_alternatives` in standard/catalog@1/catalog.yaml).
 
 ## Next
 
+- catalog@2 (2026-11-21): ADR-020, approved by the owner the same day (A
+  to questions 1, 2, 3 and 5; B to 4: the slice moves too). Three parts:
+  catalog-2a (the structure: versioned folders, defaults in the house, the
+  checks of the versions; docs/reports/catalog-2a.md), catalog-2b (the
+  content of decision 7) and catalog-2c (the slice of ADR-005 moved to
+  version 2, last, with the plan cleared by the base session first).
+  Until catalog-2c merges, the default pair stays (`catalog@1`,
+  `open-default@1`) and version 2 is a draft no kit may name.
 - std-2 Pilot decisions, mutation and identifiability. Needs real-3.
 - Then std-3 (D1).
 
 ## For other tracks
 
 - gen-1 and gen-2 work from `catalog@1`. Entries, alternatives, slots
-  with examples and probe recipes (`standard/catalog/probes.yaml`) are
+  with examples and probe recipes (`standard/catalog@1/probes.yaml`) are
   usable as they are. A probe of the kind `design` asks for a property of
   the design (arms listed out of dose order), not for a planted record.
   What gen-1 should know:
@@ -127,7 +135,7 @@ section 13.4).
   column order rule and the total column are in the layout. Tell std when a
   convention of the engines differs: the house templates follow.
 - read-1 and read-2: `specfirst parse` is the parser control of section
-  9.3; `standard/catalog/knowledge/` holds reading notes v0.
+  9.3; `standard/catalog@1/knowledge/` holds reading notes v0.
 
 ## Handed over by base-0
 

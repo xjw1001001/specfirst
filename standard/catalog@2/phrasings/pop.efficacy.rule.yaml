@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: pop.efficacy.rule
+alternatives:
+  baseline_and_postbaseline:
+    plain: "All subjects of the safety set who have a baseline value and one or more post-baseline values of the vital sign {test} form the efficacy-evaluable set."
+    formal: "The efficacy-evaluable set shall consist of all subjects of the safety set with a baseline value and at least one post-baseline value of the vital sign {test}."
+    brief: "Efficacy-evaluable set: all subjects of the safety set with a baseline value and at least one post-baseline value of the vital sign {test}."
+  attended_visit:
+    plain: "All subjects of the safety set who attended the visit {visit} form the efficacy-evaluable set."
+    formal: "The efficacy-evaluable set shall consist of all subjects of the safety set who attended the visit {visit}."
+    brief: "Efficacy-evaluable set: all subjects of the safety set who attended the visit {visit}."

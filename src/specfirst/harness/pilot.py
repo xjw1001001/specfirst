@@ -151,7 +151,8 @@ def write(root: Path, out: Path) -> Path:
     sap_md = out / tasks.DOCUMENTS["sap"]
     sap_md.parent.mkdir(parents=True)
     sap_md.write_text(sap_text(sap), encoding="ascii", newline="\n")
-    kitgold.copy_house(houses.load(houses.default_dir(root)), out)
+    house = houses.load(houses.default_dir(root))
+    kitgold.copy_house(house, out)
     for name, path in adam.items():
         target = out / ADAM / f"{name.lower()}.parquet"
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -173,7 +174,7 @@ def write(root: Path, out: Path) -> Path:
         "split": SPLIT,
         "generator": GENERATOR,
         "catalog": {"name": catalog.name, "version": catalog.version},
-        "house": "open-default@1",
+        "house": house.label,
         "pins": {"sources": dict(kit.sources), "sap_sha256": sha256_file(sap),
                  "example_sha256": sha256_file(example)},
         "units": list(UNITS),

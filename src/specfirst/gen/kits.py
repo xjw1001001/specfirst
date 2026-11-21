@@ -65,7 +65,7 @@ import yaml
 
 import specfirst
 from specfirst.compile import catalog as catalogs
-from specfirst.compile import compiler
+from specfirst.compile import compiler, versions
 from specfirst.compile import house as houses
 from specfirst.gen import (
     GENERATOR,
@@ -273,6 +273,10 @@ def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: O
               number: int | None, tier: str) -> dict:
     catalog = catalogs.load(catalogs.default_dir(root))
     house = houses.load(houses.default_dir(root))
+    try:  # a kit names frozen versions only (ADR-020, decision 1)
+        versions.require_usable(root, [catalog.label, house.label], "a generated kit")
+    except versions.VersionError as error:
+        raise KitError(str(error)) from None
     label = study.catalog_label(catalog)
     scenario_number = scenario_of(seed, number)
     scenario = decisions.SCENARIOS[scenario_number]

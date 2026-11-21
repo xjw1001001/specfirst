@@ -1,0 +1,44 @@
+entry: demo.age.groups
+alternatives:
+  lt65_65to80_gt80:
+    adam:
+      ADSL:
+        columns:
+          - name: AGEGR1
+            type: str
+            label: Pooled Age Group 1
+            derivation:
+              case:
+                - when: "AGE < 65"
+                  then: "'<65'"
+                - when: "AGE <= 80"
+                  then: "'65-80'"
+                - when: "AGE > 80"
+                  then: "'>80'"
+                - otherwise: null
+  lt65_ge65:
+    adam:
+      ADSL:
+        columns:
+          - name: AGEGR1
+            type: str
+            label: Pooled Age Group 1
+            derivation:
+              case:
+                - when: "AGE < 65"
+                  then: "'<65'"
+                - when: "AGE >= 65"
+                  then: "'>=65'"
+                - otherwise: null
+  stated_cuts:
+    adam:
+      ADSL:
+        columns:
+          - name: AGEGR1
+            type: str
+            label: Pooled Age Group 1
+            derivation:
+              cut:
+                source: AGE
+                breaks: {$get: cuts}
+                labels: {$fn: cut_labels, args: [{$get: cuts}]}

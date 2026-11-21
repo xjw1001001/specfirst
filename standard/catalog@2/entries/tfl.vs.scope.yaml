@@ -1,0 +1,27 @@
+id: tfl.vs.scope
+unit: tfl-vitals-by-visit
+applies_when: design.has_bds_parameters
+question: Which parameters and analysis visits does the vital signs table show?
+alternatives:
+  - id: stated_lists
+    statement: "The vital signs table by visit shows the parameters {parameters} at the analysis visits {visits}."
+    definition: >-
+      Parameters are named by their code (PARAMCD) and visits by their
+      analysis visit (AVISIT), each in the order of the list. Baseline and
+      End of Treatment are analysis visits.
+    slots:
+      parameters: {type: "list[name]", examples: [[SYSBP, DIABP, PULSE], [WEIGHT]]}
+      visits:
+        type: "list[text]"
+        examples: [[Baseline, Week 2, Week 4, End of Treatment], [Baseline, WEEK 24]]
+compile: templates/tfl.vs.scope.yaml
+phrasings: phrasings/tfl.vs.scope.yaml
+reading: knowledge/tfl.vs.scope.md
+probes: [output_shape]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "AnlsGrouping_09_Visit"
+    where: "the vital signs analyses grouped by parameter and visit"
+  - ref: ich-e3
+    where: "section 12.5: vital signs, physical findings and other observations related to safety"

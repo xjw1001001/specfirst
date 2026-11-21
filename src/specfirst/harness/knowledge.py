@@ -5,7 +5,7 @@
     skills/<unit>/SKILL.md        reading notes v0 of a unit, rendered from the catalog:
                                   for every entry of the unit its question, its
                                   alternatives with their statements, the house default
-                                  and its reading note (standard/catalog/knowledge/)
+                                  and its reading note (standard/catalog@<n>/knowledge/)
 
 Both are Agent Skill folders: a SKILL.md whose front matter names the skill
 and says what it is for (the format of pharma-skills, PLAN.md E16).

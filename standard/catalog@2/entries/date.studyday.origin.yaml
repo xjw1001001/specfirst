@@ -1,0 +1,23 @@
+id: date.studyday.origin
+unit: mod-treatment
+applies_when: design.always
+question: Which date is study day 1?
+alternatives:
+  - id: treatment_start
+    statement: "Study day 1 is the treatment start date."
+  - id: dm_rfstdtc
+    statement: "Study day 1 is the reference start date of the subject (DM.RFSTDTC)."
+notes: There is no study day 0. The day before study day 1 is day -1.
+compile: templates/date.studyday.origin.yaml
+phrasings: phrasings/date.studyday.origin.yaml
+reading: knowledge/date.studyday.origin.md
+probes: [reference_start_before_first_dose]
+sources:
+  - ref: adamig
+    where: "BDS timing variables, ADY: relative to a reference date such as TRTSDT"
+  - ref: sdtmig
+    where: "study day variables (--DY): relative to RFSTDTC"
+  - ref: yamaa
+    path: yaml/schema_expression_date.yaml
+    find: "Reference start date, which is study day 1"
+    where: "the study_day verb"

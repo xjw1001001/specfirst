@@ -1,0 +1,27 @@
+id: pop.safety.rule
+unit: mod-populations
+applies_when: design.has_exposure
+question: Who is in the safety set?
+alternatives:
+  - id: at_least_one_dose
+    statement: "The safety set holds every subject who received at least one dose of study treatment."
+  - id: randomized_and_dosed
+    statement: "The safety set holds every randomized subject who received at least one dose of study treatment."
+notes: >-
+  A subject received a dose when the treatment start date is present. A
+  subject is randomized when the planned arm code (DM.ARMCD) is present and
+  is neither SCRNFAIL nor NOTASSGN; the rule of the randomized set
+  (pop.randomized.rule) does not enter.
+compile: templates/pop.safety.rule.yaml
+phrasings: phrasings/pop.safety.rule.yaml
+reading: knowledge/pop.safety.rule.md
+probes: [dosed_but_not_randomized, randomized_never_dosed]
+sources:
+  - ref: ich-e9
+    where: "section 6.3: for safety and tolerability, the subjects who received at least one dose"
+  - ref: adamig
+    where: "ADSL population flags, SAFFL"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "Y if ITTFL='Y' and TRTSDT ne missing"
+    where: "SAFFL of the pilot ADSL: randomized and dosed"

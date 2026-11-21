@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: bds.unscheduled.use
+alternatives:
+  compete:
+    plain: "Records of unscheduled visits are candidates for baseline and for analysis visits."
+    formal: "Records of unscheduled visits shall be eligible for baseline and for analysis visits."
+    brief: "Unscheduled visit records: compete for baseline and for analysis visits."
+  excluded:
+    plain: "Records of unscheduled visits are left out of baseline and of analysis visits."
+    formal: "Records of unscheduled visits shall not be used for baseline or for analysis visits."
+    brief: "Unscheduled visit records: not used for baseline or for analysis visits."

@@ -1,0 +1,151 @@
+# House standard open-default@1: ARS template of the table of adverse
+# events by system organ class and preferred term (unit tfl-ae-soc-pt).
+# Organ classes and terms are data-driven groupings, as in the CDISC ARS
+# example "Common Safety Displays".
+define:
+  trt_var:
+    $if: {get: analysis_set, eq: SAF}
+    then: {$get: safety_treatment_variable}
+    else: TRT01P
+  variants:
+    $concat:
+      - [{suffix: "", grouping: "Grp_${trt_var}"}]
+      - $if: {get: total.mode, eq: none}
+        then: []
+        else: [{suffix: _Tot, grouping: Grp_Total_AESOCPT}]
+  levels:
+    - {code: Any, label: any treatment-emergent adverse event, groupings: []}
+    - {code: Soc, label: system organ class, groupings: [Grp_AESOC]}
+    - {code: Pt, label: system organ class and preferred term, groupings: [Grp_AESOC, Grp_AEDECOD]}
+
+analysisGroupings:
+  - id: "Grp_${trt_var}"
+    name: Treatment
+    groupingDataset: ADSL
+    groupingVariable: "${trt_var}"
+    dataDriven: true
+  - $if: {not: {get: total.mode, eq: none}}
+    then:
+      id: Grp_Total_AESOCPT
+      name: Total
+      groupingDataset: ADSL
+      groupingVariable: "${trt_var}"
+      dataDriven: false
+      groups:
+        - id: Grp_Total_AESOCPT_1
+          name: Total
+          level: 1
+          order: 1
+          condition:
+            dataset: ADSL
+            variable: "${trt_var}"
+            comparator: NOTIN
+            value:
+              $if: {get: total.mode, eq: active_arms}
+              then: ["", {$get: total.control}]
+              else: [""]
+  - id: Grp_AESOC
+    name: System organ class
+    groupingDataset: ADAE
+    groupingVariable: AESOC
+    dataDriven: true
+  - id: Grp_AEDECOD
+    name: Preferred term
+    groupingDataset: ADAE
+    groupingVariable: AEDECOD
+    dataDriven: true
+
+dataSubsets:
+  - id: Dss_TEAE
+    name: Treatment-emergent adverse events
+    level: 1
+    order: 1
+    condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}
+
+analyses:
+  - $for: v
+    in: {$get: variants}
+    do:
+      id: "An_AESOCPT_N${v.suffix}"
+      name: Number of subjects
+      reason: {controlledTerm: SPECIFIED IN SAP}
+      purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+      methodId: Mth_Count
+      dataset: ADSL
+      variable: USUBJID
+      analysisSetId: "AnalysisSet_${analysis_set}"
+      orderedGroupings:
+        - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+  - $for: level
+    in: {$get: levels}
+    do:
+      $for: v
+      in: {$get: variants}
+      do:
+        id: "An_AESOCPT_${level.code}${v.suffix}"
+        name: "Subjects with an event by ${level.label}"
+        reason: {controlledTerm: SPECIFIED IN SAP}
+        purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+        methodId: Mth_CatSumm
+        dataset: ADAE
+        variable: USUBJID
+        analysisSetId: "AnalysisSet_${analysis_set}"
+        dataSubsetId: Dss_TEAE
+        orderedGroupings:
+          $concat:
+            - [{order: 1, groupingId: "${v.grouping}", resultsByGroup: true}]
+            - $for: g
+              in: {$fn: numbered, args: [{$get: level.groupings}]}
+              do: {order: {$fn: next_order, args: [{$get: g.number}]}, groupingId: "${g.item}", resultsByGroup: true}
+        referencedAnalysisOperations:
+          - referencedOperationRelationshipId: Mth_CatSumm_pct_NUM
+            analysisId: "An_AESOCPT_${level.code}${v.suffix}"
+          - referencedOperationRelationshipId: Mth_CatSumm_pct_DEN
+            analysisId: "An_AESOCPT_N${v.suffix}"
+  - $for: level
+    in: {$get: levels}
+    do:
+      $for: v
+      in: {$get: variants}
+      do:
+        $if: {get: term_counts, eq: subjects_and_events}
+        then:
+          id: "An_AESOCPT_${level.code}_Events${v.suffix}"
+          name: "Events by ${level.label}"
+          reason: {controlledTerm: SPECIFIED IN SAP}
+          purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+          methodId: Mth_EventCount
+          dataset: ADAE
+          variable: AESEQ
+          analysisSetId: "AnalysisSet_${analysis_set}"
+          dataSubsetId: Dss_TEAE
+          orderedGroupings:
+            $concat:
+              - [{order: 1, groupingId: "${v.grouping}", resultsByGroup: true}]
+              - $for: g
+                in: {$fn: numbered, args: [{$get: level.groupings}]}
+                do: {order: {$fn: next_order, args: [{$get: g.number}]}, groupingId: "${g.item}", resultsByGroup: true}
+
+outputs:
+  - id: Out_AESOCPT
+    name: Adverse events by system organ class and preferred term
+    version: 1
+    displays:
+      - order: 1
+        display:
+          id: Disp_AESOCPT
+          name: Adverse events by system organ class and preferred term
+          version: 1
+          displayTitle: Treatment-Emergent Adverse Events by System Organ Class and Preferred Term
+          displaySections:
+            - sectionType: Title
+              orderedSubSections:
+                - order: 1
+                  subSection:
+                    id: Disp_AESOCPT_Title_1
+                    text: Treatment-Emergent Adverse Events by System Organ Class and Preferred Term
+
+listItem:
+  name: Adverse events by system organ class and preferred term
+  level: 1
+  outputId: Out_AESOCPT
