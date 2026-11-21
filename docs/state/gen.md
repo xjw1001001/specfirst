@@ -261,7 +261,8 @@ interval, the review, two matrices compared; no builds),
 reads, the scan, the matrix, the pilot's data and arms),
 `specfirst.gen.sep01` (the test study). Command: `specfirst gen separate
 sep01|cdiscpilot01 [--vector house|window] [--span N] [--out FILE]
-[--check FILE]`; the matrix goes to build/separation/<study>.json.
+[--check FILE]`; the matrix goes to build/separation/sep01.json or
+build/separation/cdiscpilot01-<vector>.json.
 
 ```python
 from specfirst.gen import separate

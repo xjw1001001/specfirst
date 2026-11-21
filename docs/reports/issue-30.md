@@ -333,9 +333,17 @@ $ python -m pytest -m "not evidence" -q -p no:cacheprovider
 ## cdiscpilot01, report only
 
 The SDTM files that kits/cdiscpilot01 pins, read from the fetch cache after
-their SHA-256 is checked (`separate.pilot_data`); the arms from DM and EX
-(Pbo 0 mg, Xan_Lo 54 mg, Xan_Hi 81 mg, the highest dose of a titrated
-arm; the screen failures have no exposure). The full house standard is
+their SHA-256 is checked (`separate.pilot_data`); the arms from DM and EX,
+by their highest dose (the high dose is titrated; the screen failures have
+no exposure and no arm):
+
+```text
+$ python -c 'from pathlib import Path; from specfirst.gen import separate; [print(arm) for arm in separate.pilot_arms(separate.pilot_data(Path.cwd()))]'
+{'code': 'Pbo', 'dose': 0.0, 'names': ['PLACEBO', 'Placebo']}
+{'code': 'Xan_Lo', 'dose': 54.0, 'names': ['Xanomeline Low Dose']}
+{'code': 'Xan_Hi', 'dose': 81.0, 'names': ['Xanomeline High Dose']}
+```
+ The full house standard is
 built (ADSL, ADAE, ADVS); the slice's 22 decisions are mutated. Nothing is
 tuned on the pilot: neither vector is the pilot's rule set (expressing that
 is std-2's).
@@ -597,6 +605,47 @@ clean clone gate gen-3a: PASS (clone: /tmp/specfirst-clean-lnnobs/specfirst)
 
 Logs: docs/reports/issue-30.gen-2a.gate.log, issue-30.gen-3a.gate.log.
 Ruff and the ASCII check pass in both gates and in the worktree.
+
+## The review
+
+docs/reports/issue-30.review.md, an independent agent with a fresh
+context, on `b9a38f4`: SIGNED, six findings, none blocking. What was done
+with each:
+
+- F1, no test reached the limits of the scan (two mutants of the scan
+  passed every test). Settled: `test_the_scan_stops_at_the_bound_of_the_
+  slot_and_at_its_span`, with the reviewer's three cases worked out by
+  hand (a window of 3 days gives 0 to 6, `slot_minimum` and `separated`;
+  with a span of 2, 1 to 5, `scan_limit` on both sides; 35 days with a span
+  of 3, 35 to 38, `separated` and `scan_limit`). On the two mutants it
+  fails, on the code it passes:
+
+```text
+$ flock /run/lock/specfirst-heavy.lock bash scan_mutants.sh   # a scratch script: three copies of the tree outside the worktree, the code, S3 and S4 (one line of separate.py each), then pytest -k scan_stops in each
+== base: 0 changed lines
+3 passed, 30 deselected in 9.04s
+== S3: 1 changed lines
+E               ValueError: days = 38 was not scanned
+src/specfirst/machine/separation.py:266: ValueError
+3 failed, 30 deselected in 8.29s
+== S4: 1 changed lines
+E       AssertionError: assert (-14, 'separa...-10, -9, ...]) == (0, 'slot_min..., 2, 4, 5, 6])
+tests/unit/test_separation.py:243: AssertionError
+1 failed, 2 passed, 30 deselected in 17.02s
+```
+
+  Log: docs/reports/issue-30.scan-mutants.log.
+
+- F2, a value that cannot be built counts as a separation, whatever stops
+  it; F3, an ARD row that differs only in the grouping it names counts as
+  a changed result. Both are how ADR-019 reads "separated" and both are
+  now in its item 2 for the owner; F3 was already among its consequences.
+- F4, the doses of the pilot's arms had no command: the command and its
+  output are in the section on the pilot.
+- F5, the plants log comes from a script that was not kept: left as it
+  is; the tests hold the same four plants, and the reviewer's own script
+  gave the same lines.
+- F6, the path of a pilot's matrix in docs/state/gen.md: corrected.
 
 ## Limits
 

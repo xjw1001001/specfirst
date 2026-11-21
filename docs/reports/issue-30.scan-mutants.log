@@ -1,0 +1,10 @@
+== base: 0 changed lines
+3 passed, 30 deselected in 9.04s
+== S3: 1 changed lines
+E               ValueError: days = 38 was not scanned
+src/specfirst/machine/separation.py:266: ValueError
+3 failed, 30 deselected in 8.29s
+== S4: 1 changed lines
+E       AssertionError: assert (-14, 'separa...-10, -9, ...]) == (0, 'slot_min..., 2, 4, 5, 6])
+tests/unit/test_separation.py:243: AssertionError
+1 failed, 2 passed, 30 deselected in 17.02s

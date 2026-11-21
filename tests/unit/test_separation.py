@@ -224,6 +224,30 @@ def test_a_new_mutation_gives_the_matrix_again(mutation, matrix):
     assert again["decisions"] == matrix["decisions"]
 
 
+@pytest.mark.parametrize(("gold", "span", "expected"), [
+    # The events of SEP01 start 7 (H2), 35 (P2) and 39 (L2) days after a last dose: a
+    # window of 0 to 6 days gives the table of 3 days. The slot's minimum is 0.
+    (3, 30, (0, "slot_minimum", 6, "separated", [0, 1, 2, 4, 5, 6])),
+    (3, 2, (1, "scan_limit", 5, "scan_limit", [1, 2, 4, 5])),
+    (35, 3, (35, "separated", 38, "scan_limit", [36, 37, 38])),
+])
+def test_the_scan_stops_at_the_bound_of_the_slot_and_at_its_span(machine, gold, span, expected):
+    # Cases of the review of issue #30 (F1): a scan that builds no value at a limit, or that
+    # ignores the minimum of the slot, fails here and passed every other test.
+    vector = separate.house_vector(machine.catalog, machine.house, {
+        **sep01.STATED, sep01.WINDOW: {"rule": "last_dose_plus_days", "days": gold}})
+    made = separate.Mutation(machine, sep01.data(), sep01.ARMS, vector, span).matrix(
+        study="sep01, scan", keys=[sep01.WINDOW])
+    item = _item(made, sep01.WINDOW)
+    (span_found,) = item["intervals"]
+    assert (span_found["low"], span_found["below"], span_found["high"], span_found["above"],
+            span_found["same"]) == expected
+    labels = [value["label"] for value in item["values"]]
+    assert len(labels) == len(set(labels))
+    assert all(value["value"]["days"] >= 0 for value in item["values"] if "days" in value["value"])
+    assert made["problems"] == []
+
+
 # ---- planted defects: each makes the check of one class fail (rule R5) -----------------
 
 
