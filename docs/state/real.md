@@ -63,6 +63,18 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   docs/reports/real-5b.review.md (passes 1 to 3 NOT SIGNED, their blocking
   findings F1, G1 and H1 fixed; pass 4 SIGNED). Decisions: the amendments
   "of real-5b" at the end of ADR-015.md and ADR-003.md.
+- real-5b-answers The owner's answers of 2026-11-20 on real-5a and real-5b
+  carried out: five records `stated`, G2 (the last visit of the mixed model
+  held on the model records) and K1 (no other columns in an other_build
+  proof). Gate: `scripts/clean_clone_gate.sh` exited 0 for real-5b (19 of
+  19), read-2a (19 of 19), real-5a, real-3a, real-2, gen-2a, gen-3a,
+  read-1a and std-1 on clean clones of commit `4660e8c` (2026-11-21). The
+  kept dry run of arm R was not made again. Evidence:
+  docs/reports/real-5b-answers.md, real-5b-answers.clean-clone.gate.log and
+  real-5b-answers.read-2a.gate.log. Review:
+  docs/reports/real-5b-answers.review.md (pass 1 SIGNED, four findings that
+  do not block). Decisions: ADR-015, section "The owner's answers
+  (2026-11-20)".
 
 ## Open
 
@@ -83,6 +95,13 @@ Answered by the owner on 2026-11-20 (ADR-015, "The owner's answers
   names Week 24 and the check `decisions` holds the last visit of the
   model records against it; an other_build proof refuses an other analysis
   that differs in a column-valued option. Each is planted in D11.
+
+Left by the review of real-5b-answers (does not block): L3, D11's K1 plant
+is also seen by the check `decisions`; pass 4's case O2 (an other analysis
+with strata RACEN, SEX and QSSEQ, rank scores) is the case only K1 sees,
+and could be added as a plant. For the owner, the class of the three former
+conflicts: `document_rule`, with `study_input` the alternative (review,
+"The owner's choices").
 
 Still open for the owner, from real-5b and real-5a (none blocks):
 
@@ -326,7 +345,9 @@ for 3,580 of them):
 - A second proof kind, `other_build` (csr.py): another build of the cell,
   held to "that alternative": an other analysis differs from the cell's
   only in its naming and in the options its decisions set
-  (`decisions.PARAMETERS`); an other pattern changes only the mask; an
+  (`decisions.PARAMETERS`), and never in an option whose values are
+  columns (`ars.MODEL_TERMS`; K1, the owner's answer of 2026-11-20); an
+  other pattern changes only the mask; an
   other template is a cell template of the layout (parts as {name}) and
   adds no text; every decision an entry names binds an analysis of the
   cell or its method; `decision` may be a list. `display.pattern.signed` is
@@ -336,6 +357,10 @@ for 3,580 of them):
   block kind `groups` (amendment of real-5b to ADR-003). The CSR parser
   reads a column without a count, the header of the row labels, a line of
   two labels and "Note:" as a footnote.
+- The check `decisions` holds the last visit of the model records against
+  `custom:eff-mmrm-visit` (`decisions.LAST_VISIT`; G2, the owner's answer
+  of 2026-11-20). It needs the built ADaM data: `build.decision_checks`
+  hands it the Python engines, and without them the record is a problem.
 - The gate real-5b holds the hint of E22 (`E22 hint`) and the engines' CMH
   p-values (`CMH`); the gate real-5a counts its own three tables
   (`gates.EFFICACY_GRIDS`), real-5b its two (`REAL5B_GRIDS`).

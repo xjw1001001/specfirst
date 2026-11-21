@@ -19,7 +19,7 @@ holds them together:
   the order models.R gives the visits, is the one the decision names.
 
 A changed parameter in the reporting event, or a changed value in a record,
-is seen by the last rule; tests/unit/test_efficacy.py plants both, and
+is seen by the rule of `PARAMETERS`; tests/unit/test_efficacy.py plants both, and
 tests/defects (D9-efficacy) plants the first on the pilot.
 
 The last rule closes G2 of the review of real-5b (the owner's answer of

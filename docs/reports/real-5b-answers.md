@@ -12,7 +12,12 @@ are not changed. No model ran and nothing was spent.
 
 ## Verdict
 
-(The gates on clean clones of this commit run after it; their result goes here.)
+The gates passed. `scripts/clean_clone_gate.sh` exited 0 for each of the
+nine gates, on clean clones of commit `4660e8c` with a fresh install and a
+fresh fetch: real-5b (19 of 19 checks), read-2a (19 of 19, the kept dry run
+of arm R among them), real-5a, real-3a, real-2, gen-2a, gen-3a, read-1a and
+std-1 (section "The gates on clean clones"). The review is signed
+(section "Review").
 
 - Answer 1 (the documents against the CSR): nothing changes. The 45
   differences of the five efficacy tables stay `rule_choice`, each with its
@@ -27,7 +32,8 @@ are not changed. No model ran and nothing was spent.
   - K1: an `other_build` proof now refuses an other analysis that differs
     in an option whose values are columns.
   - Each has its planted defect (rule R5), and each plant is seen.
-- (The review of this commit goes here.)
+- The review is signed in its first pass; none of its four findings
+  blocks (section "Review").
 
 ## The answers
 
@@ -120,8 +126,11 @@ problem ("none was handed over"): it cannot pass unseen.
 
 On the pilot, all three analyses at Week 24 are held:
 
-(The line of the check `decisions` from the gate real-5b on a clean clone
-goes here.)
+```text
+$ specfirst gate real-5b    (in the clean clone of 4660e8c; docs/reports/real-5b-answers.clean-clone.gate.log)
+decisions: 18 records, 18 IDs; 99 options of analyses held against the decisions that set them; the last visit held on the model records of 3 analyses; 0 problems
+PASS  decisions            0.6 s
+```
 
 ## K1: an other analysis in other columns
 
@@ -138,9 +147,10 @@ option whose values are columns: `ars.MODEL_TERMS`, that is `factors`,
 <the decisions> that take no columns
 ```
 
-The genuine proofs of real-5b differ only in options that take no columns
-(`at` of the LS means averaged over the weeks; the CMH display). They hold
-as before.
+The genuine proofs of real-5b hold as before. Only the 12 proofs of Table
+14-3.11 name an other analysis (`An_ADAS_MMRM_*_Avg`), and each differs
+from the cell's only in `at` (the LS means averaged over the weeks), an
+option that takes no columns.
 
 ## Planted defects (rule R5)
 
@@ -229,7 +239,37 @@ The new unit tests:
 
 ## The gates on clean clones
 
-(The nine gates on clean clones of this commit go here.)
+All nine ran on clean clones of `4660e8c`, one after another. Each ran
+under the shared lock with at most 4 processors:
+
+```text
+$ for wp in real-5b read-2a real-5a real-3a real-2 gen-2a gen-3a read-1a std-1; do
+    flock /run/lock/specfirst-heavy.lock taskset -c 0-3       bash scripts/clean_clone_gate.sh $wp /mnt/d/trial_work/specfirst/.git 4660e8c
+  done
+real-5b: 19 PASS, 0 FAIL; clean clone gate real-5b: PASS    (784 s)
+read-2a: 19 PASS, 0 FAIL; clean clone gate read-2a: PASS    (627 s)
+real-5a: 18 PASS, 0 FAIL; clean clone gate real-5a: PASS    (1901 s)
+real-3a: 16 PASS, 0 FAIL; clean clone gate real-3a: PASS    (1019 s)
+real-2:  15 PASS, 0 FAIL; clean clone gate real-2: PASS     (1873 s)
+gen-2a:  13 PASS, 0 FAIL; clean clone gate gen-2a: PASS     (1392 s)
+gen-3a:  15 PASS, 0 FAIL; clean clone gate gen-3a: PASS     (657 s)
+read-1a: 14 PASS, 0 FAIL; clean clone gate read-1a: PASS    (1400 s)
+std-1:   12 PASS, 0 FAIL; clean clone gate std-1: PASS      (489 s)
+```
+
+The seconds include the waits for the lock, which other sessions held in
+between. Two logs are in docs/reports:
+
+- real-5b: `real-5b-answers.clean-clone.gate.log`;
+- read-2a: `real-5b-answers.read-2a.gate.log`.
+
+The other seven are not copied. The line per gate above is counted from
+their logs.
+
+read-2a passes "arm R, kept dry run". The kept run was not made again:
+this part changes no registry entry, and no file of the harness or of
+`standard/`. In the clean clones, the four unit tests that fail in a copy
+without git pass ("unit tests" PASS in each gate).
 
 ## What the checks do not cover
 
@@ -245,7 +285,54 @@ The new unit tests:
 
 ## Review
 
-(By a fresh-context reviewer, rule R7: docs/reports/real-5b-answers.review.md.)
+By a fresh-context reviewer (rule R7); docs/reports/real-5b-answers.review.md
+has the pass in full, with the commands and their output.
+
+| Pass | Commit | Verdict | Blocking |
+| --- | --- | --- | --- |
+| 1 | `4660e8c` | SIGNED | none |
+
+The reviewer checked each point against R and against the parent:
+
+- G2's model records against R's own `mmrm_frame`: 539 records on the
+  pilot, the same (subject, visit) pairs. They also agree with missing
+  values planted, with Week 24 emptied and with the text visit.
+- The check `decisions` in the gate: "the last visit held on the model
+  records of 3 analyses; 0 problems".
+- K1 refuses pass 4's case O2, which the parent's csr.py accepted: an other
+  analysis with strata RACEN, SEX and QSSEQ and rank scores, p = 0.2728.
+  K1 refuses no genuine proof: all 45 hold.
+- Each plant and new unit test is seen by the new code and not by the
+  parent's.
+
+The findings, none blocking, and what was done with them:
+
+- L1: ADR-015 said items 1 to 4 of real-5a were answered. Item 3,
+  `custom:eff-baseline-rows`, is still `asked`. Fixed: items 1, 2 and 4.
+- L2: two texts still described the checks as they were before this part:
+  the handover item on `other_build` in docs/state/real.md, and a sentence
+  of the docstring of decisions.py ("the last rule"). Fixed: the handover
+  has K1 and G2; the docstring says "the rule of `PARAMETERS`".
+- L3: D11's K1 plant is also seen by the check `decisions`, since its
+  wrong gold changes the strata `custom:eff-cmh` sets. The case only K1
+  sees is pass 4's O2. Adding O2 as a plant is optional and was not done
+  here: the merge keeps the code the gates ran on. Left in docs/state/real.md.
+- L4: the report waited for its gate lines, and one sentence on the proofs
+  of K1 was loose. Fixed: the lines from the clean clones are in, and only
+  the 12 proofs of 14-3.11 name an other analysis.
+
+The commit after `4660e8c` changes docs/reports, docs/decisions,
+docs/state and one sentence of a docstring in
+src/specfirst/machine/decisions.py; no code runs differently.
+
+The reviewer's points for the owner (nothing blocks):
+
+- The class of the three former conflicts: answer 4 names none; the
+  executor gave `document_rule`, and `study_input` is the alternative.
+  PLAN.md 4.5 scores the two differently once a reader is scored on these
+  records. The reviewer recommends keeping `document_rule`.
+- What K1 costs: an alternative whose values are columns can no longer be
+  proved by an other analysis. No entry of the pilot needs one.
 
 ## For the base session
 
