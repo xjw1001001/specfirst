@@ -1,0 +1,31 @@
+id: tfl.ae.summary.rows
+unit: tfl-ae-summary
+applies_when: design.collects_adverse_events
+question: Which rows does the adverse event summary table have?
+alternatives:
+  - id: standard_rows
+    statement: "The rows of the adverse event summary table are any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
+  - id: stated_rows
+    statement: "The rows of the adverse event summary table are, in this order, {rows}."
+    definition: "Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL."
+    slots:
+      rows:
+        type: "list[name]"
+        choices: [ANY, RELATED, SERIOUS, DISCONTINUATION, FATAL]
+        examples: [[ANY, SERIOUS, FATAL], [ANY], [SERIOUS, RELATED, ANY]]
+notes: >-
+  Every row counts subjects with at least one treatment-emergent event of
+  its kind. Related is decision ae.related.values; serious is AESER equal
+  to Y; leading to discontinuation is AEACN equal to DRUG WITHDRAWN; fatal
+  is AESDTH equal to Y.
+compile: templates/tfl.ae.summary.rows.yaml
+phrasings: phrasings/tfl.ae.summary.rows.yaml
+reading: knowledge/tfl.ae.summary.rows.md
+probes: [output_shape]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "Dss08_AE_Ld2TrtDsc"
+    where: "the data subsets of the adverse event overview: related, serious, leading to death, leading to discontinuation"
+  - ref: fda-stf
+    where: "overview of adverse events"

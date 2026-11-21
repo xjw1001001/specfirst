@@ -1,0 +1,8 @@
+entry: tfl.tests.include
+alternatives:
+  none:
+    params: {tests: none}
+  anova_chisq:
+    params: {tests: anova_chisq}
+  anova_fisher:
+    params: {tests: anova_fisher}

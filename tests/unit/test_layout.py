@@ -8,7 +8,8 @@ import pytest
 
 DIRECTORIES = [
     "docs/state", "docs/decisions", "docs/reports",
-    "standard/schemas", "standard/catalog", "standard/methods", "standard/houses/open-default@1",
+    "standard/schemas", "standard/catalog@1", "standard/catalog@2", "standard/methods",
+    "standard/houses/open-default@1", "standard/houses/open-default@2",
     "src/specfirst/compile", "src/specfirst/machine", "src/specfirst/edit",
     "src/specfirst/gen", "src/specfirst/score", "src/specfirst/harness",
     "r/specfirstr", "skills", "kits", "viewer", "evidence",

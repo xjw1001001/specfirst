@@ -1,0 +1,21 @@
+id: tfl.percent.format
+units: [tfl-demographics, tfl-ae-summary, tfl-ae-soc-pt]
+applies_when: design.always
+question: How are percentages displayed?
+alternatives:
+  - id: one_decimal_zero_blank
+    statement: "Percentages in {output} have one decimal, and a count of zero is shown without a percentage."
+  - id: one_decimal_always
+    statement: "Percentages in {output} have one decimal, and a count of zero is shown with its percentage."
+compile: templates/tfl.percent.format.yaml
+phrasings: phrasings/tfl.percent.format.yaml
+reading: knowledge/tfl.percent.format.md
+probes: [category_with_zero_count]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "( XX.X)"
+    where: "result pattern of a percentage: one decimal"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-5.01: zero counts printed without a percentage (PLAN.md, E25)"

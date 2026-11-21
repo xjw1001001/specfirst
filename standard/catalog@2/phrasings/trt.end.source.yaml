@@ -1,0 +1,15 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: trt.end.source
+alternatives:
+  last_ex_end_date:
+    plain: "Treatment ends on the latest end date found on an exposure record with a dose."
+    formal: "The treatment end date shall be the latest end date among the exposure records with a dose."
+    brief: "Treatment end date: latest end date of an exposure record with a dose."
+  last_ex_start_date:
+    plain: "Treatment ends on the latest start date found on an exposure record with a dose."
+    formal: "The treatment end date shall be the latest start date among the exposure records with a dose."
+    brief: "Treatment end date: latest start date of an exposure record with a dose."
+  ds_date_when_ex_missing:
+    plain: "Treatment ends on the latest end date found on an exposure record with a dose; when no such record has an end date, the end-of-study disposition date is used."
+    formal: "The treatment end date shall be the latest end date among the exposure records with a dose, or, when no such record has an end date, the end-of-study disposition date."
+    brief: "Treatment end date: latest end date of an exposure record with a dose; if none, the end-of-study disposition date."

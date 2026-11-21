@@ -1,0 +1,24 @@
+id: bds.unscheduled.use
+unit: mod-bds-visits
+applies_when: design.has_bds_parameters and design.unscheduled_visits
+question: Do records of unscheduled visits compete for baseline and for analysis visits?
+alternatives:
+  - id: compete
+    statement: "Records of unscheduled visits compete for baseline and for analysis visits."
+  - id: excluded
+    statement: "Records of unscheduled visits are not used for baseline or for analysis visits."
+notes: A visit is unscheduled when it has no planned study day (VISITDY is missing).
+compile: templates/bds.unscheduled.use.yaml
+phrasings: phrasings/bds.unscheduled.use.yaml
+reading: knowledge/bds.unscheduled.use.md
+probes: [only_unscheduled_predose_value, unscheduled_record_inside_window]
+sources:
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/advs.yaml
+    find: "unscheduled visits"
+    where: "AVISIT of the pilot ADVS: unscheduled visits are left out of the per visit analysis"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-6.06: unscheduled pre-dose samples counted as baseline (PLAN.md, E26)"
+  - ref: sdtmig
+    where: "visit variables: VISITDY is the planned study day of a visit"

@@ -1,0 +1,40 @@
+entry: disp.status.record
+alternatives:
+  disposition_event:
+    adam:
+      ADSL:
+        intermediates:
+          - id: DS_EOS
+            dataset: DS
+            key: [STUDYID, USUBJID]
+            filter: "DS.DSCAT = 'DISPOSITION EVENT'"
+            order_by: [DS.DSSEQ]
+            keep: last
+        columns:
+          - name: _EOSDECOD
+            type: str
+            label: "Working value: standardized term of the end-of-study record"
+            derivation: DS_EOS.DSDECOD
+          - name: _EOSDTC
+            type: str
+            label: "Working value: date text of the end-of-study record"
+            derivation: DS_EOS.DSSTDTC
+  disposition_event_by_subcategory:
+    adam:
+      ADSL:
+        intermediates:
+          - id: DS_EOS
+            dataset: DS
+            key: [STUDYID, USUBJID]
+            filter: "DS.DSCAT = 'DISPOSITION EVENT' AND DS.DSSCAT = ${subcategory|q}"
+            order_by: [DS.DSSEQ]
+            keep: last
+        columns:
+          - name: _EOSDECOD
+            type: str
+            label: "Working value: standardized term of the end-of-study record"
+            derivation: DS_EOS.DSDECOD
+          - name: _EOSDTC
+            type: str
+            label: "Working value: date text of the end-of-study record"
+            derivation: DS_EOS.DSSTDTC

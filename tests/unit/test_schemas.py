@@ -13,7 +13,8 @@ from jsonschema import Draft202012Validator
 
 from specfirst import schemas
 
-EXAMPLES = ("decision-record", "ard", "grid", "graph-node", "graph-edge", "catalog-entry")
+EXAMPLES = ("decision-record", "ard", "grid", "graph-node", "graph-edge", "catalog-entry",
+            "catalog-entry.v1", "house-defaults")
 
 
 def examples(root, name: str) -> dict:
@@ -40,7 +41,7 @@ def test_schema_is_a_valid_json_schema(root, name):
     schema = schemas.load(name, root)
     Draft202012Validator.check_schema(schema)
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-    assert schema["$id"] == f"specfirst:schemas/0/{name}"
+    assert schema["$id"] == schemas.schema_id(name)
 
 
 @pytest.mark.parametrize("schema, part, case", cases("valid"))

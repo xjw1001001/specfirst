@@ -1,0 +1,32 @@
+id: trt.planned.source
+unit: mod-treatment
+applies_when: design.has_exposure
+question: Where does planned treatment come from?
+alternatives:
+  - id: dm_arm
+    statement: "Planned treatment is the planned arm of the subject (DM.ARM)."
+  - id: dm_armcd_map
+    statement: "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: {map}."
+    definition: A code that the list does not name gives no planned treatment.
+    slots:
+      map:
+        type: records
+        fields: {code: text, label: text}
+        item: "{code} means {label}"
+        unique: [code]
+        examples:
+          - [{code: PBO, label: Placebo}, {code: LOW, label: Low Dose}, {code: HIGH, label: High Dose}]
+          - [{code: A, label: "Drug X, 10 mg"}, {code: B, label: Placebo}]
+compile: templates/trt.planned.source.yaml
+phrasings: phrasings/trt.planned.source.yaml
+reading: knowledge/trt.planned.source.md
+probes: [arm_label_differs_from_decode]
+sources:
+  - ref: adamig
+    where: "ADSL treatment variables, TRTxxP"
+  - ref: sdtmig
+    where: "DM domain, ARM and ARMCD"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "comment: DM.ARM"
+    where: "TRT01P of the pilot ADSL"

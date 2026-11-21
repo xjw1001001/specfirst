@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: ae.teae.start
+alternatives:
+  on_or_after_first_dose_date:
+    plain: "An adverse event that starts on the treatment start date or later is treatment-emergent."
+    formal: "An adverse event shall be considered treatment-emergent if it starts on or after the treatment start date."
+    brief: "Treatment-emergent: adverse event starting on or after the treatment start date."
+  at_or_after_first_dose_time:
+    plain: "An adverse event that starts at the date and time of the first dose or later is treatment-emergent."
+    formal: "An adverse event shall be considered treatment-emergent if it starts at or after the date and time of the first dose."
+    brief: "Treatment-emergent: adverse event starting at or after the date and time of the first dose."

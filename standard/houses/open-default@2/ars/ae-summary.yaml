@@ -1,0 +1,158 @@
+# House standard open-default@1: ARS template of the adverse event summary
+# table (unit tfl-ae-summary). Every row counts the subjects with at least
+# one treatment-emergent event of its kind; the data subsets follow the
+# CDISC ARS example "Common Safety Displays".
+define:
+  trt_var:
+    $if: {get: analysis_set, eq: SAF}
+    then: {$get: safety_treatment_variable}
+    else: TRT01P
+  variants:
+    $concat:
+      - [{suffix: "", grouping: "Grp_${trt_var}"}]
+      - $if: {get: total.mode, eq: none}
+        then: []
+        else: [{suffix: _Tot, grouping: Grp_Total_AESUM}]
+  rows:
+    $for: r
+    in: {$get: ae_summary_rows}
+    do:
+      $pick: {$get: r}
+      from:
+        ANY: {code: ANY, label: Any adverse event, subset: Dss_TEAE}
+        RELATED: {code: RELATED, label: Related adverse event, subset: Dss_TEAE_Related}
+        SERIOUS: {code: SERIOUS, label: Serious adverse event, subset: Dss_TEAE_Serious}
+        DISCONTINUATION:
+          code: DISCONTINUATION
+          label: Adverse event leading to discontinuation of study treatment
+          subset: Dss_TEAE_Discontinuation
+        FATAL: {code: FATAL, label: Fatal adverse event, subset: Dss_TEAE_Fatal}
+
+analysisGroupings:
+  - id: "Grp_${trt_var}"
+    name: Treatment
+    groupingDataset: ADSL
+    groupingVariable: "${trt_var}"
+    dataDriven: true
+  - $if: {not: {get: total.mode, eq: none}}
+    then:
+      id: Grp_Total_AESUM
+      name: Total
+      groupingDataset: ADSL
+      groupingVariable: "${trt_var}"
+      dataDriven: false
+      groups:
+        - id: Grp_Total_AESUM_1
+          name: Total
+          level: 1
+          order: 1
+          condition:
+            dataset: ADSL
+            variable: "${trt_var}"
+            comparator: NOTIN
+            value:
+              $if: {get: total.mode, eq: active_arms}
+              then: ["", {$get: total.control}]
+              else: [""]
+
+dataSubsets:
+  - id: Dss_TEAE
+    name: Treatment-emergent adverse events
+    level: 1
+    order: 1
+    condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}
+  - id: Dss_TEAE_Related
+    name: Related treatment-emergent adverse events
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADAE, variable: RELGR1, comparator: EQ, value: [RELATED]}}
+  - id: Dss_TEAE_Serious
+    name: Serious treatment-emergent adverse events
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADAE, variable: AESER, comparator: EQ, value: ["Y"]}}
+  - id: Dss_TEAE_Discontinuation
+    name: Treatment-emergent adverse events leading to discontinuation of study treatment
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADAE, variable: AEACN, comparator: EQ, value: [DRUG WITHDRAWN]}}
+  - id: Dss_TEAE_Fatal
+    name: Fatal treatment-emergent adverse events
+    level: 1
+    order: 1
+    compoundExpression:
+      logicalOperator: AND
+      whereClauses:
+        - {level: 2, order: 1, condition: {dataset: ADAE, variable: TRTEMFL, comparator: EQ, value: ["Y"]}}
+        - {level: 2, order: 2, condition: {dataset: ADAE, variable: AESDTH, comparator: EQ, value: ["Y"]}}
+
+analyses:
+  - $for: v
+    in: {$get: variants}
+    do:
+      id: "An_AESUM_N${v.suffix}"
+      name: Number of subjects
+      reason: {controlledTerm: SPECIFIED IN SAP}
+      purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+      methodId: Mth_Count
+      dataset: ADSL
+      variable: USUBJID
+      analysisSetId: "AnalysisSet_${analysis_set}"
+      orderedGroupings:
+        - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+  - $for: row
+    in: {$get: rows}
+    do:
+      $for: v
+      in: {$get: variants}
+      do:
+        id: "An_AESUM_${row.code}${v.suffix}"
+        name: "Subjects with: ${row.label}"
+        reason: {controlledTerm: SPECIFIED IN SAP}
+        purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+        methodId: Mth_CatSumm
+        dataset: ADAE
+        variable: USUBJID
+        analysisSetId: "AnalysisSet_${analysis_set}"
+        dataSubsetId: "${row.subset}"
+        orderedGroupings:
+          - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+        referencedAnalysisOperations:
+          - referencedOperationRelationshipId: Mth_CatSumm_pct_NUM
+            analysisId: "An_AESUM_${row.code}${v.suffix}"
+          - referencedOperationRelationshipId: Mth_CatSumm_pct_DEN
+            analysisId: "An_AESUM_N${v.suffix}"
+
+outputs:
+  - id: Out_AESUM
+    name: Summary of adverse events
+    version: 1
+    displays:
+      - order: 1
+        display:
+          id: Disp_AESUM
+          name: Summary of adverse events
+          version: 1
+          displayTitle: Summary of Treatment-Emergent Adverse Events
+          displaySections:
+            - sectionType: Title
+              orderedSubSections:
+                - order: 1
+                  subSection: {id: Disp_AESUM_Title_1, text: Summary of Treatment-Emergent Adverse Events}
+
+listItem:
+  name: Summary of adverse events
+  level: 1
+  outputId: Out_AESUM

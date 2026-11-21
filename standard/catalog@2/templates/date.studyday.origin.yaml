@@ -1,0 +1,44 @@
+entry: date.studyday.origin
+alternatives:
+  treatment_start:
+    adam:
+      ADAE:
+        columns:
+          - name: ASTDY
+            type: int
+            label: Analysis Start Relative Day
+            derivation:
+              study_day: {source: ASTDT, reference: TRTSDT}
+          - name: AENDY
+            type: int
+            label: Analysis End Relative Day
+            derivation:
+              study_day: {source: AENDT, reference: TRTSDT}
+      ADVS:
+        columns:
+          - name: ADY
+            type: int
+            label: Analysis Relative Day
+            derivation:
+              study_day: {source: ADT, reference: TRTSDT}
+  dm_rfstdtc:
+    adam:
+      ADAE:
+        columns:
+          - name: ASTDY
+            type: int
+            label: Analysis Start Relative Day
+            derivation:
+              study_day: {source: ASTDT, reference: _RFSTDT}
+          - name: AENDY
+            type: int
+            label: Analysis End Relative Day
+            derivation:
+              study_day: {source: AENDT, reference: _RFSTDT}
+      ADVS:
+        columns:
+          - name: ADY
+            type: int
+            label: Analysis Relative Day
+            derivation:
+              study_day: {source: ADT, reference: _RFSTDT}

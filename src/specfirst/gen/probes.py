@@ -2,7 +2,7 @@
 
 A probe is a planted subject or record on which two alternatives of one
 decision give different results. The recipes are those of the catalog
-(standard/catalog/probes.yaml); this module implements the ones that the
+(standard/catalog@<n>/probes.yaml); this module implements the ones that the
 decisions of a list of units need, and can find each one again in the SDTM
 that was written.
 

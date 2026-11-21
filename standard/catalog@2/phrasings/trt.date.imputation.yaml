@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: trt.date.imputation
+alternatives:
+  not_completed:
+    plain: "An exposure date that is only partly known is not completed; it is not used when the treatment start and end dates are taken."
+    formal: "Partial exposure dates shall not be imputed and shall be disregarded in the derivation of the treatment dates."
+    brief: "Partial exposure dates: not imputed, left out of the treatment dates."
+  first_day_of_month:
+    plain: "When an exposure date has a known month and no day, the first day of that month is used."
+    formal: "A partial exposure date with a known month shall be imputed with the first day of that month."
+    brief: "Partial exposure date, month known: first day of that month."

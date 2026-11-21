@@ -1,0 +1,25 @@
+id: tfl.population
+units: [tfl-demographics, tfl-ae-summary, tfl-ae-soc-pt, tfl-vitals-by-visit]
+applies_when: design.always
+question: Which analysis set does the output use?
+alternatives:
+  - id: safety
+    statement: "The analysis set of {output} is the safety set."
+  - id: randomized
+    statement: "The analysis set of {output} is the randomized set."
+  - id: efficacy
+    statement: "The analysis set of {output} is the efficacy-evaluable set."
+compile: templates/tfl.population.yaml
+phrasings: phrasings/tfl.population.yaml
+reading: knowledge/tfl.population.md
+probes: [randomized_never_dosed, dosed_without_postbaseline_value]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "AnalysisSet_02_SAF"
+    where: "analysis sets of the safety displays"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-2.01 on the intent-to-treat population; Tables 14-5.01 and 14-7.01 on the safety population (PLAN.md, appendix D)"
+  - ref: ich-e3
+    where: "sections 11.1 and 11.2: data sets analysed; demographic and other baseline characteristics"

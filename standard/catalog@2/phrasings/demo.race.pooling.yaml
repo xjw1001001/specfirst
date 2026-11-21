@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: demo.race.pooling
+alternatives:
+  not_pooled:
+    plain: "Race is shown in the categories as collected, and no categories are pooled."
+    formal: "Race categories shall be presented as collected; no pooling of race categories shall be performed."
+    brief: "Race categories: as collected, not pooled."
+  pooled_below_count:
+    plain: "When a race category has fewer than {count} subjects, it is pooled into the category OTHER."
+    formal: "Any race category with fewer than {count} subjects shall be pooled into the category OTHER."
+    brief: "Race category with fewer than {count} subjects: pooled into the category OTHER."

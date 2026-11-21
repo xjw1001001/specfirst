@@ -1,0 +1,22 @@
+entry: trt.planned.source
+alternatives:
+  dm_arm:
+    adam:
+      ADSL:
+        columns:
+          - name: TRT01P
+            type: str
+            label: Planned Treatment for Period 01
+            derivation: DM.ARM
+  dm_armcd_map:
+    adam:
+      ADSL:
+        columns:
+          - name: TRT01P
+            type: str
+            label: Planned Treatment for Period 01
+            derivation:
+              mapping:
+                source: DM.ARMCD
+                dict: {$dict: pair, in: {$get: map}, key: {$get: pair.code}, value: {$get: pair.label}}
+                unmapped: null

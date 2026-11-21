@@ -84,10 +84,12 @@ def build_parser() -> argparse.ArgumentParser:
                            help="compile every alternative and check ARS files and layouts")
     p_catalog.add_argument("--overview", metavar="FILE",
                            help="write one readable page of the whole catalog and stop")
+    _pair_arguments(p_catalog)
 
     p_house = commands.add_parser("house", help="check the house standard")
     p_house.add_argument("--write", action="store_true",
-                         help="render STANDARD.md from the catalog and house.yaml")
+                         help="render STANDARD.md from the catalog and the house")
+    _pair_arguments(p_house)
 
     p_compile = commands.add_parser(
         "compile", help="compile decision records into yamaa, ARS and layout files"
@@ -100,6 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
                            help="where the ADaM specs read SDTM, relative to <out>/adam")
     p_compile.add_argument("--adam", default=".",
                            help="where the ADaM specs write ADaM, relative to <out>/adam")
+    _pair_arguments(p_compile)
 
     p_render = commands.add_parser(
         "render", help="render decision records as a standard-form document"
@@ -108,12 +111,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_render.add_argument("--doc", required=True, help="document ID, for example sap")
     p_render.add_argument("--title", default="Standard form")
     p_render.add_argument("--out", required=True, help="the Markdown file to write")
+    _pair_arguments(p_render, house=False)
 
     p_parse = commands.add_parser(
         "parse", help="read a standard-form document back into decision records"
     )
     p_parse.add_argument("document", help="a standard-form Markdown file")
     p_parse.add_argument("--out", required=True, help="decisions.jsonl to write")
+    _pair_arguments(p_parse, house=False)
 
     p_gen = commands.add_parser(
         "gen", add_help=False,
@@ -139,17 +144,37 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _pair_arguments(parser: argparse.ArgumentParser, house: bool = True) -> None:
+    """--catalog and --house: the version labels to load (ADR-020)."""
+    from specfirst.compile import versions
+
+    parser.add_argument("--catalog", metavar="LABEL",
+                        help="the catalog version, catalog@<n>; default "
+                             f"{versions.DEFAULT_CATALOG}")
+    if house:
+        parser.add_argument("--house", metavar="LABEL",
+                            help=f"the house version, <house>@<n>; default "
+                                 f"{versions.DEFAULT_HOUSE}")
+
+
+def _pair(root: Path, args: argparse.Namespace):
+    """The catalog and the house the arguments name; a house that does not fit is refused."""
+    from specfirst.compile import house
+
+    return house.load_pair(root, getattr(args, "catalog", None), getattr(args, "house", None))
+
+
 def _read_jsonl(path: str) -> list[dict]:
     with open(path, encoding="ascii") as handle:
         return [json.loads(line) for line in handle if line.strip()]
 
 
 def _catalog(root: Path, args: argparse.Namespace) -> int:
-    from specfirst.compile import catalog, gate, house, overview
+    from specfirst.compile import gate, overview
 
+    pair = (args.catalog, args.house)
     if args.overview:
-        text = overview.render(catalog.load(catalog.default_dir(root)),
-                               house.load(house.default_dir(root)))
+        text = overview.render(*_pair(root, args))
         Path(args.overview).write_text(text, encoding="ascii", newline="\n")
         print(f"wrote {args.overview}")
         return 0
@@ -157,27 +182,31 @@ def _catalog(root: Path, args: argparse.Namespace) -> int:
         (args.sources, gate.sources_check), (args.roundtrip, gate.roundtrip_check),
         (args.yamaa, gate.yamaa_check), (args.run, gate.run_check),
         (args.tables, gate.tables_check)) if flag]
-    passed = [check(root, print) for check in (selected or [gate.catalog_check])]
+    passed = [check(root, print, pair) for check in (selected or [gate.catalog_check])]
     return 0 if all(passed) else 1
 
 
 def _house(root: Path, args: argparse.Namespace) -> int:
-    from specfirst.compile import catalog, gate, house
+    from specfirst.compile import gate, house, versions
 
+    pair = (args.catalog, args.house)
     if args.write:
-        known = house.load(house.default_dir(root))
-        text = house.standards_document(catalog.load(catalog.default_dir(root)), known)
-        path = known.directory / str(known.raw["document"])
+        known, standard = _pair(root, args)
+        if versions.load(root)[standard.label].status == "frozen":
+            print(f"{standard.label} is frozen: its STANDARD.md is not written again "
+                  "(ADR-020)")
+            return 1
+        text = house.standards_document(known, standard)
+        path = standard.directory / str(standard.raw["document"])
         path.write_text(text, encoding="ascii", newline="\n")
         print(f"wrote {path}")
-    return 0 if gate.house_check(root, print) else 1
+    return 0 if gate.house_check(root, print, pair) else 1
 
 
 def _compile(root: Path, args: argparse.Namespace) -> int:
-    from specfirst.compile import catalog, compiler, house
+    from specfirst.compile import compiler, house
 
-    known = catalog.load(catalog.default_dir(root))
-    standard = house.load(house.default_dir(root))
+    known, standard = _pair(root, args)
     records = _read_jsonl(args.decisions)
     if args.defaults:
         have = {(record.get("id"), record.get("unit")) for record in records}
@@ -202,7 +231,7 @@ def _compile(root: Path, args: argparse.Namespace) -> int:
 def _render(root: Path, args: argparse.Namespace) -> int:
     from specfirst.compile import catalog, standard_form
 
-    form = standard_form.StandardForm(catalog.load(catalog.default_dir(root)))
+    form = standard_form.StandardForm(catalog.load(catalog.default_dir(root, args.catalog)))
     records = [record for record in _read_jsonl(args.decisions) if record.get("value")]
     try:
         text = form.render_document(args.doc, args.title, records)
@@ -218,7 +247,7 @@ def _parse(root: Path, args: argparse.Namespace) -> int:
     from specfirst.compile import catalog, standard_form
     from specfirst.compile.house import DOCUMENT_ID
 
-    form = standard_form.StandardForm(catalog.load(catalog.default_dir(root)))
+    form = standard_form.StandardForm(catalog.load(catalog.default_dir(root, args.catalog)))
     text = Path(args.document).read_text(encoding="ascii")
     try:
         doc, parsed = form.parse_document(text)

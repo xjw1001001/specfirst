@@ -1,0 +1,98 @@
+# House standard open-default@1: what every ARS reporting event of a study
+# has in common. Names follow the CDISC ARS v1 model and its example
+# "Common Safety Displays". The compiler drops the analysis sets, groupings,
+# data subsets and methods that no analysis of the study uses. Operations
+# carry no result pattern: display formats (decimals, percentages, p-values)
+# are decisions, and the layout file alone holds them.
+reporting_event:
+  id: RE_PLANNED
+  name: Planned analyses and outputs
+  version: 1
+  mainListOfContents:
+    name: List of planned analyses and outputs
+    label: LOPA
+    contentsList:
+      listItems: []
+  analysisSets:
+    - id: AnalysisSet_SAF
+      name: Safety set
+      label: SAF
+      level: 1
+      order: 1
+      condition: {dataset: ADSL, variable: SAFFL, comparator: EQ, value: ["Y"]}
+    - id: AnalysisSet_ITT
+      name: Randomized set
+      label: ITT
+      level: 1
+      order: 1
+      condition: {dataset: ADSL, variable: ITTFL, comparator: EQ, value: ["Y"]}
+    - id: AnalysisSet_EFF
+      name: Efficacy-evaluable set
+      label: EFF
+      level: 1
+      order: 1
+      condition: {dataset: ADSL, variable: EFFFL, comparator: EQ, value: ["Y"]}
+  methods:
+    - id: Mth_Count
+      name: Count of subjects by group
+      description: "Method registry: count.subjects"
+      operations:
+        - {id: Mth_Count_n, name: Count of subjects, label: n, order: 1}
+    - id: Mth_EventCount
+      name: Count of records by group
+      description: "Method registry: count.records"
+      operations:
+        - {id: Mth_EventCount_n, name: Count of records, label: n, order: 1}
+    - id: Mth_CatSumm
+      name: Summary of a categorical variable by group
+      description: "Method registry: count.subjects and percent with a referenced denominator"
+      operations:
+        - {id: Mth_CatSumm_n, name: Count of subjects, label: n, order: 1}
+        - id: Mth_CatSumm_pct
+          name: Percent of subjects
+          label: "%"
+          order: 2
+          referencedOperationRelationships:
+            - id: Mth_CatSumm_pct_NUM
+              referencedOperationRole: {controlledTerm: NUMERATOR}
+              operationId: Mth_CatSumm_n
+            - id: Mth_CatSumm_pct_DEN
+              referencedOperationRole: {controlledTerm: DENOMINATOR}
+              operationId: Mth_Count_n
+    - id: Mth_ContSumm
+      name: Summary of a continuous variable by group
+      description: "Method registry: summary.continuous"
+      operations:
+        - {id: Mth_ContSumm_n, name: Count of non-missing values, label: n, order: 1}
+        - {id: Mth_ContSumm_mean, name: Mean, label: Mean, order: 2}
+        - {id: Mth_ContSumm_sd, name: Standard deviation, label: SD, order: 3}
+        - {id: Mth_ContSumm_median, name: Median, label: Median, order: 4}
+        - {id: Mth_ContSumm_min, name: Minimum, label: Min, order: 5}
+        - {id: Mth_ContSumm_max, name: Maximum, label: Max, order: 6}
+    - id: Mth_ContSummQ
+      name: Summary of a continuous variable by group, with quartiles
+      description: "Method registry: summary.continuous"
+      operations:
+        - {id: Mth_ContSummQ_n, name: Count of non-missing values, label: n, order: 1}
+        - {id: Mth_ContSummQ_mean, name: Mean, label: Mean, order: 2}
+        - {id: Mth_ContSummQ_sd, name: Standard deviation, label: SD, order: 3}
+        - {id: Mth_ContSummQ_median, name: Median, label: Median, order: 4}
+        - {id: Mth_ContSummQ_q1, name: First quartile, label: Q1, order: 5}
+        - {id: Mth_ContSummQ_q3, name: Third quartile, label: Q3, order: 6}
+        - {id: Mth_ContSummQ_min, name: Minimum, label: Min, order: 7}
+        - {id: Mth_ContSummQ_max, name: Maximum, label: Max, order: 8}
+    - id: Mth_Anova
+      name: One-way analysis of variance
+      description: "Method registry: test.anova.oneway"
+      operations:
+        - {id: Mth_Anova_pval, name: P-value, label: p-value, order: 1}
+    - id: Mth_ChiSq
+      name: Pearson chi-square test
+      description: "Method registry: test.chisq"
+      operations:
+        - {id: Mth_ChiSq_pval, name: P-value, label: p-value, order: 1}
+    - id: Mth_Fisher
+      name: Fisher exact test
+      description: "Method registry: test.fisher.exact"
+      operations:
+        - {id: Mth_Fisher_pval, name: P-value, label: p-value, order: 1}

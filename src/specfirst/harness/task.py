@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from specfirst.compile import catalog as catalogs
+from specfirst.compile import versions
 from specfirst.compile.catalog import Catalog
 from specfirst.gen import gold as kitgold
 from specfirst.gen import kits as genkits
@@ -55,6 +56,7 @@ ADAM = "inputs/data/adam"
 STANDARD = ("standard/catalog/catalog.yaml", "standard/methods/registry.json",
             "standard/schemas/decision-record.schema.json")
 ENTRIES = "standard/catalog/entries"
+CATALOG = "standard/catalog/"  # in a task folder; in the checkout, standard/catalog@<n>/
 # What a task folder may hold, by path prefix (bin/ and out/ are the run's).
 ALLOWED = (TASK_FILE, "inputs/docs/", "inputs/house/", f"{SDTM}/", f"{ADAM}/",
            *STANDARD, f"{ENTRIES}/", f"{KNOWLEDGE}/", f"{BIN}/", f"{OUT}/")
@@ -126,6 +128,20 @@ def skill_path(root: Path, name: str) -> Path:
     return root / SKILLS / name / "SKILL.md"
 
 
+def kit_catalog(root: Path, kit_manifest: dict) -> str:
+    """The catalog label a kit names (kit.yaml, `catalog: {name, version}`), or the default.
+
+    A kit that names a draft version is refused (ADR-020, decision 1).
+    """
+    labels = versions.kit_labels(kit_manifest)
+    try:
+        versions.require_usable(root, [label for _, label in labels], "the kit")
+    except versions.VersionError as error:
+        raise TaskError(str(error)) from None
+    named = [label for kind, label in labels if kind == "catalog"]
+    return named[0] if named else versions.DEFAULT_CATALOG
+
+
 def _copy(source: Path, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source, target)
@@ -150,8 +166,8 @@ def build(root: Path, kit_dir: Path, tasks_dir: Path, stage: str = "C",
     if home is not None:
         raise TaskError(f"{tasks_dir} lies inside the checkout {home}: a task folder lies "
                         "outside every checkout (PLAN.md section 11.2)")
-    catalog = catalogs.load(catalogs.default_dir(root))
     kit_manifest = genkits.read_manifest(kit_dir)
+    catalog = catalogs.load(catalogs.default_dir(root, kit_catalog(root, kit_manifest)))
     units = scope(catalog, tuple(kit_manifest["units"]), stage)
     keys = keys_of(catalog, units)
     real = kit_manifest.get("tier") == REAL_TIER
@@ -176,9 +192,13 @@ def build(root: Path, kit_dir: Path, tasks_dir: Path, stage: str = "C",
         # for this stage only (ADR-005, decision 2).
         for path in sorted((kit_dir / "gold" / "data" / "adam").glob("*.parquet")):
             _copy(path, staging / ADAM / path.name)
+    # The catalog the kit names goes to standard/catalog/ in the task, whatever its
+    # folder in the checkout (ADR-020, decision 3): a task's bytes stay its own.
     for relative in STANDARD:
-        _copy(root / relative, staging / relative)
-    for path in sorted((root / ENTRIES).glob("*.yaml")):
+        source = (catalog.directory / relative[len(CATALOG):] if relative.startswith(CATALOG)
+                  else root / relative)
+        _copy(source, staging / relative)
+    for path in sorted((catalog.directory / "entries").glob("*.yaml")):
         _copy(path, staging / ENTRIES / path.name)
     skills = [CORE] + (list(units) if condition == "notes" else [])
     for name in skills:

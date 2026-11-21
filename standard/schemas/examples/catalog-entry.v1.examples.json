@@ -1,0 +1,103 @@
+{
+  "schema": "catalog-entry.v1",
+  "valid": [
+    {
+      "name": "a module entry with a fixed rule and a citation read at its place (catalog@2)",
+      "instance": {
+        "id": "ae.teae.start",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.collects_adverse_events and design.has_exposure",
+        "question": "When does an adverse event start treatment emergence?",
+        "fixed_rules": [
+          {
+            "id": "no_start_date",
+            "text": "An event without a start date is treatment-emergent.",
+            "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl(), start_date", "evidence": "read" }]
+          }
+        ],
+        "alternatives": [
+          { "id": "on_or_after_first_dose_date", "statement": "An adverse event is treatment-emergent when it starts on or after the first dose date." }
+        ],
+        "compile": "templates/ae.teae.start.yaml",
+        "phrasings": "phrasings/ae.teae.start.yaml",
+        "reading": "knowledge/ae.teae.start.md",
+        "probes": ["ae_on_first_dose_date_without_time"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()", "evidence": "cited" }]
+      }
+    },
+    {
+      "name": "an entry answered once per table family, with an alternative that cites its own source",
+      "instance": {
+        "id": "tfl.population",
+        "units": ["tfl-demographics", "tfl-ae-summary"],
+        "applies_when": "design.always",
+        "question": "Which analysis set does {output} use?",
+        "alternatives": [
+          { "id": "safety", "statement": "The analysis set of {output} is the safety set." },
+          {
+            "id": "randomized",
+            "statement": "The analysis set of {output} is the randomized set.",
+            "sources": [{ "ref": "ich-e9", "where": "section 5.2" }]
+          }
+        ],
+        "compile": "templates/tfl.population.yaml",
+        "phrasings": "phrasings/tfl.population.yaml",
+        "reading": "knowledge/tfl.population.md",
+        "probes": ["randomized_not_dosed"],
+        "sources": [{ "ref": "ich-e9", "where": "section 5.2" }]
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "a house default in the entry",
+      "why": "from catalog@2 a house holds the defaults (ADR-020, decision 2)",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [{ "id": "no_end", "statement": "Treatment emergence has no end date." }],
+        "house_default": "no_end",
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "a fixed rule without its text",
+      "why": "a fixed rule is cited by its anchor and must say what it fixes",
+      "instance": {
+        "id": "ae.teae.start",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does an adverse event start treatment emergence?",
+        "fixed_rules": [{ "id": "no_start_date" }],
+        "alternatives": [{ "id": "on_or_after_first_dose_date", "statement": "An adverse event is treatment-emergent when it starts on or after the first dose date." }],
+        "compile": "templates/ae.teae.start.yaml",
+        "phrasings": "phrasings/ae.teae.start.yaml",
+        "reading": "knowledge/ae.teae.start.md",
+        "probes": ["ae_on_first_dose_date_without_time"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()" }]
+      }
+    },
+    {
+      "name": "an evidence level that is not known",
+      "why": "a citation is cited, read or probed",
+      "instance": {
+        "id": "ae.teae.end",
+        "unit": "mod-ae-emergence",
+        "applies_when": "design.always",
+        "question": "When does treatment emergence end?",
+        "alternatives": [{ "id": "no_end", "statement": "Treatment emergence has no end date." }],
+        "compile": "templates/ae.teae.end.yaml",
+        "phrasings": "phrasings/ae.teae.end.yaml",
+        "reading": "knowledge/ae.teae.end.md",
+        "probes": ["ae_starts_after_emergence_window"],
+        "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl()", "evidence": "believed" }]
+      }
+    }
+  ]
+}

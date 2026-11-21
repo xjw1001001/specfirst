@@ -1,0 +1,6 @@
+entry: tfl.percent.format
+alternatives:
+  one_decimal_zero_blank:
+    params: {percent_format: {decimals: 1, zero_count: count_only}}
+  one_decimal_always:
+    params: {percent_format: {decimals: 1, zero_count: count_and_percent}}

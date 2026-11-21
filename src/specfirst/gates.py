@@ -135,6 +135,40 @@ def _root_check(run: Callable[[Path, Callable[[str], None]], bool]) -> Callable[
     return lambda ctx: run(ctx.root, ctx.out)
 
 
+def _pair_check(run: Callable[..., bool]) -> Callable[[Context], bool]:
+    """A check of std-1 run on the pair of ADR-020 (catalog@2, open-default@2)."""
+    return lambda ctx: run(ctx.root, ctx.out, std1.NEXT)
+
+
+def _catalog2() -> tuple[Check, ...]:
+    """The checks of the gates catalog-2a and catalog-2b (ADR-020, decision 9)."""
+    pair = "--catalog catalog@2 --house open-default@2"
+    return (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("frozen", "specfirst.compile.gate.frozen_check", _root_check(std1.frozen_check)),
+        Check("catalog", f"specfirst catalog {pair}", _pair_check(std1.catalog_check)),
+        Check("public sources", f"specfirst catalog --sources {pair}",
+              _pair_check(std1.sources_check)),
+        Check("round trip", f"specfirst catalog --roundtrip {pair}",
+              _pair_check(std1.roundtrip_check)),
+        Check("yamaa check", f"specfirst catalog --yamaa {pair}", _pair_check(std1.yamaa_check)),
+        Check("yamaa run", f"specfirst catalog --run {pair}", _pair_check(std1.run_check)),
+        Check("ARS schema", f"specfirst catalog --tables {pair}", _pair_check(std1.tables_check)),
+        Check("house standard", f"specfirst house {pair}", _pair_check(std1.house_check)),
+        Check("migration", "specfirst.compile.gate.migration_check: catalog@1 to catalog@2",
+              _root_check(std1.migration_check)),
+        Check("backlog", "specfirst.compile.gate.backlog_check", _root_check(std1.backlog_check)),
+        Check("defaults", "specfirst.compile.gate.defaults_check: open-default@2",
+              _root_check(std1.defaults_check)),
+        Check("templates", "specfirst.compile.gate.templates_check: catalog@2, open-default@2",
+              _root_check(std1.templates_check)),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    )
+
+
 def _kit(ctx: Context) -> bool:
     """The pilot kit assembles from the cache at its pinned hashes; git holds no study data."""
     from specfirst import kit
@@ -631,6 +665,9 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("house standard", "specfirst house", _root_check(std1.house_check)),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
+    # ADR-020: the structure of catalog@2 and open-default@2. The checks of std-1
+    # on the new pair, then the checks of the versions themselves.
+    "catalog-2a": _catalog2(),
     # PLAN.md section 13.5 and ADR-005: the gate of gen-1 for the datasets and
     # the decisions of the slice. The environment check covers CDISC CORE.
     "gen-1a": (

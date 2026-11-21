@@ -1,0 +1,22 @@
+id: tfl.quantile.definition
+units: [tfl-demographics, tfl-vitals-by-visit]
+applies_when: design.always
+question: Which quantile definition gives the median and the quartiles?
+alternatives:
+  - id: sas5
+    statement: "Quantiles in {output} follow SAS definition 5, the empirical distribution function with averaging."
+  - id: r7
+    statement: "Quantiles in {output} follow R type 7, linear interpolation of the order statistics."
+compile: templates/tfl.quantile.definition.yaml
+phrasings: phrasings/tfl.quantile.definition.yaml
+reading: knowledge/tfl.quantile.definition.md
+probes: [group_size_separating_quantiles]
+sources:
+  - ref: sas-pctldef
+    where: "PCTLDEF=5, the default: empirical distribution function with averaging"
+  - ref: r-quantile
+    where: "type 7, the default; type 2 equals SAS definition 5"
+  - ref: yamaa
+    path: rules/formulas.md
+    find: "type 7 of Hyndman and Fan"
+    where: "FORMULA-18: a named quantile definition"

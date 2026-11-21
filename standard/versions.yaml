@@ -1,0 +1,31 @@
+# The versions of the standard (ADR-020, decision 3).
+#
+# One folder per version: standard/catalog@<n>/ and
+# standard/houses/<house>@<n>/. A frozen version never changes: the gate
+# check "frozen" computes the git tree hash of its folder and compares it
+# with `tree`. A change is a new version, numbered by an integer; its
+# migration file says what the step keeps (ADR-020, decision 4). A draft
+# version may change and may not be named by a kit, a task, a run or a
+# score. A house names the catalog version it needs.
+catalogs:
+  catalog@1:
+    status: frozen
+    date: 2026-11-17
+    by: the owner at node N1 (ADR-004, "Node N1, the owner's answer"); tag catalog@1
+    tree: a25d42c08d37352131b9320a62c7fa2ce266cb9b
+  catalog@2:
+    status: draft
+    date: 2026-11-21
+    by: ADR-020, approved by the owner on 2026-11-21
+houses:
+  open-default@1:
+    status: frozen
+    date: 2026-11-17
+    by: accepted with catalog@1 at node N1 and unchanged since; the freeze recorded by ADR-020
+    catalog: catalog@1
+    tree: 7ac0f4fc4d76333817b6e3edf21e156afec38ef4
+  open-default@2:
+    status: draft
+    date: 2026-11-21
+    by: ADR-020, approved by the owner on 2026-11-21
+    catalog: catalog@2

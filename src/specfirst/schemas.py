@@ -2,8 +2,9 @@
 
 Version 0 has four schemas from base-0: decision-record, ard, grid and
 graph. The graph schema has two parts, "node" and "edge". std-1 adds
-catalog-entry (ADR-004). Changing a schema needs an ADR (PLAN.md section
-13.2).
+catalog-entry (ADR-004). ADR-020 adds catalog-entry.v1, the entry of
+`catalog@2` (version 1 of that schema), and house-defaults, the defaults of a
+house. Changing a schema needs an ADR (PLAN.md section 13.2).
 """
 
 from __future__ import annotations
@@ -15,7 +16,14 @@ from jsonschema import Draft202012Validator
 
 from specfirst.paths import repo_root
 
-NAMES = ("decision-record", "ard", "grid", "graph", "catalog-entry")
+NAMES = ("decision-record", "ard", "grid", "graph", "catalog-entry", "catalog-entry.v1",
+         "house-defaults")
+
+
+def schema_id(name: str) -> str:
+    """The `$id` of a schema: `<name>.v<n>` is version n of `<name>`."""
+    base, _, version = name.partition(".v")
+    return f"specfirst:schemas/{version or 0}/{base}"
 
 
 def schema_dir(root: Path | None = None) -> Path:

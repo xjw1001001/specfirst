@@ -1,0 +1,25 @@
+id: trt.actual.source
+unit: mod-treatment
+applies_when: design.has_exposure
+question: Where does actual treatment come from?
+alternatives:
+  - id: dm_actarm
+    statement: "Actual treatment is the actual arm of the subject (DM.ACTARM)."
+  - id: first_ex_treatment
+    statement: "Actual treatment is the treatment named on the first exposure record of the subject (EX.EXTRT)."
+    definition: The first exposure record is the one with the earliest start date; the lowest EXSEQ breaks a tie.
+  - id: same_as_planned
+    statement: "Actual treatment is the same as planned treatment."
+compile: templates/trt.actual.source.yaml
+phrasings: phrasings/trt.actual.source.yaml
+reading: knowledge/trt.actual.source.md
+probes: [actual_arm_differs_from_planned, first_exposure_other_treatment]
+sources:
+  - ref: adamig
+    where: "ADSL treatment variables, TRTxxA"
+  - ref: sdtmig
+    where: "DM domain, ACTARM; EX domain, EXTRT"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "TRT01A=TRT01P"
+    where: "TRT01A of the pilot ADSL: actual set equal to planned"

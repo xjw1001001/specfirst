@@ -1,0 +1,43 @@
+entry: ae.teae.end
+alternatives:
+  no_end:
+    adam:
+      ADAE:
+        columns:
+          - name: _TEEND
+            type: str
+            label: "Working value: the event starts before treatment emergence ends"
+            derivation: "'Y'"
+  last_dose_plus_days:
+    adam:
+      ADAE:
+        columns:
+          - name: _TEENDDT
+            type: date
+            label: "Working value: last day of treatment emergence"
+            derivation:
+              shift: {type: date, source: TRTEDT, days: {$get: days}}
+          - name: _TEEND
+            type: str
+            label: "Working value: the event starts before treatment emergence ends"
+            derivation:
+              case:
+                - when: "TRTEDT IS NULL"
+                  then: "'Y'"
+                - when: "ASTDT <= _TEENDDT"
+                  then: "'Y'"
+                - otherwise: "'N'"
+  end_of_study:
+    adam:
+      ADAE:
+        columns:
+          - name: _TEEND
+            type: str
+            label: "Working value: the event starts before treatment emergence ends"
+            derivation:
+              case:
+                - when: "EOSDT IS NULL"
+                  then: "'Y'"
+                - when: "ASTDT <= EOSDT"
+                  then: "'Y'"
+                - otherwise: "'N'"

@@ -1,0 +1,211 @@
+# House standard open-default@1: ARS template of the demographics table
+# (unit tfl-demographics). Parameters come from the decisions of the unit
+# and from pop.safety.grouping; see standard/catalog/templates/.
+define:
+  trt_var:
+    $if: {get: analysis_set, eq: SAF}
+    then: {$get: safety_treatment_variable}
+    else: TRT01P
+  variants:
+    $concat:
+      - [{suffix: "", grouping: "Grp_${trt_var}"}]
+      - $if: {get: total.mode, eq: none}
+        then: []
+        else: [{suffix: _Tot, grouping: Grp_Total_DM}]
+  rows:
+    $for: r
+    in: {$get: demog_rows}
+    do:
+      $pick: {$get: r}
+      from:
+        AGE: {var: AGE, label: Age (years), kind: continuous}
+        AGEGR1: {var: AGEGR1, label: Age group, kind: categorical}
+        SEX: {var: SEX, label: Sex, kind: categorical}
+        RACEGR1: {var: RACEGR1, label: Race, kind: categorical}
+        ETHNIC: {var: ETHNIC, label: Ethnicity, kind: categorical}
+        HEIGHTBL: {var: HEIGHTBL, label: Height (cm), kind: continuous}
+        WEIGHTBL: {var: WEIGHTBL, label: Weight (kg), kind: continuous}
+        BMIBL: {var: BMIBL, label: Body mass index (kg/m2), kind: continuous}
+
+analysisGroupings:
+  - id: "Grp_${trt_var}"
+    name: Treatment
+    groupingDataset: ADSL
+    groupingVariable: "${trt_var}"
+    dataDriven: true
+  - $if: {not: {get: total.mode, eq: none}}
+    then:
+      id: Grp_Total_DM
+      name: Total
+      groupingDataset: ADSL
+      groupingVariable: "${trt_var}"
+      dataDriven: false
+      groups:
+        - id: Grp_Total_DM_1
+          name: Total
+          level: 1
+          order: 1
+          condition:
+            dataset: ADSL
+            variable: "${trt_var}"
+            comparator: NOTIN
+            value:
+              $if: {get: total.mode, eq: active_arms}
+              then: ["", {$get: total.control}]
+              else: [""]
+  - $for: row
+    in: {$get: rows}
+    do:
+      $if: {get: row.kind, eq: categorical}
+      then:
+        id: "Grp_${row.var}"
+        name: "${row.label}"
+        groupingDataset: ADSL
+        groupingVariable: "${row.var}"
+        dataDriven: true
+
+dataSubsets:
+  - $for: row
+    in: {$get: rows}
+    do:
+      $if: {all: [{get: row.kind, eq: categorical}, {get: denominator, eq: subjects_with_data}]}
+      then:
+        id: "Dss_DM_${row.var}_Present"
+        name: "Subjects with a value of ${row.label}"
+        level: 1
+        order: 1
+        condition: {dataset: ADSL, variable: "${row.var}", comparator: NE, value: [""]}
+
+analyses:
+  - $for: v
+    in: {$get: variants}
+    do:
+      id: "An_DM_N${v.suffix}"
+      name: Number of subjects
+      reason: {controlledTerm: SPECIFIED IN SAP}
+      purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+      methodId: Mth_Count
+      dataset: ADSL
+      variable: USUBJID
+      analysisSetId: "AnalysisSet_${analysis_set}"
+      orderedGroupings:
+        - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+  - $for: row
+    in: {$get: rows}
+    do:
+      $for: v
+      in: {$get: variants}
+      do:
+        $if: {get: row.kind, eq: continuous}
+        then:
+          id: "An_DM_${row.var}_Summ${v.suffix}"
+          name: "Summary of ${row.label}"
+          reason: {controlledTerm: SPECIFIED IN SAP}
+          purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+          methodId: {$get: continuous_method}
+          dataset: ADSL
+          variable: "${row.var}"
+          analysisSetId: "AnalysisSet_${analysis_set}"
+          orderedGroupings:
+            - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+          programmingCode:
+            context: specfirst method registry
+            parameters:
+              - {name: quantile_definition, value: ["${quantile_definition}"]}
+        else:
+          id: "An_DM_${row.var}_Summ${v.suffix}"
+          name: "Summary of ${row.label}"
+          reason: {controlledTerm: SPECIFIED IN SAP}
+          purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+          methodId: Mth_CatSumm
+          dataset: ADSL
+          variable: USUBJID
+          analysisSetId: "AnalysisSet_${analysis_set}"
+          orderedGroupings:
+            - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+            - {order: 2, groupingId: "Grp_${row.var}", resultsByGroup: true}
+          referencedAnalysisOperations:
+            - referencedOperationRelationshipId: Mth_CatSumm_pct_NUM
+              analysisId: "An_DM_${row.var}_Summ${v.suffix}"
+            - referencedOperationRelationshipId: Mth_CatSumm_pct_DEN
+              analysisId:
+                $if: {get: denominator, eq: subjects_with_data}
+                then: "An_DM_${row.var}_N${v.suffix}"
+                else: "An_DM_N${v.suffix}"
+  - $for: row
+    in: {$get: rows}
+    do:
+      $for: v
+      in: {$get: variants}
+      do:
+        $if: {all: [{get: row.kind, eq: categorical}, {get: denominator, eq: subjects_with_data}]}
+        then:
+          id: "An_DM_${row.var}_N${v.suffix}"
+          name: "Number of subjects with a value of ${row.label}"
+          reason: {controlledTerm: SPECIFIED IN SAP}
+          purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+          methodId: Mth_Count
+          dataset: ADSL
+          variable: USUBJID
+          analysisSetId: "AnalysisSet_${analysis_set}"
+          dataSubsetId: "Dss_DM_${row.var}_Present"
+          orderedGroupings:
+            - {order: 1, groupingId: "${v.grouping}", resultsByGroup: true}
+  - $for: row
+    in: {$get: rows}
+    do:
+      $if: {not: {get: tests, eq: none}}
+      then:
+        $if: {get: row.kind, eq: continuous}
+        then:
+          id: "An_DM_${row.var}_Comp"
+          name: "Comparison of ${row.label} between treatments"
+          reason: {controlledTerm: SPECIFIED IN SAP}
+          purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+          methodId: Mth_Anova
+          dataset: ADSL
+          variable: "${row.var}"
+          analysisSetId: "AnalysisSet_${analysis_set}"
+          orderedGroupings:
+            - {order: 1, groupingId: "Grp_${trt_var}", resultsByGroup: false}
+        else:
+          id: "An_DM_${row.var}_Comp"
+          name: "Comparison of ${row.label} between treatments"
+          reason: {controlledTerm: SPECIFIED IN SAP}
+          purpose: {controlledTerm: EXPLORATORY OUTCOME MEASURE}
+          methodId:
+            $if: {get: tests, eq: anova_fisher}
+            then: Mth_Fisher
+            else: Mth_ChiSq
+          dataset: ADSL
+          variable: USUBJID
+          analysisSetId: "AnalysisSet_${analysis_set}"
+          orderedGroupings:
+            - {order: 1, groupingId: "Grp_${trt_var}", resultsByGroup: false}
+            - {order: 2, groupingId: "Grp_${row.var}", resultsByGroup: false}
+
+outputs:
+  - id: Out_DM
+    name: Demographic and baseline characteristics
+    version: 1
+    displays:
+      - order: 1
+        display:
+          id: Disp_DM
+          name: Demographic and baseline characteristics
+          version: 1
+          displayTitle: Demographic and Baseline Characteristics
+          displaySections:
+            - sectionType: Title
+              orderedSubSections:
+                - order: 1
+                  subSection: {id: Disp_DM_Title_1, text: Demographic and Baseline Characteristics}
+            - sectionType: Rowlabel Header
+              orderedSubSections:
+                - order: 1
+                  subSection: {id: Disp_DM_RowLabel_1, text: Characteristic}
+
+listItem:
+  name: Demographic and baseline characteristics
+  level: 1
+  outputId: Out_DM

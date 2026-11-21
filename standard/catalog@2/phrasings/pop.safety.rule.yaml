@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: pop.safety.rule
+alternatives:
+  at_least_one_dose:
+    plain: "The safety set is made up of all subjects who received one or more doses of study treatment."
+    formal: "The safety set shall consist of all subjects who received at least one dose of study treatment."
+    brief: "Safety set: all subjects who received at least one dose of study treatment."
+  randomized_and_dosed:
+    plain: "The safety set is made up of all randomized subjects who received one or more doses of study treatment."
+    formal: "The safety set shall consist of all randomized subjects who received at least one dose of study treatment."
+    brief: "Safety set: all randomized subjects who received at least one dose of study treatment."

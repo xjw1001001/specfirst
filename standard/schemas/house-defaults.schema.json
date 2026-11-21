@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "specfirst:schemas/0/house-defaults",
+  "title": "House defaults",
+  "description": "The defaults of a house standard: defaults.yaml in standard/houses/<house>@<n>/ (ADR-020, decision 2). Per catalog entry, or per entry and table family, the alternative a study takes when its documents are silent. Version 0; a change needs an ADR.",
+  "type": "object",
+  "required": ["house", "catalog", "defaults"],
+  "additionalProperties": false,
+  "properties": {
+    "house": {
+      "description": "The label of the house version.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*@[1-9][0-9]*$"
+    },
+    "catalog": {
+      "description": "The label of the catalog version the defaults are for.",
+      "type": "string",
+      "pattern": "^catalog@[1-9][0-9]*$"
+    },
+    "defaults": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$" },
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/$defs/default" },
+          {
+            "description": "An entry answered per table family: one default per unit.",
+            "type": "object",
+            "required": ["units"],
+            "additionalProperties": false,
+            "properties": {
+              "units": {
+                "type": "object",
+                "minProperties": 2,
+                "propertyNames": { "pattern": "^tfl-[a-z0-9]+(-[a-z0-9]+)*$" },
+                "additionalProperties": { "$ref": "#/$defs/default" }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "default": {
+      "oneOf": [
+        { "$ref": "#/$defs/choice" },
+        {
+          "description": "Defaults by design: the first case whose `when` holds; the last case has no `when`.",
+          "type": "object",
+          "required": ["cases"],
+          "additionalProperties": false,
+          "properties": {
+            "cases": {
+              "type": "array",
+              "minItems": 2,
+              "items": { "$ref": "#/$defs/case" }
+            }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "description": "The alternative ID, or null: no default; the documents state the decision, or a person is asked.",
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+      ]
+    },
+    "values": {
+      "description": "The slot values the alternative needs, by slot name.",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$", "not": { "enum": ["rule", "output"] } }
+    },
+    "sources": {
+      "description": "The public sources of the choice, as an entry cites them.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["ref", "where"],
+        "additionalProperties": false,
+        "properties": {
+          "ref": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "where": { "type": "string", "minLength": 1, "pattern": "^[ -~]+$" },
+          "path": { "type": "string", "minLength": 1, "pattern": "^[^/\\\\][ -~]*$" },
+          "find": { "type": "string", "minLength": 1, "pattern": "^[ -~]+$" },
+          "evidence": { "enum": ["cited", "read", "probed"] }
+        },
+        "dependentRequired": { "find": ["path"] }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "required": ["rule"],
+      "additionalProperties": false,
+      "properties": {
+        "rule": { "$ref": "#/$defs/rule" },
+        "values": { "$ref": "#/$defs/values" },
+        "sources": { "$ref": "#/$defs/sources" }
+      }
+    },
+    "case": {
+      "type": "object",
+      "required": ["rule"],
+      "additionalProperties": false,
+      "properties": {
+        "when": {
+          "description": "A predicate over the design features of the catalog.",
+          "type": "string",
+          "pattern": "^[a-z0-9_.() ]+$"
+        },
+        "rule": { "$ref": "#/$defs/rule" },
+        "values": { "$ref": "#/$defs/values" },
+        "sources": { "$ref": "#/$defs/sources" }
+      }
+    }
+  }
+}

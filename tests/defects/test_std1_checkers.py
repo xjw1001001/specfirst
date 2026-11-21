@@ -46,11 +46,11 @@ def change(path: Path, plant) -> None:
 
 
 def entry_file(work: Path, entry_id: str) -> Path:
-    return work / "standard" / "catalog" / "entries" / f"{entry_id}.yaml"
+    return work / "standard" / "catalog@1" / "entries" / f"{entry_id}.yaml"
 
 
 def template_file(work: Path, entry_id: str) -> Path:
-    return work / "standard" / "catalog" / "templates" / f"{entry_id}.yaml"
+    return work / "standard" / "catalog@1" / "templates" / f"{entry_id}.yaml"
 
 
 def fake_cache(work: Path, catalog) -> Path:
@@ -182,7 +182,7 @@ STATIC_DEFECTS = [
 
 def _path(work: Path, where: str) -> Path:
     kind, _, name = where.partition(":")
-    catalog = work / "standard" / "catalog"
+    catalog = work / "standard" / "catalog@1"
     if kind == "entry":
         return entry_file(work, name)
     if kind == "template":
@@ -203,7 +203,7 @@ def test_planted_defect_is_found(work, what, where, plant, checker, expected):
 
 
 def test_an_unused_source_is_found(work):
-    path = work / "standard" / "catalog" / "sources.yaml"
+    path = work / "standard" / "catalog@1" / "sources.yaml"
     change(path, lambda d: d["sources"].__setitem__(
         "rumour", {"kind": "document", "title": "Hearsay", "version": "1",
                    "url": "https://example.invalid/", "confirmed": "cited"}))
@@ -214,7 +214,7 @@ def test_a_structural_probe_that_needs_another_decision_is_found(work):
     """The p-value format shows only when the table compares treatments: the probe must say so."""
     catalog, house = load(work)
     assert checks.structural_probe_problems(catalog, house) == []
-    change(work / "standard" / "catalog" / "probes.yaml",
+    change(work / "standard" / "catalog@1" / "probes.yaml",
            lambda d: d["probes"]["pvalue_column_shown"].__delitem__("needs"))
     catalog, house = load(work)
     found = checks.structural_probe_problems(catalog, house)
@@ -223,13 +223,13 @@ def test_a_structural_probe_that_needs_another_decision_is_found(work):
 
 
 def test_a_probe_of_an_unknown_kind_is_found(work):
-    change(work / "standard" / "catalog" / "probes.yaml",
+    change(work / "standard" / "catalog@1" / "probes.yaml",
            lambda d: d["probes"]["output_shape"].__setitem__("kind", "obvious"))
     assert any("unknown kind 'obvious'" in p for p in static_problems(work)["probes"])
 
 
 def test_reading_notes_that_skip_an_alternative_are_found(work):
-    note = work / "standard" / "catalog" / "knowledge" / "ae.teae.end.md"
+    note = work / "standard" / "catalog@1" / "knowledge" / "ae.teae.end.md"
     note.write_text(note.read_text(encoding="ascii").replace("`end_of_study`", "the last one"),
                     encoding="ascii", newline="\n")
     assert "ae.teae.end: the reading notes do not cover `end_of_study`" in \

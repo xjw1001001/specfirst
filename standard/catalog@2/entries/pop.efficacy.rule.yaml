@@ -1,0 +1,32 @@
+id: pop.efficacy.rule
+unit: mod-populations
+applies_when: design.has_efficacy_set
+question: Who is efficacy-evaluable?
+alternatives:
+  - id: baseline_and_postbaseline
+    statement: "The efficacy-evaluable set holds every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign {test}."
+    definition: >-
+      A baseline value is a non-missing result dated on or before the
+      treatment start date; a post-baseline value is one dated after it.
+    slots:
+      test: {type: name, examples: [SYSBP, WEIGHT]}
+  - id: attended_visit
+    statement: "The efficacy-evaluable set holds every subject of the safety set who attended the visit {visit}."
+    definition: A subject attended a visit when the subject visits domain (SV) has a record of it.
+    slots:
+      visit: {type: text, examples: ["WEEK 24", "Week 8"]}
+compile: templates/pop.efficacy.rule.yaml
+phrasings: phrasings/pop.efficacy.rule.yaml
+reading: knowledge/pop.efficacy.rule.md
+probes: [postbaseline_value_but_visit_missed, baseline_value_of_other_test_only]
+sources:
+  - ref: ich-e9
+    where: "section 5.2.2, per protocol set and criteria such as availability of measurements"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "at least one record in QS for"
+    where: "EFFFL of the pilot ADSL: post-baseline records of the efficacy measures are required (it asks for no baseline value)"
+  - ref: p7
+    path: cdiscpilot01/spec/yamaa/adsl.yaml
+    find: "Y if subject has a SV.VISITNUM=12"
+    where: "COMP24FL of the pilot ADSL: a population defined by an attended visit"

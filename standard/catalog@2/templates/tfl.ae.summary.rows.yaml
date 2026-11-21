@@ -1,0 +1,6 @@
+entry: tfl.ae.summary.rows
+alternatives:
+  standard_rows:
+    params: {ae_summary_rows: [ANY, RELATED, SERIOUS, DISCONTINUATION, FATAL]}
+  stated_rows:
+    params: {ae_summary_rows: {$get: rows}}

@@ -1,0 +1,79 @@
+{
+  "schema": "house-defaults",
+  "valid": [
+    {
+      "name": "defaults with slot values, a stated null and a default per table family",
+      "instance": {
+        "house": "open-default@2",
+        "catalog": "catalog@2",
+        "defaults": {
+          "ae.teae.end": {
+            "rule": "last_dose_plus_days",
+            "values": { "days": 30 },
+            "sources": [{ "ref": "admiral", "where": "derive_var_trtemfl(), end_window", "evidence": "read" }]
+          },
+          "pop.efficacy.rule": { "rule": null },
+          "tfl.population": {
+            "units": {
+              "tfl-demographics": { "rule": "randomized" },
+              "tfl-ae-summary": { "rule": "safety" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "a default by design: the first case that holds",
+      "instance": {
+        "house": "open-default@2",
+        "catalog": "catalog@2",
+        "defaults": {
+          "pop.safety.rule": {
+            "cases": [
+              { "when": "design.randomized", "rule": "randomized_and_dosed" },
+              { "rule": "at_least_one_dose" }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "a default without a rule",
+      "why": "a default names its alternative, or null for none",
+      "instance": {
+        "house": "open-default@2",
+        "catalog": "catalog@2",
+        "defaults": { "ae.teae.end": { "values": { "days": 30 } } }
+      }
+    },
+    {
+      "name": "a house label without a version",
+      "why": "a house version is named <house>@<n>",
+      "instance": {
+        "house": "open-default",
+        "catalog": "catalog@2",
+        "defaults": { "ae.teae.end": { "rule": "no_end" } }
+      }
+    },
+    {
+      "name": "a default per table family for one unit only",
+      "why": "an entry with units has one item per unit, two or more",
+      "instance": {
+        "house": "open-default@2",
+        "catalog": "catalog@2",
+        "defaults": { "tfl.population": { "units": { "tfl-demographics": { "rule": "randomized" } } } }
+      }
+    },
+    {
+      "name": "an unknown field in a choice",
+      "why": "a choice holds rule, values and sources only",
+      "instance": {
+        "house": "open-default@2",
+        "catalog": "catalog@2",
+        "defaults": { "ae.teae.end": { "rule": "no_end", "because": "it is simple" } }
+      }
+    }
+  ]
+}

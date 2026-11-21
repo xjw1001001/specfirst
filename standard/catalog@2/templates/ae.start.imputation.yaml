@@ -1,0 +1,44 @@
+entry: ae.start.imputation
+alternatives:
+  first_of_month_not_before_first_dose:
+    adam:
+      ADAE:
+        columns:
+          - name: ASTDT
+            type: date
+            label: Analysis Start Date
+            derivation:
+              impute: {type: date, source: AE.AESTDTC, day: first, not_before: TRTSDT, invalid: null}
+          - name: ASTDTF
+            type: str
+            label: Analysis Start Date Imputation Flag
+            derivation:
+              imputation_flag: {source: ASTDT, part: date}
+  first_of_month:
+    adam:
+      ADAE:
+        columns:
+          - name: ASTDT
+            type: date
+            label: Analysis Start Date
+            derivation:
+              impute: {type: date, source: AE.AESTDTC, day: first, invalid: null}
+          - name: ASTDTF
+            type: str
+            label: Analysis Start Date Imputation Flag
+            derivation:
+              imputation_flag: {source: ASTDT, part: date}
+  not_completed:
+    adam:
+      ADAE:
+        columns:
+          - name: ASTDT
+            type: date
+            label: Analysis Start Date
+            derivation:
+              impute: {type: date, source: AE.AESTDTC, invalid: null}
+          - name: ASTDTF
+            type: str
+            label: Analysis Start Date Imputation Flag
+            derivation:
+              imputation_flag: {source: ASTDT, part: date}

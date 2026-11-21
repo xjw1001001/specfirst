@@ -1,0 +1,22 @@
+id: tfl.rounding.rule
+units: [tfl-demographics, tfl-ae-summary, tfl-ae-soc-pt, tfl-vitals-by-visit]
+applies_when: design.always
+question: How are displayed numbers rounded?
+alternatives:
+  - id: half_away_from_zero
+    statement: "Displayed numbers in {output} are rounded half away from zero."
+  - id: half_even
+    statement: "Displayed numbers in {output} are rounded half to even."
+notes: A number is rounded once, from its full precision to the displayed decimals.
+compile: templates/tfl.rounding.rule.yaml
+phrasings: phrasings/tfl.rounding.rule.yaml
+reading: knowledge/tfl.rounding.rule.md
+probes: [statistic_at_rounding_half]
+sources:
+  - ref: yamaa
+    path: yaml/schema_expression_numeric.yaml
+    find: "round_half_away_from_zero"
+    where: "the rounding verb of the ADaM engine"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-2.01 reproduces with rounding half away from zero (PLAN.md, E24)"

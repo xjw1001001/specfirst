@@ -1,0 +1,59 @@
+entry: demo.baseline.record
+alternatives:
+  last_on_or_before_first_dose:
+    adam:
+      ADSL:
+        intermediates:
+          $for: test
+          in: [WEIGHT, HEIGHT, BMI]
+          do:
+            id: "BL_${test}"
+            dataset: VS
+            key: [STUDYID, USUBJID]
+            filter: "VS.VSTESTCD = ${test|q} AND VS.VSSTRESN IS NOT NULL"
+            derivations:
+              VSDT:
+                impute: {type: date, source: VSDTC, invalid: null}
+              LASTDT: "DATE '9999-12-31'"
+            between: {value: TRTSDT, lower: VSDT, upper: LASTDT}
+            order_by: [VS.VSDTC, VS.VSSEQ]
+            keep: last
+        columns:
+          - name: WEIGHTBL
+            type: float
+            label: Weight at Baseline (kg)
+            derivation: BL_WEIGHT.VSSTRESN
+          - name: HEIGHTBL
+            type: float
+            label: Height at Baseline (cm)
+            derivation: BL_HEIGHT.VSSTRESN
+          - name: _BMICOL
+            type: float
+            label: "Working value: collected body mass index at baseline"
+            derivation: BL_BMI.VSSTRESN
+  at_visit:
+    adam:
+      ADSL:
+        intermediates:
+          $for: test
+          in: [WEIGHT, HEIGHT, BMI]
+          do:
+            id: "BL_${test}"
+            dataset: VS
+            key: [STUDYID, USUBJID]
+            filter: "VS.VSTESTCD = ${test|q} AND VS.VSSTRESN IS NOT NULL AND VS.VISIT = ${visit|q}"
+            order_by: [VS.VSSEQ]
+            keep: last
+        columns:
+          - name: WEIGHTBL
+            type: float
+            label: Weight at Baseline (kg)
+            derivation: BL_WEIGHT.VSSTRESN
+          - name: HEIGHTBL
+            type: float
+            label: Height at Baseline (cm)
+            derivation: BL_HEIGHT.VSSTRESN
+          - name: _BMICOL
+            type: float
+            label: "Working value: collected body mass index at baseline"
+            derivation: BL_BMI.VSSTRESN

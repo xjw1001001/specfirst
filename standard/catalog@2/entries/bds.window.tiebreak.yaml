@@ -1,0 +1,27 @@
+id: bds.window.tiebreak
+unit: mod-bds-visits
+applies_when: design.has_bds_parameters and design.fixed_visits
+question: Which record is analyzed when several fall in one analysis visit?
+alternatives:
+  - id: closest_then_earlier
+    statement: "Of several records in one analysis visit, the one closest to the target day is analyzed, and the earlier one on a tie."
+  - id: closest_then_later
+    statement: "Of several records in one analysis visit, the one closest to the target day is analyzed, and the later one on a tie."
+  - id: last_record
+    statement: "Of several records in one analysis visit, the last one is analyzed."
+notes: >-
+  Only non-missing values compete. Earlier and later are by the collected
+  date and time; of the values of one day, a value without a collected time
+  comes before those with a time, and the sequence number breaks a
+  remaining tie.
+compile: templates/bds.window.tiebreak.yaml
+phrasings: phrasings/bds.window.tiebreak.yaml
+reading: knowledge/bds.window.tiebreak.md
+probes: [two_records_equally_far_from_target, two_records_in_window_later_one_farther, unscheduled_record_inside_window]
+sources:
+  - ref: adamig
+    where: "BDS analysis record flag ANLzzFL and distance from target AWTDIFF"
+  - ref: yamaa
+    path: benchmarks/adam-adlb-closest-visit/spec.yaml
+    find: "ADIST"
+    where: "the benchmark of closest visit selection: distance, then a tie rule"

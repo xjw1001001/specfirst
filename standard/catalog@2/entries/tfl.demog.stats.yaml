@@ -1,0 +1,21 @@
+id: tfl.demog.stats
+unit: tfl-demographics
+applies_when: design.always
+question: Which statistics do the continuous rows show?
+alternatives:
+  - id: n_mean_sd_median_min_max
+    statement: "Continuous rows of the demographics table show n, mean, standard deviation, median, minimum and maximum."
+  - id: with_quartiles
+    statement: "Continuous rows of the demographics table show n, mean, standard deviation, median, first and third quartile, minimum and maximum."
+compile: templates/tfl.demog.stats.yaml
+phrasings: phrasings/tfl.demog.stats.yaml
+reading: knowledge/tfl.demog.stats.md
+probes: [output_shape]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "Mth02_ContVar_Summ_ByGrp_5_Q1"
+    where: "the continuous summary method: n, mean, SD, median, Q1, Q3, minimum, maximum"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "Table 14-2.01: n, mean, SD, median, minimum, maximum"

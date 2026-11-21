@@ -1,0 +1,58 @@
+# The house standard open-default@2 (PLAN.md sections 5.2, 6.4, 13.4;
+# ADR-020). The defaults, with their slot values, are in defaults.yaml.
+# This manifest names the parts of the house standard and the catalog
+# version it needs.
+house: open-default
+version: 2
+title: an open default for analysis data and safety tables, built from public standards only
+catalog: specfirst-m1
+catalog_version: 2
+document: STANDARD.md
+defaults: defaults.yaml
+
+# Parent yamaa specs. `columns` is the order of the output variables; the
+# compiler keeps those that the parent or an included fragment defines.
+# `optional` lists decisions a study may leave out; their columns are then
+# left out of the dataset.
+adam:
+  ADSL:
+    parent: adam/adsl.yaml
+    inputs: {DM: dm, EX: ex, VS: vs, DS: ds, SV: sv}
+    output: adsl
+    optional: [pop.efficacy.rule]
+    columns: [STUDYID, USUBJID, SUBJID, SITEID, AGE, AGEU, AGEGR1, SEX, RACE,
+              RACEGR1, ETHNIC, ARM, ARMCD, ACTARM, TRT01P, TRT01A, RFSTDTC,
+              TRTSDT, TRTSDTM, TRTSTMF, TRTEDT, RANDFL, ITTFL, SAFFL, EFFFL, EOSSTT,
+              EOSDT, DCSREAS, HEIGHTBL, WEIGHTBL, BMIBL]
+  ADAE:
+    parent: adam/adae.yaml
+    inputs: {AE: ae, ADSL: adsl}
+    output: adae
+    optional: []
+    columns: [STUDYID, USUBJID, AESEQ, TRTP, TRTA, SAFFL, ITTFL, TRTSDT,
+              TRTEDT, AETERM, AEDECOD, AESOC, AESEV, AESER, AEREL, RELGR1,
+              AEACN, AEOUT, AESDTH, ASTDT, ASTDTF, ASTDY, AENDT, AENDY,
+              TRTEMFL, AOCCFL, AOCCSFL, AOCCPFL]
+  ADVS:
+    parent: adam/advs.yaml
+    inputs: {VS: vs, ADSL: adsl}
+    output: advs
+    optional: []
+    columns: [STUDYID, USUBJID, TRTP, TRTA, SAFFL, ITTFL, TRTSDT, TRTEDT,
+              PARAMCD, PARAM, VSSEQ, VISIT, VISITNUM, ADT, ADY, AVISIT,
+              AVISITN, AVAL, BASE, CHG, ABLFL, ANL01FL, DTYPE]
+
+# ARS and layout templates: one pair per table family.
+ars:
+  common: ars/common.yaml
+  families:
+    tfl-demographics: ars/demographics.yaml
+    tfl-ae-summary: ars/ae-summary.yaml
+    tfl-ae-soc-pt: ars/ae-soc-pt.yaml
+    tfl-vitals-by-visit: ars/vitals-by-visit.yaml
+layout:
+  families:
+    tfl-demographics: layout/demographics.yaml
+    tfl-ae-summary: layout/ae-summary.yaml
+    tfl-ae-soc-pt: layout/ae-soc-pt.yaml
+    tfl-vitals-by-visit: layout/vitals-by-visit.yaml

@@ -91,7 +91,7 @@ def catalog_problems(catalog: Catalog, root: Path) -> list[str]:
     skeletons: dict[str, str] = {}
     for entry in catalog.entries.values():
         where = entry.id
-        for problem in schemas.problems("catalog-entry", entry.raw, root=root):
+        for problem in schemas.problems(catalog.entry_schema, entry.raw, root=root):
             problems.append(f"{where}: schema: {problem}")
         for unit in entry.units:
             if unit not in catalog.units:
@@ -549,12 +549,14 @@ def template_problems(catalog: Catalog, house: House) -> list[str]:
 
 def house_problems(catalog: Catalog, house: House, root: Path) -> list[str]:
     """The house standard fits the catalog, and STANDARD.md is rendered from the two."""
-    problems = []
-    if house.catalog != catalog.name:
-        problems.append(f"house: made for the catalog '{house.catalog}', not '{catalog.name}'")
+    problems = house_module.fit_problems(catalog, house)
     for entry_id in house.default_values:
         if entry_id not in catalog.entries:
             problems.append(f"house: default_values names the unknown entry '{entry_id}'")
+    if house.defaults_file is not None:
+        found = defaults_problems(catalog, house, root)
+        if found:
+            return problems + found
     form = StandardForm(catalog)
     try:
         defaults = house_module.defaults(catalog, house)
@@ -586,6 +588,108 @@ def house_problems(catalog: Catalog, house: House, root: Path) -> list[str]:
                      *(house.layout.get("families") or {}).values()]:
         if not relative or not (house.directory / relative).is_file():
             problems.append(f"house: the template {relative} is missing")
+    return problems
+
+
+def defaults_problems(catalog: Catalog, house: House, root: Path) -> list[str]:
+    """defaults.yaml fits its schema and the catalog (ADR-020, decisions 2 and 9).
+
+    Every (entry, unit) of the catalog has an item, a default or a stated null;
+    every rule is an alternative, its values complete it; a default by design
+    lists cases whose `when` parses and names design features of the catalog,
+    and whose last case has no `when`, so that every design resolves.
+    """
+    raw = house.defaults_file
+    if raw is None:
+        return [f"house: {house.label} has no defaults.yaml"]
+    problems = [f"house: defaults.yaml: schema: {problem}"
+                for problem in schemas.problems("house-defaults", raw, root=root)]
+    if raw.get("house") != house.label:
+        problems.append(f"house: defaults.yaml is for '{raw.get('house')}', not {house.label}")
+    if raw.get("catalog") != catalog.label:
+        problems.append(f"house: defaults.yaml is for '{raw.get('catalog')}', not "
+                        f"{catalog.label}")
+    listed = raw.get("defaults") if isinstance(raw.get("defaults"), dict) else {}
+    for entry_id in listed:
+        if entry_id not in catalog.entries:
+            problems.append(f"house: defaults.yaml names the unknown entry '{entry_id}'")
+    form = StandardForm(catalog)
+    for entry_id, unit in catalog.keys():
+        entry = catalog.entry(entry_id)
+        where = f"house: defaults.yaml: {entry_id}" + (f" ({unit})" if entry.per_family else "")
+        body = listed.get(entry_id)
+        if entry.per_family != (isinstance(body, dict) and "units" in body):
+            problems.append(f"{where}: an entry with `units` has one item per unit, and only "
+                            "such an entry")
+            continue
+        found = house_module.choices(house, entry_id, unit, entry.per_family)
+        if not found:
+            problems.append(f"{where}: no item; state the default, or null for none")
+            continue
+        if len(found) > 1 or "when" in found[0]:
+            if any("when" not in case for case in found[:-1]) or "when" in found[-1]:
+                problems.append(f"{where}: every case but the last has `when`, and the last "
+                                "has none")
+        for case in found:
+            if "when" in case:
+                try:
+                    used = predicate.names(predicate.parse(str(case["when"])))
+                    for name in sorted(used - set(catalog.design_features)):
+                        problems.append(f"{where}: `when` names the unknown feature '{name}'")
+                except predicate.PredicateError as error:
+                    problems.append(f"{where}: `when`: {error}")
+            if case.get("rule") is None:
+                if case.get("values"):
+                    problems.append(f"{where}: no default, but slot values")
+                continue
+            value = {"rule": case["rule"], **(case.get("values") or {})}
+            try:
+                form.check_value(entry_id, unit, value)
+            except StandardFormError as error:
+                problems.append(f"{where}: {error}")
+    return problems
+
+
+DIRECTIVES = ("$get", "$if", "$for", "$dict", "$pick", "$concat", "$fn")
+
+
+def template_directive_problems(catalog: Catalog, house: House) -> list[str]:
+    """Every directive of every template is known, every `$fn` a helper (ADR-020, #20).
+
+    The evaluator refuses an unknown helper only on a branch it evaluates; this
+    reads every template whole, so a branch no example reaches is checked too.
+    """
+    from specfirst.compile.template import FUNCTIONS
+
+    problems: list[str] = []
+
+    def walk(node: object, where: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if isinstance(key, str) and key.startswith("$") and key not in DIRECTIVES:
+                    problems.append(f"{where}: unknown directive '{key}'")
+                if key == "$fn" and value not in FUNCTIONS:
+                    problems.append(f"{where}: unknown helper '{value}'; the helpers are "
+                                    f"{', '.join(sorted(FUNCTIONS))}")
+                walk(value, where)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item, where)
+
+    files = [(catalog.directory, entry.compile) for entry in catalog.entries.values()
+             if entry.compile]
+    files += [(house.directory, str(meta.get("parent", ""))) for meta in house.adam.values()]
+    files += [(house.directory, str(relative)) for relative in
+              [house.ars.get("common"), *(house.ars.get("families") or {}).values(),
+               *(house.layout.get("families") or {}).values()] if relative]
+    for folder, relative in files:
+        path = folder / relative
+        if not path.is_file():
+            continue
+        try:
+            walk(yaml.safe_load(path.read_text(encoding="ascii")), relative)
+        except (OSError, UnicodeDecodeError, yaml.YAMLError) as error:
+            problems.append(f"{relative}: {error}")
     return problems
 
 

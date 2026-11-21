@@ -1,0 +1,11 @@
+# Natural variants of each statement of this entry (PLAN.md sections 5.1 and 6.6).
+entry: tfl.pvalue.format
+alternatives:
+  three_decimals:
+    plain: "In the demographics table, p-values are shown with three decimals; a p-value below 0.001 appears as <0.001."
+    formal: "P-values in the demographics table shall be presented to three decimal places; a p-value below 0.001 shall be presented as <0.001."
+    brief: "P-values in the demographics table: three decimals; below 0.001 shown as <0.001."
+  four_decimals:
+    plain: "In the demographics table, p-values are shown with four decimals; a p-value below 0.0001 appears as <0.0001."
+    formal: "P-values in the demographics table shall be presented to four decimal places; a p-value below 0.0001 shall be presented as <0.0001."
+    brief: "P-values in the demographics table: four decimals; below 0.0001 shown as <0.0001."

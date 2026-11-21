@@ -1,0 +1,30 @@
+id: ae.teae.end
+unit: mod-ae-emergence
+applies_when: design.collects_adverse_events and design.has_exposure
+question: When does treatment emergence end?
+alternatives:
+  - id: no_end
+    statement: "Treatment emergence has no end date."
+  - id: last_dose_plus_days
+    statement: "Treatment emergence ends {days} days after the treatment end date."
+    definition: >-
+      An event that starts on the last day of the window is still
+      treatment-emergent. A subject without a treatment end date has no end.
+    slots:
+      days: {type: int, min: 0, examples: [30, 7]}
+  - id: end_of_study
+    statement: "Treatment emergence ends at the end-of-study date."
+    definition: >-
+      An event that starts on the end-of-study date is still
+      treatment-emergent. A subject without an end-of-study date has no end.
+compile: templates/ae.teae.end.yaml
+phrasings: phrasings/ae.teae.end.yaml
+reading: knowledge/ae.teae.end.md
+probes: [ae_starts_after_emergence_window, ae_starts_after_end_of_study, ae_between_window_end_and_end_of_study]
+sources:
+  - ref: admiral
+    where: "derive_var_trtemfl(), end_window: events starting more than the given days after end of treatment are not flagged"
+  - ref: yamaa
+    path: benchmarks/adam-adae-onset-emergence/spec.yaml
+    find: "TEENDDTM"
+    where: "the benchmark of treatment emergence timing: a window after last exposure"

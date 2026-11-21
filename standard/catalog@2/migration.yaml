@@ -1,0 +1,13 @@
+# What the step from catalog@1 to catalog@2 keeps (ADR-020, decision 4).
+#
+# One line per alternative or unit that is added, removed (with its
+# replacement, or none), renamed, or changed in meaning. The meaning of an
+# alternative is the hash of specfirst.compile.migration.meanings: its
+# question, applies_when, statement, definition, slots, the entry's
+# notes and fixed rules, and its fragment of the compile template. The
+# gate check "migration" computes it for both versions: every difference
+# has exactly one line, every line is a difference, and every line names
+# a record of standard/BACKLOG.yaml accepted for catalog@2.
+from: catalog@1
+to: catalog@2
+changes: []

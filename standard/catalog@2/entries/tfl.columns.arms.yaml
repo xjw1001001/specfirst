@@ -1,0 +1,22 @@
+id: tfl.columns.arms
+units: [tfl-demographics, tfl-ae-summary, tfl-ae-soc-pt, tfl-vitals-by-visit]
+applies_when: design.multiple_arms
+question: In which order are the treatment columns?
+alternatives:
+  - id: ascending_dose_placebo_first
+    statement: "The treatment columns of {output} are in ascending order of dose, with placebo first."
+  - id: protocol_order
+    statement: "The treatment columns of {output} are in the order in which the protocol lists the arms."
+notes: Each column is headed by the treatment and the number of subjects of the analysis set in it.
+compile: templates/tfl.columns.arms.yaml
+phrasings: phrasings/tfl.columns.arms.yaml
+reading: knowledge/tfl.columns.arms.md
+probes: [arms_listed_out_of_dose_order]
+sources:
+  - ref: ars
+    path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+    find: "AnlsGrouping_01_Trt_1"
+    where: "the treatment grouping: placebo, low dose, high dose"
+  - ref: p6
+    path: documents/CSR.pdf
+    where: "column order of Tables 14-2.01 and 14-5.01: placebo, low dose, high dose"

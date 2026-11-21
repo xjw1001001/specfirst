@@ -407,6 +407,7 @@ alternatives:
   - id: mean_of_predose_records
     statement: "Baseline is the mean of all values before the first dose."
 house_default: last_before_first_dose          # null: ask a person when the documents are silent
+# From catalog@2 the line above is a field of the house's defaults.yaml, not of the entry (ADR-020)
 compile: templates/adam/bds_baseline.yaml.j2   # one yamaa fragment per alternative
 phrasings: phrasings/bds_baseline.yaml         # natural variants the generator may use
 reading: knowledge/bds_baseline.md             # where documents state it, synonyms, traps
