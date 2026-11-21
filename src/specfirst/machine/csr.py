@@ -44,7 +44,8 @@ patterns, another cell template and another display rule gives the CSR's
 text. It is held to "a build with that alternative" (review of real-5b, F1):
 an other analysis is the cell's analysis but for the options its decision
 records set (`decisions.PARAMETERS`; its ARD rows are those of the cell with
-the analysis's ID replaced); another template is a cell template of the
+the analysis's ID replaced), and never in an option whose values are columns
+(the model terms and strata: K1); another template is a cell template of the
 layout (each part written {name}, no format spec, no conversion: H1), shows
 parts of the cell and adds no text the cell's template has not; an other
 pattern, in either proof,
@@ -408,8 +409,8 @@ def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
                  records: dict[str, dict] | None = None,
                  events: dict[str, dict] | None = None) -> list[str]:
     """Why an other_build proof does not hold; nothing when it does."""
+    from specfirst.machine import ars, methods
     from specfirst.machine import decisions as records_module
-    from specfirst.machine import methods
 
     reasons = []
     if entry["class"] != "rule_choice":
@@ -456,12 +457,22 @@ def _other_build(entry: dict, proof: dict, template: str, shown: tuple,
         if not options:
             return [f"{', '.join(names_of(entry))} set no option of an analysis, so no other "
                     "analysis follows their other alternative"]
+        # An option whose values are columns (the model terms and strata, ars.MODEL_TERMS)
+        # may not differ: a proof takes the other alternative of a record, not any other
+        # columns (review of real-5b, K1; the owner's answer of 2026-11-20).
+        columns = options & set(ars.MODEL_TERMS)
+        free = options - columns
         for mine, other in analyses.items():
             if other not in events or mine not in events:
                 return [f"no analysis {other} in the event"]
-            if _stripped(events[mine], options) != _stripped(events[other], options):
-                return [f"{other} differs from {mine} in more than the options "
-                        f"{', '.join(sorted(options))} of {', '.join(names_of(entry))}"]
+            if _stripped(events[mine], free) == _stripped(events[other], free):
+                continue
+            if _stripped(events[mine], options) == _stripped(events[other], options):
+                return [f"{other} differs from {mine} in an option whose values are columns "
+                        f"({', '.join(sorted(columns))}): an other analysis may differ only in "
+                        f"the options of {', '.join(names_of(entry))} that take no columns"]
+            return [f"{other} differs from {mine} in more than the options "
+                    f"{', '.join(sorted(free))} of {', '.join(names_of(entry))}"]
     texts = {}
     for item in shown:
         ard = item.ard

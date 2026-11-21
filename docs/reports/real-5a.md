@@ -782,6 +782,11 @@ Three passes by fresh-context reviewers (rule R7);
 
 ## For the owner
 
+N2 and the two `conflict` records were answered on 2026-11-20: ADR-015,
+section "The owner's answers (2026-11-20)", and
+docs/reports/real-5b-answers.md. The binding of a kept run is settled by
+ADR-017, and the owner keeps the usage event (2026-11-19).
+
 From review pass 3, with the reviewer's recommendation:
 
 - Binding a kept run to versions instead of bytes (K5) changes ADR-010,
