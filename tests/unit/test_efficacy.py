@@ -386,3 +386,15 @@ def test_a_decision_is_held_against_the_parameters_of_the_analyses_it_binds(root
         found = decision_problems(root, record)
         assert any(message in problem for problem in found), (message, found)
     assert any("two records" in problem for problem in decision_problems(root, TERMS, TERMS))
+
+
+def test_the_last_visit_is_held_on_the_built_data_only(root):
+    # Review of real-5b, G2: without the data the record of the visit does not pass.
+    visit = {"id": decisions.LAST_VISIT, "unit": "tfl-efficacy-ancova",
+             "value": {"rule": "last", "label": "AVISIT", "last": "Week 24"},
+             "status": "stated", "class": "study_input", "statement": "At Week 24.",
+             "binds": ["ars:A_AGE_PW"]}
+    found = decision_problems(root, visit)
+    assert any("none was handed over" in problem for problem in found), found
+    found = decision_problems(root, dict(visit, value={"rule": "last"}))
+    assert any("none was handed over" in problem for problem in found), found

@@ -850,6 +850,21 @@ def efficacy_problems(eff: Efficacy, rows: results.Rows, event: ars.Event | None
     return problems
 
 
+def decision_problems(pilot: Pilot, records: list[dict],
+                      pairs: list[tuple[ars.Event, kits.ResultSet]]) -> list[str]:
+    """The gate's check `decisions` on events, each with its result set and the built
+    ADaM data, which the last visit of the mixed model is held on (review of real-5b, G2)."""
+    from specfirst.machine import decisions
+
+    events, engines = [], []
+    for event, spec in pairs:
+        bound = ars.bind(event, pilot.registry, spec.binding)
+        tables = ard.load_tables(pilot.folder / build.ADAM, ars.columns(event, spec.subject_key))
+        events.append((event, bound))
+        engines.append(ard.Engine(event, pilot.registry, bound, tables, spec.subject_key))
+    return decisions.problems(pilot.root, records, events, pilot.registry, engines)[1]
+
+
 def _parameters(data: dict, suffixes: tuple[str, ...], change,
                 prefix: str = "An_ADAS_W") -> dict:
     """The event with the programmingCode parameters of some analyses changed: by default
@@ -936,15 +951,11 @@ def d9_efficacy(pilot: Pilot, tmp_path) -> list[str]:
 
     records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
     cibic = efficacy_5b(pilot)[CIBIC]  # the records of real-5b bind its analyses
-    other = (ars.index(cibic.event.data), cibic.spec.binding)
     for name, value in (("unchanged", data()),
                         ("the ANCOVA without the baseline covariate",
                          in_event["the ANCOVA without the baseline covariate"])):
-        event = ars.index(value)
-        _, found = decisions.problems(
-            pilot.root, records, [(event, ars.bind(event, pilot.registry, eff.spec.binding)),
-                                  (other[0], ars.bind(other[0], pilot.registry, other[1]))],
-            pilot.registry)
+        found = decision_problems(pilot, records, [(ars.index(value), eff.spec),
+                                                   (ars.index(cibic.event.data), cibic.spec)])
         print(f"decision records, {name}: {len(found)} problems"
               + (f", for example: {found[0][:160]}" if found else ""))
         if (name == "unchanged") == bool(found):
@@ -1225,17 +1236,29 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
     from specfirst.machine import decisions
 
     records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
-    for name, eff, value in (
-            ("unchanged", None, None),
+
+    def with_value(wanted: str, **value) -> list[dict]:
+        return [dict(record, value={**record["value"], **value}) if record["id"] == wanted
+                else record for record in records]
+
+    for name, eff, value, given in (
+            ("unchanged", None, None, records),
             ("gold takes the LS means averaged over the weeks", adas,
-             in_adas["gold takes the LS means averaged over the weeks, as the CSR does"]),
+             in_adas["gold takes the LS means averaged over the weeks, as the CSR does"],
+             records),
             ("the CMH test of general association", cibic,
-             in_cibic["the CMH test of general association"])):
-        events = []
-        for each in (adas, cibic):
-            event = ars.index(value if each is eff else each.event.data)
-            events.append((event, ars.bind(event, pilot.registry, each.spec.binding)))
-        _, found = decisions.problems(pilot.root, records, events, pilot.registry)
+             in_cibic["the CMH test of general association"], records),
+            # Review of real-5b, G2 (the owner's answer of 2026-11-20): the visits by AVISIT,
+            # text, in the record of the terms and in the six analyses alike, so that Week 8
+            # is the last visit; every option is as its record says.
+            ("the visits by AVISIT, in custom:eff-mmrm-terms and the six analyses alike (G2)",
+             adas, mmrm(option("visit", ["AVISIT"])),
+             with_value("custom:eff-mmrm-terms", visit=["AVISIT"])),
+            ("custom:eff-mmrm-visit names Week 16 as the last week (G2)", None, None,
+             with_value("custom:eff-mmrm-visit", last="Week 16"))):
+        found = decision_problems(pilot, given, [
+            (ars.index(value if each is eff else each.event.data), each.spec)
+            for each in (adas, cibic)])
         print(f"decision records, {name}: {len(found)} problems"
               + (f", for example: {found[0][:160]}" if found else ""))
         if (name == "unchanged") == bool(found):
@@ -1328,8 +1351,28 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
                     "kind": "other_build",
                     "template": spelled("lsm", entries_11[0]["csr"])}))),
     }
+    # Review of real-5b, K1 (the owner's answer of 2026-11-20): gold's CMH of week 8 without
+    # its strata, proved by an other analysis with them. The two differ only in an option of
+    # custom:eff-cmh, so before K1 the proof held.
+    unstratified = copy.deepcopy(cibic.event.data)
+    gold_cmh = next(a for a in unstratified["analyses"] if a["id"] == "An_CIBIC_W08_Cmh")
+    unstratified["analyses"].append(dict(copy.deepcopy(gold_cmh), id="An_CIBIC_W08_Cmh_Site",
+                                         name=gold_cmh["name"] + ", by pooled site group"))
+    gold_cmh["programmingCode"]["parameters"] = [
+        p for p in gold_cmh["programmingCode"]["parameters"] if p["name"] != "strata"]
+    unstratified_rows = efficacy_rows(pilot, cibic, unstratified, tmp_path / "k1")
+    by_site = replaced(cibic, "Out14-3-13", week8, dict(
+        entries_13[week8], decision=["custom:eff-cmh", "custom:eff-cibic-display"],
+        proof={"kind": "other_build", "patterns": {"p": "X.XXXX"},
+               "analyses": {"An_CIBIC_W08_Cmh": "An_CIBIC_W08_Cmh_Site"}}))
+    k1 = "gold's week 8 CMH without its strata, proved by the analysis with them (K1)"
+    planted[k1] = lambda: efficacy_problems(cibic, unstratified_rows, ars.index(unstratified),
+                                            entries=by_site)
     for name, check in planted.items():
-        _seen(name, check(), problems)
+        found = check()
+        _seen(name, found, problems)
+        if name == k1 and not any("an option whose values are columns" in p for p in found):
+            problems.append(f"{name}: not seen by the rule of K1")
     return problems
 
 

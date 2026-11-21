@@ -66,45 +66,33 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
 
 ## Open
 
-For the owner, from real-5b (ADR-015, "For the owner" of the amendment of
-real-5b, items 1 to 7; docs/reports/real-5b.md, "For the owner"; none
-blocks):
+Answered by the owner on 2026-11-20 (ADR-015, "The owner's answers
+(2026-11-20)"; docs/reports/real-5b-answers.md):
 
-- N2: the 36 differences of Tables 14-3.11 and 14-3.13, all `rule_choice`:
-  the 12 numbers of the model (gold at Week 24 by SAP 10.1.1; the CSR
-  averages over weeks 8, 16 and 24, the hint of E22), 21 counts of 0 and 3
-  p-values of 14-3.13 (display). Four entries of 14-3.11 name two
-  decisions (the visit and the CSR's display: 1 decimal for the limits, the
-  sign of "-0.0", a registry entry of its own, display.pattern.signed).
-- Where the documents are silent or disagree: the records of the mixed
-  model (`conflict`), its degrees of freedom (`asked`), the CMH statistic
-  and scores (`asked`: "Pearson Chi-Square" read as no CMH statistic keeps
-  the CSR's row mean scores; read as general association, gold would
-  follow it, with 3 more differences).
+- The documents against the CSR: the 45 differences of the five efficacy
+  tables stay `rule_choice` (gold follows the documents), the sign of
+  "-0.0" and the LS means at Week 24 as they were, the row labels the
+  CSR's. Nothing changed.
+- The records the documents leave open or contradict:
+  `custom:eff-model-terms`, `custom:eff-pairwise` and
+  `custom:eff-mmrm-records` (were `conflict`) are `stated`,
+  `document_rule`; `custom:eff-mmrm-df` and `custom:eff-cmh` (were
+  `asked`, `gold_quirk`) are `stated`, `study_input`. Each keeps its value
+  and cites the answer (doc `answers`). No number changed.
+- G2 and K1 of the review of real-5b are closed: `custom:eff-mmrm-visit`
+  names Week 24 and the check `decisions` holds the last visit of the
+  model records against it; an other_build proof refuses an other analysis
+  that differs in a column-valued option. Each is planted in D11.
+
+Still open for the owner, from real-5b and real-5a (none blocks):
+
+- `custom:eff-baseline-rows` is `asked` (not in the questions): no source;
+  both readings give the same cells here.
 - The Toeplitz fallback of SAP 10.1.1 is not implemented (not met on the
   pilot). The gate real-5a counts its own three tables.
-- G2: which visit is the last one is held by no CSR cell (AVISITN puts Week
-  24 last). K1: an other analysis of a proof may differ in a column-valued
-  option at any value. Each could be closed by a small check.
-- The proposals for `catalog@2` in docs/reports/real-5b.md.
-
-For the owner, from real-5a (ADR-015 "For the owner" and
-docs/reports/real-5a.md, sections "For the owner" and "Where the documents
-disagree", say each in full):
-
-- N2: the 9 cells that differ from the CSR (the limits of the 95%
-  confidence intervals, 2 decimals by SAP template 5, 1 in the CSR) are
-  classed `rule_choice`. Also the row labels, which follow the CSR, not
-  the template (review, F8).
-- Two `conflict` records, where the documents disagree (section 4.5):
-  `custom:eff-model-terms` (the Define-XML's dose-response code leaves the
-  baseline out; the SAP and the CSR keep it) and `custom:eff-pairwise`
-  (SAP 7.3 shows the comparisons only after a significant dose response;
-  template 5 and the CSR show them anyway). Gold keeps the values under
-  which the CSR's numbers are reproduced. `custom:eff-baseline-rows` is
-  `asked`: no source; both readings give the same cells here.
-- The proposals for `catalog@2` (an efficacy table family, an imputation
-  rule in `mod-bds-visits`, the pooling of sites), for the std track.
+- The proposals for `catalog@2` in docs/reports/real-5a.md (an efficacy
+  table family, an imputation rule in `mod-bds-visits`, the pooling of
+  sites) and docs/reports/real-5b.md, for the std track.
 - The kept transcript holds the Claude Code CLI's usage event (the
   subscription's usage, no credential); the old run on `main` had it too.
   The reviewer finds it acceptable (review pass 3, K3); the owner keeps it

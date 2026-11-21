@@ -610,6 +610,9 @@ for the CMH p-values.
 
 ## For the owner
 
+All three were answered on 2026-11-20: ADR-015, section "The owner's
+answers (2026-11-20)", and docs/reports/real-5b-answers.md.
+
 - The classes of the 36 differences (N2), and the three records the
   documents do not settle (section "Where the documents are silent or
   disagree"); ADR-015's amendment of real-5b lists them.
