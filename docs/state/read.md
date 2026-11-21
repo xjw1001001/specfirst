@@ -17,7 +17,8 @@ first for the slice "adverse event summary first" (ADR-005).
   `specfirst run bind` (decision 6, no model call), the plants of decision
   7 in the gate read-2a. R-task-04119188ff71 has its binding.json. A new R
   or pyarrow still makes the run stale (ADR-017, "Found while carrying it
-  out"; with the owner, "Open"). Report: docs/reports/adr-017.md. Review:
+  out"); the owner keeps it so (2026-11-20, "Open"). Report:
+  docs/reports/adr-017.md. Review:
   docs/reports/adr-017.review.md (signed in pass 2; pass 1 found F1, the
   engines, and F2, a check without a plant of its own, both fixed). The
   gates read-2a (19 of 19) and read-1a (14 of 14) passed on clean clones
@@ -189,13 +190,14 @@ For the read track, from the owner (2026-11-19, relayed by the base session
 in real-5a). The binding of a kept run to versions (K5, the owner's choices
 item 1) and K4 are settled by ADR-017 and the part adr-017 ("Passed").
 
-- With the owner (docs/reports/adr-017.md, "For the owner"; review of
-  adr-017, F1): ADR-017 as approved frees a kept run from yamaa's version
-  only. R's version also stands in kit.yaml's `properties`, and pyarrow's
-  in every Parquet file, so a new R or pyarrow still makes the dry run of
-  arm R again. Freeing R (leave `properties.*.R` out of the binding) is a
-  small change of decision 3; freeing pyarrow changes decision 2 or the
-  generator.
+- Review of adr-017, F1: ADR-017 as approved frees a kept run from
+  yamaa's version only. R's version also stands in kit.yaml's
+  `properties`, and pyarrow's in every Parquet file. The owner keeps it as
+  it is (2026-11-20, relayed by the base session; ADR-017, "The owner's
+  answer on R and pyarrow"): when R or pyarrow really is upgraded, the dry
+  run of arm R is made again, once (about USD 0.6), and kept with
+  `specfirst run arm KIT --arm R --keep`. Freeing R or pyarrow is not
+  taken.
 
 - Review of real-5a, K3: the kept transcripts hold the CLI's
   `rate_limit_event` (the subscription's usage, no credential). The owner
