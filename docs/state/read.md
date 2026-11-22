@@ -206,8 +206,8 @@ track left alone meanwhile. Report: docs/reports/catalog-2c.md.
 - The reader's skills render the house defaults of open-default@2 (a
   default by design names its cases); TASK.md and the core-reader skill
   describe the anchors by entry ID, the cases and the fixed rules.
-- The kept dry run of arm R is `R-task-b6706bdac1d8` (kit 4 of the gate
-  seed, catalog@2), in place of `R-task-04119188ff71`.
+- The kept dry run of arm R is `R-task-6e527ae6baab` (kit 4 of the gate
+  seed, generator `catalog-2c.2`), in place of `R-task-04119188ff71`.
 - The pilot task of ADR-016 takes catalog@2: the real kit names no catalog
   version (BACKLOG i28.real-kit-pins waits for real-4).
 

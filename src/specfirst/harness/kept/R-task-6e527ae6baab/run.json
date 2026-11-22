@@ -18,28 +18,28 @@
   "usd": 10.0
  },
  "canary": {
-  "count": 30449,
+  "count": 30581,
   "hits": [],
   "sources": {
-   "kit:gold/ard/reporting-event.jsonl": 107,
-   "kit:gold/ard/reporting-event.r.jsonl": 3,
-   "kit:gold/ars/reporting-event.json": 225,
+   "kit:gold/ard/reporting-event.jsonl": 105,
+   "kit:gold/ard/reporting-event.r.jsonl": 1,
+   "kit:gold/ars/reporting-event.json": 240,
    "kit:gold/decisions.jsonl": 67,
    "kit:gold/design.yaml": 23,
    "kit:gold/docs/natural.json": 46,
    "kit:gold/docs/protocol.md": 5,
    "kit:gold/docs/sap.md": 8,
    "kit:gold/graph/coverage.json": 247,
-   "kit:gold/graph/edges.jsonl": 588,
-   "kit:gold/graph/nodes.jsonl": 576,
-   "kit:gold/grid/Out_AESUM.json": 48,
-   "kit:gold/grid/Out_AESUM.shell.json": 44,
+   "kit:gold/graph/edges.jsonl": 612,
+   "kit:gold/graph/nodes.jsonl": 596,
+   "kit:gold/grid/Out_AESUM.json": 54,
+   "kit:gold/grid/Out_AESUM.shell.json": 40,
    "kit:gold/identifiability.json": 131,
    "kit:gold/oracle.yaml": 5,
    "kit:gold/out/Out_AESUM.html": 43,
    "kit:gold/out/Out_AESUM.shell.html": 14,
-   "kit:gold/probes.jsonl": 563,
-   "kit:gold/reference/tfl-ae-summary.json": 13,
+   "kit:gold/probes.jsonl": 573,
+   "kit:gold/reference/tfl-ae-summary.json": 14,
    "kit:gold/resolved/adae.json": 1171,
    "kit:gold/resolved/adsl.json": 1544,
    "kit:gold/spec/adam/adae.yaml": 9,
@@ -54,7 +54,7 @@
    "kit:gold/spec/adam/fragments/adsl/demo.bmi.rule.yaml": 2,
    "kit:gold/spec/adam/fragments/adsl/demo.race.pooling.yaml": 1,
    "kit:gold/spec/adam/fragments/adsl/disp.status.record.yaml": 5,
-   "kit:gold/spec/adam/fragments/adsl/pop.efficacy.rule.yaml": 8,
+   "kit:gold/spec/adam/fragments/adsl/pop.efficacy.rule.yaml": 7,
    "kit:gold/spec/adam/fragments/adsl/pop.safety.rule.yaml": 1,
    "kit:gold/spec/adam/fragments/adsl/trt.actual.source.yaml": 1,
    "kit:gold/spec/adam/fragments/adsl/trt.date.imputation.yaml": 2,
@@ -77,71 +77,78 @@
    "kit:twin/data/sdtm/sv.json": 764,
    "kit:twin/data/sdtm/ts.json": 3,
    "kit:twin/data/sdtm/vs.json": 4932,
-   "kit:twin/gold/ard/reporting-event.jsonl": 15,
-   "kit:twin/gold/ars/reporting-event.json": 202,
+   "kit:twin/gold/ard/reporting-event.jsonl": 17,
+   "kit:twin/gold/ard/reporting-event.r.jsonl": 1,
+   "kit:twin/gold/ars/reporting-event.json": 204,
    "kit:twin/gold/graph/coverage.json": 2,
-   "kit:twin/gold/graph/edges.jsonl": 146,
-   "kit:twin/gold/graph/nodes.jsonl": 162,
-   "kit:twin/gold/grid/Out_AESUM.json": 36,
-   "kit:twin/gold/out/Out_AESUM.html": 11,
+   "kit:twin/gold/graph/edges.jsonl": 158,
+   "kit:twin/gold/graph/nodes.jsonl": 166,
+   "kit:twin/gold/grid/Out_AESUM.json": 19,
+   "kit:twin/gold/out/Out_AESUM.html": 12,
    "kit:twin/gold/reference/tfl-ae-summary.json": 12,
    "kit:twin/truth/subjects.jsonl": 7946,
    "planted": 3,
    "seed": 1,
    "store:README.md": 43,
-   "store:calls.jsonl": 30,
+   "store:calls.jsonl": 42,
    "store:calls/catalog-2c-readback-1.answer.json": 21,
    "store:calls/catalog-2c-readback-1.message.txt": 1,
    "store:calls/catalog-2c-readback-1.request.json": 122,
+   "store:calls/catalog-2c-readback-2.answer.json": 4,
+   "store:calls/catalog-2c-readback-2.message.txt": 1,
+   "store:calls/catalog-2c-readback-2.request.json": 11,
    "store:calls/catalog-2c-rewrite-1.answer.json": 22,
    "store:calls/catalog-2c-rewrite-1.message.txt": 1,
    "store:calls/catalog-2c-rewrite-1.request.json": 50,
+   "store:calls/catalog-2c-rewrite-2.answer.json": 5,
+   "store:calls/catalog-2c-rewrite-2.message.txt": 1,
+   "store:calls/catalog-2c-rewrite-2.request.json": 6,
    "store:calls/readback-1.answer.json": 71,
    "store:calls/readback-1.message.txt": 3,
-   "store:calls/readback-1.request.json": 145,
+   "store:calls/readback-1.request.json": 139,
    "store:calls/readback-2.answer.json": 1,
    "store:calls/readback-2.message.txt": 2,
    "store:calls/rewrite-1.answer.json": 72,
    "store:calls/rewrite-1.message.txt": 1,
    "store:calls/rewrite-1.request.json": 93,
    "store:filler.jsonl": 21,
-   "store:paragraphs.jsonl": 326
+   "store:paragraphs.jsonl": 352
   }
  },
  "condition": "notes",
  "cost": {
-  "api_seconds": 96.5,
+  "api_seconds": 88.6,
   "tokens": {
-   "cache_read": 412998,
-   "cache_write": 67120,
-   "input": 22,
-   "output": 9031
+   "cache_read": 336614,
+   "cache_write": 63137,
+   "input": 20,
+   "output": 7868
   },
   "tokens_by_model": {
    "claude-opus-5-5": {
-    "cache_read": 412998,
-    "cache_write": 67120,
-    "input": 22,
-    "output": 9031
+    "cache_read": 336614,
+    "cache_write": 63137,
+    "input": 20,
+    "output": 7868
    }
   },
-  "turns": 25,
+  "turns": 23,
   "unpriced_models": [],
-  "usd": 0.800268,
-  "usd_cli": 0.8002676000000001,
-  "wall_seconds": 108.7
+  "usd": 0.729859,
+  "usd_cli": 0.7298587999999999,
+  "wall_seconds": 94.9
  },
  "end": {
-  "events": 82,
+  "events": 68,
   "is_error": false,
   "message": "done",
   "permission_denials": [
    {
     "tool_input": {
-     "command": "cd \"<task>\"; ls -R | head -80; cat knowledge/core-reader/SKILL.md knowledge/mod-treatment/SKILL.md"
+     "command": "cd \"<task>\"; find . -type f | grep -v sdtm | head -100; cat knowledge/core-reader/SKILL.md knowledge/mod-treatment/SKILL.md"
     },
     "tool_name": "Bash",
-    "tool_use_id": "toolu_0179P4sJCbAFXNch1Ht1YTMz"
+    "tool_use_id": "toolu_016HDex513sK5bhWCAK5ppUN"
    }
   ],
   "result": true,
@@ -150,20 +157,20 @@
   "stopped": false
  },
  "kit": {
-  "generator": "catalog-2c.1",
+  "generator": "catalog-2c.2",
   "id": "sfrrl2uh",
-  "kit_yaml_sha256": "046475c1def3dced60672fb17f599e2afd143a940f23aa0e2f9765de00d4f501",
+  "kit_yaml_sha256": "123f5c8f1c5fa966f855e4baf30003e5c96ccfb6701e668168ade735efbeb1af",
   "seed_checked": true,
   "split": "train"
  },
  "outputs": {
   "decisions.jsonl": {
    "lines": 22,
-   "sha256": "1cc1c77d0ff3e7cdd1514ca3d65fa5fe33353542267e82faacf6cad6f4bddf9d"
+   "sha256": "683c4e325808e5bf8be4760c5ed7b08f31af6a519be826b80bab3050e89e720a"
   },
   "questions.jsonl": {
    "lines": 2,
-   "sha256": "23144f68858616416a421ae1b02bc303485472c92900d2742af474ac330661c4"
+   "sha256": "b52eb11f82a1d6dc629f7b7f2071e116b436fdeb187a9fb2aacff43d03cbcb0a"
   },
   "unmapped.jsonl": {
    "lines": 0,
@@ -212,6 +219,7 @@
   "deny": [
    "//<home>/.claude",
    "//<home>/AppData/Local/Temp/claude/10aba9a65c3031fd/54b2d98f-98c9-475d-aa2b-ec2aa3e823a9/scratchpad/r2c/runs",
+   "//<home>/AppData/Local/Temp/claude/10aba9a65c3031fd/54b2d98f-98c9-475d-aa2b-ec2aa3e823a9/scratchpad/r2c/tasks/task-b6706bdac1d8",
    "//<home>/Desktop",
    "//<home>/Documents",
    "//<home>/Downloads",
@@ -219,6 +227,7 @@
    "//<checkout>/src/specfirst/gen/rewrites",
    "/<home>/.claude",
    "/<home>/AppData/Local/Temp/claude/10aba9a65c3031fd/54b2d98f-98c9-475d-aa2b-ec2aa3e823a9/scratchpad/r2c/runs",
+   "/<home>/AppData/Local/Temp/claude/10aba9a65c3031fd/54b2d98f-98c9-475d-aa2b-ec2aa3e823a9/scratchpad/r2c/tasks/task-b6706bdac1d8",
    "/<home>/Desktop",
    "/<home>/Documents",
    "/<home>/Downloads",
@@ -235,11 +244,11 @@
   ]
  },
  "record": 1,
- "run": "R-task-b6706bdac1d8",
+ "run": "R-task-6e527ae6baab",
  "stage": "C",
  "task": {
   "decisions": 22,
-  "id": "task-b6706bdac1d8",
+  "id": "task-6e527ae6baab",
   "knowledge": [
    "knowledge/core-reader/SKILL.md",
    "knowledge/mod-ae-emergence/SKILL.md",
@@ -247,7 +256,7 @@
    "knowledge/mod-treatment/SKILL.md",
    "knowledge/tfl-ae-summary/SKILL.md"
   ],
-  "manifest_sha256": "b6706bdac1d84e419806d9505dabe2098c6ee2a71f26068e568f2b277eece586",
+  "manifest_sha256": "6e527ae6baab5a319c6e9bea688b0af7a51ea8a759eff6c933c2a2d332ce8101",
   "units": [
    "mod-treatment",
    "mod-populations",

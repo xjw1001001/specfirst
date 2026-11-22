@@ -2,12 +2,12 @@
  "adr": "ADR-017",
  "binding": 1,
  "files": {
-  "asks.jsonl": "cb7a932d6cb7bc83fa4e247dd9a517a70ab99d0954f61ad4230525a5e40ca7d4",
-  "run.json": "acdca1f35afc745467b9dec1c4efc5401f67ee2c10db77332ddfe12d832677a0",
-  "task.json": "3dca0cbcf959a4252563680e858112ea654dc1b87a9f3de24a11e1b23e3892bc",
-  "transcript.jsonl": "c3fccf26f284fabba2940d9584b708e60d3394dcb9b3345b05986de8b354c987",
-  "workspace/out/decisions.jsonl": "841caa4d065165f27cbaca8a734c3404cbde83466d9a00dc10a55d88c234fd64",
-  "workspace/out/questions.jsonl": "23144f68858616416a421ae1b02bc303485472c92900d2742af474ac330661c4",
+  "asks.jsonl": "38ff3f996cfc15883135178810effb576aae3db55b6020b087ccb346b4475344",
+  "run.json": "569f708e493cbcc8461ccb709714beff77ff8bdf7074a26d11112f14cfbd2bc8",
+  "task.json": "3062b40ac5c58fce0802e17a7d9925739d82be9749b48505b589c8215b968594",
+  "transcript.jsonl": "2af6f015200fcc68e61d7d3a5c92ed44bab8d7db07e21d7e4e763f6b328aadf6",
+  "workspace/out/decisions.jsonl": "f69eb08f5f1e5bf7dd03d819d2459ca30d8501b67e467e5e3a5428bd5e07da0e",
+  "workspace/out/questions.jsonl": "b52eb11f82a1d6dc629f7b7f2071e116b436fdeb187a9fb2aacff43d03cbcb0a",
   "workspace/out/unmapped.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
  },
  "kit": {
@@ -15,7 +15,7 @@
    "name": "specfirst-m1",
    "version": "2"
   },
-  "generator": "catalog-2c.1",
+  "generator": "catalog-2c.2",
   "house": "open-default@2",
   "keys": {
    "archetype": "13604ea361497000825e30c2764e4ecbae809ea0950794a118efd3dd7f853e44",
@@ -23,8 +23,8 @@
    "datasets": "32303ea9867bef848e916702b41eb17c8972d9de45c0a5701c665cb3e7e63ce8",
    "decisions": "048e946e1b28fdaf5adde625df66f76b4f1d3f5ba32635d03765751bf975805f",
    "documents": "7773194df72fcf6f5fbec9cf6f1408950292ff855b042964a1ce0cf2bbee50aa",
-   "files": "feae51eec6a2f6dad396d4d7c2df6e4b9ab7e1860df6bd85f675ec9cd9b30cb5",
-   "generator": "9c4c048c9904d1b05a1c672c74e806be7e9e11d380ba1916c2ed1f32b0de8ad6",
+   "files": "1b1e06a0e46ae2897c3bba7943050603b11fe363f61415b1a99d6577e64a6ee3",
+   "generator": "e857683834b199a3b54f4b2730d5e98c7cde6e81d10c50da6a3545a6de3a30aa",
    "house": "3b7cef8cf41cef9956d2bf94bead812943b13d3ec4ecf956581fc220213b7e4d",
    "id": "19b799b94e69ff0cc0112122a5c0efcf7474ecc1131bad7026ae5f3584b0cd7d",
    "kit": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
@@ -39,7 +39,7 @@
    "title": "ef7ea3b53ee6b4bd15ec40cc2879f3321b6988e25e01f14cde56a7a6dd8cfd1e",
    "units": "4f944e158c8c43f871519db9b65a2122da684304cf97a7fb9e950fc233d8c856"
   },
-  "kit_yaml_sha256": "1b6f7e49c5ff207c3314f07bcc9529ba6847cf5e3853c2c8b22ffe284a0ad6d4"
+  "kit_yaml_sha256": "e28396614e573c95de6ed167c79b873ea6e7b885282d65b212ee4efe725b3c14"
  },
  "registry": {
   "format": 0,
@@ -52,6 +52,6 @@
  },
  "task": {
   "files": 92,
-  "manifest_sha256": "b583b5ac0e5ebb611d6df1715ad59a02ae75c7642206532e749b72c2d5a24d1a"
+  "manifest_sha256": "3aeaf6377a5e9931b0a4862792da963fc9a4ec4db1b32b1da63bca220121bb0a"
  }
 }
