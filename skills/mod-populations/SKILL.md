@@ -1,11 +1,11 @@
 ---
 name: mod-populations
-description: Reading notes v0 for the unit mod-populations (Analysis populations and disposition). For each of its 5 catalog questions, where a protocol or a statistical analysis plan states the decision, the words to look for and the traps. Rendered from the decision catalog specfirst-m1 1.
+description: Reading notes v0 for the unit mod-populations (Analysis populations and disposition). For each of its 5 catalog questions, where a protocol or a statistical analysis plan states the decision, the words to look for and the traps. Rendered from the decision catalog specfirst-m1 2 and the house standard open-default@2.
 ---
 
 # Analysis populations and disposition (mod-populations): reading notes v0
 
-Rendered from the decision catalog `specfirst-m1` version 1 by `specfirst run skills --write`; do not edit by hand. Read `core-reader` first: it says how to record a decision. Here, for every question of the unit: its alternatives with the statement each gives, the house default, and where documents state it.
+Rendered from the decision catalog `specfirst-m1` version 2 and the house standard `open-default@2` by `specfirst run skills --write`; do not edit by hand. Read `core-reader` first: it says how to record a decision. Here, for every question of the unit: its alternatives with the statement each gives, the house default, and where documents state it.
 
 Questions of this unit: `pop.randomized.rule`, `pop.safety.rule`, `pop.safety.grouping`, `pop.efficacy.rule`, `disp.status.record`.
 
@@ -14,8 +14,9 @@ Questions of this unit: `pop.randomized.rule`, `pop.safety.rule`, `pop.safety.gr
 Alternatives:
 
 - `all_randomized` (the house default): "The randomized set holds every randomized subject."
+  Meaning: The randomized set is written to ITTFL: the FDA guide calls it the randomized population, often referred to as the intent-to-treat population.
 - `randomized_with_postbaseline`, slots test: "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign {test}."
-  Meaning: A post-baseline value is a non-missing result dated after the treatment start date.
+  Meaning: A post-baseline value is a non-missing result dated after the treatment start date. The set is a modified intent-to-treat set (mITT): a predefined part of the randomized set, still written to ITTFL.
 
 House default: `all_randomized`.
 
@@ -46,16 +47,16 @@ which documents usually call the intent-to-treat set or the full analysis set.
   a laboratory test or "any efficacy assessment", report the passage.
 - When the SAP defines both an all-randomized set and a narrower evaluable set, this entry is
   the all-randomized one; the narrower set belongs to `pop.efficacy.rule`.
-- Silent documents: use the house default `all_randomized` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `pop.safety.rule`: Who is in the safety set?
 
 Alternatives:
 
 - `at_least_one_dose` (the house default): "The safety set holds every subject who received at least one dose of study treatment."
-- `randomized_and_dosed`: "The safety set holds every randomized subject who received at least one dose of study treatment."
+- `randomized_and_dosed` (the house default): "The safety set holds every randomized subject who received at least one dose of study treatment."
 
-House default: `at_least_one_dose`.
+House default: it depends on the design: `randomized_and_dosed` for a study where design.randomized holds; `at_least_one_dose` for any other study.
 
 The answer fixes the subjects and the column counts of every safety output. The alternatives
 differ only for a subject who was dosed without being randomized.
@@ -73,6 +74,12 @@ differ only for a subject who was dosed without being randomized.
   treated subjects", "all subjects exposed to study drug".
 - `randomized_and_dosed`: "all randomized subjects who received at least one dose",
   "randomized and treated subjects".
+- Ambiguous between the two: "all subjects exposed to at least one dose of randomized
+  treatment" (the FDA guide, section 2.1.1). "Randomized treatment" may mean the trial's
+  treatment rather than a test of randomization; report the passage and say which reading
+  was taken.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment: "all participants who received at least one dose of study intervention".
 
 ### Traps
 
@@ -84,7 +91,7 @@ differ only for a subject who was dosed without being randomized.
 - Added conditions such as "and at least one post-dose safety assessment" match no
   alternative; report the passage.
 - Whether the set is grouped as treated or as randomized is `pop.safety.grouping`.
-- Silent documents: use the house default `at_least_one_dose` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `pop.safety.grouping`: Which treatment groups the safety analyses?
 
@@ -121,7 +128,7 @@ when the treatment received differs from the treatment assigned.
   `planned`.
 - If protocol and SAP disagree, cite both passages; the SAP, as the later and more detailed
   document, normally governs the analysis.
-- Silent documents: use the house default `actual` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `pop.efficacy.rule`: Who is efficacy-evaluable?
 
@@ -162,7 +169,8 @@ the subjects and column counts of every output on that set.
 - Both alternatives start from the safety set. Sets built on protocol deviations, compliance
   limits or an assessment that is not a vital sign match no alternative; report the passage.
 - The visit name is compared exactly with the collected visit name; copy it as written.
-- Silent documents: this entry has no house default. Do not guess; a person must be asked.
+- Silent documents: when the house standard states no default for this entry, do not guess;
+  a person must be asked.
 
 ## `disp.status.record`: Which record gives the end-of-study status?
 
@@ -203,4 +211,4 @@ ongoing. Rules that fall back on the end-of-study date use the same record.
   subject with no such record is ONGOING.
 - The subcategory is compared exactly. Use the text the documents or annotated forms give;
   if none is given, report that instead of inventing one.
-- Silent documents: use the house default `disposition_event` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

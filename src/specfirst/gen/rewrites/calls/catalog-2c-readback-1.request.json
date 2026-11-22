@@ -1,0 +1,414 @@
+{
+ "rules": [
+  "For each item, read the paragraph alone and pick the one alternative whose rule the paragraph states for the question, by its id. Values in angle brackets may be any value. If the paragraph states none of them, or more than one, answer '(none)'.",
+  "For each filler item, list the questions (by their text) whose answer the paragraph states, or an empty list.",
+  "Judge from the text only; do not read any other file."
+ ],
+ "items": [
+  {
+   "item": "r0a8b0d7b0526",
+   "paragraph": "The planned arm code (DM.ARMCD) determines planned treatment: SFX50 is decoded as Low Dose, SFX100 as Medium Dose, SFX200 as High Dose, and PBO as Placebo.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r115db54ab8ec",
+   "paragraph": "Percentages in the adverse event summary table are reported with 0 decimals, and a count of zero is displayed without a percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown without a percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown with its percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+    }
+   ]
+  },
+  {
+   "item": "r1ac07754c733",
+   "paragraph": "The planned arm code (DM.ARMCD) determines planned treatment: KRD5 is decoded as Low Dose, KRD10 as High Dose, and PBO as Placebo.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r2d5700867acf",
+   "paragraph": "Treatment emergence ends 14 days after the treatment end date, and that day is included in the window.",
+   "question": "When does treatment emergence end?",
+   "alternatives": [
+    {
+     "id": "no_end",
+     "rule": "Treatment emergence has no end date.",
+     "meaning": "Every event that starts on or after the start of treatment emergence is treatment-emergent, however long after the treatment end date (the on-study reading of the FDA guide)."
+    },
+    {
+     "id": "last_dose_plus_days",
+     "rule": "Treatment emergence ends <days> days after the treatment end date, that day included.",
+     "meaning": "An event that starts later than that many days after the treatment end date is not treatment-emergent; one that starts on the last day of the window still is."
+    }
+   ]
+  },
+  {
+   "item": "r3b0a3e99c99f",
+   "paragraph": "The adverse event summary table has these rows: any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment.",
+   "question": "Which rows does the adverse event summary table have?",
+   "alternatives": [
+    {
+     "id": "standard_rows",
+     "rule": "The rows of the adverse event summary table are any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment.",
+     "meaning": "The rows and their order are those of the ARS example \"Common Safety Displays\", output Out14-3-1-1, without its rows of related fatal events and of events leading to dose modification."
+    },
+    {
+     "id": "stated_rows",
+     "rule": "The rows of the adverse event summary table are, in this order, <rows>.",
+     "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related)."
+    }
+   ]
+  },
+  {
+   "item": "r4055d67a1206",
+   "paragraph": "The planned arm code (DM.ARMCD) determines planned treatment: TNB50 is decoded as Low Dose, TNB100 as Medium Dose, TNB200 as High Dose, and PBO as Placebo.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "r56c2449b5faa",
+   "paragraph": "An adverse event is treatment-emergent if it starts on or after the first dose; date and time are compared where both were collected, and dates alone are compared otherwise.",
+   "question": "When does treatment emergence begin?",
+   "alternatives": [
+    {
+     "id": "on_or_after_first_dose_date",
+     "rule": "An adverse event is treatment-emergent when it starts on or after the treatment start date.",
+     "meaning": "Dates are compared; times are ignored."
+    },
+    {
+     "id": "at_or_after_first_dose_time",
+     "rule": "An adverse event is treatment-emergent when it starts at or after the date and time of the first dose.",
+     "meaning": "A start or a first dose collected without a time counts from 00:00 of its day."
+    },
+    {
+     "id": "by_time_when_collected",
+     "rule": "An adverse event is treatment-emergent when it starts on or after the first dose, comparing date and time where both were collected and dates otherwise.",
+     "meaning": "On the first dose date, an event is not treatment-emergent only when both its start time and the time of the first dose were collected and it starts before the dose; an event on that date without a collected time is treatment-emergent."
+    }
+   ]
+  },
+  {
+   "item": "r5872c9b87cb5",
+   "paragraph": "The treatment end date is the latest start date among the exposure records that have a dose.",
+   "question": "What is the treatment end date?",
+   "alternatives": [
+    {
+     "id": "last_ex_end_date",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose."
+    },
+    {
+     "id": "last_ex_start_date",
+     "rule": "The treatment end date is the latest start date of an exposure record with a dose."
+    },
+    {
+     "id": "ds_date_when_ex_missing",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date.",
+     "meaning": "The disposition date is the start date of the end-of-study record (decision disp.status.record). It is taken only for a subject with a treatment start."
+    },
+    {
+     "id": "last_ex_record_end",
+     "rule": "The treatment end date is the latest end date of any exposure record.",
+     "meaning": "Every exposure record takes part, whatever its dose: the counterpart of trt.start.source/first_ex_record, for an EX in which EXDOSE is not populated (EXDOSE is not a Required variable of SDTMIG)."
+    }
+   ]
+  },
+  {
+   "item": "r636bdf22c93a",
+   "paragraph": "Percentages in the adverse event summary table are reported with 2 decimals, and a count of zero is displayed without a percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown without a percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown with its percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+    }
+   ]
+  },
+  {
+   "item": "r71ab3d72a8cd",
+   "paragraph": "An adverse event is considered related to study treatment when its causality is POSSIBLY RELATED, PROBABLY RELATED, or RELATED.",
+   "question": "Which causality values count as related to study treatment?",
+   "alternatives": [
+    {
+     "id": "stated_list",
+     "rule": "An adverse event is related to study treatment when its causality is one of <values>.",
+     "meaning": "The causality is the collected value of AEREL, compared exactly."
+    }
+   ]
+  },
+  {
+   "item": "r89087aa085af",
+   "paragraph": "An adverse event is considered related to study treatment when its causality is PROBABLE.",
+   "question": "Which causality values count as related to study treatment?",
+   "alternatives": [
+    {
+     "id": "stated_list",
+     "rule": "An adverse event is related to study treatment when its causality is one of <values>.",
+     "meaning": "The causality is the collected value of AEREL, compared exactly."
+    }
+   ]
+  },
+  {
+   "item": "r98656ddd2682",
+   "paragraph": "Baseline body mass index is derived from baseline weight and height and is kept at full precision.",
+   "question": "How is baseline body mass index obtained?",
+   "alternatives": [
+    {
+     "id": "derived",
+     "rule": "Baseline body mass index is derived from baseline weight and height, at full precision.",
+     "meaning": "Weight in kg divided by the square of height in m, with height collected in cm and divided by 100; weight in kg and height in cm are assumed. The value is kept at full precision: a table rounds it once, at display (PLAN.md section 7.2)."
+    },
+    {
+     "id": "as_collected",
+     "rule": "Baseline body mass index is the collected body mass index, selected by the rule for baseline weight and height.",
+     "meaning": "The collected value is the vital sign with VSTESTCD equal to BMI."
+    }
+   ]
+  },
+  {
+   "item": "r9c5ca8f08560",
+   "paragraph": "The planned arm code (DM.ARMCD) determines planned treatment: PBO is decoded as Placebo, ZQR200 as High Dose, ZQR100 as Medium Dose, and ZQR50 as Low Dose.",
+   "question": "Where does planned treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_arm",
+     "rule": "Planned treatment is the planned arm of the subject (DM.ARM)."
+    },
+    {
+     "id": "dm_armcd_map",
+     "rule": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: <map>.",
+     "meaning": "A code that the list does not name gives no planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "ra309ddd1c093",
+   "paragraph": "Actual treatment is the treatment named on the first exposure record of the subject (EX.EXTRT).",
+   "question": "Where does actual treatment come from?",
+   "alternatives": [
+    {
+     "id": "dm_actarm",
+     "rule": "Actual treatment is the actual arm of the subject (DM.ACTARM)."
+    },
+    {
+     "id": "first_ex_treatment",
+     "rule": "Actual treatment is the treatment named on the first exposure record of the subject (EX.EXTRT).",
+     "meaning": "The first exposure record is the one with the earliest start date; the lowest EXSEQ breaks a tie."
+    },
+    {
+     "id": "same_as_planned",
+     "rule": "Actual treatment is the same as planned treatment."
+    }
+   ]
+  },
+  {
+   "item": "rb5dbd4c9a67c",
+   "paragraph": "An adverse event is considered related to study treatment when its causality is UNLIKELY RELATED, POSSIBLY RELATED, PROBABLY RELATED, or RELATED.",
+   "question": "Which causality values count as related to study treatment?",
+   "alternatives": [
+    {
+     "id": "stated_list",
+     "rule": "An adverse event is related to study treatment when its causality is one of <values>.",
+     "meaning": "The causality is the collected value of AEREL, compared exactly."
+    }
+   ]
+  },
+  {
+   "item": "rb7169995acb3",
+   "paragraph": "The adverse event summary table has the rows ANY, RELATED, FATAL, in that order.",
+   "question": "Which rows does the adverse event summary table have?",
+   "alternatives": [
+    {
+     "id": "standard_rows",
+     "rule": "The rows of the adverse event summary table are any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment.",
+     "meaning": "The rows and their order are those of the ARS example \"Common Safety Displays\", output Out14-3-1-1, without its rows of related fatal events and of events leading to dose modification."
+    },
+    {
+     "id": "stated_rows",
+     "rule": "The rows of the adverse event summary table are, in this order, <rows>.",
+     "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related)."
+    }
+   ]
+  },
+  {
+   "item": "rbfc8f54449d6",
+   "paragraph": "Percentages in the adverse event summary table are reported with 1 decimal, and a count of zero is displayed with its percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown without a percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown with its percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+    }
+   ]
+  },
+  {
+   "item": "rccbe7315303e",
+   "paragraph": "The randomized set consists of every randomized subject.",
+   "question": "Who is in the randomized set?",
+   "alternatives": [
+    {
+     "id": "all_randomized",
+     "rule": "The randomized set holds every randomized subject.",
+     "meaning": "The randomized set is written to ITTFL: the FDA guide calls it the randomized population, often referred to as the intent-to-treat population."
+    },
+    {
+     "id": "randomized_with_postbaseline",
+     "rule": "The randomized set holds every randomized subject with at least one post-baseline value of the vital sign <test>.",
+     "meaning": "A post-baseline value is a non-missing result dated after the treatment start date. The set is a modified intent-to-treat set (mITT): a predefined part of the randomized set, still written to ITTFL."
+    }
+   ]
+  },
+  {
+   "item": "rd3a757091c27",
+   "paragraph": "The adverse event summary table has the rows ANY, RELATED, FATAL, FATAL_RELATED, in that order.",
+   "question": "Which rows does the adverse event summary table have?",
+   "alternatives": [
+    {
+     "id": "standard_rows",
+     "rule": "The rows of the adverse event summary table are any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment.",
+     "meaning": "The rows and their order are those of the ARS example \"Common Safety Displays\", output Out14-3-1-1, without its rows of related fatal events and of events leading to dose modification."
+    },
+    {
+     "id": "stated_rows",
+     "rule": "The rows of the adverse event summary table are, in this order, <rows>.",
+     "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related)."
+    }
+   ]
+  },
+  {
+   "item": "re6b58ddf54f0",
+   "paragraph": "Age is grouped as below 65 years and 65 years and above.",
+   "question": "Which age groups are used?",
+   "alternatives": [
+    {
+     "id": "lt65_65to80_gt80",
+     "rule": "Age groups are below 65, 65 to 80 (80 included), and above 80 years.",
+     "meaning": "The groups are labelled <65, 65-80 and >80. An age of exactly 80 is in 65-80."
+    },
+    {
+     "id": "lt65_ge65",
+     "rule": "Age groups are below 65 years, and 65 years and above.",
+     "meaning": "The groups are labelled <65 and >=65."
+    },
+    {
+     "id": "stated_cuts",
+     "rule": "Age groups start at the ages <cuts> years, with one more group below the first of them.",
+     "meaning": "For the cuts 18 and 65 the groups are labelled <18, 18-<65 and >=65. An age equal to a cut is in the group that starts there."
+    }
+   ]
+  },
+  {
+   "item": "reb394c6db9f3",
+   "paragraph": "Percentages in the adverse event summary table are reported with 1 decimal, and a count of zero is displayed without a percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown without a percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown with its percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+    }
+   ]
+  }
+ ],
+ "filler": [],
+ "filler_questions": [
+  "Are race categories regrouped?",
+  "How are displayed numbers rounded? (for the adverse event summary table)",
+  "How are partial adverse event start dates completed?",
+  "How are partial exposure dates completed?",
+  "How are percentages displayed? (for the adverse event summary table)",
+  "How is baseline body mass index obtained?",
+  "In which order are the treatment columns? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event table by system organ class and preferred term)",
+  "Is the output part of the planned outputs of the study? (for the demographics table)",
+  "Is the output part of the planned outputs of the study? (for the vital signs table by visit)",
+  "Is there a total column? (for the adverse event summary table)",
+  "What is the treatment end date?",
+  "What is the treatment start date?",
+  "When does treatment emergence begin?",
+  "When does treatment emergence end?",
+  "Where does actual treatment come from?",
+  "Where does planned treatment come from?",
+  "Which age groups are used?",
+  "Which analysis set does the output use? (for the adverse event summary table)",
+  "Which causality values count as related to study treatment?",
+  "Which date is study day 1?",
+  "Which record gives baseline weight and height?",
+  "Which record gives the end-of-study status?",
+  "Which rows does the adverse event summary table have?",
+  "Which treatment groups the safety analyses?",
+  "Who is efficacy-evaluable?",
+  "Who is in the randomized set?",
+  "Who is in the safety set?"
+ ],
+ "answer": {
+  "items": [
+   {
+    "item": "<id>",
+    "pick": "<alternative id or none>"
+   }
+  ],
+  "filler": [
+   {
+    "item": "<id>",
+    "states": []
+   }
+  ]
+ }
+}

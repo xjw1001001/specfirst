@@ -48,8 +48,10 @@ def _render(catalog, entry_id, value, unit=None):
 def test_the_tokens_of_a_statement(catalog):
     assert natural.tokens(catalog, "ae.teae.end", "mod-ae-emergence",
                           {"rule": "last_dose_plus_days", "days": 14}) == ["14", "days"]
+    # catalog@2 says where 80 goes (#18): "below 65, 65 to 80 (80 included), and above 80".
     assert natural.tokens(catalog, "demo.age.groups", "mod-demographics",
-                          {"rule": "lt65_65to80_gt80"}) == ["65", "65", "80", "80", "years"]
+                          {"rule": "lt65_65to80_gt80"}) == ["65", "65", "80", "80", "80",
+                                                            "years"]
     assert natural.tokens(catalog, "trt.planned.source", "mod-treatment", {
         "rule": "dm_armcd_map", "map": [{"code": "PBO", "label": "Placebo"},
                                         {"code": "KRD5", "label": "Low Dose"}]}) == [
@@ -89,11 +91,11 @@ def test_the_slot_check_fails_on_planted_defects(catalog):
         "'days' is not in the paragraph"]
     ages = natural.token_groups(catalog, "demo.age.groups", "mod-demographics",
                           {"rule": "lt65_65to80_gt80"})
-    text = "Age groups will be below 65, 65 to 80, and above 80 years."
+    text = "Age groups will be below 65, 65 to 80 (80 included), and above 80 years."
     assert natural.slot_problems(text, ages) == []
     assert natural.slot_problems(text.replace("above 80", "above 85"), ages) == [
         "the number 85 is not in the statement",
-        "'80' stands 1 times in the paragraph, the statement has it 2 times"]
+        "'80' stands 2 times in the paragraph, the statement has it 3 times"]
     # What is no paragraph of a document.
     assert natural.slot_problems(period + "\nMore.", days) == ["the paragraph is not one line"]
     assert natural.slot_problems("[3/p1] " + period, days)[0] == "the paragraph holds an anchor"
@@ -161,7 +163,7 @@ def test_the_loop_accepts_what_reads_back_and_falls_back_after_three_failures(ca
     assert set(item) == {"item", "paragraph", "question", "alternatives"}
     assert item["paragraph"] == text and wanted[key]["statement"] not in json.dumps(request)
     assert natural.NONE not in {alt["id"] for alt in item["alternatives"]}
-    natural.readback(catalog, store, {"items": [{"item": item["item"], "pick": "end_of_study"}]},
+    natural.readback(catalog, store, {"items": [{"item": item["item"], "pick": "no_end"}]},
                      "call-3")
     assert not store.paragraphs[key]["accepted"] and store.failed(store.paragraphs[key]) == 2
     # Attempt 3 fails the slot check too: three failures, the phrasing template follows.
@@ -218,7 +220,8 @@ def test_the_documents_of_each_tier(catalog, house, design, tier, tmp_path):
                                        decisions.SLICE_UNITS, Stream("tier", tier),
                                        tmp_path / "kit", store)
     state = {(r["id"], r["unit"]): r["status"] for r in records}
-    defaults = {(r["id"], r["unit"]) for r in houses.default_decisions(catalog, house)}
+    defaults = {(r["id"], r["unit"]) for r in houses.default_decisions(
+        catalog, house, designs.features(design))}
     none_default = {key for key in state if key not in defaults and key[1] in
                     decisions.SLICE_UNITS}
     assert {key[0] for key in none_default} == {"ae.related.values", "pop.efficacy.rule"}
@@ -319,11 +322,11 @@ def test_the_slot_check_keeps_case_and_refuses_what_the_statement_lacks(catalog)
     assert natural.slot_problems("Emergence will end 30 days after the treatment end date plus "
                                  "2 days.", window) == ["the number 2 is not in the statement"]
     # A word in capitals of the template text is a token of its own.
-    pooled = groups("demo.race.pooling", {"rule": "pooled_below_count", "count": 5})
-    assert ["OTHER"] in pooled
-    assert natural.slot_problems("A race category with fewer than 5 subjects will be pooled "
-                                 "into the category Other.", pooled) == [
-        "'OTHER' is not in the paragraph"]
+    sas = groups("tfl.quantile.definition", {"rule": "sas5"}, "tfl-demographics")
+    assert ["SAS"] in sas
+    assert natural.slot_problems("Quantiles in the demographics table will follow definition 5 "
+                                 "(R type 2), the empirical distribution function with "
+                                 "averaging.", sas) == ["'SAS' is not in the paragraph"]
 
 
 def test_a_read_back_that_cannot_tell_agreement_from_abstention_does_not_count(catalog,

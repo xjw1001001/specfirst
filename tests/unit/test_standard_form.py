@@ -17,10 +17,13 @@ from specfirst.compile.slots import (
 )
 from specfirst.compile.standard_form import StandardForm, StandardFormError, decision_record
 
+# The std-1 tests hold the frozen pair of version 1 (ADR-020: loadable by label).
+V1 = ("catalog@1", "open-default@1")
+
 
 @pytest.fixture(scope="module")
 def catalog(root):
-    return catalog_module.load(catalog_module.default_dir(root))
+    return catalog_module.load(catalog_module.default_dir(root, V1[0]))
 
 
 @pytest.fixture(scope="module")
@@ -145,7 +148,7 @@ def test_a_value_that_fits_no_alternative_is_not_rendered(form, entry_id, unit, 
 
 
 def test_document_round_trip_and_decision_records(root, catalog, form):
-    house = house_module.load(house_module.default_dir(root))
+    house = house_module.load(house_module.default_dir(root, V1[1]))
     records = checks.base_vector(catalog, house)
     text = form.render_document("sap", "Statistical analysis plan", records)
     doc, parsed = form.parse_document(text)

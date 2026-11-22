@@ -365,7 +365,9 @@ def tiers(root: Path, out: Out) -> bool:
     def default_in_full(folder: Path) -> None:
         records = kits.read_decisions(folder)
         catalog, house = _context(root)
-        base = {(r["id"], r["unit"]): r for r in houses.default_decisions(catalog, house)}
+        features = designs.features(designs.load(folder / "gold" / "design.yaml"))
+        base = {(r["id"], r["unit"]): r
+                for r in houses.default_decisions(catalog, house, features)}
         for index, record in enumerate(records):
             key = (record["id"], record["unit"])
             if key in base and base[key]["value"] == record["value"]:

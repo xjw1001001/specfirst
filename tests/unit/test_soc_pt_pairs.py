@@ -63,7 +63,9 @@ def machine(root):
 
 @pytest.fixture(scope="module")
 def records(machine):
-    """The base vector with the table by organ class and term as its only output."""
+    """The base vector with the table by organ class and term as its only output, and its
+    total column over all arms (open-default@2 has none by default; the issue's table
+    has one)."""
     found = []
     for record in checks.base_vector(machine.catalog, machine.house):
         kind = machine.catalog.units[record["unit"]].kind
@@ -71,6 +73,8 @@ def records(machine):
             if record["id"] == "tfl.output.include":
                 found.append({**record, "value": {"rule": "not_included"}})
             continue
+        if (record["id"], record["unit"]) == ("tfl.columns.total", UNIT):
+            record = {**record, "value": {"rule": "all_arms"}}
         found.append(record)
     return found
 

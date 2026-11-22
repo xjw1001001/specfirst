@@ -205,9 +205,10 @@ def test_a_record_after_the_end_of_participation_is_in_follow_up(design, catalog
             late.add(subject)
         else:
             assert row["EPOCH"] is not None and row["EPOCH"] in inside
-    planted = {s for r in log if r["probe"] in ("ae_starts_after_end_of_study",
-                                                "no_exposure_end_date") for s in r["subjects"]}
-    assert late == planted and len(planted) == 2
+    # catalog@2 has no probe of an event after the end of the study (#3): the subject
+    # without an exposure end date has the only one.
+    planted = {s for r in log if r["probe"] == "no_exposure_end_date" for s in r["subjects"]}
+    assert late == planted and len(planted) == 1
     # No other record of a subject lies after the end of the participation.
     for name, variable in (("DS", "DSSTDTC"), ("VS", "VSDTC"), ("EX", "EXSTDTC")):
         for row in rows[name]:

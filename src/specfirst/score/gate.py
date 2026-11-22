@@ -110,14 +110,19 @@ def separated(root: Path, out: Out) -> bool:
     return same
 
 
+# The planted change of the document: the list of related causality values loses
+# POSSIBLE (the study's plan states ae.related.values; open-default@2 has no default).
+LISTED, PLANTED = '"POSSIBLE", "PROBABLE"', '"PROBABLE"'
+
+
 def _changed_document(machine: Machine, case: scorer.Case) -> tuple[str, scorer.Result | str]:
     """The control on a document in which one statement says something else: the
     document of the case is changed, and `scorer.control` reads it as it reads any."""
     text = case.documents.texts[case.standard_form]
-    line = next(line for line in text.splitlines() if "30 days" in line)
+    line = next(line for line in text.splitlines() if LISTED in line)
     changed = dataclasses.replace(case, documents=Documents(
         {**case.documents.texts, case.standard_form: text.replace(
-            line, line.replace("30 days", "31 days"))}))
+            line, line.replace(LISTED, PLANTED))}))
     try:
         return line, scorer.control(machine, changed)
     except StandardFormError as error:
@@ -149,13 +154,13 @@ def control(root: Path, out: Out) -> bool:
     # Rule R5: the control must fail on a document that states something else.
     case = hand.case(machine.catalog, machine.house)
     line, found = _changed_document(machine, case)
-    out(f"planted in the document: '{line}' with 31 days in place of 30")
+    out(f"planted in the document: '{line}' with {PLANTED} in place of {LISTED}")
     if isinstance(found, str):
         out(f"  {found}")
         seen = True
     else:
         wrong = [item.key[0] for item in found.reading.wrong()]
-        seen = not found.perfect and wrong == ["ae.teae.end"]
+        seen = not found.perfect and wrong == ["ae.related.values"]
         out(f"  the control is {'not ' if not found.perfect else ''}100%: wrong by value: "
             f"{', '.join(wrong) or 'none'}; twin: "
             f"{len(found.builds['twin'].wrong())} cells wrong")
@@ -184,27 +189,39 @@ def arms(root: Path, out: Out) -> bool:
     for result in (chain, table):
         for line in report.lines(result):
             out(line)
-    # The study states two decisions. One, ae.related.values, has no default: the chain
-    # is built without what it binds, and the four cells of the row of related events
-    # wait for it (ADR-014). The other, ae.teae.end, takes its default: the visible data
-    # cannot show it, the twin shows it in two cells, which it owns alone. The table
-    # decisions are all defaults.
-    related, end = ("ae.related.values", "mod-ae-emergence"), ("ae.teae.end", "mod-ae-emergence")
+    # The study states two decisions of the slice (open-default@2). One, ae.related.values,
+    # has no default: the chain is built without what it binds, and the six cells of the
+    # rows of related and of serious related events in the treatment columns wait for it
+    # (ADR-014). The other, tfl.columns.total, takes its default, no total column: on both
+    # datasets the seven cells of the total column are wrong and owned by it, the two of
+    # the rows that wait together with ae.related.values; the other 15 cells are right.
+    # At stage T the table decisions are the defaults but the total column: its seven
+    # cells are owned by tfl.columns.total alone.
+    related, total = ("ae.related.values", "mod-ae-emergence"), ("tfl.columns.total",
+                                                                 "tfl-ae-summary")
     built = all(score.valid and score.produced == score.in_gold == 1
                 for score in chain.builds.values())
-    waits = chain.pending == {related: {name: 4 for name in chain.builds}}
-    visible = chain.builds["visible"]
-    right = visible.correct == visible.denominators()["all"] == 20 and not chain.owners["visible"]
-    owners = chain.owners["twin"]
-    owned = len(owners) == 2 and all(owner.decisions == (end,) and owner.layer == "L4"
-                                     and owner.confirmed for owner in owners)
+    waits = chain.pending == {related: {name: 6 for name in chain.builds}}
+
+    def by_total(result: scorer.Result, alone: bool) -> bool:
+        return all(len(owners) == 7 and all(
+            owner.column[0] == "Total" and total in owner.decisions and owner.confirmed
+            and (owner.decisions == (total,) or not alone) for owner in owners)
+            for owners in result.owners.values())
+
+    right = all(score.correct == 15 for score in chain.builds.values())
+    owned = by_total(chain, alone=False)
     out(f"arm S, chain: the output is built on both datasets: {'yes' if built else 'NO'}; the "
-        f"4 cells of the row of related events wait for ae.related.values on each, and no "
-        f"other cell waits: {'yes' if waits else 'NO'}; the other 20 cells of the visible data "
-        f"are right: {'yes' if right else 'NO'}; the 2 wrong cells of the twin are owned by "
-        f"ae.teae.end alone, at L4: {'yes' if owned else 'NO'}")
-    out(f"arm S, stage T: every score 100%: {'yes' if table.perfect else 'NO'}")
-    return built and waits and right and owned and table.perfect
+        f"6 cells of the rows of related events wait for ae.related.values on each, and no "
+        f"other cell waits: {'yes' if waits else 'NO'}; the 7 cells of the total column are "
+        f"owned by tfl.columns.total: {'yes' if owned else 'NO'}; the other 15 cells are "
+        f"right: {'yes' if right else 'NO'}")
+    wrong = [item.key for item in table.reading.wrong()]
+    alone = wrong == [total] and by_total(table, alone=True) and all(
+        score.correct == 21 for score in table.builds.values())
+    out(f"arm S, stage T: tfl.columns.total is the one wrong decision and owns the 7 cells of "
+        f"the total column alone: {'yes' if alone else 'NO'}")
+    return built and waits and right and owned and alone
 
 
 def pilot_report(root: Path, out: Out) -> bool:

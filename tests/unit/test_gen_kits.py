@@ -158,7 +158,8 @@ def test_the_properties_of_the_kit(root, kit, catalog):
     assert (item["read"], item["applicable"], item["identifiable"]) == (
         False, False, "unseparated") and item["reason"] == verify.NOT_READ
     item = next(i for i in matrix["decisions"] if i["id"] == "ae.teae.end")
-    assert item["read"] and item["applicable"] and len(item["pairs"]) == 3
+    # catalog@2: no end at the end of the study (#3), one pair left.
+    assert item["read"] and item["applicable"] and len(item["pairs"]) == 1
     assert all(pair["separated"] for pair in item["pairs"])
     # The check of a written kit decides everything again from the files, the mutation
     # included, and finds nothing. This kit has no results of the R engine, which the

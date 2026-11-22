@@ -242,7 +242,7 @@ subagents of a Claude Code session; the CLI on this machine is not logged
 in (ADR-009, decision 1).
 
 - Change `GENERATOR` with any change that gives other bytes. Kits are
-  generated again, never patched. It is `gen-3a.2` now.
+  generated again, never patched. It is `catalog-2c.1` now (catalog-2c).
 - `specfirst gate` refuses to run while `SPECFIRST_REWRITES` is set, and
   `specfirst gen natural requests|propose` refuses dev, test and sealed
   kits (but those of the gate seed) while the store lies inside a
@@ -323,6 +323,45 @@ For the read track (the scorer is not changed by issue #30):
   cdiscpilot01-house.json from `specfirst gen separate cdiscpilot01`). At
   stage T the ADaM is the reference's, not the chain's: a matrix of stage T
   would be made the same way, on `Data(adam=...)`, and is not made here.
+
+## From catalog-2c (std track, 2026-11-21)
+
+The slice moved to version 2 of the standard (ADR-020, decision 8 as
+amended); the std track made the change in the files of gen, which this
+track left alone meanwhile. Report: docs/reports/catalog-2c.md.
+
+- The default pair is (`catalog@2`, `open-default@2`): every kit is
+  generated at version 2, with the generator `catalog-2c.1`, and the kits of
+  every seed have new bytes. `catalog@1` stays loadable by label.
+- Probes: `undosed_record_after_last_dose` (#24,
+  `trt.end.source/last_ex_record_end`) and
+  `ae_timed_before_timed_first_dose` (#5,
+  `ae.teae.start/by_time_when_collected`) are new, each with its recipe,
+  its check in `present.FINDERS` and its plant in the tests; the probes of
+  `ae.teae.end/end_of_study`, which catalog@2 removed (#3), are gone. In
+  `REACHES` the end-of-study record is read only by the disposition date
+  that stands in for a missing exposure end date.
+- Sampling: a stated value may be the default's alternative with other slot
+  values (a window of the follow-up length, against the house's 30 days);
+  `tfl.percent.format` draws its decimals from 1, 0 and 2; `stated_rows`
+  has two more lists with the new rows; the held-out combination is the
+  total over all arms with the protocol order (the house has no total
+  column now).
+- The reference (`reference.py`) reads catalog@2: the six standard rows in
+  the order of the ARS example, the decimals slot (a whole number is not
+  padded), emergence by time where both times were collected, the latest
+  end of any exposure record, the randomized subject by the disposition
+  record RANDOMIZED first.
+- A default of the house may depend on the design (`pop.safety.rule`):
+  `documents.statuses` and `without_default` take the design's features.
+- SEP01: the expected table has the six rows, no total column and a count
+  of zero with its percentage; mutation moves `tfl.columns.total` to
+  separated (counts 7, 9, 5, 1); the three invariants and the plants hold.
+  The pilot vectors `house` and `window` are the same under open-default@2.
+- The store holds 21 more accepted statements (calls `catalog-2c-rewrite-1`
+  and `catalog-2c-readback-1`, both accepted on the first attempt).
+- core_findings.yaml: the event after the end of the study is explained by
+  `no_exposure_end_date` alone.
 
 ## Open
 

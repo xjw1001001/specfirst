@@ -3,8 +3,9 @@
 Property P2 asks that a build equals its reference (PLAN.md section 4.6). A
 real study has a reference: what it delivered. A generated study has none,
 so this module is one: it calculates the output of the slice from the SDTM
-rows and the decision values, by the words of the catalog entries, the way
-a statistician would check a table with a second program.
+rows and the decision values, by the words of the catalog entries of the
+default pair (`catalog@2`, `open-default@2`, ADR-020), the way a statistician
+would check a table with a second program.
 
 It shares no code with the machine: no compiler, no template, no yamaa, no
 result engine, no grid builder, no method registry. It reads SDTM as rows
@@ -16,8 +17,8 @@ in two ways. `verify` holds every build against it.
 What it takes from elsewhere, and says so:
 
 - The text of a cell: `cell_text` and `header_text` follow the display of
-  specfirst.gen.display (a count, and a percentage with one decimal in
-  brackets).
+  specfirst.gen.display (a count, and a percentage in brackets with the
+  decimals of tfl.percent.format, padded to its mask when it has decimals).
 - The arms of the protocol, which no decision carries (`Arm`): their order,
   their doses, and the texts that can name each arm in a treatment column.
   The caller makes them with `gold.arms_of`, the function the machine uses,
@@ -25,7 +26,8 @@ What it takes from elsewhere, and says so:
   `gold.order_values` written a second time, not a second reading: an arm
   that `arms_of` names wrongly stands last in both.
 - The labels of the rows and of the total column (`ROW_LABELS`,
-  `TOTAL_LABEL`): copied from the layout template of the house standard.
+  `TOTAL_LABEL`): copied from the ARS and layout templates of the house
+  standard.
 
 Readings where the words of an entry leave a choice are marked READING. A
 reading that the machine shares does not show as a difference.
@@ -46,10 +48,17 @@ ROW_LABELS = {
     "ANY": "Any adverse event",
     "RELATED": "Related adverse event",
     "SERIOUS": "Serious adverse event",
+    "SERIOUS_RELATED": "Serious related adverse event",
     "DISCONTINUATION": "Adverse event leading to discontinuation of study treatment",
+    "DOSE_MODIFIED": "Adverse event leading to dose modification",
     "FATAL": "Fatal adverse event",
+    "FATAL_RELATED": "Fatal related adverse event",
 }
-STANDARD_ROWS = ("ANY", "RELATED", "SERIOUS", "DISCONTINUATION", "FATAL")
+# tfl.ae.summary.rows/standard_rows: the rows of the ARS example in its order, without
+# its rows of related fatal events and of events leading to dose modification.
+STANDARD_ROWS = ("ANY", "RELATED", "SERIOUS", "SERIOUS_RELATED", "FATAL", "DISCONTINUATION")
+# AEACN of an event leading to dose modification (tfl.ae.summary.rows, notes).
+DOSE_MODIFIED = ("DOSE REDUCED", "DRUG INTERRUPTED")
 TOTAL_LABEL = "Total"
 
 
@@ -180,10 +189,12 @@ def _treatment_dates(person: Person, dm: dict, exposure: list[dict], values: Val
     if starts:
         person.start, person.start_time = min(starts)
     field_name = {"last_ex_end_date": "EXENDTC", "ds_date_when_ex_missing": "EXENDTC",
-                  "last_ex_start_date": "EXSTDTC"}.get(end)
+                  "last_ex_start_date": "EXSTDTC", "last_ex_record_end": "EXENDTC"}.get(end)
     if field_name is None:
         raise CannotCalculate(f"trt.end.source: {end}")
-    ends = [found[0] for record in dosed
+    # last_ex_record_end: every exposure record takes part, whatever its dose.
+    records = exposure if end == "last_ex_record_end" else dosed
+    ends = [found[0] for record in records
             if (found := _usable(record[field_name], imputation)) is not None]
     if ends:
         person.end = max(ends)
@@ -211,10 +222,16 @@ def _results(vitals: list[dict], test: str) -> list[Date]:
             and (date := full_date(record["VSDTC"])) is not None]
 
 
-def _populations(person: Person, dm: dict, vitals: list[dict], visits: list[dict],
-                 values: Values) -> None:
-    code = dm.get("ARMCD")
-    person.randomized = bool(code) and code not in ("SCRNFAIL", "NOTASSGN")
+def _populations(person: Person, dm: dict, disposition: list[dict], vitals: list[dict],
+                 visits: list[dict], values: Values, by_disposition: bool) -> None:
+    # pop.randomized.rule, fixed rule randomized_subject: a disposition record RANDOMIZED;
+    # when no subject of the study has one, the planned arm code.
+    if by_disposition:
+        person.randomized = any(record.get("DSDECOD") == "RANDOMIZED"
+                                for record in disposition)
+    else:
+        code = dm.get("ARMCD")
+        person.randomized = bool(code) and code not in ("SCRNFAIL", "NOTASSGN")
     rule = values["pop.randomized.rule"]
     if rule["rule"] == "all_randomized":
         person.in_randomized = person.randomized
@@ -313,6 +330,15 @@ def _emergent(person: Person, event: dict, start: Date | None, values: Values) -
         # A start without a collected time, a completed one included, counts from 00:00.
         collected = seconds_of(event["AESTDTC"]) if full_date(event["AESTDTC"]) else 0
         begins = (start, collected) >= (person.start, person.start_time)
+    elif rule == "by_time_when_collected":
+        # On the first dose date an event is not emergent only when both times were
+        # collected and it starts before the dose. READING: the time of the first dose
+        # counts as collected when it is after 00:00 (nothing precedes 00:00 on its day).
+        timed = full_date(event["AESTDTC"]) is not None and str(event["AESTDTC"])[10:11] == "T"
+        if start == person.start and timed and person.start_time > 0:
+            begins = seconds_of(event["AESTDTC"]) >= person.start_time
+        else:
+            begins = start >= person.start
     else:
         raise CannotCalculate(f"ae.teae.start: {rule}")
     rule = values["ae.teae.end"]
@@ -320,8 +346,6 @@ def _emergent(person: Person, event: dict, start: Date | None, values: Values) -
         within = True
     elif rule["rule"] == "last_dose_plus_days":
         within = person.end is None or start <= person.end + rule["days"] * DAY
-    elif rule["rule"] == "end_of_study":
-        within = person.end_of_study is None or start <= person.end_of_study
     else:
         raise CannotCalculate(f"ae.teae.end: {rule['rule']}")
     return begins and within
@@ -334,6 +358,8 @@ def people(tables: Tables, values: Values) -> list[Person]:
     events = _by_subject(tables.get("AE", []))
     related = set((values.get("ae.related.values") or {}).get("values") or ())
     imputation = values["ae.start.imputation"]["rule"]
+    by_disposition = any(record.get("DSDECOD") == "RANDOMIZED"
+                         for record in tables.get("DS", []))
     found = []
     for dm in tables["DM"]:
         subject = dm["USUBJID"]
@@ -341,7 +367,8 @@ def people(tables: Tables, values: Values) -> list[Person]:
         person.end_of_study = _end_of_study(disposition.get(subject, []),
                                             values["disp.status.record"])
         _treatment_dates(person, dm, exposure.get(subject, []), values)
-        _populations(person, dm, vitals.get(subject, []), visits.get(subject, []), values)
+        _populations(person, dm, disposition.get(subject, []), vitals.get(subject, []),
+                     visits.get(subject, []), values, by_disposition)
         _treatments(person, dm, exposure.get(subject, []), values)
         for event in events.get(subject, []):
             start = analysis_start(event["AESTDTC"], person.start, imputation)
@@ -352,8 +379,14 @@ def people(tables: Tables, values: Values) -> list[Person]:
                 kinds.add("SERIOUS")
             if event.get("AEACN") == "DRUG WITHDRAWN":
                 kinds.add("DISCONTINUATION")
+            if event.get("AEACN") in DOSE_MODIFIED:
+                kinds.add("DOSE_MODIFIED")
             if event.get("AESDTH") == "Y":
                 kinds.add("FATAL")
+            if "RELATED" in kinds and "SERIOUS" in kinds:
+                kinds.add("SERIOUS_RELATED")
+            if "RELATED" in kinds and "FATAL" in kinds:
+                kinds.add("FATAL_RELATED")
             person.events.append({"seq": event["AESEQ"], "start": start, "kinds": kinds,
                                   "emergent": _emergent(person, event, start, values)})
         found.append(person)
@@ -382,14 +415,18 @@ def header_text(count: int) -> str:
 
 
 def cell_text(count: int, total: int, values: Values) -> str:
-    """A count and its percentage, as the display shows them: "12 ( 37.5)"."""
+    """A count and its percentage, as the display shows them: "12 ( 37.5)" with one
+    decimal, padded to the mask "XXX.X"; "12 (38)" with none, the mask "XXX" is not
+    padded (display.pattern)."""
     show = values["tfl.percent.format"]["rule"]
     if show not in ("one_decimal_zero_blank", "one_decimal_always"):
         raise CannotCalculate(f"tfl.percent.format: {show}")
     if total == 0 or (count == 0 and show == "one_decimal_zero_blank"):
         return str(count)
-    percent = rounded(Fraction(100 * count, total), 1, values["tfl.rounding.rule"]["rule"])
-    return f"{count} ({percent.rjust(5)})"
+    decimals = values["tfl.percent.format"]["decimals"]
+    percent = rounded(Fraction(100 * count, total), decimals,
+                      values["tfl.rounding.rule"]["rule"])
+    return f"{count} ({percent.rjust(4 + decimals) if decimals else percent})"
 
 
 def shown_rows(values: Values) -> list[str]:

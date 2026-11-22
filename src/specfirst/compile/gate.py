@@ -191,6 +191,8 @@ def house_check(root: Path, out: Out, pair: tuple = (None, None)) -> bool:
 # The pair the gates catalog-2a and catalog-2b check, and the version before it.
 NEXT = ("catalog@2", "open-default@2")
 BEFORE = "catalog@1"
+# The pair the gate std-1 checks: version 1, frozen and loadable by label (ADR-020).
+FIRST = ("catalog@1", "open-default@1")
 
 
 def frozen_check(root: Path, out: Out) -> bool:

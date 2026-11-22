@@ -22,7 +22,13 @@ from specfirst.score.candidate import Data, Machine, vector
 
 KEY = ("ae.related.values", "mod-ae-emergence")
 ROWS = ("tfl.ae.summary.rows", "tfl-ae-summary")
+TOTAL = ("tfl.columns.total", "tfl-ae-summary")
 RELATED = "Related adverse event"
+# The rows of the standard rows of catalog@2 that read the related values (RELGR1).
+RELATED_ROWS = (RELATED, "Serious related adverse event")
+# What ae.related.values binds in HAND01's build.
+BOUND = ["adam:ADAE.RELGR1", "ars:An_AESUM_RELATED", "ars:An_AESUM_RELATED_Tot",
+         "ars:An_AESUM_SERIOUS_RELATED", "ars:An_AESUM_SERIOUS_RELATED_Tot"]
 
 
 @pytest.fixture(scope="module")
@@ -50,27 +56,28 @@ def test_the_repro_of_issue_26_builds_every_output(root):
     decision. Before: `compile: ADAE: no value for ae.related.values`, no grid."""
     machine = Machine(root, datasets=("ADSL", "ADAE"))
     gold = hand.gold_values(machine.catalog, machine.house)
-    found = vector(machine.catalog, machine.house, gold, [asked(KEY)], hand.UNITS)
+    found = vector(machine.catalog, machine.house, gold, [asked(KEY)], hand.UNITS,
+                   hand.FEATURES)
     assert not any((r["id"], r["unit"]) == KEY for r in found)
     made = machine.build(found, Data("repro/asked", sdtm=hand.tables("visible")), hand.ARMS)
     assert made.ok, made.failure
     assert sorted(made.grids) == [hand.OUTPUT]
-    assert RELATED not in [row["label"] for row in made.grids[hand.OUTPUT]["rows"]]
+    labels = [row["label"] for row in made.grids[hand.OUTPUT]["rows"]]
+    assert not set(RELATED_ROWS) & set(labels)
     assert set(made.pending.values()) == {(KEY,)}
 
 
 @pytest.mark.parametrize("which", ["visible", "twin"])
 def test_a_pending_decision_leaves_out_only_what_it_binds(machine, case, which):
-    """Every other decision at gold: the grid is the gold grid without the row of
-    related events, cell for cell."""
+    """Every other decision at gold: the grid is the gold grid without the rows of
+    related and of serious related events, cell for cell."""
     candidate = [r for r in case.gold if (r["id"], r["unit"]) != KEY] + [asked(KEY)]
     found = vector(machine.catalog, machine.house, case.gold, candidate, case.units)
     made = machine.build(found, hand.data(which), hand.ARMS)
     assert made.ok, made.failure
     assert cells(made) == {key: text for key, text in hand.expected_cells(which).items()
-                           if key[0] != RELATED}
-    assert made.pending == {"adam:ADAE.RELGR1": (KEY,), "ars:An_AESUM_RELATED": (KEY,),
-                            "ars:An_AESUM_RELATED_Tot": (KEY,)}
+                           if key[0] not in RELATED_ROWS}
+    assert made.pending == {element: (KEY,) for element in BOUND}
     assert "RELGR1" not in made.adam["ADAE"].column_names
     assert "AEREL" in made.adam["ADAE"].column_names
 
@@ -83,8 +90,7 @@ def test_the_compiler_keeps_its_default(machine, case):
         compile_decisions(machine.catalog, machine.house, records, "../house")
     compiled = compile_decisions(machine.catalog, machine.house, records, "../house",
                                  pending=True)
-    assert compiled.pending == {KEY: ["adam:ADAE.RELGR1", "ars:An_AESUM_RELATED",
-                                      "ars:An_AESUM_RELATED_Tot"]}
+    assert compiled.pending == {KEY: BOUND}
     assert compiled.manifest()["pending"] == [
         {"id": KEY[0], "unit": KEY[1], "left_out": compiled.pending[KEY]}]
     complete = compile_decisions(machine.catalog, machine.house, case.gold_vector(), "../house",
@@ -96,32 +102,29 @@ def test_the_compiler_keeps_its_default(machine, case):
 
 def test_the_standard_alone_builds_the_chain_with_the_related_row_pending(machine, case):
     """Arm S on HAND01: ae.related.values has no house default. Before ADR-014 the
-    build stopped and no output was produced."""
+    build stopped and no output was produced. The house has no total column
+    (open-default@2) and the study states one."""
     result = scorer.standard_alone(machine, case)
-    assert [item.key[0] for item in result.reading.wrong()] == ["ae.teae.end",
-                                                                "ae.related.values"]
-    assert result.pending == {KEY: {"visible": 4, "twin": 4}}
+    assert [item.key[0] for item in result.reading.wrong()] == ["ae.related.values",
+                                                                "tfl.columns.total"]
+    # The two rows that read the related values wait in the three treatment columns.
+    assert result.pending == {KEY: {"visible": 6, "twin": 6}}
     assert result.silent == [] and result.behind == {}
     assert not result.perfect
     for score in result.builds.values():
         assert score.valid, score.failure
         assert (score.produced, score.in_gold, score.waiting) == (1, 1, 0)
-        assert score.pending_by_decision() == {KEY: 4}
-        assert score.denominators() == {"shared_rows": 20, "produced": 20, "all": 20}
+        assert score.pending_by_decision() == {KEY: 6}
+        assert score.denominators() == {"shared_rows": 20, "produced": 22, "all": 22}
         assert not score.perfect
-        assert any("pending" in line and "ae.related.values (4 cells)" in line
+        assert any("pending" in line and "ae.related.values (6 cells)" in line
                    for line in score.lines())
-    # The visible data cannot show the default of ae.teae.end; the twin can, in two
-    # cells, and that decision alone owns them.
-    visible, twin = result.builds["visible"], result.builds["twin"]
-    assert (visible.correct, visible.strict, visible.lenient) == (20, 1, 1)
-    assert result.owners["visible"] == []
-    assert (twin.correct, twin.strict, twin.lenient) == (18, 0, 0)
-    owners = result.owners["twin"]
-    assert {(o.row[1], o.column[0]) for o in owners} == {("Any adverse event", "Placebo"),
-                                                         ("Any adverse event", "Total")}
-    assert all(o.decisions == (("ae.teae.end", "mod-ae-emergence"),) and o.layer == "L4"
-               and o.confirmed for o in owners)
+        # The total column is missing: its seven cells are wrong, the other 15 right.
+        assert (score.correct, score.strict, score.lenient) == (15, 0, 0)
+    for owners in result.owners.values():
+        assert len(owners) == 7 and {o.column[0] for o in owners} == {"Total"}
+        assert all(TOTAL in o.decisions and o.confirmed for o in owners)
+        assert {o.row[1] for o in owners if o.decisions == (KEY, TOTAL)} == set(RELATED_ROWS)
 
 
 def test_a_table_decision_without_a_value_leaves_the_output_pending(machine, case):
@@ -130,7 +133,7 @@ def test_a_table_decision_without_a_value_leaves_the_output_pending(machine, cas
     denominator of the outputs too (review of std-issues, finding 4)."""
     candidate = [r for r in case.gold if (r["id"], r["unit"]) != ROWS] + [asked(ROWS)]
     result = scorer.run(machine, case, candidate)
-    assert result.pending == {ROWS: {"visible": 24, "twin": 24}}
+    assert result.pending == {ROWS: {"visible": 28, "twin": 28}}
     for score in result.builds.values():
         assert score.valid
         assert (score.produced, score.in_gold, score.waiting) == (0, 0, 1)
@@ -143,17 +146,18 @@ def test_a_table_decision_without_a_value_leaves_the_output_pending(machine, cas
 
 
 def test_an_axis_is_owned_without_the_rows_that_wait(machine, case):
-    """The rows of the table are read as ANY, RELATED, SERIOUS and ae.related.values
-    is asked. The axis of rows is held without the row that waits (gold: ANY, SERIOUS,
-    DISCONTINUATION, FATAL; the candidate: ANY, SERIOUS), and the rows decision alone
-    gives it back: it owns the axis. Before, the attribution held the axis against the
-    whole gold axis and named ae.related.values as well (seen in the gate read-2a)."""
-    rows = {"id": ROWS[0], "unit": ROWS[1],
-            "value": {"rule": "stated_rows", "rows": ["ANY", "RELATED", "SERIOUS"]}}
+    """The rows of the table are read as ANY, RELATED, SERIOUS, SERIOUS_RELATED and
+    ae.related.values is asked. The axis of rows is held without the rows that wait
+    (gold: ANY, SERIOUS, FATAL, DISCONTINUATION; the candidate: ANY, SERIOUS), and the
+    rows decision alone gives it back: it owns the axis. Before, the attribution held
+    the axis against the whole gold axis and named ae.related.values as well (seen in
+    the gate read-2a)."""
+    rows = {"id": ROWS[0], "unit": ROWS[1], "value": {
+        "rule": "stated_rows", "rows": ["ANY", "RELATED", "SERIOUS", "SERIOUS_RELATED"]}}
     candidate = [r for r in case.gold if (r["id"], r["unit"]) not in (KEY, ROWS)] + [
         asked(KEY), rows]
     result = scorer.run(machine, case, candidate)
-    assert result.pending == {KEY: {"visible": 4, "twin": 4}}
+    assert result.pending == {KEY: {"visible": 8, "twin": 8}}
     for name in result.builds:
         assert [(a.output, a.axis, a.decisions, a.confirmed) for a in result.axes[name]] == [
             (hand.OUTPUT, "rows", (ROWS,), True)]

@@ -32,7 +32,7 @@ VARIANTS: dict[str, list[dict]] = {
     "trt.start.source": [{"rule": "first_ex_with_dose"}, {"rule": "first_ex_record"},
                          {"rule": "dm_rfxstdtc"}],
     "trt.end.source": [{"rule": "last_ex_end_date"}, {"rule": "last_ex_start_date"},
-                       {"rule": "ds_date_when_ex_missing"}],
+                       {"rule": "ds_date_when_ex_missing"}, {"rule": "last_ex_record_end"}],
     "trt.date.imputation": [{"rule": "not_completed"}, {"rule": "first_day_of_month"}],
     "date.studyday.origin": [{"rule": "treatment_start"}, {"rule": "dm_rfstdtc"}],
     "pop.randomized.rule": [{"rule": "all_randomized"},
@@ -52,9 +52,9 @@ VARIANTS: dict[str, list[dict]] = {
     "ae.start.imputation": [{"rule": "first_of_month_not_before_first_dose"},
                             {"rule": "first_of_month"}, {"rule": "not_completed"}],
     "ae.teae.start": [{"rule": "on_or_after_first_dose_date"},
-                      {"rule": "at_or_after_first_dose_time"}],
+                      {"rule": "at_or_after_first_dose_time"}, {"rule": "by_time_when_collected"}],
     "ae.teae.end": [{"rule": "no_end"}, {"rule": "last_dose_plus_days", "days": 30},
-                    {"rule": "last_dose_plus_days", "days": 2}, {"rule": "end_of_study"}],
+                    {"rule": "last_dose_plus_days", "days": 2}],
     "ae.related.values": [{"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]},
                           {"rule": "stated_list", "values": ["PROBABLE"]}],
     "tfl.output.include": [{"rule": "included"}, {"rule": "not_included"}],
@@ -62,10 +62,15 @@ VARIANTS: dict[str, list[dict]] = {
     "tfl.columns.arms": [{"rule": "ascending_dose_placebo_first"}, {"rule": "protocol_order"}],
     "tfl.columns.total": [{"rule": "all_arms"}, {"rule": "none"},
                           {"rule": "active_arms", "control": "Placebo"}],
-    "tfl.percent.format": [{"rule": "one_decimal_zero_blank"}, {"rule": "one_decimal_always"}],
+    "tfl.percent.format": [{"rule": "one_decimal_zero_blank", "decimals": 1},
+                           {"rule": "one_decimal_always", "decimals": 1},
+                           {"rule": "one_decimal_always", "decimals": 0},
+                           {"rule": "one_decimal_zero_blank", "decimals": 2}],
     "tfl.rounding.rule": [{"rule": "half_away_from_zero"}, {"rule": "half_even"}],
     "tfl.ae.summary.rows": [{"rule": "standard_rows"},
-                            {"rule": "stated_rows", "rows": ["SERIOUS", "ANY", "FATAL"]}],
+                            {"rule": "stated_rows", "rows": ["SERIOUS", "ANY", "FATAL"]},
+                            {"rule": "stated_rows", "rows": ["SERIOUS_RELATED", "ANY",
+                                                             "DOSE_MODIFIED", "FATAL_RELATED"]}],
 }
 
 
@@ -131,12 +136,12 @@ def test_the_machine_and_the_hand_calculation_agree_on_every_alternative(catalog
         {**BASE, "tfl.population": {"rule": "randomized"},
          "pop.safety.grouping": {"rule": "planned"}},
         {**BASE, "tfl.population": {"rule": "efficacy"},
-         "ae.teae.end": {"rule": "end_of_study"},
+         "ae.teae.end": {"rule": "last_dose_plus_days", "days": 2},
          "ae.teae.start": {"rule": "at_or_after_first_dose_time"}},
         {**BASE, "ae.teae.end": {"rule": "last_dose_plus_days", "days": 30},
          "trt.date.imputation": {"rule": "first_day_of_month"},
          "trt.actual.source": {"rule": "first_ex_treatment"},
-         "tfl.percent.format": {"rule": "one_decimal_always"}},
+         "tfl.percent.format": {"rule": "one_decimal_always", "decimals": 1}},
     ]
     compared, empty, tables = 0, 0, set()
     for base in bases:
@@ -260,7 +265,8 @@ def test_planted_display_defects_are_seen(catalog, house, bench, rows):
     with pytest.raises(display.DisplayError, match="the ARD does not have it"):
         display.build(shown.event, shown.compiled.layouts[decisions.OUTPUT_UNIT], by_id)
     assert verify.changed_cells(verify.table_view(made), verify.table_view(wrong)) >= 3
-    assert verify.changed_cells(verify.table_view(made), None) == 18
+    # Every cell of the table: three columns, the header and the six standard rows.
+    assert verify.changed_cells(verify.table_view(made), None) == 21
 
 
 def test_rounding_rules_of_the_registry_differ_at_a_half():

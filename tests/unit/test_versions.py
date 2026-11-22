@@ -59,9 +59,12 @@ def test_labels_name_folders():
         catalogs.default_dir(Path("r"), "open-default@1")
 
 
-def test_the_default_pair_is_version_1(root):
+def test_the_default_pair_is_version_2(root):
+    """From catalog-2c (ADR-020, decision 8 as amended); version 1 by label."""
     catalog, house = houses.load_pair(root)
-    assert (catalog.label, house.label) == ("catalog@1", "open-default@1")
+    assert (catalog.label, house.label) == ("catalog@2", "open-default@2")
+    assert catalog.directory.name == "catalog@2" and not catalog.has_defaults
+    catalog, house = houses.load_pair(root, "catalog@1", "open-default@1")
     assert catalog.directory.name == "catalog@1" and catalog.has_defaults
 
 
@@ -81,7 +84,8 @@ def test_a_house_that_does_not_fit_is_refused(root, pair):
 def test_version_2_changes_the_defaults_the_owner_took(root):
     """The defaults of open-default@2 are those of open-default@1 but for the eight
     of ADR-020, question 2 (#1, #2, #3, #6, #7, #8, #11, #13) and #22."""
-    old = {(r["id"], r["unit"]): r["value"] for r in houses.defaults(*houses.load_pair(root))}
+    old = {(r["id"], r["unit"]): r["value"] for r in houses.defaults(
+        *houses.load_pair(root, "catalog@1", "open-default@1"))}
     new = {(r["id"], r["unit"]): r["value"] for r in houses.defaults(
         *houses.load_pair(root, "catalog@2", "open-default@2"))}
     changed = {key for key in set(old) | set(new) if old.get(key) != new.get(key)}
@@ -198,29 +202,28 @@ def test_a_task_and_a_kit_refuse_a_draft_version(root, tmp_path):
     from specfirst.gen import kits
     from specfirst.harness import task
 
+    drafted = _drafted(root, tmp_path)
     with pytest.raises(task.TaskError, match="a draft version"):
-        task.kit_catalog(_drafted(root, tmp_path), {
+        task.kit_catalog(drafted, {
             "catalog": {"name": "specfirst-m1", "version": 2}, "house": "open-default@2"})
     assert task.kit_catalog(root, {"catalog": {"name": "specfirst-m1", "version": 2},
                                    "house": "open-default@2"}) == "catalog@2"
     assert task.kit_catalog(root, {"catalog": {"name": "specfirst-m1", "version": 1},
                                    "house": "open-default@1"}) == "catalog@1"
-    copy = tmp_path / "root"
-    shutil.copytree(root / "standard", copy / "standard")
-    path = copy / "standard" / "versions.yaml"
-    data = yaml.safe_load(path.read_text(encoding="ascii"))
-    data["catalogs"]["catalog@1"]["status"] = "draft"
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="ascii", newline="\n")
-    with pytest.raises(kits.KitError, match="catalog@1', a draft version"):
-        kits._generate(copy, "seed-x", tmp_path / "kit", "train", False, print, None, "full")
+    # The generator takes the default pair, version 2 from catalog-2c: a draft of it is
+    # refused before anything is written.
+    with pytest.raises(kits.KitError, match="catalog@2', a draft version"):
+        kits._generate(drafted, "seed-x", tmp_path / "kit", "train", False, print, None, "full")
 
 
 def test_house_write_refuses_a_frozen_house(root, capsys):
     from specfirst import cli
 
     before = (root / "standard" / "houses" / "open-default@1" / "STANDARD.md").read_bytes()
-    assert cli.main(["house", "--write"]) == 1
+    assert cli.main(["house", "--write", "--house", "open-default@1"]) == 1
     assert "open-default@1 is frozen" in capsys.readouterr().out
+    assert cli.main(["house", "--write"]) == 1
+    assert "open-default@2 is frozen" in capsys.readouterr().out
     after = (root / "standard" / "houses" / "open-default@1" / "STANDARD.md").read_bytes()
     assert after == before
     assert cli.main(["catalog", "--catalog", "catalog@2", "--house", "open-default@1"]) == 1

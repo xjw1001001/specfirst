@@ -173,7 +173,7 @@ def test_a_window_that_four_values_reproduce(matrix):
     levels = {value["label"]: value["level"] for value in item["values"]}
     assert levels["last_dose_plus_days(days=34)"] == "outputs"
     assert levels["last_dose_plus_days(days=39)"] == "outputs"
-    assert levels["no_end"] == levels["end_of_study"] == "outputs"
+    assert levels["no_end"] == "outputs"  # catalog@2 has no end at the end of the study
 
 
 def test_an_inert_rule_changes_adam_and_no_output_reads_it(matrix):
@@ -200,7 +200,7 @@ def test_every_decision_of_the_slice_has_the_class_the_study_states(matrix):
     assert sep01.check(matrix) == []
     assert matrix["problems"] == []
     assert {klass: len(names) for klass, names in matrix["summary"].items()
-            if klass in sep.CLASSES} == {"separated": 6, "unseparated": 10, "inert": 5,
+            if klass in sep.CLASSES} == {"separated": 7, "unseparated": 9, "inert": 5,
                                          "separated_at_dataset_only": 1}
 
 

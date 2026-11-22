@@ -19,6 +19,9 @@ from specfirst.compile import house as house_module
 from specfirst.compile.compiler import compile_decisions, relative_reference
 from specfirst.paths import cache_dir
 
+# The std-1 tests hold the frozen pair of version 1 (ADR-020: loadable by label).
+V1 = ("catalog@1", "open-default@1")
+
 
 @pytest.fixture
 def work(root, tmp_path) -> Path:
@@ -28,13 +31,13 @@ def work(root, tmp_path) -> Path:
     (copy_root / "third_party").mkdir()
     shutil.copy(root / "third_party" / "sources.yaml", copy_root / "third_party" / "sources.yaml")
     shutil.copy(root / "PLAN.md", copy_root / "PLAN.md")
-    fake_cache(copy_root, catalog_module.load(catalog_module.default_dir(copy_root)))
+    fake_cache(copy_root, catalog_module.load(catalog_module.default_dir(copy_root, V1[0])))
     return copy_root
 
 
 def load(work: Path):
-    return (catalog_module.load(catalog_module.default_dir(work)),
-            house_module.load(house_module.default_dir(work)))
+    return (catalog_module.load(catalog_module.default_dir(work, V1[0])),
+            house_module.load(house_module.default_dir(work, V1[1])))
 
 
 def change(path: Path, plant) -> None:
@@ -331,8 +334,8 @@ def test_two_decisions_that_write_one_column_are_found(work, tmp_path):
 
 @pytest.fixture
 def compiled(root, tmp_path):
-    catalog, house = (catalog_module.load(catalog_module.default_dir(root)),
-                      house_module.load(house_module.default_dir(root)))
+    catalog, house = (catalog_module.load(catalog_module.default_dir(root, V1[0])),
+                      house_module.load(house_module.default_dir(root, V1[1])))
     return compile_decisions(catalog, house, checks.base_vector(catalog, house),
                              relative_reference(house.directory, tmp_path / "adam"))
 

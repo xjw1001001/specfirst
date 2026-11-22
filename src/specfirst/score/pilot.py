@@ -196,12 +196,25 @@ def key_grid(event: ars.Event, layout: layouts.Layout, names: dict[str, str]) ->
             "rows": rows, "footnotes": list(planned.footnotes)}
 
 
+# The features of the pilot's design, as its protocol describes it: randomized, three arms,
+# exposure, adverse events and vital signs collected, an efficacy-evaluable set, visits on
+# target days and unscheduled visits. A default of the house may depend on them
+# (pop.safety.rule of open-default@2).
+PILOT_FEATURES = {
+    "design.always": True, "design.randomized": True, "design.multiple_arms": True,
+    "design.has_exposure": True, "design.has_efficacy_set": True,
+    "design.collects_adverse_events": True, "design.collects_vital_signs": True,
+    "design.has_bds_parameters": True, "design.fixed_visits": True,
+    "design.unscheduled_visits": True,
+}
+
+
 def standard_vector(machine: Machine) -> list[dict]:
-    """Arm S for the one output: every house default; the first alternative of the
-    catalog where a decision of another unit has none (the tables read none of
-    these); the three other table families left out."""
+    """Arm S for the one output: every house default, for the design of the pilot; the
+    first alternative of the catalog where a decision of another unit has none (the
+    tables read none of these); the three other table families left out."""
     found = []
-    for record in checks.base_vector(machine.catalog, machine.house):
+    for record in checks.base_vector(machine.catalog, machine.house, PILOT_FEATURES):
         kind = machine.catalog.units[record["unit"]].kind
         if kind == "table_family" and record["unit"] != UNIT:
             if record["id"] == "tfl.output.include":

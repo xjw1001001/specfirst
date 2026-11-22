@@ -53,10 +53,13 @@ SPLITS = ("train", "dev", "test", "sealed")
 
 # The chance that a decision of a kit is another alternative than the house default.
 STATED_SHARE = 0.45
-# What an exam holds out (PLAN.md section 6.7): no train, dev or test kit has these.
+# What an exam holds out (PLAN.md section 6.7): no train, dev or test kit has these. The
+# combination is of two stated alternatives: under open-default@2 a table has no total
+# column by default, so the total over all arms stands where "none" stood under
+# open-default@1.
 HELD_OUT = {
     "design": "an allocation ratio other than 1 to 1",
-    "combination": {"tfl.columns.total": "none", "tfl.columns.arms": "protocol_order"},
+    "combination": {"tfl.columns.total": "all_arms", "tfl.columns.arms": "protocol_order"},
 }
 
 
@@ -70,11 +73,11 @@ SCENARIOS: tuple[dict, ...] = (
     {"values": {"tfl.population": "randomized"}, "arms": 3},
     {"values": {"ae.teae.end": "last_dose_plus_days"}},
     {"values": {"tfl.population": "efficacy"}, "feature": "design.has_efficacy_set"},
-    {"values": {"ae.teae.end": "end_of_study"}},
+    {"values": {"ae.teae.end": "no_end"}},
     {"values": {"pop.safety.grouping": "planned"}, "arms": 3},
     {"values": {"ae.teae.end": "last_dose_plus_days",
                 "trt.end.source": "ds_date_when_ex_missing"}},
-    {"values": {"tfl.population": "randomized", "ae.teae.end": "end_of_study"}},
+    {"values": {"tfl.population": "randomized", "ae.teae.end": "no_end"}},
     {"values": {"tfl.population": "efficacy", "ae.teae.end": "last_dose_plus_days"},
      "feature": "design.has_efficacy_set"},
     {"values": {"tfl.population": "safety", "pop.safety.grouping": "actual",
@@ -177,7 +180,12 @@ def slot_values(entry_id: str, rule: str, design: dict, parameters: dict) -> dic
         return {"control": [placebo["description"]]}
     if key == ("tfl.ae.summary.rows", "stated_rows"):
         return {"rows": [["ANY", "SERIOUS", "FATAL"], ["ANY", "RELATED", "FATAL"],
-                         ["FATAL", "SERIOUS", "RELATED", "ANY"], ["ANY", "FATAL"]]}
+                         ["FATAL", "SERIOUS", "RELATED", "ANY"], ["ANY", "FATAL"],
+                         ["ANY", "SERIOUS", "SERIOUS_RELATED", "DOSE_MODIFIED", "FATAL"],
+                         ["ANY", "RELATED", "FATAL", "FATAL_RELATED"]]}
+    if entry_id == "tfl.percent.format":
+        # Any number of decimals separates the two alternatives at a count of zero.
+        return {"decimals": [1, 0, 2]}
     return {}
 
 
@@ -220,14 +228,12 @@ def fits(values: Values, parameters: dict) -> list[str]:
                         "two completions to a day give the same table")
     record = values["disp.status.record"]
     end = values["ae.teae.end"]["rule"]
-    read = end == "end_of_study" or (
-        end == "last_dose_plus_days" and values["trt.end.source"]["rule"]
-        == "ds_date_when_ex_missing")
+    read = end == "last_dose_plus_days" and values["trt.end.source"]["rule"] \
+        == "ds_date_when_ex_missing"
     if record.get("subcategory") == parameters["treatment_subcategory"]:
         # Only the planted subject has a treatment record. With it as the end-of-study
-        # record no other subject has an end-of-study date: an end of emergence at the
-        # end of the study is no end, and the disposition date never stands in for a
-        # missing exposure end date.
+        # record no other subject has an end-of-study date: the disposition date never
+        # stands in for a missing exposure end date.
         problems.append("disp.status.record: with the treatment record as the end-of-study "
                         "record nearly no subject has an end-of-study date, and the decisions "
                         "that read that date cannot be told apart")
@@ -257,8 +263,10 @@ def sample(catalog: catalogs.Catalog, house: houses.House, design: dict, paramet
         for entry in entries(catalog, design):
             options = variants(entry, design, parameters)
             default = base.get(entry.id)
-            others = [value for value in options
-                      if default is None or value["rule"] != default["rule"]]
+            # Another alternative, or the default's with other slot values: under
+            # open-default@2 the default window is 30 days, and a study may state one
+            # of its follow-up length.
+            others = [value for value in options if default is None or value != default]
             stream = draw.child(entry.id)
             if entry.id == "tfl.output.include":
                 value = default

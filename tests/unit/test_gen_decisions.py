@@ -115,16 +115,17 @@ def test_fits_names_the_interplays_of_the_log(catalog, house):
     study_record = {"rule": "disposition_event_by_subcategory",
                     "subcategory": parameters["study_subcategory"]}
     treatment = {**study_record, "subcategory": parameters["treatment_subcategory"]}
-    end = {"rule": "end_of_study"}
+    # catalog@2: only the disposition date that stands in for a missing exposure end
+    # date reads the end-of-study record (no end of emergence at the end of the study).
+    window = {"rule": "last_dose_plus_days", "days": parameters["window_days"]}
+    by_ds = {"rule": "ds_date_when_ex_missing"}
     assert problems(disp__status__record=study_record) == []       # not read: any value
-    assert problems(disp__status__record=study_record, ae__teae__end=end)[0].startswith(
-        "disp.status.record")
+    assert problems(disp__status__record=study_record, ae__teae__end=window,
+                    trt__end__source=by_ds)[0].startswith("disp.status.record")
     # The treatment record as the end-of-study record is never the decision of a kit: it
     # is what the other alternative is changed to.
-    window = {"rule": "last_dose_plus_days", "days": parameters["window_days"]}
-    for changed in ({}, {"ae__teae__end": end},
-                    {"ae__teae__end": window,
-                     "trt__end__source": {"rule": "ds_date_when_ex_missing"}}):
+    for changed in ({}, {"ae__teae__end": {"rule": "no_end"}},
+                    {"ae__teae__end": window, "trt__end__source": by_ds}):
         found = problems(disp__status__record=treatment, **changed)
         assert len(found) == 1 and "nearly no subject has an end-of-study date" in found[0]
 

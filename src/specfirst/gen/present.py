@@ -183,6 +183,24 @@ def _no_end_date(record: dict, data: Data, design: dict) -> list[str]:
     return _each(record, check)
 
 
+def _undosed_after_last(record: dict, data: Data, design: dict) -> list[str]:
+    days = datetime.timedelta(days=record["detail"]["window_days"])
+
+    def check(subject: str) -> str | None:
+        rows = data.exposure(subject)
+        dosed = [d for r in rows if with_dose(r) and (d := _date(r["EXENDTC"]))]
+        zero = [d for r in rows if r["EXDOSE"] == 0 and not with_dose(r)
+                and (d := _date(r["EXENDTC"]))]
+        if not dosed or not zero or max(zero) <= max(dosed):
+            return "no record of dose zero that ends after the last record with a dose"
+        if not any(max(dosed) + days < d <= max(zero) + days
+                   for d, _ in data.event_starts(subject)):
+            return ("no event later than the window after the last record with a dose and "
+                    "within the window after the record of dose zero")
+        return None
+    return _each(record, check)
+
+
 def _partial_exposure(record: dict, data: Data, design: dict) -> list[str]:
     def check(subject: str) -> str | None:
         rows = data.exposure(subject)
@@ -345,6 +363,23 @@ def _on_first_dose_date(record: dict, data: Data, design: dict) -> list[str]:
     return _each(record, check)
 
 
+def _timed_before_dose(record: dict, data: Data, design: dict) -> list[str]:
+    def check(subject: str) -> str | None:
+        # The time of the first dose stands in the exposure record and in DM.RFXSTDTC,
+        # as for the event on the first dose date without a time.
+        dosed = data.dosed(subject)
+        texts = [data.dm[subject]["RFXSTDTC"] or "", dosed[0]["EXSTDTC"] if dosed else ""]
+        if any("T" not in text or text.split("T")[1] <= "00:00" for text in texts):
+            return "the first dose has no time after 00:00 in EX.EXSTDTC or in DM.RFXSTDTC"
+        if texts[0] != texts[1]:
+            return "DM.RFXSTDTC and the first exposure record differ"
+        if not any(str(r["AESTDTC"])[:11] == texts[1][:11] and str(r["AESTDTC"]) < texts[1]
+                   for r in data.rows("AE", subject)):
+            return "no event on the first dose date at a collected time before the dose"
+        return None
+    return _each(record, check)
+
+
 def _starts(data: Data, subject: str) -> list[Date]:
     return [d for r in data.rows("AE", subject) if (d := _date(r["AESTDTC"]))]
 
@@ -363,27 +398,6 @@ def _after_window(record: dict, data: Data, design: dict) -> list[str]:
     if offsets != [days, days + 1]:
         return [f"the log has subjects for {offsets} days after the last dose, not for "
                 f"{days} and {days + 1}"]
-    return _each(record, check)
-
-
-def _after_end_of_study(record: dict, data: Data, design: dict) -> list[str]:
-    def check(subject: str) -> str | None:
-        end = data.end_of_study(subject)
-        return None if end and any(d > end for d in _starts(data, subject)) else \
-            "no event that starts after the end-of-study date"
-    return _each(record, check)
-
-
-def _between_window_and_end(record: dict, data: Data, design: dict) -> list[str]:
-    days = record["detail"]["window_days"]
-
-    def check(subject: str) -> str | None:
-        last, end = data.last_dose(subject), data.end_of_study(subject)
-        if last is None or end is None:
-            return "no date of the last dose or of the end of the study"
-        limit = last + datetime.timedelta(days=days)
-        return None if any(limit < d < end for d in _starts(data, subject)) else \
-            f"no event more than {days} days after the last dose and before the end of the study"
     return _each(record, check)
 
 
@@ -476,6 +490,7 @@ FINDERS: dict[str, Finder] = {
     "rfxstdtc_differs_from_exposure": _rfxstdtc,
     "last_exposure_record_spans_days": _spans_days,
     "no_exposure_end_date": _no_end_date,
+    "undosed_record_after_last_dose": _undosed_after_last,
     "partial_exposure_date": _partial_exposure,
     "partial_exposure_date_not_earliest": _partial_not_earliest,
     "reference_start_before_first_dose": _reference_start,
@@ -488,9 +503,8 @@ FINDERS: dict[str, Finder] = {
     "partial_ae_start_in_month_of_first_dose": _partial_ae_in_month,
     "partial_ae_start_before_month_of_first_dose": _partial_ae_before_month,
     "ae_on_first_dose_date_without_time": _on_first_dose_date,
+    "ae_timed_before_timed_first_dose": _timed_before_dose,
     "ae_starts_after_emergence_window": _after_window,
-    "ae_starts_after_end_of_study": _after_end_of_study,
-    "ae_between_window_end_and_end_of_study": _between_window_and_end,
     "ae_with_each_causality_value": _each_causality,
     "dosed_without_postbaseline_value": _without_any_postbaseline,
     "category_with_zero_count": _zero_count,

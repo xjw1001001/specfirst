@@ -67,7 +67,7 @@ def test_the_list_of_explained_findings_is_well_formed(root, catalog):
 LOG = [
     {"data": "twin", "probe": "actual_arm_differs_from_planned", "subjects": ["S-9"]},
     {"data": "visible", "probe": "actual_arm_differs_from_planned", "subjects": ["S-7"]},
-    {"data": "twin", "probe": "ae_starts_after_end_of_study", "subjects": ["S-4"]},
+    {"data": "twin", "probe": "no_exposure_end_date", "subjects": ["S-4"]},
 ]
 # In SV, three subjects: two with several visits (seven records), one with a single visit.
 TABLES = {"AE": [{}] * 5, "EX": [{"USUBJID": "S-1"}, {"USUBJID": "S-2"}, {"USUBJID": "S-3"}],
