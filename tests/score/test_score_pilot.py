@@ -55,8 +55,9 @@ def arm_s() -> None:
     assert [f"{d}.{n}" for d, n, there in found.reads if there] == [
         "ADAE.AEACN", "ADAE.AESDTH", "ADAE.AESER", "ADAE.TRTEMFL", "ADAE.USUBJID",
         "ADSL.SAFFL", "ADSL.TRT01A", "ADSL.USUBJID"]
-    # The rows of related, serious related and related fatal events read RELGR1: open.
-    assert found.not_built == ["RELATED", "SERIOUS_RELATED"]
+    # The rows of related, serious related and related fatal events read RELGR1: open (the
+    # first two are standard rows, the third a row of the key's list).
+    assert found.not_built == ["RELATED", "SERIOUS_RELATED", "FATAL_RELATED"]
     assert {item.cell.row[1] for item in found.cells if item.state == "open"} == {
         "Related adverse event", "Serious related adverse event", "Fatal related adverse event"}
     assert found.no_row == []
@@ -64,6 +65,15 @@ def arm_s() -> None:
     text = "\n".join(pilot.lines(found))
     assert "Any adverse event | Placebo | 65 ( 75.6) | 65 ( 75.6) | equal" in text
     assert "UNEXPLAINED" not in text
+    # Review of catalog-2c, G1: the summary counts the explained cells of the dose
+    # modifications among the rows arm S does not build, not among the rows it shares.
+    assert ("cells of the key that differ or are missing: 12. Of the 15 cells of the rows "
+            "both tables have, 0 differ and are explained by another value of one table "
+            "decision, and 0 are unexplained. 12 are in rows that arm S does not build: 3 "
+            "explained by another value of one table decision, 9 for a variable the reference "
+            "ADaM lacks, 0 in rows the catalog does not have, 0 in rows the table decisions "
+            "do not ask for that no one table decision gives;") in text
+    assert "rows not built: RELATED, SERIOUS_RELATED, FATAL_RELATED" in text
 
 
 def arm_r() -> None:
@@ -93,6 +103,13 @@ def arm_r() -> None:
     assert 'tfl.columns.total = {"rule": "all_arms"}' in text.split("\n")[2]
     assert ("Fatal adverse event | Xanomeline High Dose | 0 (  0.0) | 0 | differs; explained "
             "by tfl.percent.format") in text
+    # The dose modifications are a row of catalog@2 the decisions do not ask for, not a gap
+    # of the catalog (G1).
+    assert ("Of the 15 cells of the rows both tables have, 5 differ and are explained by "
+            "another value of one table decision, and 0 are unexplained. 12 are in rows that "
+            "arm R does not build: 0 explained by another value of one table decision, 9 for "
+            "a variable the reference ADaM lacks, 0 in rows the catalog does not have, 3 in "
+            "rows the table decisions do not ask for that no one table decision gives;") in text
 
 
 def arm_r_no_output() -> None:
@@ -123,6 +140,11 @@ def arm_r_no_output() -> None:
     assert ('Any adverse event | Placebo | 65 ( 75.6) | - | 65 ( 75.6) | missing; explained '
             'by tfl.output.include = {"rule": "included"}') in text
     assert "the key has 4 rows that arm R with tfl.output.include" in text
+    assert ("10 have the key's text, 5 differ and are explained by one more table decision, "
+            "and 0 are unexplained. 12 are in rows that this build does not have: 0 explained "
+            "by one more table decision, 9 for a variable the reference ADaM lacks, 0 in rows "
+            "the catalog does not have, 3 in rows the table decisions do not ask for that no "
+            "one table decision gives;") in text
 
 
 def pilot_folder() -> None:

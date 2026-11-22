@@ -93,6 +93,9 @@ class PilotError(RuntimeError):
 
 
 STATES = ("decision", "open", "no_row", "unexplained")
+# The note of a cell whose row the catalog lacks (a gap of the catalog); the other cells of
+# the state `no_row` are in rows the table decisions do not ask for.
+GAP_NOTE = "the catalog has no such row (tfl.ae.summary.rows)"
 
 
 @dataclass
@@ -112,7 +115,9 @@ class Pilot:
     key: dict  # the key grid, with the house labels
     ours: dict | None  # the grid of arm S
     missing: list[tuple[str, str, list[str]]]  # (dataset, variable, decisions that write it)
-    not_built: list[str]  # row codes left out for a missing variable
+    # row codes left out for a missing variable: those the decisions ask for, then those of
+    # the key's list of rows
+    not_built: list[str]
     no_row: list[str]  # analyses of the example without a row in the catalog
     cells: list[Explained]
     axes: dict[str, list[tuple[Key, dict]]]  # axis that differs -> what makes it equal
@@ -336,11 +341,12 @@ def run(machine: Machine, records: list[dict] | None = None, arm: str = "S") -> 
             missing.append((dataset, name, writers))
     our_rows = {row["label"] for row in (work.grids.get(OUR_OUTPUT) or {"rows": []})["rows"]}
     # The rows the decisions ask for that the build lacks: a variable they read is missing.
-    not_built = [code for code in _codes(compiled) if names.get(code) not in our_rows]
+    asked = [code for code in _codes(compiled) if names.get(code) not in our_rows]
     keyed = made(_with(traced, ROWS_KEY, KEY_ROWS))
     keyed_rows = {row["label"] for row in (keyed.grids.get(OUR_OUTPUT) or {"rows": []})["rows"]}
     # The rows of the key that its own list of rows does not build either.
     never_built = [code for code in KEY_ROWS["rows"] if names.get(code) not in keyed_rows]
+    not_built = asked + [code for code in never_built if code not in asked]
     # Every other value of every table decision, each built once.
     trials: list[tuple[Key, dict, build.BuildScore]] = []
     for record in traced:
@@ -370,14 +376,14 @@ def run(machine: Machine, records: list[dict] | None = None, arm: str = "S") -> 
         code = next((c for c, label in names.items() if label == cell.row[1]), None)
         if item.by:
             item.state = "decision"
-        elif here.reason == "no_row" and (code in not_built or code in never_built):
+        elif here.reason == "no_row" and code in not_built:
             item.state = "open"
             item.note = "the row is not built: " + "; ".join(
                 f"the reference ADaM has no {d}.{n}, which the house standard writes by "
                 f"{', '.join(w) or 'its parent spec'}" for d, n, w in missing)
         elif here.reason == "no_row":
             item.state = "no_row"
-            item.note = ("the catalog has no such row (tfl.ae.summary.rows)" if code is None
+            item.note = (GAP_NOTE if code is None
                          else "the table decisions do not ask for this row, and no other value "
                          "of one table decision gives the key's text (tfl.ae.summary.rows asks "
                          "for it with the key's list of rows)")
@@ -458,27 +464,39 @@ def lines(pilot: Pilot) -> list[str]:
         said.append(f"  the {axis} are not the key's{more}{less}: "
                     + ("explained by " + _fits(by) if by else
                        "no other value of one table decision makes them equal"))
-    count = {state: sum(1 for item in pilot.cells if item.state == state) for state in STATES}
+    # Each state counted apart in the rows both tables have and in the rows the build lacks
+    # (a cell explained by a decision may lie in either).
+    rows_here = set(traced.rows) if traced else set()
+
+    def tally(state: str, inside: bool) -> int:
+        return sum(1 for item in pilot.cells
+                   if item.state == state and (item.cell.row in rows_here) == inside)
+
+    gaps = sum(1 for item in pilot.cells if item.state == "no_row" and item.note == GAP_NOTE)
+    outside = sum(1 for item in pilot.cells if item.cell.row not in rows_here)
+    one = "one more table decision" if first else "another value of one table decision"
+    lost = tally("unexplained", False)
+    rows_out = (f"{tally('decision', False)} explained by {one}, {tally('open', False)} for a "
+                f"variable the reference ADaM lacks, {gaps} in rows the catalog does not "
+                f"have, {tally('no_row', False) - gaps} in rows the table decisions do not "
+                "ask for that no one table decision gives"
+                + (f", {lost} unexplained" if lost else "")
+                + "; the open cells and those without a row are classed by the crosswalk of "
+                "rows, not by a build")
     if first:
         alone = sum(1 for item in pilot.cells if item.by == [first] and item.first is None)
         said.append(f"  cells of the key that differ or are missing: {len(pilot.cells)}, every "
                     f"one missing: {arm} built no output. {lifted.capitalize()}, {alone} have "
-                    f"the key's text, {count['decision'] - alone} differ and are explained by "
-                    f"one more table decision, and {count['unexplained']} are unexplained. "
-                    f"{count['open'] + count['no_row']} are in rows that this build does not "
-                    f"have: {count['open']} for a variable the reference ADaM lacks, "
-                    f"{count['no_row']} in rows the catalog does not have; these are classed "
-                    "by the crosswalk of rows, not by a build")
+                    f"the key's text, {tally('decision', True) - alone} differ and are "
+                    f"explained by {one}, and {tally('unexplained', True)} are unexplained. "
+                    f"{outside} are in rows that this build does not have: {rows_out}")
     else:
         shared = pilot.score.denominators()["shared_rows"]
         said.append(f"  cells of the key that differ or are missing: {len(pilot.cells)}. Of "
-                    f"the {shared} cells of the rows both tables have, {count['decision']} "
-                    "differ and are explained by another value of one table decision, and "
-                    f"{count['unexplained']} are unexplained. "
-                    f"{count['open'] + count['no_row']} are in rows that {arm} does not "
-                    f"build: {count['open']} for a variable the reference ADaM lacks, "
-                    f"{count['no_row']} in rows the catalog does not have; these are classed "
-                    "by the crosswalk of rows, not by a build")
+                    f"the {shared} cells of the rows both tables have, "
+                    f"{tally('decision', True)} differ and are explained by {one}, and "
+                    f"{tally('unexplained', True)} are unexplained. {outside} are in rows that "
+                    f"{arm} does not build: {rows_out}")
     said.append(f"  variables the house template reads: {len(pilot.reads)}; in the reference "
                 "ADaM under the same name: "
                 + ", ".join(f"{d}.{n}" for d, n, there in pilot.reads if there))
