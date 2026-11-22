@@ -75,6 +75,15 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   docs/reports/real-5b-answers.review.md (pass 1 SIGNED, four findings that
   do not block). Decisions: ADR-015, section "The owner's answers
   (2026-11-20)".
+- Issue #29 A standalone recomputation script per analysis (2026-11-21):
+  `specfirst recompute cdiscpilot01` writes, runs sealed and compares 69
+  scripts (42 Python, 27 R), 69 of 69 `reproduced`; the planted break of
+  the LS-means weights, and the quartile and CMH plants, are found. Gates:
+  `scripts/clean_clone_gate.sh` exited 0 for issue-29 (12 of 12), real-5a,
+  real-5b, real-2 and real-3a on clean clones of commit `22c2932` (the
+  work on `main` `9dc6b20`). Evidence: docs/reports/issue-29.md and
+  issue-29.clean-clone.gate.log, issue-29.<gate>.gate.log. Review:
+  docs/reports/issue-29.review.md. Decisions: docs/decisions/ADR-021.md.
 
 ## Open
 
