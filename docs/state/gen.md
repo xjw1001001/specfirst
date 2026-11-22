@@ -361,11 +361,24 @@ track left alone meanwhile. Report: docs/reports/catalog-2c.md.
 - SEP01: the expected table has the six rows, no total column and a count
   of zero with its percentage; mutation moves `tfl.columns.total` to
   separated (counts 7, 9, 5, 1); the three invariants and the plants hold.
-  The pilot vectors `house` and `window` are the same under open-default@2.
-- The store holds 21 more accepted statements (calls `catalog-2c-rewrite-1`
-  and `catalog-2c-readback-1`, both accepted on the first attempt).
+  The pilot vector `window` is gone: under open-default@2 it was `house`.
+- The store holds 26 more accepted statements, in four calls, each accepted
+  on the first attempt (`catalog-2c-rewrite-1` and `-readback-1`: 21;
+  `catalog-2c-rewrite-2` and `-readback-2`: 5).
 - core_findings.yaml: the event after the end of the study is explained by
   `no_exposure_end_date` alone.
+- Left open by the review of catalog-2c (pass 2, notes):
+  - G6: the store has texts of the window for 14 and 30 days only. A kit of
+    another seed that states 7 or 28 days fails gen-3a until a call of the
+    natural form adds the text.
+  - G2: `Parameters.of` reads the house window through the cached
+    `probes.house_window()`, from `repo_root()`, not from the root and house
+    the generator is given.
+  - G3: the probe tests run on a design whose follow-up is 30 days, the
+    house window; a design with another follow-up is held only by the
+    reach test. G4: no unit test fails when `decisions.stated` is reverted.
+  - G5: for `by_time_when_collected` the reference counts an hour-only dose
+    time as collected, the template does not; no generated record has one.
 
 ## Open
 

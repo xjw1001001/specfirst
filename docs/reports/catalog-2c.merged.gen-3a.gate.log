@@ -1,0 +1,300 @@
+clean clone gate gen-3a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     1e24e3c
+clone:      /tmp/specfirst-clean-ImmwOX/specfirst
+environment and cache: /tmp/specfirst-clean-ImmwOX/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-ImmwOX/specfirst
+
+$ git -C /tmp/specfirst-clean-ImmwOX/specfirst checkout --quiet --detach 1e24e3c
+
+$ git -C /tmp/specfirst-clean-ImmwOX/specfirst log -1 --format=%H %s
+1e24e3c7d349f3c225253bacfa54b99fd20ccf82 Merge main into track/std: issue #29 (ADR-021), before catalog-2c merges
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-ImmwOX/env/venv-specfirst-887718429
+R library: /tmp/specfirst-clean-ImmwOX/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-ImmwOX/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-ImmwOX/env/core/f3282a0d870b-d90ef34c553d
+source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
+python     3.12.3  (/tmp/specfirst-clean-ImmwOX/env/venv-specfirst-887718429/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-ImmwOX/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate gen-3a --clean
+gate gen-3a at commit 1e24e3c7d349f3c225253bacfa54b99fd20ccf82 (clean)
+
+== [1/15] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-ImmwOX/env/venv-specfirst-887718429/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+-- PASS environment (0.5 s)
+
+== [2/15] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-ImmwOX/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (1.6 s)
+
+== [3/15] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/15] unit tests: pytest -m "not evidence" -q
+........................................................................ [  5%]
+........................................................................ [ 10%]
+........................................................................ [ 15%]
+........................................................................ [ 21%]
+........................................................................ [ 26%]
+........................................................................ [ 31%]
+........................................................................ [ 37%]
+........................................................................ [ 42%]
+........................................................................ [ 47%]
+........................................................................ [ 53%]
+........................................................................ [ 58%]
+........................................................................ [ 63%]
+........................................................................ [ 68%]
+........................................................................ [ 74%]
+........................................................................ [ 79%]
+........................................................................ [ 84%]
+........................................................................ [ 90%]
+........................................................................ [ 95%]
+.............................................................            [100%]
+1357 passed, 36 deselected in 576.87s (0:09:36)
+-- PASS unit tests (577.7 s)
+
+== [5/15] kits: specfirst.gen.gate3.kits_written: the 10 kits of the seed of the gate gen-2a, each by a process of its own; the tiers of their documents
+kit 1 of the set of the seed 'gen-2a': sfpbt5zj, train, generator catalog-2c.2, 128 files, kit.yaml 25eeab982a330723
+kit 2 of the set of the seed 'gen-2a': sfmyncmq, train, generator catalog-2c.2, 128 files, kit.yaml 3dd65313a61df7bd
+kit 3 of the set of the seed 'gen-2a': sfg5vbvq, train, generator catalog-2c.2, 127 files, kit.yaml 9ad15c5be6624bc4
+kit 4 of the set of the seed 'gen-2a': sfrrl2uh, train, generator catalog-2c.2, 128 files, kit.yaml 123f5c8f1c5fa966
+kit 5 of the set of the seed 'gen-2a': sflnykvq, dev, generator catalog-2c.2, 127 files, kit.yaml 1bfafee4b18af9bf
+kit 6 of the set of the seed 'gen-2a': sfphbktr, dev, generator catalog-2c.2, 127 files, kit.yaml a73b2118e96a2884
+kit 7 of the set of the seed 'gen-2a': sfp6x45g, dev, generator catalog-2c.2, 128 files, kit.yaml 24db60f517898884
+kit 8 of the set of the seed 'gen-2a': sf6xjw92, test, generator catalog-2c.2, 127 files, kit.yaml 9d064e881f2686a6
+kit 9 of the set of the seed 'gen-2a': sfyf9ekd, test, generator catalog-2c.2, 128 files, kit.yaml 37ad0fa03ab56d20
+kit 10 of the set of the seed 'gen-2a': sf4tvbdp, test, generator catalog-2c.2, 128 files, kit.yaml e2df6f84776715db
+tiers of the documents: full, standard, full, ask, standard, full, ask, standard, full, standard; kits of the ask demo: 2
+-- PASS kits (59.7 s)
+
+== [6/15] parser: specfirst.gen.gate3.parser: 100% of the decisions from the standard-form documents (with the house standard and the oracle)
+planted defect in kit 1: the standard-form SAP without the statement of trt.planned.source: the check reports it: trt.planned.source (mod-treatment, stated): not recovered from the documents, the house standard and the oracle
+planted defect in kit 1: the standard-form SAP states the other rounding rule: the check reports it: gold/docs/sap.md [6/s6] states tfl.rounding.rule as {'rule': 'half_away_from_zero'}; the record is stated {'rule': 'half_even'}
+kit 1 (full): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 2 (standard): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 3 (full): 28 of 28 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 4 (ask): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 5 (standard): 28 of 28 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 6 (full): 28 of 28 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 7 (ask): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 8 (standard): 28 of 28 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 9 (full): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+kit 10 (standard): 29 of 29 decisions recovered from the standard-form documents, the house standard and the oracle; 0 problems
+-- PASS parser (1.5 s)
+
+== [7/15] slots: specfirst.gen.gate3.slots: every decision paragraph of the natural form
+planted defect in kit 1: the variable name DM.ARM taken out of the paragraph of trt.planned.source: the check reports it: sap#3/p6 (trt.planned.source): slot check: 'DM.ARM' is not in the paragraph
+planted defect in kit 1: the tokens POSSIBLY RELATED and PROBABLY RELATED exchanged in the paragraph of ae.related.values: the check reports it: protocol#4.2/p2 (ae.related.values): slot check: 'PROBABLY RELATED' is out of the order of the statement
+kit 1 (full): 29 decision paragraphs keep the tokens of their statements; 0 problems
+kit 2 (standard): 14 decision paragraphs keep the tokens of their statements; 0 problems
+kit 3 (full): 28 decision paragraphs keep the tokens of their statements; 0 problems
+kit 4 (ask): 9 decision paragraphs keep the tokens of their statements; 0 problems
+kit 5 (standard): 14 decision paragraphs keep the tokens of their statements; 0 problems
+kit 6 (full): 28 decision paragraphs keep the tokens of their statements; 0 problems
+kit 7 (ask): 10 decision paragraphs keep the tokens of their statements; 0 problems
+kit 8 (standard): 13 decision paragraphs keep the tokens of their statements; 0 problems
+kit 9 (full): 29 decision paragraphs keep the tokens of their statements; 0 problems
+kit 10 (standard): 10 decision paragraphs keep the tokens of their statements; 0 problems
+-- PASS slots (0.5 s)
+
+== [8/15] read-back: specfirst.gen.gate3.readback: the verifier's pick for the text of every paragraph
+planted defect in kit 1: the store says the verifier read the paragraph of tfl.rounding.rule as half_away_from_zero: the check reports it: sap#7.1/p1 (tfl.rounding.rule): read-back: read back as half_away_from_zero, the decision is half_even
+planted defect in kit 1: the store has no read-back of the paragraph of tfl.rounding.rule: the check reports it: sap#7.1/p1 (tfl.rounding.rule): read-back: no read-back of this text in the store
+planted defect in kit 1: the filler paragraph sap#8/p1 is not the text the store read back: the check reports it: sap#8/p1: filler that the store did not read back as stating nothing
+kit 1 (full): 29 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 2 (standard): 14 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 3 (full): 28 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 4 (ask): 9 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 5 (standard): 14 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 6 (full): 28 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 7 (ask): 10 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 8 (standard): 13 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 9 (full): 29 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+kit 10 (standard): 10 decision paragraphs read back as their alternative, 4 filler paragraphs as stating nothing; 0 problems
+the store: 87 statements, 87 accepted, 0 of them by the phrasing template; 10 filler paragraphs; 7 model calls
+-- PASS read-back (0.6 s)
+
+== [9/15] bad rewrite: specfirst.gen.gate3.bad_rewrite: a changed number is rejected
+planted defect in kit 1: the paragraph sap#3/p4 of date.studyday.origin with 1 changed to 6: the check reports it: sap#3/p4 (date.studyday.origin): slot check: the number 6 is not in the statement
+planted defect in kit 1: the same rewrite, held against the read-back: the check reports it: sap#3/p4 (date.studyday.origin): read-back: no read-back of this text in the store
+planted bad rewrite proposed to the loop: ef2e8655846a79ea date.studyday.origin: attempt 1: SLOTS: the number 6 is not in the statement; '1' is not in the paragraph; not accepted and not sent to the verifier: yes
+-- PASS bad rewrite (0.3 s)
+
+== [10/15] tiers: specfirst.gen.gate3.tiers: full, standard, the ask demo and the oracle
+planted defect in kit 4: a kit of the ask demo whose oracle answers nothing: the check reports it: the oracle answers [], the asked decisions are [('ae.related.values', 'mod-ae-emergence'), ('pop.efficacy.rule', 'mod-populations')]
+planted defect in kit 1: a kit of the tier full that leaves one house default to the house standard: the check reports it: trt.planned.source (mod-treatment): default, the tier full asks stated
+kit 1 (full): 29 decisions; 0 problems
+kit 2 (standard): 29 decisions; 0 problems
+kit 3 (full): 28 decisions; 0 problems
+kit 4 (ask): 29 decisions; 0 problems
+kit 5 (standard): 28 decisions; 0 problems
+kit 6 (full): 28 decisions; 0 problems
+kit 7 (ask): 29 decisions; 0 problems
+kit 8 (standard): 28 decisions; 0 problems
+kit 9 (full): 29 decisions; 0 problems
+kit 10 (standard): 29 decisions; 0 problems
+kit 4: the ask demo leaves out pop.efficacy.rule, ae.related.values; the oracle answers them
+kit 7: the ask demo leaves out pop.efficacy.rule, ae.related.values; the oracle answers them
+-- PASS tiers (0.5 s)
+
+== [11/15] anchors: specfirst.gen.gate3.anchors: every citation stands at its anchor
+planted defect in kit 2: the natural citation of trt.start.source names the next paragraph: the check reports it: trt.start.source (mod-treatment): the quote does not stand at sap#2/p2
+planted defect in kit 2: the paragraph of trt.start.source changed after natural.json was written: the check reports it: inputs/docs/sap.md: not the text natural.json names
+kit 1 (full): 58 citations stand at their anchors; 0 problems
+kit 2 (standard): 43 citations stand at their anchors; 0 problems
+kit 3 (full): 56 citations stand at their anchors; 0 problems
+kit 4 (ask): 36 citations stand at their anchors; 0 problems
+kit 5 (standard): 42 citations stand at their anchors; 0 problems
+kit 6 (full): 56 citations stand at their anchors; 0 problems
+kit 7 (ask): 37 citations stand at their anchors; 0 problems
+kit 8 (standard): 41 citations stand at their anchors; 0 problems
+kit 9 (full): 58 citations stand at their anchors; 0 problems
+kit 10 (standard): 39 citations stand at their anchors; 0 problems
+kit 1 (full): natural.json names every paragraph; 0 problems
+kit 2 (standard): natural.json names every paragraph; 0 problems
+kit 3 (full): natural.json names every paragraph; 0 problems
+kit 4 (ask): natural.json names every paragraph; 0 problems
+kit 5 (standard): natural.json names every paragraph; 0 problems
+kit 6 (full): natural.json names every paragraph; 0 problems
+kit 7 (ask): natural.json names every paragraph; 0 problems
+kit 8 (standard): natural.json names every paragraph; 0 problems
+kit 9 (full): natural.json names every paragraph; 0 problems
+kit 10 (standard): natural.json names every paragraph; 0 problems
+-- PASS anchors (0.5 s)
+
+== [12/15] visible probes: specfirst.gen.gate3.visible_probes: listed in kit.yaml and found in the visible data
+planted defect in kit 1: kit.yaml lists ae_on_first_dose_date_without_time as visible: the check reports it: kit.yaml does not list the probes of the log by dataset
+planted defect in kit 1: the log and kit.yaml claim ae_on_first_dose_date_without_time for the visible data: the check reports it: visible data: probe ae_on_first_dose_date_without_time: the data cannot be read for this probe: KeyError: 'SFPBT5ZJ-101-060'
+kit 1 (full): 18 visible probes listed and found in the visible data; 0 problems
+kit 2 (standard): 20 visible probes listed and found in the visible data; 0 problems
+kit 3 (full): 16 visible probes listed and found in the visible data; 0 problems
+kit 4 (ask): 16 visible probes listed and found in the visible data; 0 problems
+kit 5 (standard): 17 visible probes listed and found in the visible data; 0 problems
+kit 6 (full): 13 visible probes listed and found in the visible data; 0 problems
+kit 7 (ask): 15 visible probes listed and found in the visible data; 0 problems
+kit 8 (standard): 14 visible probes listed and found in the visible data; 0 problems
+kit 9 (full): 18 visible probes listed and found in the visible data; 0 problems
+kit 10 (standard): 16 visible probes listed and found in the visible data; 0 problems
+-- PASS visible probes (0.5 s)
+
+== [13/15] summary: specfirst.gen.gate3.summaries: one page per kit
+planted defect in kit 1: the summary without the line of trt.planned.source: the check reports it: the summary does not name trt.planned.source
+planted defect in kit 1: the summary 30 lines longer: the check reports it: the summary has 80 lines, more than 60
+kit 1 (full): one page, every decision named; 0 problems
+kit 2 (standard): one page, every decision named; 0 problems
+kit 3 (full): one page, every decision named; 0 problems
+kit 4 (ask): one page, every decision named; 0 problems
+kit 5 (standard): one page, every decision named; 0 problems
+kit 6 (full): one page, every decision named; 0 problems
+kit 7 (ask): one page, every decision named; 0 problems
+kit 8 (standard): one page, every decision named; 0 problems
+kit 9 (full): one page, every decision named; 0 problems
+kit 10 (standard): one page, every decision named; 0 problems
+-- PASS summary (0.4 s)
+
+== [14/15] cache untouched: specfirst fetch --verify
+cache: /tmp/specfirst-clean-ImmwOX/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS cache untouched (0.1 s)
+
+== [15/15] ASCII: python -m specfirst.asciicheck
+ASCII check: 889 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.5 s
+PASS  pins                 1.6 s
+PASS  lint                 0.0 s
+PASS  unit tests         577.7 s
+PASS  kits                59.7 s
+PASS  parser               1.5 s
+PASS  slots                0.5 s
+PASS  read-back            0.6 s
+PASS  bad rewrite          0.3 s
+PASS  tiers                0.5 s
+PASS  anchors              0.5 s
+PASS  visible probes       0.5 s
+PASS  summary              0.4 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE gen-3a: PASS
+
+clean clone gate gen-3a: PASS (clone: /tmp/specfirst-clean-ImmwOX/specfirst)
+The clone does not last: under WSL /tmp is cleared when the instance restarts, about a
+minute after the last command ends. Copy what must be kept in the same command that
+runs this script (docs/lessons.md, lesson 39). The log is in build/gates/gen-3a/ here.
