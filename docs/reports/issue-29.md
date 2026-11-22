@@ -464,9 +464,13 @@ A fresh-context reviewer (rule R7) signs docs/reports/issue-29.review.md.
   `22c2932`): nothing blocks. G1 (the seconds come from the loop, not a
   log) and G2 (the run of `694709b` has no log) are answered in the
   section "The gates on clean clones"; G3 (each log names the repository
-  it clones by its path, which holds no user folder) needs nothing. Then
-  the merge with `main` and its six logs; the final verdict stands in
-  docs/reports/issue-29.review.md.
+  it clones by its path, which holds no user folder) needs nothing.
+- Final, of `0ae9b24` (the merge `711c032` and its six logs): **SIGNED**.
+  The merge brings into cli.py and gates.py exactly main's change and
+  keeps this work's whole; main changes nothing the recomputation reads.
+  No finding blocks; F2 to F5, G1 and G2 are closed, G3 needs nothing, F1
+  is closed but for the residuals ADR-021, decision 5 names. Nothing is for
+  the owner.
 
 ## What is not done
 

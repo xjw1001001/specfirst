@@ -85,7 +85,9 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   `711c032` (`main` `6cdeded` merged in). Evidence:
   docs/reports/issue-29.md, issue-29.clean-clone.gate.log,
   issue-29.<gate>.gate.log and issue-29.merged.<gate>.gate.log. Review:
-  docs/reports/issue-29.review.md. Decisions: docs/decisions/ADR-021.md.
+  docs/reports/issue-29.review.md (pass 1 and pass 2 no blocking finding;
+  final SIGNED of `0ae9b24`, nothing for the owner). Decisions:
+  docs/decisions/ADR-021.md.
 
 ## Open
 
