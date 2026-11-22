@@ -242,7 +242,7 @@ subagents of a Claude Code session; the CLI on this machine is not logged
 in (ADR-009, decision 1).
 
 - Change `GENERATOR` with any change that gives other bytes. Kits are
-  generated again, never patched. It is `catalog-2c.1` now (catalog-2c).
+  generated again, never patched. It is `catalog-2c.2` now (catalog-2c).
 - `specfirst gate` refuses to run while `SPECFIRST_REWRITES` is set, and
   `specfirst gen natural requests|propose` refuses dev, test and sealed
   kits (but those of the gate seed) while the store lies inside a
@@ -331,7 +331,7 @@ amended); the std track made the change in the files of gen, which this
 track left alone meanwhile. Report: docs/reports/catalog-2c.md.
 
 - The default pair is (`catalog@2`, `open-default@2`): every kit is
-  generated at version 2, with the generator `catalog-2c.1`, and the kits of
+  generated at version 2, with the generator `catalog-2c.2`, and the kits of
   every seed have new bytes. `catalog@1` stays loadable by label.
 - Probes: `undosed_record_after_last_dose` (#24,
   `trt.end.source/last_ex_record_end`) and

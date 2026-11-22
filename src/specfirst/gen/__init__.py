@@ -25,6 +25,7 @@ the seed (rule R4): no clock, no unseeded randomness, sorted outputs.
 """
 
 # The version of the generator. Change it whenever the same design and seed
-# would give other bytes; every generated file names it. catalog-2c.1: the slice on
-# catalog@2 and open-default@2 (ADR-020, decision 8 as amended).
-GENERATOR = "catalog-2c.1"
+# would give other bytes; every generated file names it. catalog-2c.2: the slice on
+# catalog@2 and open-default@2 (ADR-020, decision 8 as amended), after pass 1 of its
+# review (catalog-2c.1 before it).
+GENERATOR = "catalog-2c.2"
