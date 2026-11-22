@@ -1,0 +1,148 @@
+{
+ "rules": [
+  "For each item, read the paragraph alone and pick the one alternative whose rule the paragraph states for the question, by its id. Values in angle brackets may be any value. If the paragraph states none of them, or more than one, answer '(none)'.",
+  "For each filler item, list the questions (by their text) whose answer the paragraph states, or an empty list.",
+  "Judge from the text only; do not read any other file."
+ ],
+ "items": [
+  {
+   "item": "r3508a68b6556",
+   "paragraph": "The treatment end date will be the latest end date found among all exposure records.",
+   "question": "What is the treatment end date?",
+   "alternatives": [
+    {
+     "id": "last_ex_end_date",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose."
+    },
+    {
+     "id": "last_ex_start_date",
+     "rule": "The treatment end date is the latest start date of an exposure record with a dose."
+    },
+    {
+     "id": "ds_date_when_ex_missing",
+     "rule": "The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date.",
+     "meaning": "The disposition date is the start date of the end-of-study record (decision disp.status.record). It is taken only for a subject with a treatment start."
+    },
+    {
+     "id": "last_ex_record_end",
+     "rule": "The treatment end date is the latest end date of any exposure record.",
+     "meaning": "Every exposure record takes part, whatever its dose: the counterpart of trt.start.source/first_ex_record, for an EX in which EXDOSE is not populated (EXDOSE is not a Required variable of SDTMIG)."
+    }
+   ]
+  },
+  {
+   "item": "r51683685bc35",
+   "paragraph": "The efficacy-evaluable set will consist of all subjects in the safety set who have a baseline value and at least one post-baseline value of the vital sign WEIGHT.",
+   "question": "Who is efficacy-evaluable?",
+   "alternatives": [
+    {
+     "id": "baseline_and_postbaseline",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign <test>.",
+     "meaning": "A baseline value is a non-missing result dated on or before the treatment start date; a post-baseline value is one dated after it."
+    },
+    {
+     "id": "attended_visit",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set who attended the visit <visit>.",
+     "meaning": "A subject attended a visit when the subject visits domain (SV) has a record of it."
+    }
+   ]
+  },
+  {
+   "item": "r898188d666c3",
+   "paragraph": "The period of treatment emergence will run until 30 days after the treatment end date, with that last day included.",
+   "question": "When does treatment emergence end?",
+   "alternatives": [
+    {
+     "id": "no_end",
+     "rule": "Treatment emergence has no end date.",
+     "meaning": "Every event that starts on or after the start of treatment emergence is treatment-emergent, however long after the treatment end date (the on-study reading of the FDA guide)."
+    },
+    {
+     "id": "last_dose_plus_days",
+     "rule": "Treatment emergence ends <days> days after the treatment end date, that day included.",
+     "meaning": "An event that starts later than that many days after the treatment end date is not treatment-emergent; one that starts on the last day of the window still is."
+    }
+   ]
+  },
+  {
+   "item": "ra8e4d265d6d0",
+   "paragraph": "In the adverse event summary table, percentages will be presented with 0 decimals, and a count of zero will be displayed together with its percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown without a percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown with its percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+    }
+   ]
+  },
+  {
+   "item": "rb7048048ce6c",
+   "paragraph": "In the adverse event summary table, percentages will be presented with 2 decimals, and a count of zero will be displayed together with its percentage.",
+   "question": "How are percentages displayed? (for the adverse event summary table)",
+   "alternatives": [
+    {
+     "id": "one_decimal_zero_blank",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown without a percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+    },
+    {
+     "id": "one_decimal_always",
+     "rule": "The number of decimals of percentages in the adverse event summary table is <decimals>, and a count of zero is shown with its percentage.",
+     "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+    }
+   ]
+  }
+ ],
+ "filler": [],
+ "filler_questions": [
+  "Are race categories regrouped?",
+  "How are displayed numbers rounded? (for the adverse event summary table)",
+  "How are partial adverse event start dates completed?",
+  "How are partial exposure dates completed?",
+  "How are percentages displayed? (for the adverse event summary table)",
+  "How is baseline body mass index obtained?",
+  "In which order are the treatment columns? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event table by system organ class and preferred term)",
+  "Is the output part of the planned outputs of the study? (for the demographics table)",
+  "Is the output part of the planned outputs of the study? (for the vital signs table by visit)",
+  "Is there a total column? (for the adverse event summary table)",
+  "What is the treatment end date?",
+  "What is the treatment start date?",
+  "When does treatment emergence begin?",
+  "When does treatment emergence end?",
+  "Where does actual treatment come from?",
+  "Where does planned treatment come from?",
+  "Which age groups are used?",
+  "Which analysis set does the output use? (for the adverse event summary table)",
+  "Which causality values count as related to study treatment?",
+  "Which date is study day 1?",
+  "Which record gives baseline weight and height?",
+  "Which record gives the end-of-study status?",
+  "Which rows does the adverse event summary table have?",
+  "Which treatment groups the safety analyses?",
+  "Who is efficacy-evaluable?",
+  "Who is in the randomized set?",
+  "Who is in the safety set?"
+ ],
+ "answer": {
+  "items": [
+   {
+    "item": "<id>",
+    "pick": "<alternative id or none>"
+   }
+  ],
+  "filler": [
+   {
+    "item": "<id>",
+    "states": []
+   }
+  ]
+ }
+}

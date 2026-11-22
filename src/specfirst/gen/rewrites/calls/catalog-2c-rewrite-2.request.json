@@ -1,0 +1,61 @@
+{
+ "rules": [
+  "Write one paragraph per statement, one to three sentences, in the plain voice of a clinical study protocol or statistical analysis plan, in the future or present tense.",
+  "Keep every number, unit, visit name, variable name (such as DM.ARMCD), quoted value and the name of the table exactly as the statement writes it, and in the same order as in the statement. Quotation marks may be dropped; the words inside them may not change.",
+  "Say the same rule and nothing else: add no rule, no example, no number, no value and no reason. Do not mention the standard form, a catalog or a template.",
+  "Reword freely: change the sentence structure and the ordinary words; the meaning must stay exactly the same.",
+  "One line of plain ASCII text: no line breaks, no Markdown, no brackets around numbers, no curly quotes, no dashes other than the ASCII hyphen."
+ ],
+ "paragraphs": [
+  {
+   "key": "143a25f85d7f62f4",
+   "document": "sap",
+   "statement": "The number of decimals of percentages in the adverse event summary table is 0, and a count of zero is shown with its percentage.",
+   "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+  },
+  {
+   "key": "38ada0f9a172ae32",
+   "document": "protocol",
+   "statement": "The efficacy-evaluable set holds every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign WEIGHT.",
+   "meaning": "A baseline value is a non-missing result dated on or before the treatment start date; a post-baseline value is one dated after it."
+  },
+  {
+   "key": "cb149eac0baa5239",
+   "document": "sap",
+   "statement": "The treatment end date is the latest end date of any exposure record.",
+   "meaning": "Every exposure record takes part, whatever its dose: the counterpart of trt.start.source/first_ex_record, for an EX in which EXDOSE is not populated (EXDOSE is not a Required variable of SDTMIG)."
+  },
+  {
+   "key": "d1314e75c2820be3",
+   "document": "sap",
+   "statement": "The number of decimals of percentages in the adverse event summary table is 2, and a count of zero is shown with its percentage.",
+   "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+  },
+  {
+   "key": "df27755fc9e15ca1",
+   "document": "sap",
+   "statement": "Treatment emergence ends 30 days after the treatment end date, that day included.",
+   "meaning": "An event that starts later than that many days after the treatment end date is not treatment-emergent; one that starts on the last day of the window still is."
+  }
+ ],
+ "filler_rules": [
+  "Write one neutral paragraph of two to four sentences for the heading given, in the voice of a clinical study protocol or statistical analysis plan.",
+  "It must state no analysis rule at all: nothing about analysis sets or populations, treatment dates or groups, study days, disposition, adverse events, causality, imputation of dates, baseline values, age or race groups, body mass index, which tables are produced, table columns, rows, percentages, rounding or decimals.",
+  "No numbers, no dates, no names of variables or datasets. One line of plain ASCII text."
+ ],
+ "filler": [],
+ "answer": {
+  "paragraphs": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ],
+  "filler": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ]
+ }
+}

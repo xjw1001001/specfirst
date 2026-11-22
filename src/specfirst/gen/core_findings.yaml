@@ -192,10 +192,11 @@ explained:
     kind: probe
     datasets: [AE]
     rules: [CORE-000717, CORE-002088]
-    probes: [ae_starts_after_end_of_study, no_exposure_end_date]
+    probes: [no_exposure_end_date]
     reason: >-
-      An adverse event starts after the end-of-study record. The first probe
-      separates the rules for the end of treatment emergence. The second
-      has an exposure record without an end date and an event after the
-      window that follows the end of the study: the event is emergent or
-      not according to the source of the treatment end date.
+      An adverse event starts after the end-of-study record. The probe has
+      an exposure record without an end date and an event after the window
+      that follows the end of the study: the event is emergent or not
+      according to the source of the treatment end date. (catalog@2 has no
+      end of emergence at the end of the study, and no probe of an event
+      after it.)

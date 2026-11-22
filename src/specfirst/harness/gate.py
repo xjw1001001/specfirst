@@ -37,6 +37,8 @@ from collections.abc import Callable
 from pathlib import Path
 
 from specfirst.compile import catalog as catalogs
+from specfirst.compile import house as houses
+from specfirst.compile import versions
 from specfirst.gen import documents as gendocs
 from specfirst.gen import gate2, natural
 from specfirst.gen import kits as genkits
@@ -104,6 +106,9 @@ def skills(root: Path, out: Out) -> bool:
         changed: the check itself, not a stand-in for it."""
         copy_root = _scratch() / f"skills-root-{len(list(_scratch().glob('skills-root-*')))}"
         shutil.copytree(catalogs.default_dir(root), catalogs.default_dir(copy_root))
+        # From catalog@2 the reading notes render the defaults of the house (ADR-020).
+        shutil.copytree(houses.default_dir(root), houses.default_dir(copy_root))
+        shutil.copy(root / versions.VERSIONS, copy_root / versions.VERSIONS)
         shutil.copytree(root / tasks.SKILLS, copy_root / tasks.SKILLS)
         path = tasks.skill_path(copy_root, name)
         path.write_text(change(path.read_text(encoding="ascii")), encoding="ascii")

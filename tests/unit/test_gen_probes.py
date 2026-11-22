@@ -250,6 +250,18 @@ def _undo_events(t, r, d):
     _drop(t, "AE", lambda row: row["USUBJID"] != subject)
 
 
+def _undo_undosed(t, r, d):
+    # The record of dose zero after the last dose gets a dose.
+    for row in _rows(t, "EX", r["subjects"][0]):
+        row["EXDOSE"] = row["EXDOSE"] or 5.0
+
+
+def _undo_ae_time(t, r, d):
+    # The event on the first dose date loses its collected time.
+    for row in _rows(t, "AE", r["subjects"][0]):
+        row["AESTDTC"] = row["AESTDTC"][:10]
+
+
 def _undo_causality(t, r, d):
     scale = d["collection"]["adverseEvents"]["causality"]
     subject = next(s for s, own in r["by_subject"].items() if own["value"] == scale[-1])
@@ -299,6 +311,7 @@ UNDO = {
     "rfxstdtc_differs_from_exposure": _undo_rfxstdtc,
     "last_exposure_record_spans_days": _undo_spans,
     "no_exposure_end_date": _undo_no_end,
+    "undosed_record_after_last_dose": _undo_undosed,
     "partial_exposure_date": _undo_partial_exposure,
     "partial_exposure_date_not_earliest": _undo_partial_middle,
     "reference_start_before_first_dose": _undo_reference,
@@ -311,9 +324,8 @@ UNDO = {
     "partial_ae_start_in_month_of_first_dose": _undo_partial_ae,
     "partial_ae_start_before_month_of_first_dose": _undo_ongoing,
     "ae_on_first_dose_date_without_time": _undo_dose_time,
+    "ae_timed_before_timed_first_dose": _undo_ae_time,
     "ae_starts_after_emergence_window": _undo_after_window,
-    "ae_starts_after_end_of_study": _undo_events,
-    "ae_between_window_end_and_end_of_study": _undo_events,
     "ae_with_each_causality_value": _undo_causality,
     "dosed_without_postbaseline_value": _undo_without_any,
     "category_with_zero_count": _undo_zero_count,
@@ -464,13 +476,16 @@ def test_a_log_line_says_when_its_difference_reaches_the_output(catalog, full):
 
 
 def _reach(entry_id, first, second, parameters, **changed):
-    """`probes.reaches` for the house defaults with some decisions changed."""
+    """`probes.reaches` for a vector of the slice with some decisions changed: the
+    defaults of open-default@1 for these decisions (open-default@2 has a window of 30
+    days, which the planted length need not be)."""
     values = {"tfl.population": {"rule": "safety"}, "pop.safety.grouping": {"rule": "actual"},
               "trt.actual.source": {"rule": "dm_actarm"}, "ae.teae.end": {"rule": "no_end"},
               "ae.teae.start": {"rule": "on_or_after_first_dose_date"},
               "trt.end.source": {"rule": "last_ex_end_date"},
               "disp.status.record": {"rule": "disposition_event"},
-              "tfl.ae.summary.rows": {"rule": "standard_rows"}}
+              "tfl.ae.summary.rows": {"rule": "standard_rows"},
+              "tfl.percent.format": {"rule": "one_decimal_always", "decimals": 1}}
     values.update({name.replace("__", "."): value for name, value in changed.items()})
     return probes.reaches(entry_id, first, second, values, parameters)
 
@@ -517,10 +532,8 @@ def test_reaches_is_evaluated_on_a_decision_vector(catalog, full):
     treatment = {"rule": "disposition_event_by_subcategory",
                  "subcategory": parameters["treatment_subcategory"]}
     study = {**treatment, "subcategory": parameters["study_subcategory"]}
-    assert _reach("ae.teae.end", "no_end", "end_of_study", parameters)
-    assert not _reach("ae.teae.end", "no_end", "end_of_study", parameters,
-                      disp__status__record=treatment)
-    assert _reach("ae.teae.end", "no_end", "end_of_study", parameters,
+    assert _reach("ae.teae.end", "no_end", "last_dose_plus_days", parameters)
+    assert _reach("ae.teae.end", "no_end", "last_dose_plus_days", parameters,
                   disp__status__record=study)
     assert _reach("ae.teae.end", "no_end", "last_dose_plus_days", parameters,
                   disp__status__record=treatment)
@@ -528,11 +541,27 @@ def test_reaches_is_evaluated_on_a_decision_vector(catalog, full):
     # subject when the subcategory is that of the study participation (review of gen-2a,
     # finding G8).
     pair = ("disposition_event", "disposition_event_by_subcategory")
-    to_end = {"rule": "end_of_study"}
+    by_ds = {"rule": "ds_date_when_ex_missing"}
     assert not _reach("disp.status.record", *pair, parameters)
-    assert _reach("disp.status.record", *pair, parameters, ae__teae__end=to_end)
-    assert not _reach("disp.status.record", *pair, parameters, ae__teae__end=to_end,
-                      disp__status__record=study)
+    assert not _reach("disp.status.record", *pair, parameters, ae__teae__end=window)
+    assert _reach("disp.status.record", *pair, parameters, ae__teae__end=window,
+                  trt__end__source=by_ds)
+    assert not _reach("disp.status.record", *pair, parameters, ae__teae__end=window,
+                      trt__end__source=by_ds, disp__status__record=study)
+    # The probes of the window are built around the house's default window (open-default@2:
+    # 30 days), so that a kit that takes the default separates it (review of catalog-2c, F1).
+    assert days == probes.house_window() == 30
+    assert parameters["follow_up_days"] in (7, 14, 28, 30)
+    # The rounding probe lies on a half at one decimal only (F1).
+    pair = ("half_away_from_zero", "half_even")
+    assert _reach("tfl.rounding.rule", *pair, parameters)
+    for decimals in (0, 2):
+        assert not _reach("tfl.rounding.rule", *pair, parameters, tfl__percent__format={
+            "rule": "one_decimal_always", "decimals": decimals})
+    # The latest end of any exposure record (#24) is read by the window as well.
+    assert not _reach("trt.end.source", "last_ex_end_date", "last_ex_record_end", parameters)
+    assert _reach("trt.end.source", "last_ex_end_date", "last_ex_record_end", parameters,
+                  ae__teae__end=window)
     # The table reads actual treatment on the safety set grouped by it, planned otherwise.
     planned = {"rule": "planned"}
     pair = ("dm_actarm", "first_ex_treatment")
@@ -542,10 +571,10 @@ def test_reaches_is_evaluated_on_a_decision_vector(catalog, full):
     assert _reach("trt.planned.source", "dm_arm", "dm_armcd_map", parameters,
                   pop__safety__grouping=planned)
     # A line of the log carries the same table: a reader of the log needs no code.
-    record = next(r for r in log if "ae.teae.end" in r["reaches"])
-    values = {"ae.teae.end": {"rule": "no_end"}, "disp.status.record": treatment}
-    assert probes.reaches("ae.teae.end", "no_end", "end_of_study", values, parameters,
-                          record["reaches"]) is False
+    record = next(r for r in log if "trt.end.source" in r["reaches"])
+    values = {"ae.teae.end": {"rule": "no_end"}, "tfl.population": {"rule": "safety"}}
+    assert probes.reaches("trt.end.source", "last_ex_end_date", "last_ex_record_end", values,
+                          parameters, record["reaches"]) is False
     with pytest.raises(ValueError, match="not a condition"):
         probes.holds({"sometimes": True}, {}, parameters)
 
@@ -567,6 +596,13 @@ def _f9_placebo_on_day_one(t, r, d):
     like = dict(rows[0])
     like.update(EXTRT="PLACEBO", EXDOSE=0.0, EXSEQ=rows[-1]["EXSEQ"] + 1)
     t["EX"].append(like)
+
+
+def _f9_zero_record_placebo(t, r, d):
+    # A record of dose zero named placebo has a dose by the catalog's definition.
+    for row in _rows(t, "EX", r["subjects"][0]):
+        if row["EXDOSE"] == 0:
+            row["EXTRT"] = "PLACEBO"
 
 
 def _f9_event_over_before_the_dose(t, r, d):
@@ -597,6 +633,9 @@ def _f9_one_more_serious_on_day_one(t, r, d):
 
 F9 = [
     ("ae_on_first_dose_date_without_time", _f9_dose_time_in_dm_only),
+    ("ae_timed_before_timed_first_dose", _f9_dose_time_in_dm_only),
+    ("undosed_record_after_last_dose", _f9_zero_record_placebo),
+    ("undosed_record_after_last_dose", _f9_no_event),
     ("no_exposure_end_date", _f9_no_dose),
     ("dosed_but_not_randomized", _f9_no_dose),
     ("zero_dose_record_before_first_dose", _f9_placebo_on_day_one),

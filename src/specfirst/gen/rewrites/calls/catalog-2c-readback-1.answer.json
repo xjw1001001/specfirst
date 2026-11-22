@@ -1,0 +1,23 @@
+{"items": [
+{"item": "r0a8b0d7b0526", "pick": "dm_armcd_map"},
+{"item": "r115db54ab8ec", "pick": "one_decimal_zero_blank"},
+{"item": "r1ac07754c733", "pick": "dm_armcd_map"},
+{"item": "r2d5700867acf", "pick": "last_dose_plus_days"},
+{"item": "r3b0a3e99c99f", "pick": "standard_rows"},
+{"item": "r4055d67a1206", "pick": "dm_armcd_map"},
+{"item": "r56c2449b5faa", "pick": "by_time_when_collected"},
+{"item": "r5872c9b87cb5", "pick": "last_ex_start_date"},
+{"item": "r636bdf22c93a", "pick": "one_decimal_zero_blank"},
+{"item": "r71ab3d72a8cd", "pick": "stated_list"},
+{"item": "r89087aa085af", "pick": "stated_list"},
+{"item": "r98656ddd2682", "pick": "derived"},
+{"item": "r9c5ca8f08560", "pick": "dm_armcd_map"},
+{"item": "ra309ddd1c093", "pick": "first_ex_treatment"},
+{"item": "rb5dbd4c9a67c", "pick": "stated_list"},
+{"item": "rb7169995acb3", "pick": "stated_rows"},
+{"item": "rbfc8f54449d6", "pick": "one_decimal_always"},
+{"item": "rccbe7315303e", "pick": "all_randomized"},
+{"item": "rd3a757091c27", "pick": "stated_rows"},
+{"item": "re6b58ddf54f0", "pick": "lt65_ge65"},
+{"item": "reb394c6db9f3", "pick": "one_decimal_zero_blank"}
+], "filler": []}

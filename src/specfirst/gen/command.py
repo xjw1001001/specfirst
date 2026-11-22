@@ -7,7 +7,7 @@
     specfirst gen kits --seed S --count N --out DIR [--first K]
     specfirst gen verify DIR [--no-mutation]
     specfirst gen natural requests|propose|readback-requests|readback|status ...
-    specfirst gen separate sep01|cdiscpilot01 [--vector house|window] [--check FILE]
+    specfirst gen separate sep01|cdiscpilot01 [--vector house] [--check FILE]
 
 `gen kit` writes one kit of the slice "adverse event summary first" (data,
 decisions, gold on the visible data and on the twin) when it has the
@@ -111,8 +111,8 @@ def _parser() -> argparse.ArgumentParser:
     p_separate.add_argument("study", choices=("sep01", "cdiscpilot01"),
                             help="the test study of issue #30, or the pilot's SDTM")
     p_separate.add_argument("--vector", default="house", help="cdiscpilot01: the decision "
-                            "vector, `house` (the house standard alone) or `window` (with a "
-                            "window of 30 days)")
+                            "vector, `house` (the house standard alone, with its window of "
+                            "30 days)")
     p_separate.add_argument("--span", type=int, help="how far an integer slot is scanned from "
                             "gold on each side (default 30)")
     p_separate.add_argument("--out", help="the matrix to write; default "

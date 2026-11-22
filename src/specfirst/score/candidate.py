@@ -258,7 +258,8 @@ def no_treatment_start(built: Build, data: Data, inputs: dict[str, str]) -> str 
 
 
 def vector(catalog: catalogs.Catalog, house: houses.House, gold: list[dict],
-           candidate: list[dict], units: tuple[str, ...]) -> list[dict]:
+           candidate: list[dict], units: tuple[str, ...],
+           features: dict[str, bool] | None = None) -> list[dict]:
     """The decision vector that stands for a candidate, in catalog order.
 
     Inside the units of the scope: the candidate's value, else the house
@@ -277,7 +278,7 @@ def vector(catalog: catalogs.Catalog, house: houses.House, gold: list[dict],
             if key in given:
                 value = given[key].get("value")
             elif key in known:
-                value = houses.default_value(catalog, house, *key)
+                value = houses.default_value(catalog, house, *key, features)
             else:
                 value = None
         else:

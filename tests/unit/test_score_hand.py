@@ -21,6 +21,10 @@ from specfirst.score import attribute, build, command, defects, gate, hand, scor
 from specfirst.score.candidate import Machine, vector
 from specfirst.score.reading import same_value
 
+# Two decisions of HAND01's plan (catalog@2): the related values, the total column.
+RELATED_VALUES = ("ae.related.values", "mod-ae-emergence")
+TOTAL = ("tfl.columns.total", "tfl-ae-summary")
+
 
 @pytest.fixture(scope="module")
 def machine(root):
@@ -44,18 +48,18 @@ def test_the_gold_decisions_build_the_table_worked_out_by_hand(machine, case, wh
     assert [column[0] for column in table.columns] == ["Placebo", "Low Dose", "High Dose", "Total"]
     ours = {(row[1], column[0]): cell["text"] for (row, column), cell in table.cells.items()}
     assert ours == hand.expected_cells(which)
-    assert len(ours) == 24
+    assert len(ours) == 28
 
 
 def test_the_study_states_two_decisions_of_the_slice_and_takes_19_defaults(case):
     scoped = [r for r in case.gold if r["unit"] in case.units]
     assert len(scoped) == 21
     assert sorted(r["id"] for r in scoped if r["status"] == "stated") == [
-        "ae.related.values", "ae.teae.end"]
+        "ae.related.values", "tfl.columns.total"]
     assert {r["class"] for r in scoped} == {"document_rule", "house_default"}
     assert tuple(r["id"] for r in scoped if r["identifiable"] == "unseparated") == (
         hand.UNSEPARATED)
-    assert len(hand.UNSEPARATED) == 9
+    assert len(hand.UNSEPARATED) == 10
     assert "[1/s1] " in case.documents.texts["sap"]
 
 
@@ -67,37 +71,46 @@ def test_the_parser_control_scores_100_percent(machine, stage, decisions):
     for name in ("value", "status", "quote", "span"):
         assert result.reading.total(name) == (decisions, decisions)
     for score in result.builds.values():
-        assert (score.produced, score.correct, score.strict, score.lenient) == (1, 24, 1, 1)
-        assert score.denominators() == {"shared_rows": 24, "produced": 24, "all": 24}
+        assert (score.produced, score.correct, score.strict, score.lenient) == (1, 28, 1, 1)
+        assert score.denominators() == {"shared_rows": 28, "produced": 28, "all": 28}
     assert result.silent == [] and result.behind == {}
 
 
-def test_the_standard_alone_builds_the_chain_but_the_related_row(machine, case):
+def test_the_standard_alone_builds_the_chain_but_the_related_rows(machine, case):
     """ae.related.values has no house default: the build leaves out what it binds and
     its cells wait for it (ADR-014, which changed ADR-005, decision 3; before, nothing
-    was built). The arm is held in detail in tests/unit/test_pending.py."""
+    was built). The house has no total column (open-default@2) and the study states one.
+    The arm is held in detail in tests/unit/test_pending.py."""
     result = scorer.standard_alone(machine, case)
-    assert [item.key[0] for item in result.reading.wrong()] == ["ae.teae.end",
-                                                                "ae.related.values"]
-    assert result.pending == {("ae.related.values", "mod-ae-emergence"):
-                              {"visible": 4, "twin": 4}}
+    assert [item.key[0] for item in result.reading.wrong()] == ["ae.related.values",
+                                                                "tfl.columns.total"]
+    # The rows of related and of serious related events wait in the three treatment
+    # columns; their cells of the total column are wrong with the column.
+    assert result.pending == {RELATED_VALUES: {"visible": 6, "twin": 6}}
     for score in result.builds.values():
         assert score.valid and (score.produced, score.in_gold) == (1, 1)
-    # The visible table is the gold table without the row; the twin still has the
-    # event on the 31st day, which the default of ae.teae.end (no end) counts.
-    assert result.owners["visible"] == []
-    owners = result.owners["twin"]
-    assert {(o.row[1], o.column[0]) for o in owners} == {("Any adverse event", "Placebo"),
-                                                         ("Any adverse event", "Total")}
-    assert all(o.decisions == (("ae.teae.end", "mod-ae-emergence"),) and o.confirmed
-               and o.note != attribute.HIDDEN for o in owners)
+        assert score.correct == 15
+    for dataset in ("visible", "twin"):
+        owners = result.owners[dataset]
+        assert len(owners) == 7 and {o.column[0] for o in owners} == {"Total"}
+        assert {o.row[1] for o in owners if len(o.decisions) == 2} == {
+            "Related adverse event", "Serious related adverse event"}
+        assert all(TOTAL in o.decisions and o.confirmed and o.note != attribute.HIDDEN
+                   for o in owners)
+        assert [(a.axis, a.decisions) for a in result.axes[dataset]] == [
+            ("rows", (RELATED_VALUES,)), ("columns", (TOTAL,))]
     assert result.behind == {} and result.silent == []
 
 
 def test_the_standard_alone_gives_the_table_at_stage_t(machine):
-    """Every table decision of the study is the house default."""
+    """Every table decision of the study is the house default but the total column: the
+    table is gold's without it, and its seven cells are the decision's."""
     result = scorer.standard_alone(machine, hand.case(machine.catalog, machine.house, "T"))
-    assert result.perfect and len(result.reading.decisions) == 7
+    assert len(result.reading.decisions) == 7
+    assert [item.key for item in result.reading.wrong()] == [TOTAL]
+    for dataset, score in result.builds.items():
+        assert score.correct == 21 and len(result.owners[dataset]) == 7
+        assert all(o.decisions == (TOTAL,) for o in result.owners[dataset])
 
 
 def test_stage_t_reads_table_decisions_only(machine, case):
@@ -112,27 +125,28 @@ def test_outside_the_scope_the_gold_value_stands(machine, case):
                  {"id": "tfl.population", "unit": "tfl-ae-summary",
                   "value": {"rule": "randomized"}}]
     made = {(r["id"], r["unit"]): r["value"] for r in vector(
-        machine.catalog, machine.house, case.gold, candidate, case.units)}
+        machine.catalog, machine.house, case.gold, candidate, case.units, case.features)}
     assert made[("tfl.output.include", "tfl-demographics")] == {"rule": "not_included"}
     assert made[("tfl.population", "tfl-ae-summary")] == {"rule": "randomized"}
     # No default: left open, and pending in the build (ADR-014).
     assert ("ae.related.values", "mod-ae-emergence") not in made
-    assert made[("ae.teae.end", "mod-ae-emergence")] == {"rule": "no_end"}
+    assert made[("ae.teae.end", "mod-ae-emergence")] == {"rule": "last_dose_plus_days",
+                                                        "days": 30}
 
 
 # Planted defect -> (layer, the cells it must change on the visible data and on the
 # twin, whether an axis must differ), each worked out by hand.
 EXPECTED = {
     "S1-arms": ("L6", 2, 2, False),
-    "S2-set": ("L5", 10, 8, False),
-    "S2-set-rule": ("L4", 0, 8, False),
+    "S2-set": ("L5", 12, 11, False),
+    "S2-set-rule": ("L4", 0, 9, False),
     "S3-window": ("L4", 0, 2, False),
     "S4-denominator": ("L5", 2, 1, False),
-    "S5-column": ("L7", 6, 6, True),
-    # Every percent that is no whole number: the five of the total column of the visible
-    # table; on the twin 33.3, 66.7 and 33.3 of the arms and 62.5, 12.5 and 12.5 of the
-    # total column.
-    "S7-rounded": ("L6", 5, 6, False),
+    "S5-column": ("L7", 7, 7, True),
+    # Every percent that is no whole number: the six of the total column of the visible
+    # table; on the twin 33.3 of the placebo arm and 57.1, 28.6, 14.3, 14.3 and 14.3 of
+    # the total column.
+    "S7-rounded": ("L6", 6, 6, False),
     "S9-sort": ("L7", 0, 0, True),
     "S9-sort-build": ("L7", 0, 0, True),
     "S10-frozen": ("L4", 0, 2, False),
@@ -203,7 +217,7 @@ def test_the_suite_passes_and_prints_every_defect(machine, case):
 def test_the_suite_stops_when_the_control_does_not_hold(machine, case):
     broken = [dict(r) for r in case.gold]
     for record in broken:
-        if record["id"] == "ae.teae.end":
+        if record["id"] == "tfl.columns.total":
             record["status"] = "default"  # gold calls a stated decision a default
     lines: list[str] = []
     passed, outcomes = defects.suite(
@@ -239,18 +253,19 @@ def owners_of(result, dataset):
 
 def test_two_wrong_decisions_and_each_cell_has_the_owner_that_changes_it(machine, case, control):
     """Section 9.4, with every claim run. The emergence without an end changes two
-    cells of the twin (the event on the 31st day); the percent after a count of zero
-    changes six cells of the visible table and ten of the twin. With both wrong, no
+    cells of the twin (the event on the 31st day); a count of zero without its percent
+    changes eight cells of the visible table and twelve of the twin. With both wrong, no
     cell of the display belongs to the module: the results of those cells are the
     gold results, whatever differs in ADAE (review of read-1a, finding R2)."""
     result = scorer.run(machine, case, misread(control, {
         "ae.teae.end": {"rule": "no_end"},
-        "tfl.percent.format": {"rule": "one_decimal_always"}}), documents=control[1])
+        "tfl.percent.format": {"rule": "one_decimal_zero_blank", "decimals": 1}}),
+        documents=control[1])
     display = ("L7", ("tfl.percent.format",), True)
     assert set(owners_of(result, "visible").values()) == {display}
-    assert len(result.owners["visible"]) == 6
+    assert len(result.owners["visible"]) == 8
     twin = owners_of(result, "twin")
-    assert len(twin) == 12
+    assert len(twin) == 14
     module = {cell for cell, owner in twin.items() if owner == ("L4", ("ae.teae.end",), True)}
     assert module == {("Any adverse event", "Placebo"), ("Any adverse event", "Total")}
     assert all(owner == display for cell, owner in twin.items() if cell not in module)
@@ -260,27 +275,30 @@ def test_two_wrong_decisions_and_each_cell_has_the_owner_that_changes_it(machine
 def test_two_wrong_decisions_behind_one_cell_own_it_together(machine, case, control):
     """The rule of the safety set and the set the table names, both wrong. On the
     visible data every dosed subject is randomized: only the table's set differs,
-    and its ten cells are its own. On the twin the candidate's table is on the
-    randomized set, with L3 and without X1. Four cells are wrong under the table
+    and its twelve cells are its own. On the twin the candidate's table is on the
+    randomized set, with L3 and without X1. Five cells are wrong under the table
     decision alone and right under the other alone (the low dose column): the table
-    decision owns them. Four are wrong under each alone (the high dose column and
-    the total of any event, where X1 is missing either way): no one decision gives
-    the gold text, both together do, and the owner is the far end with both."""
+    decision owns them. Six are wrong under each alone (the total column: back on the
+    safety set, its rule of at least one dose brings X1 in; on the randomized set, L3
+    is in): no one decision gives the gold text, both together do, and the owner is the
+    far end with both."""
     result = scorer.run(machine, case, misread(control, {
-        "pop.safety.rule": {"rule": "randomized_and_dosed"},
+        "pop.safety.rule": {"rule": "at_least_one_dose"},
         "tfl.population": {"rule": "randomized"}}), documents=control[1])
     table = ("L5", ("tfl.population",), True)
     assert set(owners_of(result, "visible").values()) == {table}
-    assert len(result.owners["visible"]) == 10
+    assert len(result.owners["visible"]) == 12
     twin = owners_of(result, "twin")
     both = ("L4", ("pop.safety.rule", "tfl.population"), True)
     assert {cell for cell, owner in twin.items() if owner == both} == {
-        ("", "High Dose"), ("Any adverse event", "High Dose"), ("Any adverse event", "Total"),
-        ("Adverse event leading to discontinuation of study treatment", "High Dose")}
+        ("", "Total"), ("Any adverse event", "Total"), ("Related adverse event", "Total"),
+        ("Serious adverse event", "Total"), ("Serious related adverse event", "Total"),
+        ("Adverse event leading to discontinuation of study treatment", "Total")}
     assert {cell for cell, owner in twin.items() if owner == table} == {
         ("", "Low Dose"), ("Any adverse event", "Low Dose"),
-        ("Related adverse event", "Low Dose"), ("Serious adverse event", "Low Dose")}
-    assert len(twin) == 8
+        ("Related adverse event", "Low Dose"), ("Serious adverse event", "Low Dose"),
+        ("Serious related adverse event", "Low Dose")}
+    assert len(twin) == 11
     joint = [o for o in result.owners["twin"] if len(o.decisions) == 2]
     assert all(o.note == attribute.JOINT and o.element == "adam:ADSL.SAFFL" for o in joint)
     assert result.silent == [] and result.behind == {}
@@ -325,21 +343,22 @@ def test_a_claim_that_fails_is_no_owner(machine, case, control, monkeypatch):
         everything if k == key else real(records, k, value)))
     result = scorer.run(machine, case, misread(control, {
         "ae.teae.end": {"rule": "no_end"},
-        "tfl.percent.format": {"rule": "one_decimal_always"}}), documents=control[1])
+        "tfl.percent.format": {"rule": "one_decimal_zero_blank", "decimals": 1}}),
+        documents=control[1])
     twin = owners_of(result, "twin")
     assert sum(1 for owner in twin.values() if owner[1] == ("ae.teae.end",)) == 2
-    assert sum(1 for owner in twin.values() if owner == ("L7", ("tfl.percent.format",), True)) == 10
+    assert sum(1 for owner in twin.values() if owner == ("L7", ("tfl.percent.format",), True)) == 12
 
 
 def test_without_a_run_the_owner_is_the_first_claim(machine, case, control):
     result = scorer.run(machine, case, misread(control, {
         "ae.teae.end": {"rule": "no_end"},
-        "tfl.percent.format": {"rule": "one_decimal_always"}}), documents=control[1],
-        prove=False)
+        "tfl.percent.format": {"rule": "one_decimal_zero_blank", "decimals": 1}}),
+        documents=control[1], prove=False)
     twin = owners_of(result, "twin")
     assert {owner[2] for owner in twin.values()} == {None}
     # The display cells are the display's without any run: their results are gold's.
-    assert sum(1 for owner in twin.values() if owner[0] == "L7") == 10
+    assert sum(1 for owner in twin.values() if owner[0] == "L7") == 12
 
 
 def test_every_wrong_cell_must_have_an_owner(machine, case, control, monkeypatch):
@@ -370,7 +389,7 @@ def test_an_axis_of_columns_is_owned_by_the_data_behind_it(machine, case, contro
         score = result.builds[dataset].outputs[0]
         assert not score.columns_equal and score.rows_equal
         # The three treatment columns have other headers; the total column stands.
-        assert len(result.owners[dataset]) == 18 == len(table.cells) - len(table.rows)
+        assert len(result.owners[dataset]) == 21 == len(table.cells) - len(table.rows)
         assert {cell.reason for cell in score.wrong} == {"no_column"}
         [axis] = result.axes[dataset]
         assert (axis.axis, axis.layer, axis.element) == ("columns", "L4", "adam:ADSL.TRT01A")
@@ -388,7 +407,9 @@ def test_the_candidate_and_gold_differ_only_where_the_decisions_do(machine, case
 
 def test_the_unseparated_decisions_are_those_no_other_value_shows(machine, case):
     """`identifiable` is filled by the machine, never by the author (section 4.3): the
-    first version of the study marked two decisions; mutation finds nine."""
+    first version of the study marked two decisions; mutation finds ten under
+    open-default@2 (nine under open-default@1: the grouping of the safety set is the
+    tenth, as every subject of the set is dosed as planned)."""
     found = scorer.separation(machine, case, first_only=True)
     assert len(found) == 21
     silent = tuple(key[0] for key, values in found.items()
@@ -407,7 +428,7 @@ def test_the_command_scores_an_arm(root, capsys):
     assert command.main(root, ["hand", "--arm", "C", "--stage", "T"]) == 0
     text = capsys.readouterr().out
     assert "case hand01, arm C, stage T" in text and "every score is 100%" in text
-    assert "twin: cells correct: 24 of 24 gold cells of the outputs produced" in text
+    assert "twin: cells correct: 28 of 28 gold cells of the outputs produced" in text
 
 
 def test_the_gate_of_the_part_has_the_checks_of_the_plan():
@@ -432,9 +453,10 @@ def test_the_checks_of_the_gate_hold_on_the_hand_made_study(root):
     assert gate.arms(root, lines.append)
     assert gate.planted_defects(root, lines.append)
     text = "\n".join(lines)
-    assert "HAND01, twin: 24 of 24 cells are the cells worked out by hand" in text
+    assert "HAND01, twin: 28 of 28 cells are the cells worked out by hand" in text
     assert "the control fails on the changed document: yes" in text
-    assert "arm S, stage T: every score 100%: yes" in text
+    assert ("arm S, stage T: tfl.columns.total is the one wrong decision and owns the 7 cells "
+            "of the total column alone: yes") in text
     assert "every defect that applies is planted on HAND01, detected and attributed: yes" in text
 
 
@@ -465,9 +487,9 @@ def test_the_defects_check_fails_when_a_defect_cannot_be_planted(root, monkeypat
 
 def test_the_hand_table_check_fails_on_another_table(root, monkeypatch):
     """Rule R5 for the check itself: one cell of the table by hand is changed."""
-    twin = {**hand.EXPECTED["twin"], "": ("(N=3)", "(N=2)", "(N=3)", "(N=9)")}
+    twin = {**hand.EXPECTED["twin"], "": ("(N=3)", "(N=2)", "(N=2)", "(N=9)")}
     monkeypatch.setattr(hand, "EXPECTED", {**hand.EXPECTED, "twin": twin})
     lines: list[str] = []
     assert gate.hand_table(root, lines.append) is False
     assert any("problem: " in line and "'(N=9)'" in line for line in lines)
-    assert "HAND01, twin: 23 of 24 cells are the cells worked out by hand" in lines
+    assert "HAND01, twin: 27 of 28 cells are the cells worked out by hand" in lines

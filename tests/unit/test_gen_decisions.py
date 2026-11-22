@@ -45,10 +45,12 @@ def test_every_alternative_of_the_slice_is_a_variant_with_fitting_slots(catalog)
         for option in options:
             form.check_value(entry.id, unit, option)   # raises on a missing or a stray slot
     by_id = {e.id: decisions.variants(e, design, parameters) for e in found}
-    # The slots fit the design: the window is the follow-up length, the tests are measured,
+    # The slots fit the design: the window is the house's (30 days, the probes are built
+    # around it), the follow-up length a study may state instead; the tests are measured,
     # the subcategory is that of the treatment record, the map names every arm.
-    assert by_id["ae.teae.end"][1] == {"rule": "last_dose_plus_days",
-                                       "days": designs.follow_up_days(design)}
+    assert by_id["ae.teae.end"][1] == {"rule": "last_dose_plus_days", "days": 30}
+    assert decisions.slot_values("ae.teae.end", "last_dose_plus_days", design, parameters)[
+        "days"] == list(dict.fromkeys([30, designs.follow_up_days(design)]))
     assert by_id["pop.randomized.rule"][1]["test"] == parameters["tests"][0]
     assert by_id["disp.status.record"][1]["subcategory"] == "STUDY TREATMENT"
     assert [pair["code"] for pair in by_id["trt.planned.source"][1]["map"]] == [
@@ -115,16 +117,17 @@ def test_fits_names_the_interplays_of_the_log(catalog, house):
     study_record = {"rule": "disposition_event_by_subcategory",
                     "subcategory": parameters["study_subcategory"]}
     treatment = {**study_record, "subcategory": parameters["treatment_subcategory"]}
-    end = {"rule": "end_of_study"}
+    # catalog@2: only the disposition date that stands in for a missing exposure end
+    # date reads the end-of-study record (no end of emergence at the end of the study).
+    window = {"rule": "last_dose_plus_days", "days": parameters["window_days"]}
+    by_ds = {"rule": "ds_date_when_ex_missing"}
     assert problems(disp__status__record=study_record) == []       # not read: any value
-    assert problems(disp__status__record=study_record, ae__teae__end=end)[0].startswith(
-        "disp.status.record")
+    assert problems(disp__status__record=study_record, ae__teae__end=window,
+                    trt__end__source=by_ds)[0].startswith("disp.status.record")
     # The treatment record as the end-of-study record is never the decision of a kit: it
     # is what the other alternative is changed to.
-    window = {"rule": "last_dose_plus_days", "days": parameters["window_days"]}
-    for changed in ({}, {"ae__teae__end": end},
-                    {"ae__teae__end": window,
-                     "trt__end__source": {"rule": "ds_date_when_ex_missing"}}):
+    for changed in ({}, {"ae__teae__end": {"rule": "no_end"}},
+                    {"ae__teae__end": window, "trt__end__source": by_ds}):
         found = problems(disp__status__record=treatment, **changed)
         assert len(found) == 1 and "nearly no subject has an end-of-study date" in found[0]
 

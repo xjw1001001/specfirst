@@ -256,11 +256,11 @@ def test_the_records_of_a_run_are_listed_with_their_quotes_cut_short():
 def test_arm_r_on_the_pilot_takes_the_readers_table_decisions_only(root):
     machine = Machine(root)
     standard = scorepilot.standard_vector(machine)
-    given = [{"id": "tfl.columns.total", "unit": UNIT, "value": {"rule": "none"}},
+    given = [{"id": "tfl.columns.total", "unit": UNIT, "value": {"rule": "all_arms"}},
              {"id": "ae.teae.end", "unit": "mod-ae-emergence", "value": {"rule": "x"}},
              {"id": ENTRY, "unit": UNIT, "value": None}]
     vector = scorepilot.given_vector(machine, given)
     changed = [(a["id"], b["value"]) for a, b in zip(standard, vector, strict=True)
                if a["value"] != b["value"]]
-    assert changed == [("tfl.columns.total", {"rule": "none"})]
+    assert changed == [("tfl.columns.total", {"rule": "all_arms"})]
     assert scorepilot.given_vector(machine, []) == standard

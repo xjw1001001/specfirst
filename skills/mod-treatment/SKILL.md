@@ -1,11 +1,11 @@
 ---
 name: mod-treatment
-description: Reading notes v0 for the unit mod-treatment (Treatment and exposure). For each of its 6 catalog questions, where a protocol or a statistical analysis plan states the decision, the words to look for and the traps. Rendered from the decision catalog specfirst-m1 1.
+description: Reading notes v0 for the unit mod-treatment (Treatment and exposure). For each of its 6 catalog questions, where a protocol or a statistical analysis plan states the decision, the words to look for and the traps. Rendered from the decision catalog specfirst-m1 2 and the house standard open-default@2.
 ---
 
 # Treatment and exposure (mod-treatment): reading notes v0
 
-Rendered from the decision catalog `specfirst-m1` version 1 by `specfirst run skills --write`; do not edit by hand. Read `core-reader` first: it says how to record a decision. Here, for every question of the unit: its alternatives with the statement each gives, the house default, and where documents state it.
+Rendered from the decision catalog `specfirst-m1` version 2 and the house standard `open-default@2` by `specfirst run skills --write`; do not edit by hand. Read `core-reader` first: it says how to record a decision. Here, for every question of the unit: its alternatives with the statement each gives, the house default, and where documents state it.
 
 Questions of this unit: `trt.planned.source`, `trt.actual.source`, `trt.start.source`, `trt.end.source`, `trt.date.imputation`, `date.studyday.origin`.
 
@@ -44,7 +44,7 @@ columns and groups every analysis done by planned treatment.
   included; do not add entries for screen failures or subjects not assigned.
 - Pooled groups such as "all active" or "total" are columns (`tfl.columns.total`), not map
   rows. Wording on the treatment actually received belongs to `trt.actual.source`.
-- Silent documents: use the house default `dm_arm` and cite the house standard. Do not guess
+- Silent documents: use the house default and cite the house standard. Do not guess
   a map from the data.
 
 ## `trt.actual.source`: Where does actual treatment come from?
@@ -87,7 +87,7 @@ treatment. It matters only for subjects dosed with something other than their pl
   the lowest sequence number on a tie.
 - Rules such as "the treatment received for most of the study" or "the highest dose received"
   match no alternative. Report the passage instead of picking the nearest one.
-- Silent documents: use the house default `dm_actarm` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `trt.start.source`: What is the treatment start date?
 
@@ -118,6 +118,8 @@ who counts as dosed. Another source moves all of them for the subjects it affect
   "first entry of the drug administration log, whatever the dose".
 - `dm_rfxstdtc`: "date of first exposure as recorded in demographics", "reference first
   treatment date", or the variable RFXSTDTC named directly.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ### Traps
 
@@ -129,7 +131,7 @@ who counts as dosed. Another source moves all of them for the subjects it affect
   date are matters for `date.studyday.origin`, not for this entry.
 - This entry gives a date. Comparisons with the time of the first dose are decided in
   `ae.teae.start` and `bds.baseline.rule`.
-- Silent documents: use the house default `first_ex_with_dose` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `trt.end.source`: What is the treatment end date?
 
@@ -139,6 +141,8 @@ Alternatives:
 - `last_ex_start_date`: "The treatment end date is the latest start date of an exposure record with a dose."
 - `ds_date_when_ex_missing`: "The treatment end date is the latest end date of an exposure record with a dose, or the end-of-study disposition date when no such record has an end date."
   Meaning: The disposition date is the start date of the end-of-study record (decision disp.status.record). It is taken only for a subject with a treatment start.
+- `last_ex_record_end`: "The treatment end date is the latest end date of any exposure record."
+  Meaning: Every exposure record takes part, whatever its dose: the counterpart of trt.start.source/first_ex_record, for an EX in which EXDOSE is not populated (EXDOSE is not a Required variable of SDTMIG).
 
 House default: `last_ex_end_date`.
 
@@ -160,18 +164,23 @@ treatment emergence window that is counted from the last dose.
   infusion was started", "start of the last dosing interval".
 - `ds_date_when_ex_missing`: a fallback sentence such as "if the date of last dose is missing,
   the date of study completion or discontinuation is used".
+- `last_ex_record_end`: "end date of the last exposure record", "the last entry of the drug
+  administration log, whatever the dose"; the counterpart of `first_ex_record` of
+  `trt.start.source`.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ### Traps
 
 - With one record per dose, start and end date agree; the first two alternatives differ only
   when a record spans several days. Plain "date of last dose" means `last_ex_end_date`.
-- Only exposure records with a dose count (a dose above zero, or a placebo record). The
-  fallback of `ds_date_when_ex_missing` applies only when no such record of the subject has
+- Except under `last_ex_record_end`, only exposure records with a dose count (a dose above
+  zero, or a placebo record). The fallback of `ds_date_when_ex_missing` applies only when no such record of the subject has
   an end date, and it takes the date of the end-of-study record (`disp.status.record`).
 - A fallback to the last visit, the last contact or a data cut-off date matches no
   alternative. Report the passage instead of picking the nearest one.
 - The date of an "end of treatment visit" is a visit date, not the treatment end date.
-- Silent documents: use the house default `last_ex_end_date` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `trt.date.imputation`: How are partial exposure dates completed?
 
@@ -211,7 +220,7 @@ start or end date, and so whether such a subject has study days and counts as do
   the last day of the month, or any date with the 15th, is not covered: report the passage.
 - A general sentence such as "partial dates are imputed conservatively" names no rule; treat
   it as silent.
-- Silent documents: use the house default `not_completed` and cite the house standard. Do not
+- Silent documents: use the house default and cite the house standard. Do not
   infer a rule from the data.
 
 ## `date.studyday.origin`: Which date is study day 1?
@@ -249,4 +258,4 @@ the assignment of records to visit windows and target days.
   footnote ties it to first dosing or to another event.
 - When first dose and reference start fall on the same day for every subject, both
   alternatives give the same days. Choose by the wording, not by that coincidence.
-- Silent documents: use the house default `treatment_start` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

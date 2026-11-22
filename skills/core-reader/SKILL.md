@@ -21,7 +21,12 @@ or wrong; there is no partial credit for a near value.
    footnote-like sentence after a design description. The protocol and the
    statistical analysis plan together are the source; neither alone.
 3. Read the house standard. It states one default for every question that
-   has one, each as a numbered statement.
+   has one, each as a statement anchored by the ID of its question, for
+   example `[trt.start.source]`. A default that depends on the design has
+   one statement per case, after a line that says when it holds, for example
+   `[pop.safety.rule/1]`: take the case that holds for this study. A fixed
+   rule, for example `[ae.teae.start/no_start_date]`, holds for every
+   alternative of its question and is not a decision.
 4. For each question, read its catalog entry: the question, the
    alternatives, the statement template of each alternative and its slots,
    and the meaning of the alternative when the entry gives one. Then read the
@@ -64,9 +69,9 @@ Write one JSON object per line in `out/decisions.jsonl`.
   | are silent | has no default | `asked` | `study_input` | nothing |
 
 - `citations`: a list of `{"doc", "anchor", "quote"}`. A stated decision
-  cites the paragraph that states it; a default cites the numbered statement
-  of the house standard (`doc` is `house`, the anchor as `1/s3`, the quote
-  is the statement).
+  cites the paragraph that states it; a default cites the statement of the
+  house standard (`doc` is `house`, the anchor as `trt.start.source`, or
+  `pop.safety.rule/1` for a case, the quote is the statement).
 - Never write `binds` or `identifiable`: the compiler and the machine fill
   them.
 - A question that does not apply to the study (the study has nothing it

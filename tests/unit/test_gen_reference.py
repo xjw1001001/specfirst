@@ -102,6 +102,9 @@ TABLES = {"DM": DM, "EX": EX, "AE": AE, "DS": DS, "VS": VS, "SV": SV}
 ARMS = [Arm("HIGH", 20.0, ("Drug 20 mg", "DRUG", "High")),
         Arm("LOW", 10.0, ("Drug 10 mg", "DRUG", "Low")),
         Arm("PBO", 0.0, ("Placebo", "PLACEBO"))]
+# The house defaults of open-default@1, the vector the cases below were worked out for.
+# Every value is an alternative of catalog@2 as well (tfl.percent.format with its slot);
+# open-default@2 takes four others (`HOUSE_2`).
 HOUSE = {
     "trt.planned.source": {"rule": "dm_arm"}, "trt.actual.source": {"rule": "dm_actarm"},
     "trt.start.source": {"rule": "first_ex_with_dose"},
@@ -116,9 +119,17 @@ HOUSE = {
     "tfl.output.include": {"rule": "included"}, "tfl.population": {"rule": "safety"},
     "tfl.columns.arms": {"rule": "ascending_dose_placebo_first"},
     "tfl.columns.total": {"rule": "all_arms"},
-    "tfl.percent.format": {"rule": "one_decimal_zero_blank"},
+    "tfl.percent.format": {"rule": "one_decimal_zero_blank", "decimals": 1},
     "tfl.rounding.rule": {"rule": "half_away_from_zero"},
     "tfl.ae.summary.rows": {"rule": "standard_rows"},
+}
+# The defaults of open-default@2 for a randomized design (ADR-020, question 2).
+HOUSE_2 = {
+    **HOUSE,
+    "pop.safety.rule": {"rule": "randomized_and_dosed"},
+    "ae.teae.end": {"rule": "last_dose_plus_days", "days": 30},
+    "tfl.columns.total": {"rule": "none"},
+    "tfl.percent.format": {"rule": "one_decimal_always", "decimals": 1},
 }
 
 
@@ -152,7 +163,32 @@ def test_the_house_defaults_on_five_subjects():
     assert _row(found, "Adverse event leading to discontinuation of study treatment") == {
         "Placebo": "0", "Drug 10 mg": "1 ( 33.3)", "Total": "1 ( 25.0)"}
     assert _row(found, "Fatal adverse event")["Drug 10 mg"] == "1 ( 33.3)"
+    # N1's serious event is not related: no serious related event.
+    assert _row(found, "Serious related adverse event") == {
+        "Placebo": "0", "Drug 10 mg": "0", "Total": "0"}
     assert found.counts["N"] == {"Placebo": 1, "Drug 10 mg": 3, "Total": 4}
+
+
+def test_the_house_defaults_of_open_default_2():
+    """Safety set of the randomized subjects who were dosed: P1 in Placebo; L1 and H1 in
+    Drug 10 mg (N1 was not randomized). The window of 30 days leaves out L1's serious
+    event on day 41; no total column; a count of zero with its percentage."""
+    found = reference.table(TABLES, HOUSE_2, ARMS)
+    assert found.columns == ["Placebo", "Drug 10 mg"]
+    assert found.header == ["(N=1)", "(N=2)"]
+    zero = "0 (  0.0)"
+    assert dict(found.rows) == {
+        "Any adverse event": ["1 (100.0)", "1 ( 50.0)"],
+        "Related adverse event": [zero, "1 ( 50.0)"],
+        "Serious adverse event": [zero, zero],
+        "Serious related adverse event": [zero, zero],
+        "Fatal adverse event": [zero, zero],
+        "Adverse event leading to discontinuation of study treatment": [zero, zero],
+    }
+    assert [label for label, _ in found.rows] == [
+        "Any adverse event", "Related adverse event", "Serious adverse event",
+        "Serious related adverse event", "Fatal adverse event",
+        "Adverse event leading to discontinuation of study treatment"]
 
 
 def test_the_treatment_decisions():
@@ -186,9 +222,9 @@ def test_the_end_of_emergence():
     assert _row(found, "Any adverse event")["Drug 10 mg"] == "2 ( 66.7)"
     assert _row(_table(ae__teae__end={"rule": "last_dose_plus_days", "days": 41}),
                 "Serious adverse event")["Drug 10 mg"] == "2 ( 66.7)"
-    # The end of the study: L1 left on 2024-05-14, by its last disposition event.
-    found = _table(ae__teae__end={"rule": "end_of_study"})
-    assert _row(found, "Serious adverse event")["Drug 10 mg"] == "1 ( 33.3)"
+    # catalog@2 has no end of emergence at the end of the study (#3).
+    with pytest.raises(reference.CannotCalculate, match="ae.teae.end"):
+        _table(ae__teae__end={"rule": "end_of_study"})
     # With the treatment record as the end-of-study record only L1 has an end at all.
     treatment = {"rule": "disposition_event_by_subcategory", "subcategory": "STUDY TREATMENT"}
     people = {p.usubjid: p for p in reference.people(
@@ -204,6 +240,15 @@ def test_the_end_of_emergence():
     start = {"rule": "last_ex_start_date"}
     assert {p.usubjid: p.end for p in reference.people(
         TABLES, {**HOUSE, "trt.end.source": start})}["H1"] == Date(2024, 3, 18)
+    # The latest end of any exposure record (#24): a record of dose 0 after H1's last dose,
+    # to 2024-04-30, ends treatment; by the records with a dose it ends on 2024-04-25.
+    tables = {**TABLES, "EX": [*EX, {"USUBJID": "H1", "EXSEQ": 3, "EXTRT": "DRUG",
+                                     "EXDOSE": 0.0, "EXSTDTC": "2024-04-26",
+                                     "EXENDTC": "2024-04-30"}]}
+    ends = {p.usubjid: p.end for p in reference.people(
+        tables, {**HOUSE, "trt.end.source": {"rule": "last_ex_record_end"}})}
+    assert ends["H1"] == Date(2024, 4, 30) and ends["N1"] is None
+    assert {p.usubjid: p.end for p in reference.people(tables, HOUSE)}["H1"] == Date(2024, 4, 25)
 
 
 def test_the_start_of_emergence_and_partial_dates():
@@ -212,6 +257,24 @@ def test_the_start_of_emergence_and_partial_dates():
     by_time = {"rule": "at_or_after_first_dose_time"}
     found = _table(ae__teae__start=by_time)
     assert _row(found, "Any adverse event")["Placebo"] == "0"
+    # By date and time where both were collected (#5): P1's event has no time, so its date
+    # counts, and it is emergent; collected at 07:30, before the dose at 08:00, it is not.
+    collected = {"rule": "by_time_when_collected"}
+    assert _row(_table(ae__teae__start=collected), "Any adverse event")["Placebo"] == \
+        "1 (100.0)"
+    timed = {**TABLES, "AE": [{**AE[0], "AESTDTC": "2024-03-10T07:30"}, *AE[1:]]}
+    found = reference.table(timed, {**HOUSE, "ae.teae.start": collected}, ARMS)
+    assert _row(found, "Any adverse event")["Placebo"] == "0"
+    found = reference.table(timed, HOUSE, ARMS)
+    assert _row(found, "Any adverse event")["Placebo"] == "1 (100.0)"
+    late = {**TABLES, "AE": [{**AE[0], "AESTDTC": "2024-03-10T08:00"}, *AE[1:]]}
+    found = reference.table(late, {**HOUSE, "ae.teae.start": collected}, ARMS)
+    assert _row(found, "Any adverse event")["Placebo"] == "1 (100.0)"
+    # A time of the hour alone counts from the start of that hour (review of catalog-2c, F8).
+    for hour, shown in (("07", "0"), ("09", "1 (100.0)")):
+        timed = {**TABLES, "AE": [{**AE[0], "AESTDTC": f"2024-03-10T{hour}"}, *AE[1:]]}
+        found = reference.table(timed, {**HOUSE, "ae.teae.start": collected}, ARMS)
+        assert _row(found, "Any adverse event")["Placebo"] == shown
     # L1's partial start "2024-03": to the day of the first dose (emergent), to the first of
     # the month (before the dose, and the event has not ended: not emergent), or not
     # completed (no analysis start date: emergent).
@@ -245,6 +308,13 @@ def test_the_analysis_sets():
     people = {p.usubjid: p for p in reference.people(TABLES, HOUSE)}
     assert {s for s, p in people.items() if p.randomized} == {"P1", "L1", "L2", "H1"}
     assert {s for s, p in people.items() if p.in_safety} == {"P1", "L1", "N1", "H1"}
+    # The randomized subject of catalog@2 (#10): with a disposition record RANDOMIZED in
+    # the study, the record decides, whatever the planned arm code.
+    randomized = [{"USUBJID": s, "DSSEQ": 9, "DSCAT": "PROTOCOL MILESTONE", "DSSCAT": None,
+                   "DSDECOD": "RANDOMIZED", "DSSTDTC": "2024-03-01"} for s in ("P1", "N1")]
+    tables = {**TABLES, "DS": [*DS, *randomized]}
+    people = {p.usubjid: p for p in reference.people(tables, HOUSE)}
+    assert {s for s, p in people.items() if p.randomized} == {"P1", "N1"}
     # The randomized set, by planned treatment: L2 is in it, N1 is not.
     found = _table(tfl__population={"rule": "randomized"})
     assert found.columns == ["Placebo", "Drug 10 mg", "Drug 20 mg", "Total"]
@@ -285,9 +355,25 @@ def test_the_table_decisions():
     # A control that no column has pools every arm.
     found = _table(tfl__columns__total={"rule": "active_arms", "control": "PLACEBO"})
     assert found.header[-1] == "(N=4)"
-    always = {"rule": "one_decimal_always"}
+    always = {"rule": "one_decimal_always", "decimals": 1}
     assert _row(_table(tfl__percent__format=always), "Related adverse event")[
         "Placebo"] == "0 (  0.0)"
+    # The number of decimals (#1): the mask "XXX" of a whole number is not padded.
+    for decimals, text, zero in ((0, "1 (33)", "0 (0)"), (2, "1 ( 33.33)", "0 (  0.00)")):
+        found = _table(tfl__percent__format={"rule": "one_decimal_always", "decimals": decimals})
+        assert _row(found, "Related adverse event")["Drug 10 mg"] == text
+        assert _row(found, "Related adverse event")["Placebo"] == zero
+    # The rows of catalog@2 (#13): a related serious and fatal event, a dose interrupted.
+    tables = {**TABLES, "AE": [{**AE[0], "AEACN": "DRUG INTERRUPTED"}, *AE[1:5],
+                               {**AE[5], "AEREL": "PROBABLE"}, *AE[6:]]}
+    rows = {"rule": "stated_rows",
+            "rows": ["SERIOUS_RELATED", "FATAL_RELATED", "DOSE_MODIFIED", "ANY"]}
+    found = reference.table(tables, {**HOUSE, "tfl.ae.summary.rows": rows}, ARMS)
+    assert dict(found.rows) == {
+        "Serious related adverse event": ["0", "1 ( 33.3)", "1 ( 25.0)"],
+        "Fatal related adverse event": ["0", "1 ( 33.3)", "1 ( 25.0)"],
+        "Adverse event leading to dose modification": ["1 (100.0)", "0", "1 ( 25.0)"],
+        "Any adverse event": ["1 (100.0)", "2 ( 66.7)", "3 ( 75.0)"]}
     rows = {"rule": "stated_rows", "rows": ["FATAL", "ANY"]}
     assert [label for label, _ in _table(tfl__ae__summary__rows=rows).rows] == [
         "Fatal adverse event", "Any adverse event"]

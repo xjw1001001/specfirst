@@ -8,10 +8,11 @@
     P4-arm-r-no-output  a reader that leaves the output out: the trace goes
                through tfl.output.include first
 
-The numbers are those of the report docs/reports/read-1a.md. They are held
-here so that a change of the scorer that moves them is seen; they decide
-nothing about the reader, and nothing is tuned on them (PLAN.md section
-6.1).
+The numbers are those of the report docs/reports/read-1a.md, moved to the
+default pair of catalog-2c (`catalog@2`, `open-default@2`; its report says
+how). They are held here so that a change of the scorer that moves them is
+seen; they decide nothing about the reader, and nothing is tuned on them
+(PLAN.md section 6.1).
 
 The test needs `specfirst fetch` and carries the marker `evidence`: `make
 test` leaves it out and `specfirst gate read-1a` runs it. A missing cache
@@ -38,56 +39,86 @@ def arm_s() -> None:
     # The key: the header row and the eight analyses of the example, three arms.
     assert (score.produced, score.in_gold) == (1, 1)
     assert score.denominators() == {"shared_rows": 15, "produced": 27, "all": 27}
-    assert (score.correct, score.strict, score.lenient) == (10, 0, 0)
+    # open-default@2 shows a count of zero with its percent and has no total column, as
+    # the example: every cell of the rows both tables have is the key's.
+    assert (score.correct, score.strict, score.lenient) == (15, 0, 0)
     states = {state: sum(1 for item in found.cells if item.state == state)
               for state in pilot.STATES}
-    assert states == {"decision": 5, "open": 3, "no_row": 9, "unexplained": 0}
-    # The five cells that differ are counts of zero, which the house default shows
-    # without a percent and the example with one.
+    assert states == {"decision": 3, "open": 9, "no_row": 0, "unexplained": 0}
+    # The three cells of the dose modifications, a row the standard rows leave out, are
+    # explained by the key's list of rows (catalog@2 has a row for every analysis, #13).
     fits = {(key[0], value["rule"]) for item in found.cells for key, value in item.by}
-    assert fits == {("tfl.percent.format", "one_decimal_always")}
-    assert all(item.cell.gold.startswith("0 (") and item.cell.candidate == "0"
-               for item in found.cells if item.state == "decision")
+    assert fits == {("tfl.ae.summary.rows", "stated_rows")}
+    assert {item.cell.row[1] for item in found.cells if item.state == "decision"} == {
+        "Adverse event leading to dose modification"}
     assert found.missing == [("ADAE", "RELGR1", ["ae.related.values"])]
     assert [f"{d}.{n}" for d, n, there in found.reads if there] == [
         "ADAE.AEACN", "ADAE.AESDTH", "ADAE.AESER", "ADAE.TRTEMFL", "ADAE.USUBJID",
         "ADSL.SAFFL", "ADSL.TRT01A", "ADSL.USUBJID"]
-    assert found.not_built == ["RELATED"]
-    assert len(found.no_row) == 3
-    # The house default has a total column; the example has none.
-    assert set(found.axes) == {"rows", "columns"}
-    assert [(key[0], value) for key, value in found.axes["columns"]] == [
-        ("tfl.columns.total", {"rule": "none"})]
-    assert found.axes["rows"] == []
+    # The rows of related, serious related and related fatal events read RELGR1: open (the
+    # first two are standard rows, the third a row of the key's list).
+    assert found.not_built == ["RELATED", "SERIOUS_RELATED", "FATAL_RELATED"]
+    assert {item.cell.row[1] for item in found.cells if item.state == "open"} == {
+        "Related adverse event", "Serious related adverse event", "Fatal related adverse event"}
+    assert found.no_row == []
+    assert set(found.axes) == {"rows"} and found.axes["rows"] == []
     text = "\n".join(pilot.lines(found))
     assert "Any adverse event | Placebo | 65 ( 75.6) | 65 ( 75.6) | equal" in text
     assert "UNEXPLAINED" not in text
+    # Review of catalog-2c, G1: the summary counts the explained cells of the dose
+    # modifications among the rows arm S does not build, not among the rows it shares.
+    assert ("cells of the key that differ or are missing: 12. Of the 15 cells of the rows "
+            "both tables have, 0 differ and are explained by another value of one table "
+            "decision, and 0 are unexplained. 12 are in rows that arm S does not build: 3 "
+            "explained by another value of one table decision, 9 for a variable the reference "
+            "ADaM lacks, 0 in rows the catalog does not have, 0 in rows the table decisions "
+            "do not ask for that no one table decision gives;") in text
+    assert "rows not built: RELATED, SERIOUS_RELATED, FATAL_RELATED" in text
 
 
 def arm_r() -> None:
-    """Arm R with two table decisions read otherwise than the house: the five counts of
-    zero then have the key's text, and the columns are the key's."""
+    """Arm R with two table decisions read otherwise than the house (those of
+    open-default@1): the five counts of zero then lose the key's percent, explained by
+    tfl.percent.format, and the total column is one the key lacks."""
     records = [{"id": "tfl.percent.format", "unit": pilot.UNIT,
-                "value": {"rule": "one_decimal_always"}},
-               {"id": "tfl.columns.total", "unit": pilot.UNIT, "value": {"rule": "none"}}]
+                "value": {"rule": "one_decimal_zero_blank", "decimals": 1}},
+               {"id": "tfl.columns.total", "unit": pilot.UNIT, "value": {"rule": "all_arms"}}]
     found = pilot.run(Machine(repo_root()), records, "R")
     score = found.score
     assert score.denominators() == {"shared_rows": 15, "produced": 27, "all": 27}
-    assert (score.correct, score.strict, score.lenient) == (15, 0, 0)
+    assert (score.correct, score.strict, score.lenient) == (10, 0, 0)
     states = {state: sum(1 for item in found.cells if item.state == state)
               for state in pilot.STATES}
-    assert states == {"decision": 0, "open": 3, "no_row": 9, "unexplained": 0}
-    assert set(found.axes) == {"rows"} and found.axes["rows"] == []
+    # The dose modifications need the key's rows and the percent format: two decisions.
+    assert states == {"decision": 5, "open": 9, "no_row": 3, "unexplained": 0}
+    fits = {(key[0], value["rule"]) for item in found.cells for key, value in item.by}
+    assert fits == {("tfl.percent.format", "one_decimal_always")}
+    assert all(item.cell.gold.startswith("0 (") and item.cell.candidate == "0"
+               for item in found.cells if item.state == "decision")
+    assert set(found.axes) == {"rows", "columns"} and found.axes["rows"] == []
+    assert [(key[0], value) for key, value in found.axes["columns"]] == [
+        ("tfl.columns.total", {"rule": "none"})]
     text = "\n".join(pilot.lines(found))
     assert "arm R (a reader's table decisions" in text
-    assert 'tfl.columns.total = {"rule": "none"}' in text.split("\n")[2]
-    assert "Fatal adverse event | Xanomeline High Dose | 0 (  0.0) | 0 (  0.0) | equal" in text
+    assert 'tfl.columns.total = {"rule": "all_arms"}' in text.split("\n")[2]
+    assert ("Fatal adverse event | Xanomeline High Dose | 0 (  0.0) | 0 | differs; explained "
+            "by tfl.percent.format") in text
+    # The dose modifications are a row of catalog@2 the decisions do not ask for, not a gap
+    # of the catalog (G1).
+    assert ("Of the 15 cells of the rows both tables have, 5 differ and are explained by "
+            "another value of one table decision, and 0 are unexplained. 12 are in rows that "
+            "arm R does not build: 0 explained by another value of one table decision, 9 for "
+            "a variable the reference ADaM lacks, 0 in rows the catalog does not have, 3 in "
+            "rows the table decisions do not ask for that no one table decision gives;") in text
 
 
 def arm_r_no_output() -> None:
-    """A reader that reads the SAP as planning no such table: nothing is built, and the
-    trace sets tfl.output.include first, then explains each cell against that build."""
-    records = [{"id": pilot.INCLUDE, "unit": pilot.UNIT, "value": {"rule": "not_included"}}]
+    """A reader that reads the SAP as planning no such table, and the count of zero
+    without its percent: nothing is built, and the trace sets tfl.output.include first,
+    then explains each cell against that build, one more decision where it needs one."""
+    records = [{"id": pilot.INCLUDE, "unit": pilot.UNIT, "value": {"rule": "not_included"}},
+               {"id": "tfl.percent.format", "unit": pilot.UNIT,
+                "value": {"rule": "one_decimal_zero_blank", "decimals": 1}}]
     found = pilot.run(Machine(repo_root()), records, "R")
     score = found.score
     assert (score.produced, score.in_gold) == (0, 1)
@@ -96,19 +127,24 @@ def arm_r_no_output() -> None:
     assert found.first == ((pilot.INCLUDE, pilot.UNIT), {"rule": "included"})
     alone = [item for item in found.cells if item.by == [found.first] and item.first is None]
     joint = [item for item in found.cells if item.state == "decision" and item.first]
+    # The five counts of zero need the percent format as well.
     assert len(found.cells) == 27 and len(alone) == 10 and len(joint) == 5
     assert {(key[0], value["rule"]) for item in joint for key, value in item.by} == {
         ("tfl.percent.format", "one_decimal_always")}
     states = {state: sum(1 for item in found.cells if item.state == state)
               for state in pilot.STATES}
-    assert states == {"decision": 15, "open": 3, "no_row": 9, "unexplained": 0}
-    assert [(key[0], value) for key, value in found.axes["columns"]] == [
-        ("tfl.columns.total", {"rule": "none"})]
+    assert states == {"decision": 15, "open": 9, "no_row": 3, "unexplained": 0}
+    assert set(found.axes) == {"rows"} and found.axes["rows"] == []
     text = "\n".join(pilot.lines(found))
     assert "arm R built no output" in text and "UNEXPLAINED" not in text
     assert ('Any adverse event | Placebo | 65 ( 75.6) | - | 65 ( 75.6) | missing; explained '
             'by tfl.output.include = {"rule": "included"}') in text
     assert "the key has 4 rows that arm R with tfl.output.include" in text
+    assert ("10 have the key's text, 5 differ and are explained by one more table decision, "
+            "and 0 are unexplained. 12 are in rows that this build does not have: 0 explained "
+            "by one more table decision, 9 for a variable the reference ADaM lacks, 0 in rows "
+            "the catalog does not have, 3 in rows the table decisions do not ask for that no "
+            "one table decision gives;") in text
 
 
 def pilot_folder() -> None:

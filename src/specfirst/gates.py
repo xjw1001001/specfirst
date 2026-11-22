@@ -135,9 +135,13 @@ def _root_check(run: Callable[[Path, Callable[[str], None]], bool]) -> Callable[
     return lambda ctx: run(ctx.root, ctx.out)
 
 
-def _pair_check(run: Callable[..., bool]) -> Callable[[Context], bool]:
-    """A check of std-1 run on the pair of ADR-020 (catalog@2, open-default@2)."""
-    return lambda ctx: run(ctx.root, ctx.out, std1.NEXT)
+def _pair_check(run: Callable[..., bool], pair: tuple[str, str] = std1.NEXT
+                ) -> Callable[[Context], bool]:
+    """A check of std-1 run on a pair of ADR-020: (catalog@2, open-default@2) unless named."""
+    return lambda ctx: run(ctx.root, ctx.out, pair)
+
+
+_FIRST = "--catalog catalog@1 --house open-default@1"
 
 
 def _catalog2() -> tuple[Check, ...]:
@@ -790,18 +794,26 @@ GATES: dict[str, tuple[Check, ...]] = {
     # PLAN.md section 13.4: the round trip is exact for every alternative;
     # compiled fragments pass yamaa check and the ARS schema; every entry has
     # at least one public source.
+    # From catalog-2c the default pair is version 2; std-1 checks version 1 by label.
     "std-1": (
         Check("environment", "specfirst doctor", _environment),
         Check("pins", "specfirst fetch --verify", _pins),
         Check("lint", "ruff check .", _lint),
         Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
-        Check("catalog", "specfirst catalog", _root_check(std1.catalog_check)),
-        Check("public sources", "specfirst catalog --sources", _root_check(std1.sources_check)),
-        Check("round trip", "specfirst catalog --roundtrip", _root_check(std1.roundtrip_check)),
-        Check("yamaa check", "specfirst catalog --yamaa", _root_check(std1.yamaa_check)),
-        Check("yamaa run", "specfirst catalog --run", _root_check(std1.run_check)),
-        Check("ARS schema", "specfirst catalog --tables", _root_check(std1.tables_check)),
-        Check("house standard", "specfirst house", _root_check(std1.house_check)),
+        Check("catalog", f"specfirst catalog {_FIRST}",
+              _pair_check(std1.catalog_check, std1.FIRST)),
+        Check("public sources", f"specfirst catalog --sources {_FIRST}",
+              _pair_check(std1.sources_check, std1.FIRST)),
+        Check("round trip", f"specfirst catalog --roundtrip {_FIRST}",
+              _pair_check(std1.roundtrip_check, std1.FIRST)),
+        Check("yamaa check", f"specfirst catalog --yamaa {_FIRST}",
+              _pair_check(std1.yamaa_check, std1.FIRST)),
+        Check("yamaa run", f"specfirst catalog --run {_FIRST}",
+              _pair_check(std1.run_check, std1.FIRST)),
+        Check("ARS schema", f"specfirst catalog --tables {_FIRST}",
+              _pair_check(std1.tables_check, std1.FIRST)),
+        Check("house standard", f"specfirst house {_FIRST}",
+              _pair_check(std1.house_check, std1.FIRST)),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),
     # ADR-020: the structure of catalog@2 and open-default@2. The checks of std-1

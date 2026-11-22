@@ -101,7 +101,7 @@ def test_parse_document_refuses_cases(pair):
 
 
 def test_a_positional_document_is_as_before(root):
-    catalog, house = houses.load_pair(root)
+    catalog, house = houses.load_pair(root, "catalog@1", "open-default@1")
     text = houses.standards_document(catalog, house)
     assert text == (house.directory / "STANDARD.md").read_text(encoding="ascii")
     assert "[1/s1]" in text and "Fixed rules" not in text

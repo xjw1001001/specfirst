@@ -40,14 +40,19 @@ Twin
     X1  dosed with High Dose from 01-16 to 02-14 without being randomized.
         Headache on 01-30.
 
-What the study cannot show is listed in `UNSEPARATED`: nine of the 21
+What the study cannot show is listed in `UNSEPARATED`: ten of the 21
 decisions of the slice change no cell of either table under any other value.
 
-Gold decisions: the house defaults, and two stated decisions. An adverse
-event is related when its causality is POSSIBLE or PROBABLE
-(ae.related.values has no default). Treatment emergence ends 30 days after
-the treatment end date (ae.teae.end). The three other table families are
-not part of the planned outputs.
+Gold decisions: the house defaults of open-default@2 for a randomized
+design (`FEATURES`), and two stated decisions of the slice. An adverse event
+is related when its causality is POSSIBLE or PROBABLE (ae.related.values
+has no default). The table has a total column over all arms
+(tfl.columns.total; the house has none, and a planted defect of the scorer
+leaves the total column out). By default treatment emergence ends 30 days
+after the treatment end date (ae.teae.end), the safety set holds the
+randomized subjects who were dosed (pop.safety.rule), and a count of zero
+is shown with its percentage. The three other table families are not part
+of the planned outputs.
 
 `EXPECTED` is the adverse event summary these decisions give, worked out by
 hand from the lists above; tests/unit/test_score_hand.py holds the build
@@ -75,12 +80,21 @@ _DOSES = {"Low Dose": 10.0, "High Dose": 20.0, "Placebo": 0.0}
 ARMS = [{"code": _CODES[label], "dose": dose, "names": sorted({label, label.upper()})}
         for label, dose in _DOSES.items()]
 
+# The features of the design of the study (the design features of the catalog): a
+# default of the house may depend on them (pop.safety.rule).
+FEATURES = {
+    "design.always": True, "design.randomized": True, "design.multiple_arms": True,
+    "design.has_exposure": True, "design.has_efficacy_set": False,
+    "design.collects_adverse_events": True, "design.collects_vital_signs": True,
+    "design.has_bds_parameters": True, "design.fixed_visits": True,
+    "design.unscheduled_visits": True,
+}
 # The decisions the documents of the study state; every other decision of the
 # scope and of mod-demographics is the house default.
 STATED = {
     ("ae.related.values", "mod-ae-emergence"):
         {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]},
-    ("ae.teae.end", "mod-ae-emergence"): {"rule": "last_dose_plus_days", "days": 30},
+    ("tfl.columns.total", "tfl-ae-summary"): {"rule": "all_arms"},
     ("tfl.output.include", "tfl-demographics"): {"rule": "not_included"},
     ("tfl.output.include", "tfl-ae-soc-pt"): {"rule": "not_included"},
     ("tfl.output.include", "tfl-vitals-by-visit"): {"rule": "not_included"},
@@ -140,27 +154,36 @@ EVENTS = {
     ],
 }
 
+# The rows of the standard rows of catalog@2, in their order (tfl.ae.summary.rows).
 _ROWS = ("Any adverse event", "Related adverse event", "Serious adverse event",
-         "Adverse event leading to discontinuation of study treatment", "Fatal adverse event")
+         "Serious related adverse event", "Fatal adverse event",
+         "Adverse event leading to discontinuation of study treatment")
 _COLUMNS = ("Placebo", "Low Dose", "High Dose", "Total")
 # The adverse event summary of the gold decisions, by hand. The first row is the
-# header row: the subjects of the safety set in each column.
+# header row: the subjects of the safety set in each column. Visible data: L3 was
+# never dosed; L2's event ends before the first dose; L1's rash on the 30th day after
+# the last dose is inside the window; L1's nausea is serious and possibly related.
+# Twin: X1 is dosed without being randomized and is not in the safety set; P2's rash
+# on the 31st day after the last dose is outside the window; L2's dizziness is
+# serious and possibly related.
 EXPECTED = {
     "visible": {
         "": ("(N=2)", "(N=2)", "(N=2)", "(N=6)"),
         _ROWS[0]: ("1 ( 50.0)", "1 ( 50.0)", "2 (100.0)", "4 ( 66.7)"),
-        _ROWS[1]: ("0", "1 ( 50.0)", "1 ( 50.0)", "2 ( 33.3)"),
-        _ROWS[2]: ("0", "1 ( 50.0)", "1 ( 50.0)", "2 ( 33.3)"),
-        _ROWS[3]: ("0", "0", "1 ( 50.0)", "1 ( 16.7)"),
-        _ROWS[4]: ("0", "0", "1 ( 50.0)", "1 ( 16.7)"),
+        _ROWS[1]: ("0 (  0.0)", "1 ( 50.0)", "1 ( 50.0)", "2 ( 33.3)"),
+        _ROWS[2]: ("0 (  0.0)", "1 ( 50.0)", "1 ( 50.0)", "2 ( 33.3)"),
+        _ROWS[3]: ("0 (  0.0)", "1 ( 50.0)", "0 (  0.0)", "1 ( 16.7)"),
+        _ROWS[4]: ("0 (  0.0)", "0 (  0.0)", "1 ( 50.0)", "1 ( 16.7)"),
+        _ROWS[5]: ("0 (  0.0)", "0 (  0.0)", "1 ( 50.0)", "1 ( 16.7)"),
     },
     "twin": {
-        "": ("(N=3)", "(N=2)", "(N=3)", "(N=8)"),
-        _ROWS[0]: ("1 ( 33.3)", "2 (100.0)", "2 ( 66.7)", "5 ( 62.5)"),
-        _ROWS[1]: ("0", "2 (100.0)", "0", "2 ( 25.0)"),
-        _ROWS[2]: ("0", "1 ( 50.0)", "0", "1 ( 12.5)"),
-        _ROWS[3]: ("0", "0", "1 ( 33.3)", "1 ( 12.5)"),
-        _ROWS[4]: ("0", "0", "0", "0"),
+        "": ("(N=3)", "(N=2)", "(N=2)", "(N=7)"),
+        _ROWS[0]: ("1 ( 33.3)", "2 (100.0)", "1 ( 50.0)", "4 ( 57.1)"),
+        _ROWS[1]: ("0 (  0.0)", "2 (100.0)", "0 (  0.0)", "2 ( 28.6)"),
+        _ROWS[2]: ("0 (  0.0)", "1 ( 50.0)", "0 (  0.0)", "1 ( 14.3)"),
+        _ROWS[3]: ("0 (  0.0)", "1 ( 50.0)", "0 (  0.0)", "1 ( 14.3)"),
+        _ROWS[4]: ("0 (  0.0)", "0 (  0.0)", "0 (  0.0)", "0 (  0.0)"),
+        _ROWS[5]: ("0 (  0.0)", "0 (  0.0)", "1 ( 50.0)", "1 ( 14.3)"),
     },
 }
 
@@ -206,7 +229,8 @@ def tables(which: str) -> dict[str, pa.Table]:
     counts: dict[str, int] = {}
     for subject, term, start, end, causality, serious, action, fatal in EVENTS[which]:
         counts[subject] = counts.get(subject, 0) + 1
-        ae.append((STUDY, subject, counts[subject], term.title(), term, "GENERAL DISORDERS",
+        ae.append((STUDY, subject, counts[subject], term.title(), term,
+                   "GENERAL DISORDERS", "GENERAL DISORDERS",
                    "MILD", serious, causality, action,
                    "FATAL" if fatal == "Y" else "RECOVERED/RESOLVED", fatal, start, end))
     return {
@@ -223,8 +247,9 @@ def tables(which: str) -> dict[str, pa.Table]:
                       "VSSTRESU", "VSDTC", "VISIT", "VISITNUM", "VISITDY"], vs,
                      {"VSSEQ": integer, "VSSTRESN": number, "VISITNUM": number,
                       "VISITDY": number}),
-        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AESOC", "AESEV",
-                      "AESER", "AEREL", "AEACN", "AEOUT", "AESDTH", "AESTDTC", "AEENDTC"], ae,
+        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AEBODSYS", "AESOC",
+                      "AESEV", "AESER", "AEREL", "AEACN", "AEOUT", "AESDTH", "AESTDTC",
+                      "AEENDTC"], ae,
                      {"AESEQ": integer}),
     }
 
@@ -240,7 +265,7 @@ def gold_values(catalog: Catalog, house: houses.House) -> list[dict]:
         if key in STATED:
             value = STATED[key]
         elif key[1] in BUILT_UNITS:
-            value = houses.default_value(catalog, house, *key)
+            value = houses.default_value(catalog, house, *key, FEATURES)
             if value is None and key[1] not in UNITS:
                 alternative = catalog.entry(key[0]).alternatives[0]
                 value = {"rule": alternative.id,
@@ -267,7 +292,8 @@ def sap(catalog: Catalog, house: houses.House) -> str:
 
 
 def _is_default(catalog: Catalog, house: houses.House, record: dict) -> bool:
-    return record["value"] == houses.default_value(catalog, house, record["id"], record["unit"])
+    return record["value"] == houses.default_value(catalog, house, record["id"], record["unit"],
+                                                   FEATURES)
 
 
 def documents(catalog: Catalog, house: houses.House) -> Documents:
@@ -283,7 +309,8 @@ def gold_records(catalog: Catalog, house: houses.House) -> list[dict]:
     _, stated = form.parse_document(sap(catalog, house))
     by_key = {(item["id"], item["unit"]): decision_record(item, "sap", "stated", "document_rule")
               for item in stated}
-    defaults = {(r["id"], r["unit"]): r for r in houses.default_decisions(catalog, house)}
+    defaults = {(r["id"], r["unit"]): r
+                for r in houses.default_decisions(catalog, house, FEATURES)}
     found = []
     for record in gold_values(catalog, house):
         key = (record["id"], record["unit"])
@@ -299,15 +326,17 @@ def gold_records(catalog: Catalog, house: houses.House) -> list[dict]:
 # The decisions of the scope that this study cannot show: under every other value
 # the catalog offers (each alternative with the examples of its slots), the gold
 # vector builds the gold table on the visible data and on the twin (section 9.3:
-# "If the twin cannot separate it either"). Nine of 21. The study has no partial
+# "If the twin cannot separate it either"). Ten of 21. The study has no partial
 # date, no dose time, one exposure record and one disposition event per subject,
-# no percent on a half, and its table is on the safety set by actual treatment.
+# no percent on a half, and its table is on the safety set by actual treatment; every
+# subject of that set (the randomized subjects who were dosed, open-default@2) is dosed
+# as planned, so the grouping of the safety set changes nothing.
 # The list is what mutation gives (`scorer.separation`), not what the author
 # expected: tests/unit/test_score_hand.py builds every value and holds it.
 UNSEPARATED = (
     "trt.planned.source", "trt.start.source", "trt.date.imputation", "date.studyday.origin",
-    "pop.randomized.rule", "disp.status.record", "ae.start.imputation", "ae.teae.start",
-    "tfl.rounding.rule",
+    "pop.randomized.rule", "pop.safety.grouping", "disp.status.record", "ae.start.imputation",
+    "ae.teae.start", "tfl.rounding.rule",
 )
 
 
@@ -323,4 +352,5 @@ def case(catalog: Catalog, house: houses.House, stage: str = "C"):
     return Case(id=STUDY.lower(), units=units, gold=gold_records(catalog, house),
                 arms=lambda records: ARMS,
                 data={which: data(which) for which in ("visible", "twin")},
-                documents=documents(catalog, house), stage=stage, standard_form="sap")
+                documents=documents(catalog, house), stage=stage, standard_form="sap",
+                features=FEATURES)

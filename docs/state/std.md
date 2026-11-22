@@ -55,6 +55,20 @@ section 13.4).
   std-1 again on the freeze commit. Generated kits are the same bytes.
   Evidence: docs/reports/catalog-2b.md. Review:
   docs/reports/catalog-2b.review.md.
+- catalog-2c (2026-11-22): the slice of ADR-005 on `catalog@2` and
+  `open-default@2` (ADR-020, decision 8 as amended), the gen and read files
+  included. The default pair is version 2; the gate std-1 checks `catalog@1`
+  and `open-default@1` by label. The generator is `catalog-2c.2`; the
+  natural texts of 26 statements were written and read back in four Sonnet
+  subagent calls; the kept dry run of arm R is `R-task-6e527ae6baab`. Model
+  cost about USD 2.14 (2.88 without any cache) of the owner's USD 3.0.
+  Gates on clean clones of `9d4b48f`: catalog-2b, std-1, gen-1a, gen-2a,
+  gen-3a, read-1a and read-2a, all PASS; on the merge with main `1e24e3c`
+  (issue #29): those, issue-29, real-2, real-3a, real-5a and real-5b, all
+  PASS; read-1a again on `03f12fe` (G1 of the review: the pilot report's
+  summary), PASS. Evidence: docs/reports/catalog-2c.md. Review:
+  docs/reports/catalog-2c.review.md (pass 2 signed of `1e24e3c`, on the
+  condition of the gates of the merge; G1 fixed in `03f12fe`).
 
 ## For other tracks (from std-issues)
 
@@ -119,16 +133,9 @@ section 13.4).
 
 ## Next
 
-- catalog-2c: the slice of ADR-005 moves to version 2 (ADR-020, amended
-  decision 8). The owner approved its model costs (about USD 1.6 in all:
-  the natural-form rewrite and read-back, at most 4 calls, and one dry run
-  of arm R). The std track makes all of it, the files of gen and read
-  included, in one package with one review; the gen and read tracks touch
-  none of those files while it is open. SEP01's expected values and classes
-  (`specfirst.gen.sep01`) are worked out again with
-  `specfirst gen separate sep01`. Until catalog-2c merges, the default pair
-  stays (`catalog@1`, `open-default@1`).
-- std-2 Pilot decisions, mutation and identifiability. Needs real-3.
+- std-2 Pilot decisions, mutation and identifiability. Needs real-3. It
+  takes what ADR-020 left waiting for it: #16 and #19, the record parts of
+  #20, schema point 3 (standard/BACKLOG.yaml, status `waits`).
 - Then std-3 (D1).
 
 ## For other tracks
@@ -144,10 +151,16 @@ section 13.4).
   unscheduled when VISITDY is missing or VISIT contains UNSCHED, a subject
   is randomized by the disposition record first, and PARAM carries the
   unit. What changed is in standard/catalog@2/migration.yaml.
-- gen-1 and gen-2 work from `catalog@1`. Entries, alternatives, slots
-  with examples and probe recipes (`standard/catalog@1/probes.yaml`) are
-  usable as they are. A probe of the kind `design` asks for a property of
-  the design (arms listed out of dose order), not for a planted record.
+- From catalog-2c the slice (the generator, the kits of every gate seed, the
+  store of natural texts, the reader's task folders, HAND01) works from
+  `catalog@2` and `open-default@2`; a new statement of a kit needs an
+  accepted text in src/specfirst/gen/rewrites, or the gate gen-3a fails.
+  What changed is in docs/reports/catalog-2c.md, "What changed".
+- gen-1 and gen-2 worked from `catalog@1` until catalog-2c. Entries,
+  alternatives, slots with examples and probe recipes
+  (`standard/catalog@1/probes.yaml`) are usable as they are. A probe of the
+  kind `design` asks for a property of the design (arms listed out of dose
+  order), not for a planted record.
   What gen-1 should know:
   - SDTM variables the house specs read: DM (ARM, ARMCD, ACTARM, RFSTDTC,
     RFXSTDTC and the demographics), EX (EXSEQ, EXTRT, EXDOSE, EXSTDTC,

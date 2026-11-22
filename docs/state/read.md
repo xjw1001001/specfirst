@@ -184,6 +184,33 @@ Numbers are in docs/reports/read-1a.md. In short:
   a module decision with a table decision) every wrong cell is owned by
   the decision that changes it alone, or by both where each does.
 
+## From catalog-2c (std track, 2026-11-21)
+
+The slice moved to version 2 of the standard (ADR-020, decision 8 as
+amended); the std track made the change in the files of read, which this
+track left alone meanwhile. Report: docs/reports/catalog-2c.md.
+
+- The scorer takes the features of the study's design (`Case.features`,
+  `candidate.vector(..., features)`): a default of open-default@2 may depend
+  on the design (`pop.safety.rule`). A kit's case gives its design's
+  features; HAND01 has `hand.FEATURES`.
+- HAND01 states two decisions of the slice: `ae.related.values` and a total
+  column over all arms (the house has none; the planted defect S5 leaves
+  the total column out). Its table has the six standard rows of catalog@2
+  (28 cells), worked out again by hand; mutation finds ten decisions it
+  cannot show (the grouping of the safety set is the tenth).
+- The checks of read-1a on HAND01: the control plants the list of related
+  causality values ("PROBABLE" in place of "POSSIBLE", "PROBABLE"); arm S
+  leaves the six cells of the two rows of related events waiting and the
+  seven cells of the total column to `tfl.columns.total`.
+- The reader's skills render the house defaults of open-default@2 (a
+  default by design names its cases); TASK.md and the core-reader skill
+  describe the anchors by entry ID, the cases and the fixed rules.
+- The kept dry run of arm R is `R-task-6e527ae6baab` (kit 4 of the gate
+  seed, generator `catalog-2c.2`), in place of `R-task-04119188ff71`.
+- The pilot task of ADR-016 takes catalog@2: the real kit names no catalog
+  version (BACKLOG i28.real-kit-pins waits for real-4).
+
 ## Open
 
 For the read track, from the owner (2026-11-19, relayed by the base session

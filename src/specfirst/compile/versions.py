@@ -34,9 +34,10 @@ import yaml
 from specfirst.paths import repo_root
 
 VERSIONS = "standard/versions.yaml"
-# The pair every loader takes when it is given no label (ADR-020, decision 3).
-DEFAULT_CATALOG = "catalog@1"
-DEFAULT_HOUSE = "open-default@1"
+# The pair every loader takes when it is given no label (ADR-020, decision 3): version 2
+# from catalog-2c (decision 8 as amended); version 1 stays loadable by label.
+DEFAULT_CATALOG = "catalog@2"
+DEFAULT_HOUSE = "open-default@2"
 STATUSES = ("draft", "frozen")
 # The tree of every frozen version, pinned here as well as in versions.yaml, so that
 # a frozen folder changed together with its line of versions.yaml still fails (review

@@ -769,9 +769,14 @@ class Variant:
     problems: list[str] = field(default_factory=list)
 
 
-def base_vector(catalog: Catalog, house: House) -> list[dict]:
-    """The house defaults, and the first example of the first alternative where there is none."""
-    records = house_module.defaults(catalog, house)
+def base_vector(catalog: Catalog, house: House,
+                features: dict[str, bool] | None = None) -> list[dict]:
+    """The house defaults, and the first example of the first alternative where there is none.
+
+    With the features of a design, a default that depends on the design is the one of
+    that design; without them it is left out like a decision without a default.
+    """
+    records = house_module.defaults(catalog, house, features)
     have = {(record["id"], record["unit"]) for record in records}
     for entry_id, unit in catalog.keys():
         if (entry_id, unit) in have:

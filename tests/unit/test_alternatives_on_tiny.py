@@ -17,6 +17,9 @@ from specfirst.compile import checks, tiny
 from specfirst.compile import house as house_module
 from specfirst.compile.compiler import compile_decisions, relative_reference
 
+# The std-1 tests hold the frozen pair of version 1 (ADR-020: loadable by label).
+V1 = ("catalog@1", "open-default@1")
+
 WINDOWS = [{"visit": "Week 2", "target": 15, "low": 8, "high": 21},
            {"visit": "Week 4", "target": 29, "low": 22, "high": 42}]
 VISITS = [{"visit": "Week 2", "target": 15}, {"visit": "Week 4", "target": 29}]
@@ -167,8 +170,8 @@ KEYS = {"ADSL": ["USUBJID"], "ADAE": ["USUBJID", "AESEQ"],
 
 @pytest.fixture(scope="module")
 def standard(root):
-    catalog = catalog_module.load(catalog_module.default_dir(root))
-    house = house_module.load(house_module.default_dir(root))
+    catalog = catalog_module.load(catalog_module.default_dir(root, V1[0]))
+    house = house_module.load(house_module.default_dir(root, V1[1]))
     return catalog, house, checks.base_vector(catalog, house)
 
 

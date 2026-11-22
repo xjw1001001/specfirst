@@ -1,0 +1,196 @@
+{
+ "condition": "notes",
+ "id": "task-6e527ae6baab",
+ "keys": [
+  [
+   "trt.planned.source",
+   "mod-treatment"
+  ],
+  [
+   "trt.actual.source",
+   "mod-treatment"
+  ],
+  [
+   "trt.start.source",
+   "mod-treatment"
+  ],
+  [
+   "trt.end.source",
+   "mod-treatment"
+  ],
+  [
+   "trt.date.imputation",
+   "mod-treatment"
+  ],
+  [
+   "date.studyday.origin",
+   "mod-treatment"
+  ],
+  [
+   "pop.randomized.rule",
+   "mod-populations"
+  ],
+  [
+   "pop.safety.rule",
+   "mod-populations"
+  ],
+  [
+   "pop.safety.grouping",
+   "mod-populations"
+  ],
+  [
+   "pop.efficacy.rule",
+   "mod-populations"
+  ],
+  [
+   "disp.status.record",
+   "mod-populations"
+  ],
+  [
+   "ae.start.imputation",
+   "mod-ae-emergence"
+  ],
+  [
+   "ae.teae.start",
+   "mod-ae-emergence"
+  ],
+  [
+   "ae.teae.end",
+   "mod-ae-emergence"
+  ],
+  [
+   "ae.related.values",
+   "mod-ae-emergence"
+  ],
+  [
+   "tfl.output.include",
+   "tfl-ae-summary"
+  ],
+  [
+   "tfl.population",
+   "tfl-ae-summary"
+  ],
+  [
+   "tfl.columns.arms",
+   "tfl-ae-summary"
+  ],
+  [
+   "tfl.columns.total",
+   "tfl-ae-summary"
+  ],
+  [
+   "tfl.percent.format",
+   "tfl-ae-summary"
+  ],
+  [
+   "tfl.rounding.rule",
+   "tfl-ae-summary"
+  ],
+  [
+   "tfl.ae.summary.rows",
+   "tfl-ae-summary"
+  ]
+ ],
+ "manifest": {
+  "TASK.md": "ea244290ebd78699f660b3c5481ddfa71fc3102bfe85dd9d63890256f03d89e0",
+  "inputs/data/sdtm/ae.json": "49e391f7435ce7102ed9e30a3a388b487ceb7230c1c360eef51a621d729d0fae",
+  "inputs/data/sdtm/ae.parquet": "f6ee8d291686caf79a2968beb5076456a26bf84977b0a9d3853cb7ec3ad67ae4",
+  "inputs/data/sdtm/define.xml": "afe54b1f8627fd44afe7ef342409b8476702d60ec552a3e8700e8ec332d2d5d9",
+  "inputs/data/sdtm/dm.json": "06e8821f95b04cb8d7e081bf7de42ae2b91c385034982fc1a0317fbbce1659c3",
+  "inputs/data/sdtm/dm.parquet": "05eb09b0e656715445d3b05c8de96bc1fe867c0024578d5e967d3395e59f8a0c",
+  "inputs/data/sdtm/ds.json": "647c12d50bcbd37dc726cfe3c4716678fea479bf604a5e937e4263f8d88d3e5b",
+  "inputs/data/sdtm/ds.parquet": "7ef29a9fba2778a8a8e3e704f483c37289fcb1612019f67af66960dc994e9896",
+  "inputs/data/sdtm/ex.json": "9b742a4a9e181cb2e64d859ebe123027bd425fb29a30d3bdae71d3f87ef0c41e",
+  "inputs/data/sdtm/ex.parquet": "fa2fc15b664437e72490faba7709f2ec29b070d2b8cd337eb12849a10da2ffb4",
+  "inputs/data/sdtm/se.json": "b76d4f9c8eeab223f5a2e96638f37f440ec49c53c9cacda9dbc61d091bacf94d",
+  "inputs/data/sdtm/se.parquet": "864617fac4c67c0d7bd680a5ef7962c80800788c55f6f4a4916d38094d84cc5b",
+  "inputs/data/sdtm/sv.json": "5220faca9d149643a0b15ad37ca8193e4da9133ae8200dc399ecc9c0e9633b84",
+  "inputs/data/sdtm/sv.parquet": "69d594332660241c47838245cfcb27ac9d31c323de0fc5ceebeb13bc5fda3d09",
+  "inputs/data/sdtm/ta.json": "3c97034e64cd99dcf82ca5e98e64409a23e44164d4d485c76ecb625f387623eb",
+  "inputs/data/sdtm/ta.parquet": "57e30ed66887d902fa7bc1e302ad14831c9ff7b975bb23ffbee208b809a8846e",
+  "inputs/data/sdtm/te.json": "c2ddbb6fb3ae793b772ba0e24c5fda67e810c0587920a0e92299eab002acfacc",
+  "inputs/data/sdtm/te.parquet": "2c5e9dd99a705b98e80b0a63933a378931b2c697e54149757dd95f7997dbd8b8",
+  "inputs/data/sdtm/ts.json": "6d51a8f2f47c4625bfd1f1520917fd888aa30ccbbb65818c78721980232356b2",
+  "inputs/data/sdtm/ts.parquet": "8a057d688d6286a2c3028e3a83df01c40fda5d72107bb3dda0a73294daa298ab",
+  "inputs/data/sdtm/tv.json": "b7b4490ddc9048a3aaf88ee7aace22011bcec5af057e34609ae1f1bb5831b42d",
+  "inputs/data/sdtm/tv.parquet": "fa0d45f0ce30ee6098274f0725fe0561214fcccb8df0059fb215f630dee63f28",
+  "inputs/data/sdtm/vs.json": "dcc7d4fc4960c4311c0d4fd4279680d3012df5069ed75f2d60520d680d235d38",
+  "inputs/data/sdtm/vs.parquet": "d8829c48915c5d3bfdfda3cb792b183b154fb4c3bcaaeff0ec994ce35646597f",
+  "inputs/docs/protocol.md": "c3bc412abb2203abcc8303b9f7c4df6ba2ce5e8df37ec49f2bdc20d06dae4207",
+  "inputs/docs/sap.md": "8117d0f36ea616e4ee250915f4fec98605b7082e3912a8e2c7c98d19bd7fd157",
+  "inputs/house/README.md": "f8a62d5507bcd38ae867f923091cf2d759311955b09a4e570fd2a7bac29a161f",
+  "inputs/house/STANDARD.md": "677ec71f97c9ea933887e3845499cdd94b3b4cd8fd407479439018919fd681de",
+  "inputs/house/adam/adae.yaml": "66043b5bff9ffd62d092e2cfe45ab55cb850296c5d551983cd9c731c5ebf3353",
+  "inputs/house/adam/adsl.yaml": "882c0625a8286f52f29cbedeab2c5d19cc3dec8d4b0864c9bc334fe6ef6bff4e",
+  "inputs/house/adam/advs.yaml": "4b29060747d4db5dc1ecba5b185b40979d78ed850d4b6b03a3139016e35d7ae9",
+  "inputs/house/ars/ae-soc-pt.yaml": "89b1663a886a7a9be0d9d5559b66fe56fb901c7fb2735f9018f484d459b103ac",
+  "inputs/house/ars/ae-summary.yaml": "f089cdd06025511a969b3540a16a6341cf1e6c93490a7c915e2bd4ce832cd99f",
+  "inputs/house/ars/common.yaml": "c520c66948919fbf8d21967f56c574670b6ada935961ee06cebf1e0fd29e2773",
+  "inputs/house/ars/demographics.yaml": "0ede5ed6625185980e9742c425c199e3e337925363f42b50269344f54272514f",
+  "inputs/house/ars/vitals-by-visit.yaml": "897470bd8b890c971b3d29c37f741eb1efd28cf9a481f8fb2e44fd17ba32ba9f",
+  "inputs/house/defaults.yaml": "5259c811b0d10c68a6f97eab4391a8614005d98d24afa44e5a39696bcd17836c",
+  "inputs/house/house.yaml": "c712badf97275abede9a57acbf91ece3424c3b0248982e10323dabef31264726",
+  "inputs/house/layout/ae-soc-pt.yaml": "ba7e6d4737bc236a0d870e66f6f021195dc7877596d87b55d50ccffc6d466d58",
+  "inputs/house/layout/ae-summary.yaml": "bf5a579b2198c34796bf458159bf0f4c96eed38cad862cd4b6d8b72633fffcdc",
+  "inputs/house/layout/demographics.yaml": "329c45d4304bcf8e2655a1daf9c0d3b18313d6c33739cf2124196b5145b32978",
+  "inputs/house/layout/vitals-by-visit.yaml": "8dfacdd22d4de0737364ee8057e628825480f11d491ec71b9eae9bb4611d01c6",
+  "knowledge/core-reader/SKILL.md": "07a412e4ab71b006439b6acd6133d7de5ac45ac40126e8be5691917c36fa4fcb",
+  "knowledge/mod-ae-emergence/SKILL.md": "6ca0560db03a9c2bbe165f08eca4e23d7b2f06142e06f3e157db8b99bf358148",
+  "knowledge/mod-populations/SKILL.md": "4ed4a040c1b77857bfe8f82d151dfd22e2f83242dc931e24859bbc5517070ac3",
+  "knowledge/mod-treatment/SKILL.md": "55bf41adc10b1a9e731c4b2dfe48416c1b1cbf5569bc51f26002f94ca7dbf7ac",
+  "knowledge/tfl-ae-summary/SKILL.md": "29c40a3cc63beea794a8ddd1c19a88493184157572028a693f282990a397e9b6",
+  "standard/catalog/catalog.yaml": "a4fee1c492024588f2b3488e1a037a0a23d39f459dd321294c33fac67e5cbfde",
+  "standard/catalog/entries/ae.related.values.yaml": "7b568f33f9bc9a14b77f869a633943fa319b53877f62497b24377253228f5bdd",
+  "standard/catalog/entries/ae.start.imputation.yaml": "970e308affe19034b050f57cadb43ccfdb3288b2dab6abc5fd033f55c0fe3f8d",
+  "standard/catalog/entries/ae.teae.end.yaml": "43f7cdb444c47b7d4b0b3b46ca12cb1a54db14aebcd03631e6bdb9c17b2c0420",
+  "standard/catalog/entries/ae.teae.start.yaml": "2cb9edbbdf40ce3b083cd2af6f308884262257e78f5da70eeedb16bc2bd2798b",
+  "standard/catalog/entries/bds.baseline.rule.yaml": "a2835e72105a858dc45d667eaef69ccd5fd68cf6fc21d921241a8013c0689aa8",
+  "standard/catalog/entries/bds.eot.record.yaml": "1af1661a64e24cfccba4d01286e82643fdbd528b513febcce613d17fb5ad55d4",
+  "standard/catalog/entries/bds.unscheduled.use.yaml": "e2f800ba1462e56c1b75a6508653e9be08a4c890a3f090d60112245bdb1bf9a8",
+  "standard/catalog/entries/bds.window.table.yaml": "a1606ddb64eaaf527374f7c36d05306d9a48f7107f21d7a64a125a1177929f2b",
+  "standard/catalog/entries/bds.window.tiebreak.yaml": "2225004f09898f14f21895b5f120bf0cff17c4ec894a0bd1cad26d0603486246",
+  "standard/catalog/entries/date.studyday.origin.yaml": "106b1ad40dae971814ef927def14133b01c8e5fbd968955d17f33dc2e2ff155c",
+  "standard/catalog/entries/demo.age.groups.yaml": "bde1ce8e5b06f71ee17ae2a411bc8523166854db8ce620bb03463282d82cbf70",
+  "standard/catalog/entries/demo.baseline.record.yaml": "f3428ed7dcb881ac02fa1fa643dcbb1eaf5895cc8feda1b59d1efc292809a6c8",
+  "standard/catalog/entries/demo.bmi.rule.yaml": "d8cfdf5d2c8796a15d0bff54c435ec7cc3b0706faf4bdbe6780f265134d6e86c",
+  "standard/catalog/entries/demo.race.pooling.yaml": "5505b306ea6eaba6f8b147f54fd99d66e0241595e87645c367dcd13cfc8a0ab7",
+  "standard/catalog/entries/disp.status.record.yaml": "b1f1a998eb6f7898e89b601b2d7cfa0f5972bdc3e8f1f2f022bdfd2d711df55a",
+  "standard/catalog/entries/pop.efficacy.rule.yaml": "acee9401f6102476f19fe4da3885f56a8363c0d80cbe39b1cc16798ef500025b",
+  "standard/catalog/entries/pop.randomized.rule.yaml": "8c7bf29bd2c8eb512b5fb0a80f48c05613bda31979cda35f7f99f1c83a4693c8",
+  "standard/catalog/entries/pop.safety.grouping.yaml": "46d6a2b33b77a09e24e3412d7062b51c238309750e6c66d15cba0234462ca36e",
+  "standard/catalog/entries/pop.safety.rule.yaml": "8dc229812836653e3f9bfd0b79e417ffe3df1f2e85bebe988ca4e72b639d431a",
+  "standard/catalog/entries/tfl.ae.socpt.counts.yaml": "1408d98644145badf6126ca71513126b6d8533ee678d0a43328adf5283318103",
+  "standard/catalog/entries/tfl.ae.socpt.sort.yaml": "624ebb70e84601c81e8aaad44cb4e5d5023c2ab28bd717dbb1041cf0c25fb1b6",
+  "standard/catalog/entries/tfl.ae.socpt.threshold.yaml": "a047531a364bfd6ee3720b1d65cf5e18925cbbb0e199e8dde8b89213f386fe96",
+  "standard/catalog/entries/tfl.ae.summary.rows.yaml": "0730f3c166d93c201747a7ab1d76b877aa57b3728c532e4d82e6c9c185134617",
+  "standard/catalog/entries/tfl.columns.arms.yaml": "c5016a39cba713034e57dc5d125b14bc49e5f5cd91f35da434c2948b69b4dc9a",
+  "standard/catalog/entries/tfl.columns.total.yaml": "8e23e17d3e7b1494dca015feed35756efca4cc6fcaa9ecd9ec2b6114ba00678f",
+  "standard/catalog/entries/tfl.decimals.rule.yaml": "984d9bb879e3803d6294c7b0d6a0b2acceb0356c9cdc1843d34e473ddf7493ae",
+  "standard/catalog/entries/tfl.demog.rows.yaml": "4027e98a2f19e67165d44c76caf4449df02d2b98123b7df2146c468ba2f83276",
+  "standard/catalog/entries/tfl.demog.stats.yaml": "c50590f1c7131cadd29b1c1febb5922cdf706472356bd421858cb3c66fccdbbe",
+  "standard/catalog/entries/tfl.denominator.yaml": "42c162f55bb63df2326e18ac6f71454f8cf50bf834ffe7e4cf48d2db2528d53d",
+  "standard/catalog/entries/tfl.output.include.yaml": "4fff05f66116cc962da3f4bbf930ebfd1619d496f20bf083e5a91efc181b62ad",
+  "standard/catalog/entries/tfl.percent.format.yaml": "730c986ecbde9ee1b4a0aca7b4541ebc002b612e0f203dc7e38da25624651ea2",
+  "standard/catalog/entries/tfl.population.yaml": "f59bec79c765cce34988e700fe2fe73ad4b3b7eac60d138c085ce14d12024b42",
+  "standard/catalog/entries/tfl.pvalue.format.yaml": "db3724b70dc13957ac1eff860b5595038ef083e654f9724be3844abde7a02533",
+  "standard/catalog/entries/tfl.quantile.definition.yaml": "b24aaff9794fd4d0c4f9aae80ecb72d2ec54f16e42e8e67b5e8f1774453752a9",
+  "standard/catalog/entries/tfl.rounding.rule.yaml": "a28fbdc999c96a488ece491b80448c446ca06fe32c9d34d784738ab6bfca3cea",
+  "standard/catalog/entries/tfl.tests.include.yaml": "2a4d15b007e2a809032286a0f818b47f130393d09c532c62a94592a37500153d",
+  "standard/catalog/entries/tfl.vs.layout.yaml": "1af19914ef6ee702f31a02b0158ce8d2e447b1c8d1720419e444e3ae14a4367f",
+  "standard/catalog/entries/tfl.vs.scope.yaml": "f5124aa89ee13410ac59c896d35afb5889cf1851aca94401e354197ee9498da8",
+  "standard/catalog/entries/trt.actual.source.yaml": "fe4f8fd6f295e9d7bfa3ff6af266863bfd9ba09914549324da5629bebe691619",
+  "standard/catalog/entries/trt.date.imputation.yaml": "7750eadf3de969361fe3aab9afa0100fa3dbdf31edeeba5cb7acc25030bcaa53",
+  "standard/catalog/entries/trt.end.source.yaml": "b4058916f09719127744cb1b15e6d582513c91b05ca22516fab742995f76fb6b",
+  "standard/catalog/entries/trt.planned.source.yaml": "0f0de2ed88d8c62ad0f7bd55ef1685975f845563cc3656c323961fce2bfb70d0",
+  "standard/catalog/entries/trt.start.source.yaml": "522f5ff3d364414f5abebdffd280819c85584d6f0eefe655c40d12600dc6daa2",
+  "standard/methods/registry.json": "edc5419a1e130a5da28694d02661897b2ab23ced6bd3c8df9776a0e9be048a7d",
+  "standard/schemas/decision-record.schema.json": "1c606e284d791ef092a029e5b40f4aff4e46e04b2f605cfec4d9517970548bfc"
+ },
+ "stage": "C",
+ "units": [
+  "mod-treatment",
+  "mod-populations",
+  "mod-ae-emergence",
+  "tfl-ae-summary"
+ ]
+}
