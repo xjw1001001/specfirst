@@ -27,17 +27,3 @@ alternatives:
                 - when: "ASTDT <= _TEENDDT"
                   then: "'Y'"
                 - otherwise: "'N'"
-  end_of_study:
-    adam:
-      ADAE:
-        columns:
-          - name: _TEEND
-            type: str
-            label: "Working value: the event starts before treatment emergence ends"
-            derivation:
-              case:
-                - when: "EOSDT IS NULL"
-                  then: "'Y'"
-                - when: "ASTDT <= EOSDT"
-                  then: "'Y'"
-                - otherwise: "'N'"

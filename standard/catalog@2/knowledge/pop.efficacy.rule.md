@@ -28,4 +28,5 @@ the subjects and column counts of every output on that set.
 - Both alternatives start from the safety set. Sets built on protocol deviations, compliance
   limits or an assessment that is not a vital sign match no alternative; report the passage.
 - The visit name is compared exactly with the collected visit name; copy it as written.
-- Silent documents: this entry has no house default. Do not guess; a person must be asked.
+- Silent documents: when the house standard states no default for this entry, do not guess;
+  a person must be asked.

@@ -1,6 +1,6 @@
-# House standard open-default@1: ARS template of the demographics table
+# House standard open-default@2: ARS template of the demographics table
 # (unit tfl-demographics). Parameters come from the decisions of the unit
-# and from pop.safety.grouping; see standard/catalog/templates/.
+# and from pop.safety.grouping; see standard/catalog@2/templates/.
 define:
   trt_var:
     $if: {get: analysis_set, eq: SAF}

@@ -28,4 +28,4 @@ family applies.
   outputs is silent; it does not say that the output is left out.
 - A listing or a figure of the same data is not the table.
 - Answer each table family on its own; one can be included and another not.
-- Silent documents: use the house default `included` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

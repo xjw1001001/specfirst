@@ -4,15 +4,10 @@ alternatives:
     adam:
       ADSL:
         columns:
-          - name: _BMIRAW
-            type: float
-            label: "Working value: body mass index before rounding"
-            derivation: "WEIGHTBL / POWER(NULLIF(HEIGHTBL, 0) / 100, 2)"
           - name: BMIBL
             type: float
             label: Body Mass Index at Baseline (kg/m2)
-            derivation:
-              round_half_away_from_zero: {source: _BMIRAW, digits: 1}
+            derivation: "WEIGHTBL / POWER(NULLIF(HEIGHTBL, 0) / 100, 2)"
   as_collected:
     adam:
       ADSL:

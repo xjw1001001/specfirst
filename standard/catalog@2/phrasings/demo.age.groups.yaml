@@ -2,8 +2,8 @@
 entry: demo.age.groups
 alternatives:
   lt65_65to80_gt80:
-    plain: "Age is grouped as below 65 years, 65 to 80 years, and above 80 years."
-    formal: "Age shall be categorized into the groups below 65 years, 65 to 80 years, and above 80 years."
+    plain: "Age is grouped as below 65 years, 65 to 80 years with 80 included, and above 80 years."
+    formal: "Age shall be categorized into the groups below 65 years, 65 to 80 years inclusive, and above 80 years."
     brief: "Age groups (years): <65, 65-80, >80."
   lt65_ge65:
     plain: "Age is grouped as below 65 years, and 65 years or above."

@@ -261,10 +261,12 @@ def _parse(root: Path, args: argparse.Namespace) -> int:
     form = standard_form.StandardForm(catalog.load(catalog.default_dir(root, args.catalog)))
     text = Path(args.document).read_text(encoding="ascii")
     try:
-        doc, parsed = form.parse_document(text)
+        doc, parsed, cases, _ = form.parse_full(text)
     except standard_form.StandardFormError as error:
         print(f"cannot parse: {error}")
         return 1
+    if cases:
+        print(f"left out: {len(cases)} decisions by design (they need the design's features)")
     status_class = ("default", "house_default") if doc == DOCUMENT_ID else \
         ("stated", "document_rule")
     with open(args.out, "w", encoding="ascii", newline="\n") as handle:

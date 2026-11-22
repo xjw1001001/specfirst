@@ -26,5 +26,4 @@ once per table family; the counts do not change.
 - An active comparator has no place in a dose order. If the study has one and the text does
   not say where its column goes, report that.
 - The total column is `tfl.columns.total`, not this entry.
-- Silent documents: use the house default `ascending_dose_placebo_first` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.

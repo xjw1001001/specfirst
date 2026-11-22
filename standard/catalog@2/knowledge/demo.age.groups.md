@@ -27,4 +27,4 @@ demographics table and any analysis by age group.
 - There is always one more group below the first cut. In a study of adults, groups written
   "18-64, 65-74, >=75" are the cuts 65 and 75; do not add the lowest eligible age as a cut.
 - Age groups used to stratify the randomization need not be the groups of the table.
-- Silent documents: use the house default `lt65_65to80_gt80` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

@@ -25,5 +25,4 @@ body mass index) show the first and third quartile next to the other statistics.
 - A general convention applies to the demographics table unless its shell shows otherwise;
   if text and shell disagree, cite both passages.
 - This entry is for the demographics table only; it does not decide the vital signs table.
-- Silent documents: use the house default `n_mean_sd_median_min_max` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.

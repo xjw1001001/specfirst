@@ -1,6 +1,6 @@
 # What the step from catalog@1 to catalog@2 keeps (ADR-020, decision 4).
 #
-# One line per alternative or unit that is added, removed (with its
+# One line per alternative, unit or defined term that is added, removed (with its
 # replacement, or none), renamed, or changed in meaning. The meaning of an
 # alternative is the hash of specfirst.compile.migration.meanings: its
 # question, applies_when, statement, definition, slots, the entry's
@@ -10,4 +10,58 @@
 # a record of standard/BACKLOG.yaml accepted for catalog@2.
 from: catalog@1
 to: catalog@2
-changes: []
+changes:
+  # added
+  - {alternative: ae.teae.start/by_time_when_collected, change: added, backlog: i05.date-time}
+  - {alternative: demo.race.pooling/fixed_groups, change: added, backlog: i21.race-map}
+  - {alternative: tfl.ae.socpt.sort/soc_alpha_pt_descending_in_column, change: added, backlog: i09.sort-replaced}
+  - {alternative: trt.end.source/last_ex_record_end, change: added, backlog: i24.last-end-any-record}
+  # removed, with the replacement a record of catalog@1 may go to (a person decides)
+  - {alternative: ae.teae.end/end_of_study, change: removed, replacement: null, backlog: i03.end-of-study-removed}
+  - {alternative: demo.race.pooling/pooled_below_count, change: removed, replacement: demo.race.pooling/fixed_groups, backlog: i21.race-map}
+  - {alternative: tfl.ae.socpt.sort/descending_frequency_highest_dose, change: removed, replacement: tfl.ae.socpt.sort/soc_alpha_pt_descending_in_column, backlog: i09.sort-replaced}
+  # changed in meaning
+  - {alternative: ae.teae.end/last_dose_plus_days, change: changed, backlog: i18.boundary-words}
+  - {alternative: ae.teae.end/no_end, change: changed, backlog: i18.fixed-rules}
+  - {alternative: ae.teae.start/on_or_after_first_dose_date, change: changed, backlog: i04.fixed-rules}
+  - {alternative: ae.teae.start/at_or_after_first_dose_time, change: changed, backlog: i04.fixed-rules}
+  - {alternative: bds.baseline.rule/last_before_first_dose, change: changed, backlog: i06.first-dose-day}
+  - {alternative: bds.baseline.rule/last_on_or_before_first_dose_date, change: changed, backlog: i06.first-dose-day}
+  - {alternative: bds.baseline.rule/scheduled_baseline_visit, change: changed, backlog: i06.first-dose-day}
+  - {alternative: bds.eot.record/last_on_treatment_value, change: changed, backlog: i17.eot-record}
+  - {alternative: bds.unscheduled.use/compete, change: changed, backlog: i21.unscheduled}
+  - {alternative: bds.unscheduled.use/excluded, change: changed, backlog: i21.unscheduled}
+  - {alternative: demo.age.groups/lt65_65to80_gt80, change: changed, backlog: i18.boundary-words}
+  - {alternative: demo.baseline.record/last_on_or_before_first_dose, change: changed, backlog: i06.first-dose-day}
+  - {alternative: demo.bmi.rule/derived, change: changed, backlog: i12.bmi-unrounded}
+  - {alternative: demo.race.pooling/not_pooled, change: changed, backlog: i21.race-map}
+  - {alternative: disp.status.record/disposition_event, change: changed, backlog: i17.screen-failure}
+  - {alternative: disp.status.record/disposition_event_by_subcategory, change: changed, backlog: i17.screen-failure}
+  - {alternative: pop.randomized.rule/all_randomized, change: changed, backlog: i10.randomized-from-ds}
+  - {alternative: pop.randomized.rule/randomized_with_postbaseline, change: changed, backlog: i10.set-names}
+  - {alternative: pop.safety.rule/at_least_one_dose, change: changed, backlog: i10.randomized-from-ds}
+  - {alternative: pop.safety.rule/randomized_and_dosed, change: changed, backlog: i10.randomized-from-ds}
+  - {alternative: tfl.ae.socpt.sort/alphabetical, change: changed, backlog: i09.alphabetical}
+  - {alternative: tfl.ae.socpt.sort/descending_frequency_total, change: changed, backlog: i09.alphabetical}
+  - {alternative: tfl.ae.summary.rows/standard_rows, change: changed, backlog: i13.standard-rows}
+  - {alternative: tfl.ae.summary.rows/stated_rows, change: changed, backlog: i13.rows-added}
+  - {alternative: tfl.percent.format/one_decimal_zero_blank, change: changed, backlog: i01.decimals-slot}
+  - {alternative: tfl.percent.format/one_decimal_always, change: changed, backlog: i01.decimals-slot}
+  - {alternative: tfl.quantile.definition/sas5, change: changed, backlog: i22.quantiles}
+  - {alternative: tfl.quantile.definition/r7, change: changed, backlog: i22.quantiles}
+  - {alternative: tfl.rounding.rule/half_away_from_zero, change: changed, backlog: i23.reading-words}
+  - {alternative: tfl.rounding.rule/half_even, change: changed, backlog: i23.reading-words}
+  # units
+  - {unit: tfl.quantile.definition@tfl-vitals-by-visit, change: removed, backlog: i22.quantiles}
+  - {alternative: bds.window.table/protocol_windows, change: changed, backlog: i06.first-dose-day}
+  - {alternative: bds.window.table/midpoint_windows, change: changed, backlog: i06.first-dose-day}
+  - {alternative: bds.window.table/nominal_visit, change: changed, backlog: i06.first-dose-day}
+  # terms (#18)
+  - {term: treatment start date, change: added, backlog: i18.terms}
+  - {term: treatment end date, change: added, backlog: i18.terms}
+  - {term: randomized subject, change: added, backlog: i18.terms}
+  - {term: safety set, change: added, backlog: i18.terms}
+  - {term: study day, change: added, backlog: i18.terms}
+  - {term: treatment-emergent, change: added, backlog: i18.terms}
+  - {term: baseline, change: added, backlog: i18.terms}
+  - {term: post-baseline, change: added, backlog: i18.terms}

@@ -4,8 +4,12 @@ applies_when: design.collects_vital_signs
 question: How is baseline body mass index obtained?
 alternatives:
   - id: derived
-    statement: "Baseline body mass index is derived from baseline weight and height and rounded to one decimal."
-    definition: "Weight in kg divided by the square of height in m; rounding is half away from zero."
+    statement: "Baseline body mass index is derived from baseline weight and height, at full precision."
+    definition: >-
+      Weight in kg divided by the square of height in m, with height
+      collected in cm and divided by 100; weight in kg and height in cm are
+      assumed. The value is kept at full precision: a table rounds it once,
+      at display (PLAN.md section 7.2).
   - id: as_collected
     statement: "Baseline body mass index is the collected body mass index, selected by the rule for baseline weight and height."
     definition: The collected value is the vital sign with VSTESTCD equal to BMI.
@@ -19,4 +23,5 @@ sources:
     find: "WEIGHTBL / ((HEIGHTBL"
     where: "BMIBL of the pilot ADSL: derived from baseline weight and height"
   - ref: admiral
-    where: "compute_bmi(): weight in kg divided by squared height in m"
+    where: "compute_bmi(): weight in kg divided by squared height in m; inst/templates/ad_advs.R derive_param_bmi() with no rounding step (the review of #12, 2026-11-11)"
+    evidence: cited

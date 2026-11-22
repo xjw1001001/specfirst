@@ -19,7 +19,8 @@ reading: knowledge/tfl.ae.socpt.threshold.md
 probes: [term_at_display_threshold]
 sources:
   - ref: fda-stf
-    where: "common adverse events: terms at or above a stated percentage in any arm"
+    where: "Table 15, page 27, Common Adverse Events Occurring at >=X% Frequency; in which arm the guide does not say, and in any arm is this catalog's reading (the review of #14, 2026-11-11)"
+    evidence: cited
   - ref: p6
     path: documents/CSR.pdf
     where: "Table 14-5.01 shows every term (PLAN.md, E25)"

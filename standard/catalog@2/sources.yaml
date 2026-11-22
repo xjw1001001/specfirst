@@ -65,9 +65,11 @@ sources:
   fda-stf:
     kind: document
     title: "FDA Standard Safety Tables and Figures: Integrated Guide"
-    version: "2022"
+    version: "2.0 (April 2025)"
     url: https://www.fda.gov/media/187065/download
-    confirmed: cited
+    confirmed: >-
+      cited: the sections, tables and pages are those the owner-side review of
+      2026-11-11 opened (#14); no session of specfirst has read the guide
   admiral:
     kind: document
     title: admiral (pharmaverse), function reference and source

@@ -24,4 +24,4 @@ changes from baseline next to each other, or in separate blocks. The numbers are
   `stacked`, which is one table with two blocks. Report the passage with the answer.
 - Change from baseline is shown for post-baseline visits only in both alternatives; an empty
   change cell at Baseline is not a sign of either layout.
-- Silent documents: use the house default `side_by_side` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

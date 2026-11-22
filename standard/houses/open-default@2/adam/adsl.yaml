@@ -1,4 +1,4 @@
-# House standard open-default@1: parent spec of ADSL, one record per subject.
+# House standard open-default@2: parent spec of ADSL, one record per subject.
 #
 # This layer holds what no decision changes. It reads columns that decisions
 # own (TRT01P, TRTSDT, SAFFL and the working values whose names start with
@@ -28,6 +28,23 @@ input:
     path: ../sdtm/sv.parquet
     relative_to: entry
 base: DM
+
+# Randomization (ADR-020, #10): the disposition record RANDOMIZED of the
+# subject, and whether the study has any (keyed by STUDYID alone), so that
+# the planned arm code decides only when the disposition data hold none.
+intermediates:
+  - id: DS_RAND
+    dataset: DS
+    key: [STUDYID, USUBJID]
+    filter: "DS.DSDECOD = 'RANDOMIZED'"
+    order_by: [DS.DSSEQ]
+    keep: first
+  - id: DS_RANDSTUDY
+    dataset: DS
+    key: [STUDYID]
+    filter: "DS.DSDECOD = 'RANDOMIZED'"
+    order_by: [DS.USUBJID, DS.DSSEQ]
+    keep: first
 
 output:
   path: adsl.parquet
@@ -101,14 +118,37 @@ columns:
     label: Subject Reference Start Date/Time
     derivation: DM.RFSTDTC
 
+  - name: _RANDSEQ
+    type: int
+    label: "Working value: sequence number of the subject's disposition record RANDOMIZED"
+    derivation: DS_RAND.DSSEQ
+
+  - name: _RANDSTUDYSEQ
+    type: int
+    label: "Working value: the disposition data of the study hold a record RANDOMIZED"
+    derivation: DS_RANDSTUDY.DSSEQ
+
   - name: RANDFL
     type: str
     label: Randomized Population Flag
     derivation:
-      flag:
-        condition: "ARMCD IS NOT NULL AND ARMCD <> '' AND ARMCD NOT IN ('SCRNFAIL', 'NOTASSGN')"
-        false_value: N
-        missing: N
+      case:
+        - when: "_RANDSEQ IS NOT NULL"
+          then: "'Y'"
+        - when: "_RANDSTUDYSEQ IS NOT NULL"
+          then: "'N'"
+        - when: "ARMCD IS NOT NULL AND ARMCD <> '' AND ARMCD NOT IN ('SCRNFAIL', 'NOTASSGN')"
+          then: "'Y'"
+        - otherwise: "'N'"
+
+  - name: RANDDT
+    type: date
+    label: Date of Randomization
+    derivation:
+      impute:
+        type: date
+        source: DS_RAND.DSSTDTC
+        invalid: null
 
   - name: EOSDT
     type: date
@@ -124,6 +164,8 @@ columns:
     label: End of Study Status
     derivation:
       case:
+        - when: "_EOSDECOD = 'SCREEN FAILURE'"
+          then: null
         - when: "_EOSDECOD = 'COMPLETED'"
           then: "'COMPLETED'"
         - when: "_EOSDECOD IS NOT NULL AND _EOSDECOD <> ''"

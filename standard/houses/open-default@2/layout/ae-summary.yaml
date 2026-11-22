@@ -1,4 +1,4 @@
-# House standard open-default@1: layout template of the adverse event
+# House standard open-default@2: layout template of the adverse event
 # summary table. Layout draft 0; see layout/demographics.yaml for the parts.
 output:
   id: Out_AESUM

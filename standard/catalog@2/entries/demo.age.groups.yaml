@@ -4,11 +4,16 @@ applies_when: design.always
 question: Which age groups are used?
 alternatives:
   - id: lt65_65to80_gt80
-    statement: "Age groups are below 65, 65 to 80, and above 80 years."
+    statement: "Age groups are below 65, 65 to 80 (80 included), and above 80 years."
     definition: "The groups are labelled <65, 65-80 and >80. An age of exactly 80 is in 65-80."
   - id: lt65_ge65
     statement: "Age groups are below 65 years, and 65 years and above."
     definition: "The groups are labelled <65 and >=65."
+    sources:
+      - ref: ars
+        path: "workfiles/examples/ARS v1/Common Safety Displays.json"
+        find: "AnlsGrouping_03_AgeGp"
+        where: "the age grouping of the demographics analyses: < 65 years and >= 65 years"
   - id: stated_cuts
     statement: "Age groups start at the ages {cuts} years, with one more group below the first of them."
     definition: >-

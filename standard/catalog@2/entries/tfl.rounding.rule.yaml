@@ -7,7 +7,12 @@ alternatives:
     statement: "Displayed numbers in {output} are rounded half away from zero."
   - id: half_even
     statement: "Displayed numbers in {output} are rounded half to even."
-notes: A number is rounded once, from its full precision to the displayed decimals.
+notes: >-
+  A number is rounded once, from its full precision to the displayed
+  decimals. A number is halfway when the shortest decimal text that gives
+  back the same double (Python repr, as the method registry reads it) has a
+  5 as its first dropped digit and nothing after it: 2.675 is halfway, though
+  the double stored for it is slightly below 2.675.
 compile: templates/tfl.rounding.rule.yaml
 phrasings: phrasings/tfl.rounding.rule.yaml
 reading: knowledge/tfl.rounding.rule.md

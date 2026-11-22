@@ -15,6 +15,8 @@ summary table. An event whose causality value is not in the list is not related.
 - `stated_list`: "related events are those assessed as possibly, probably or definitely
   related", "events with a relationship of related", "related includes ...". The slot
   `values` is the list of collected causality values that count, as the study collects them.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ## Traps
 
@@ -25,5 +27,5 @@ summary table. An event whose causality value is not in the list is not related.
   express that; report the sentence with the answer.
 - "Unlikely related" is the usual boundary case. Include it only if the text does.
 - A two-level scale (related, not related) still needs the list; it then has one value.
-- Silent documents: this entry has no house default. Do not guess from the scale;
-  a person must be asked.
+- Silent documents: when the house standard states no default for this entry, do not guess
+  from the scale; a person must be asked.

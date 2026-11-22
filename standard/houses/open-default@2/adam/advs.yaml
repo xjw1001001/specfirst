@@ -1,4 +1,4 @@
-# House standard open-default@1: parent spec of ADVS, the vital signs
+# House standard open-default@2: parent spec of ADVS, the vital signs
 # analysis dataset in the basic data structure.
 #
 # This layer holds what no decision changes. It reads columns that decisions
@@ -12,7 +12,9 @@
 # _ROWKIND tells the two kinds of rows apart.
 #
 #   baseline      the last row with _PRE = 'Y' among the eligible rows
-#   post-baseline a row dated after the treatment start date
+#   post-baseline a row dated after the treatment start date, or on that date,
+#                 not before the first dose (_PRE = N) and timed at or after a
+#                 timed first dose (ADR-020, #6)
 #   AVISIT        End of Treatment, Baseline, or the visit of the decision
 #                 bds.window.table for an eligible post-baseline row
 #   ANL01FL       the baseline row, the end-of-treatment row, and the row
@@ -32,6 +34,17 @@ input:
     schema: adsl.yaml
     key: [STUDYID, USUBJID]
 base: VS
+
+# The unit of a parameter: the first non-missing standard unit of the test in
+# the study, by subject and sequence number, so that PARAM is one text per
+# PARAMCD (ADaMIG; ADR-020, #17).
+intermediates:
+  - id: VS_UNIT
+    dataset: VS
+    key: {STUDYID: STUDYID, VSTESTCD: PARAMCD}
+    filter: "VS.VSSTRESU IS NOT NULL AND VS.VSSTRESU <> ''"
+    order_by: [VS.USUBJID, VS.VSSEQ]
+    keep: first
 
 output:
   path: advs.parquet
@@ -66,7 +79,7 @@ columns:
       case:
         - when: "_ROWKIND = 'EOT'"
           then: "'LOV'"
-        - otherwise: "''"
+        - otherwise: "''"  # not null: DTYPE is a key of ADVS (ADR-020, #17)
 
   - name: TRTP
     type: str
@@ -127,10 +140,30 @@ columns:
     label: Parameter Code
     derivation: VS.VSTESTCD
 
+  # PARAM with the unit, AVALU from the standard unit (ADR-020, #17).
+  - name: AVALU
+    type: str
+    label: Analysis Value Unit
+    derivation:
+      case:
+        - when: "VS.VSSTRESU IS NULL OR VS.VSSTRESU = ''"
+          then: null
+        - otherwise: VS.VSSTRESU
+
+  - name: _PARAMU
+    type: str
+    label: "Working value: the test name with the unit of its parameter"
+    derivation:
+      str_template: {template: "{VS.VSTEST} ({VS_UNIT.VSSTRESU})", missing: null}
+
   - name: PARAM
     type: str
     label: Parameter
-    derivation: VS.VSTEST
+    derivation:
+      case:
+        - when: "_PARAMU IS NULL"
+          then: VS.VSTEST
+        - otherwise: _PARAMU
 
   - name: AVAL
     type: float
@@ -199,16 +232,21 @@ columns:
     label: "Working value: the visit is scheduled"
     derivation:
       flag:
-        condition: "_VISITDY IS NOT NULL"
+        # bds.unscheduled.use, fixed rule unscheduled_visit (ADR-020, #21)
+        condition: "_VISITDY IS NOT NULL AND (VISIT IS NULL OR VISIT NOT LIKE '%UNSCHED%')"
         false_value: N
         missing: N
 
+  # Post-baseline is time-aware the way the baseline rule is (ADR-020, #6): a
+  # record on the treatment start date that is not before the first dose and
+  # was timed at or after a timed first dose is post-baseline, so that no
+  # record falls between baseline and post-baseline.
   - name: _POST
     type: str
     label: "Working value: the record is post-baseline"
     derivation:
       flag:
-        condition: "ADT > TRTSDT"
+        condition: "ADT > TRTSDT OR (ADT = TRTSDT AND _PRE = 'N' AND _TIMED = 'Y' AND _TRTSTMF IS NULL AND _ADTM >= TRTSDTM)"
         false_value: N
         missing: N
 

@@ -73,6 +73,21 @@ def catalog_problems(catalog: Catalog, root: Path) -> list[str]:
     problems = list(catalog.load_problems)
     if len(catalog.entries) < MINIMUM_ENTRIES:
         problems.append(f"{len(catalog.entries)} entries; the plan asks for {MINIMUM_ENTRIES}")
+    for term, body in (catalog.raw.get("terms") or {}).items():
+        if not isinstance(body, dict) or body.get("entry") not in catalog.entries \
+                or not body.get("text"):
+            problems.append(f"term '{term}': a term names an entry of the catalog and its text")
+    for entry in catalog.entries.values():
+        ids = [rule.get("id") for rule in entry.fixed_rules]
+        if len(set(ids)) != len(ids) or set(ids) & set(entry.units):
+            problems.append(f"{entry.id}: a fixed rule ID is used twice, or is a unit")
+        reading = catalog.directory / entry.reading if entry.reading else None
+        if not catalog.has_defaults and reading is not None and reading.is_file():
+            # From catalog@2 the defaults are a house's: a note names none (ADR-020).
+            for number, line in enumerate(reading.read_text(encoding="ascii").splitlines(), 1):
+                if re.search(r"house default\W*`", line):
+                    problems.append(f"{entry.id}: {entry.reading}, line {number}, names a house "
+                                    "default; the defaults are the house's (defaults.yaml)")
     phrases: dict[str, str] = {}
     for unit in catalog.units.values():
         if unit.kind not in ("module", "table_family"):
@@ -180,6 +195,9 @@ def source_problems(catalog: Catalog, root: Path, cache: Path | None = None) -> 
         cited = [(entry.id, s) for s in entry.sources]
         for alternative in entry.alternatives:
             cited += [(f"{entry.id}/{alternative.id}", s) for s in alternative.sources]
+        for rule in entry.fixed_rules:  # from catalog@2
+            cited += [(f"{entry.id}/{rule.get('id')}", s) for s in rule.get("sources") or []
+                      if isinstance(s, dict)]
         for where, source in cited:
             ref = source.get("ref")
             if ref not in catalog.sources:
@@ -575,6 +593,8 @@ def house_problems(catalog: Catalog, house: House, root: Path) -> list[str]:
     if [(r["id"], r["unit"], r["value"]) for r in records] != \
             [(r["id"], r["unit"], r["value"]) for r in form.order(defaults)]:
         problems.append("house: the parsed standards document differs from the defaults")
+    if house.defaults_file is not None:
+        problems += _document_cases_and_rules(catalog, house, form, text)
     for record in records:
         for problem in schemas.problems("decision-record", record, root=root):
             problems.append(f"house: default {record['id']}: {problem}")
@@ -584,10 +604,42 @@ def house_problems(catalog: Catalog, house: House, root: Path) -> list[str]:
         for entry_id in meta.get("optional") or []:
             if entry_id not in catalog.entries:
                 problems.append(f"house: {dataset}: optional names the unknown entry '{entry_id}'")
+    if house.defaults_file is not None:  # the house rule of labels, from open-default@2 (#33)
+        from specfirst.compile import attributes
+
+        parents = {dataset: house.read(str(meta.get("parent", "")))
+                   for dataset, meta in house.adam.items()
+                   if (house.directory / str(meta.get("parent", ""))).is_file()}
+        problems += [f"house: {problem}" for problem in attributes.carried_label_problems(parents)]
     for relative in [house.ars.get("common"), *(house.ars.get("families") or {}).values(),
                      *(house.layout.get("families") or {}).values()]:
         if not relative or not (house.directory / relative).is_file():
             problems.append(f"house: the template {relative} is missing")
+    return problems
+
+
+def _document_cases_and_rules(catalog: Catalog, house: House, form: StandardForm,
+                              text: str) -> list[str]:
+    """A document anchored by entry states every default by design and every fixed rule."""
+    problems = []
+    try:
+        _, _, cases, fixed = form.parse_full(text)
+    except StandardFormError as error:
+        return [f"house: STANDARD.md: {error}"]
+    for entry_id, unit in catalog.keys():
+        if not house_module.by_design(catalog, house, entry_id, unit):
+            continue
+        wanted = [{"rule": case["rule"], **(case.get("values") or {})} for case in
+                  house_module.choices(house, entry_id, unit, catalog.entry(entry_id).per_family)]
+        stated = [line["value"] for line in cases.get((entry_id, unit), [])]
+        if stated != wanted:
+            problems.append(f"house: STANDARD.md states the cases of {entry_id} ({unit}) as "
+                            f"{stated}, not as defaults.yaml: {wanted}")
+    for entry in catalog.entries.values():
+        for rule in entry.fixed_rules:
+            if f"{entry.id}/{rule.get('id')}" not in fixed:
+                problems.append(f"house: STANDARD.md does not state the fixed rule "
+                                f"{entry.id}/{rule.get('id')}")
     return problems
 
 
@@ -649,6 +701,10 @@ def defaults_problems(catalog: Catalog, house: House, root: Path) -> list[str]:
                 if case.get("values"):
                     problems.append(f"{where}: no default, but slot values")
                 continue
+            for source in case.get("sources") or []:
+                if isinstance(source, dict) and source.get("ref") not in catalog.sources:
+                    problems.append(f"{where}: the source '{source.get('ref')}' is not in "
+                                    "sources.yaml of the catalog")
             value = {"rule": case["rule"], **(case.get("values") or {})}
             try:
                 form.check_value(entry_id, unit, value)
@@ -675,7 +731,7 @@ def template_directive_problems(catalog: Catalog, house: House) -> list[str]:
             for key, value in node.items():
                 if isinstance(key, str) and key.startswith("$") and key not in DIRECTIVES:
                     problems.append(f"{where}: unknown directive '{key}'")
-                if key == "$fn" and value not in FUNCTIONS:
+                if key == "$fn" and not (isinstance(value, str) and value in FUNCTIONS):
                     problems.append(f"{where}: unknown helper '{value}'; the helpers are "
                                     f"{', '.join(sorted(FUNCTIONS))}")
                 walk(value, where)

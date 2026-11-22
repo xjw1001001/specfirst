@@ -16,6 +16,12 @@ differ only for a subject who was dosed without being randomized.
   treated subjects", "all subjects exposed to study drug".
 - `randomized_and_dosed`: "all randomized subjects who received at least one dose",
   "randomized and treated subjects".
+- Ambiguous between the two: "all subjects exposed to at least one dose of randomized
+  treatment" (the FDA guide, section 2.1.1). "Randomized treatment" may mean the trial's
+  treatment rather than a test of randomization; report the passage and say which reading
+  was taken.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment: "all participants who received at least one dose of study intervention".
 
 ## Traps
 
@@ -27,4 +33,4 @@ differ only for a subject who was dosed without being randomized.
 - Added conditions such as "and at least one post-dose safety assessment" match no
   alternative; report the passage.
 - Whether the set is grouped as treated or as randomized is `pop.safety.grouping`.
-- Silent documents: use the house default `at_least_one_dose` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

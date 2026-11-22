@@ -1,19 +1,35 @@
 id: demo.race.pooling
 unit: mod-demographics
 applies_when: design.always
-question: Are small race categories pooled?
+question: Are race categories regrouped?
 alternatives:
   - id: not_pooled
     statement: "Race categories are shown as collected and are not pooled."
-  - id: pooled_below_count
-    statement: "A race category with fewer than {count} subjects is pooled into the category OTHER."
-    definition: The subjects are counted over all subjects of the subject-level dataset, whatever their arm.
+  - id: fixed_groups
+    statement: "Race is grouped by a stated map, and a value the map does not name is grouped as {other}: {map}."
+    definition: >-
+      Each collected value of RACE that the map names goes to its group; any
+      other collected value goes to the group named first in the sentence. A
+      subject without a race has no group. The groups are written to
+      RACEGR1.
     slots:
-      count: {type: int, min: 1, examples: [5, 10]}
+      other: {type: text, examples: ["Non-white", "Other"]}
+      map:
+        type: records
+        fields: {race: text, group: text}
+        item: "{race} as {group}"
+        unique: [race]
+        examples:
+          - [{race: WHITE, group: White}]
+          - [{race: WHITE, group: White}, {race: BLACK OR AFRICAN AMERICAN, group: Black}]
+    sources:
+      - ref: admiral
+        where: "inst/templates/ad_adsl.R, format_racegr1(): WHITE to White, any other value to Non-white (the review of #21, 2026-11-11)"
+        evidence: cited
 compile: templates/demo.race.pooling.yaml
 phrasings: phrasings/demo.race.pooling.yaml
 reading: knowledge/demo.race.pooling.md
-probes: [race_category_at_pooling_count]
+probes: [race_value_the_map_regroups]
 sources:
   - ref: adamig
     where: "ADSL subject-level grouping variables, RACEGRy (pooled race group); the rule of pooling is the sponsor's"

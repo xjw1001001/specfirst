@@ -27,5 +27,5 @@ each in the order given. Anything left out of a list is not shown.
 - Visit names must equal the analysis visit names: those of the window table when
   `bds.window.table` has one, otherwise the collected visit names.
 - "All vital signs" or "each visit" with no names leaves the slots open; report that.
-- Silent documents: this entry has no house default. Do not guess the lists;
-  a person must be asked.
+- Silent documents: when the house standard states no default for this entry, do not guess
+  the lists; a person must be asked.

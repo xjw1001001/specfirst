@@ -18,21 +18,46 @@ defaults:
   trt.date.imputation: {rule: not_completed}
   date.studyday.origin: {rule: treatment_start}
   pop.randomized.rule: {rule: all_randomized}
-  pop.safety.rule: {rule: at_least_one_dose}
+  pop.safety.rule:  # #2: randomized and dosed when the study randomizes
+    cases:
+      - when: design.randomized
+        rule: randomized_and_dosed
+        sources:
+          - {ref: p7, path: cdiscpilot01/spec/yamaa/adsl.yaml, find: "Y if ITTFL='Y' and TRTSDT ne missing", where: "SAFFL of the pilot ADSL: randomized and dosed"}
+          - {ref: fda-stf, where: "section 2.1.1, page 5: all subjects exposed to at least one dose of randomized treatment, one reading of an ambiguous sentence (the review of #2, 2026-11-11)", evidence: cited}
+      - rule: at_least_one_dose
+        sources:
+          - {ref: ich-e9, where: "section 6.3: the safety set, subjects who received at least one dose"}
   pop.safety.grouping: {rule: actual}
   pop.efficacy.rule: {rule: null}
   disp.status.record: {rule: disposition_event}
-  demo.age.groups: {rule: lt65_65to80_gt80}
+  demo.age.groups:  # #7
+    rule: lt65_ge65
+    sources:
+      - {ref: ars, path: "workfiles/examples/ARS v1/Common Safety Displays.json", where: "grouping AnlsGrouping_03_AgeGp on AGEGR1: < 65 years and >= 65 years"}
   demo.race.pooling: {rule: not_pooled}
-  demo.baseline.record: {rule: last_on_or_before_first_dose}
+  demo.baseline.record:  # #6: the same rule as the baseline of ADVS
+    rule: last_on_or_before_first_dose
+    sources:
+      - {ref: admiral, where: "inst/templates/ad_advs.R: ABLFL the last record with ADT <= TRTSDT, a date comparison (the review of #6, 2026-11-11)", evidence: cited}
   demo.bmi.rule: {rule: derived}
   ae.start.imputation: {rule: first_of_month_not_before_first_dose}
   ae.teae.start: {rule: on_or_after_first_dose_date}
-  ae.teae.end: {rule: no_end}
+  ae.teae.end:  # #3
+    rule: last_dose_plus_days
+    values: {days: 30}
+    sources:
+      - {ref: admiral, where: "inst/templates/ad_adae.R: derive_var_trtemfl(trt_end_date = TRTEDT, end_window = 30) (the review of #3, 2026-11-11)", evidence: cited}
   ae.related.values: {rule: null}
-  bds.baseline.rule: {rule: last_before_first_dose}
+  bds.baseline.rule:  # #6
+    rule: last_on_or_before_first_dose_date
+    sources:
+      - {ref: admiral, where: "inst/templates/ad_advs.R: ABLFL the last record by ADT, VISITNUM, VSSEQ with ADT <= TRTSDT (the review of #6, 2026-11-11)", evidence: cited}
   bds.window.table: {rule: nominal_visit}
-  bds.window.tiebreak: {rule: closest_then_earlier}
+  bds.window.tiebreak:  # #11
+    rule: last_record
+    sources:
+      - {ref: admiral, where: "inst/templates/ad_advs.R: ANL01FL the last record per USUBJID, PARAMCD, AVISIT, ATPT, DTYPE by ADT and AVAL, AVISIT from VISIT (the review of #11, 2026-11-11)", evidence: cited}
   bds.unscheduled.use: {rule: compete}
   bds.eot.record: {rule: last_on_treatment_value}
   tfl.output.include:
@@ -55,20 +80,20 @@ defaults:
       tfl-vitals-by-visit: {rule: ascending_dose_placebo_first}
   tfl.columns.total:
     units:
-      tfl-demographics: {rule: all_arms}
-      tfl-ae-summary: {rule: all_arms}
-      tfl-ae-soc-pt: {rule: all_arms}
-      tfl-vitals-by-visit: {rule: all_arms}
+      tfl-demographics:  # #8
+        rule: all_arms
+        sources:
+          - {ref: fda-stf, where: "Table 2, page 8: the column Total Population (the review of #8, 2026-11-11)", evidence: cited}
+      tfl-ae-summary: {rule: none}
+      tfl-ae-soc-pt: {rule: none}
+      tfl-vitals-by-visit: {rule: none}
   tfl.denominator: {rule: analysis_set_per_column}
   tfl.percent.format:
     units:
-      tfl-demographics: {rule: one_decimal_zero_blank}
-      tfl-ae-summary: {rule: one_decimal_zero_blank}
-      tfl-ae-soc-pt: {rule: one_decimal_zero_blank}
-  tfl.quantile.definition:
-    units:
-      tfl-demographics: {rule: sas5}
-      tfl-vitals-by-visit: {rule: sas5}
+      tfl-demographics: {rule: one_decimal_always, values: {decimals: 1}, sources: [{ref: ars, path: "workfiles/examples/ARS v1/Common Safety Displays.json", where: "every count of 0 with its formatted percentage (  0.0), one decimal"}]}  # #1
+      tfl-ae-summary: {rule: one_decimal_always, values: {decimals: 1}, sources: [{ref: ars, path: "workfiles/examples/ARS v1/Common Safety Displays.json", where: "every count of 0 with its formatted percentage (  0.0), one decimal"}]}
+      tfl-ae-soc-pt: {rule: one_decimal_always, values: {decimals: 1}, sources: [{ref: ars, path: "workfiles/examples/ARS v1/Common Safety Displays.json", where: "every count of 0 with its formatted percentage (  0.0), one decimal"}]}
+  tfl.quantile.definition: {rule: sas5}  # #22: the demographics table only
   tfl.rounding.rule:
     units:
       tfl-demographics: {rule: half_away_from_zero}

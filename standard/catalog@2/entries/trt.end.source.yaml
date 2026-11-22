@@ -13,6 +13,12 @@ alternatives:
       The disposition date is the start date of the end-of-study record
       (decision disp.status.record). It is taken only for a subject with a
       treatment start.
+  - id: last_ex_record_end
+    statement: "The treatment end date is the latest end date of any exposure record."
+    definition: >-
+      Every exposure record takes part, whatever its dose: the counterpart of
+      trt.start.source/first_ex_record, for an EX in which EXDOSE is not
+      populated (EXDOSE is not a Required variable of SDTMIG).
 notes: >-
   An exposure record has a dose when EXDOSE is above zero, or when EXDOSE is
   zero and EXTRT contains PLACEBO. Which partial dates take part is decision
@@ -20,7 +26,7 @@ notes: >-
 compile: templates/trt.end.source.yaml
 phrasings: phrasings/trt.end.source.yaml
 reading: knowledge/trt.end.source.md
-probes: [last_exposure_record_spans_days, no_exposure_end_date]
+probes: [last_exposure_record_spans_days, no_exposure_end_date, undosed_record_after_last_dose]
 sources:
   - ref: adamig
     where: "ADSL treatment timing variables, TRTEDT"

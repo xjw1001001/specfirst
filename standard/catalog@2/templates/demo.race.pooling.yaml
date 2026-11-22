@@ -8,24 +8,18 @@ alternatives:
             type: str
             label: Pooled Race Group 1
             derivation: RACE
-  pooled_below_count:
+  fixed_groups:
     adam:
       ADSL:
         columns:
-          - name: _RACEN
-            type: int
-            label: "Working value: number of subjects of the same race"
-            derivation:
-              aggregate:
-                key: {RACE: RACE}
-                expr: "COUNT(DM.USUBJID)"
           - name: RACEGR1
             type: str
             label: Pooled Race Group 1
             derivation:
               case:
-                - when: "RACE IS NULL OR RACE = ''"
-                  then: null
-                - when: "_RACEN < ${count}"
-                  then: "'OTHER'"
-                - otherwise: RACE
+                $concat:
+                  - [{when: "RACE IS NULL OR RACE = ''", then: null}]
+                  - $for: m
+                    in: {$get: map}
+                    do: {when: "RACE = ${m.race|q}", then: "${m.group|q}"}
+                  - [{otherwise: "${other|q}"}]

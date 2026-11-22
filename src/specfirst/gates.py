@@ -807,6 +807,10 @@ GATES: dict[str, tuple[Check, ...]] = {
     # ADR-020: the structure of catalog@2 and open-default@2. The checks of std-1
     # on the new pair, then the checks of the versions themselves.
     "catalog-2a": _catalog2(),
+    # ADR-020: the content of catalog@2 and open-default@2 (decision 7), the same
+    # checks; at the freeze the check "backlog" holds that no record is still
+    # accepted for a frozen version.
+    "catalog-2b": _catalog2(),
     # PLAN.md section 13.5 and ADR-005: the gate of gen-1 for the datasets and
     # the decisions of the slice. The environment check covers CDISC CORE.
     "gen-1a": (

@@ -33,4 +33,4 @@ whether a record taken off schedule moves to another visit or drops out.
   unscheduled visit has no analysis visit.
 - Target days follow the study day convention (`date.studyday.origin`): with the first dose
   on day 1, Week 2 is day 15. Use the days the SAP gives; do not compute them from weeks.
-- Silent documents: use the house default `nominal_visit` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

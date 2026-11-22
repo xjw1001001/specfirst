@@ -28,5 +28,4 @@ the body mass index at baseline.
 - A general baseline definition in the SAP covers weight and height unless the demographics
   section names a visit. The baseline of by-visit parameters is `bds.baseline.rule`.
 - The visit name is compared exactly with the collected visit name; copy it as written.
-- Silent documents: use the house default `last_on_or_before_first_dose` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.

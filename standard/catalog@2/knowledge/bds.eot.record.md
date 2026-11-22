@@ -29,5 +29,4 @@ analysis visit End of Treatment, that the by-visit tables can show as a row.
   value.
 - An End of Treatment row in `tfl.vs.scope` needs `last_on_treatment_value`; check the two
   answers against each other.
-- Silent documents: use the house default `last_on_treatment_value` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.

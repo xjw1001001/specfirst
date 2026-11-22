@@ -26,4 +26,4 @@ shown for a very small p-value. It matters only when treatments are compared the
   this answer changes nothing; still record what the documents state.
 - A convention stated for all p-values of the study covers the demographics table; one
   stated for a single analysis does not.
-- Silent documents: use the house default `three_decimals` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

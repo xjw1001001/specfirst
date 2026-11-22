@@ -27,4 +27,4 @@ which documents usually call the intent-to-treat set or the full analysis set.
   a laboratory test or "any efficacy assessment", report the passage.
 - When the SAP defines both an all-randomized set and a narrower evaluable set, this entry is
   the all-randomized one; the narrower set belongs to `pop.efficacy.rule`.
-- Silent documents: use the house default `all_randomized` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.

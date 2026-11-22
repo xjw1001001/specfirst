@@ -14,9 +14,10 @@ catalogs:
     by: the owner at node N1 (ADR-004, "Node N1, the owner's answer"); tag catalog@1
     tree: a25d42c08d37352131b9320a62c7fa2ce266cb9b
   catalog@2:
-    status: draft
+    status: frozen
     date: 2026-11-21
-    by: ADR-020, approved by the owner on 2026-11-21
+    by: the merge of catalog-2b (ADR-020, decisions 3 and 7, approved by the owner on 2026-11-21); tag catalog@2
+    tree: 1a3dcc6575849a57f47257b8daaf5eb30d995be9
 houses:
   open-default@1:
     status: frozen
@@ -25,7 +26,8 @@ houses:
     catalog: catalog@1
     tree: 7ac0f4fc4d76333817b6e3edf21e156afec38ef4
   open-default@2:
-    status: draft
+    status: frozen
     date: 2026-11-21
-    by: ADR-020, approved by the owner on 2026-11-21
+    by: the merge of catalog-2b with catalog@2 (ADR-020, approved by the owner on 2026-11-21); tag open-default@2
     catalog: catalog@2
+    tree: 550cb664b4d64a304f9d14bbd995379d16602601

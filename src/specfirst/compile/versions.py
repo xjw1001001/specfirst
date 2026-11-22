@@ -44,6 +44,8 @@ STATUSES = ("draft", "frozen")
 PINNED = {
     "catalog@1": "a25d42c08d37352131b9320a62c7fa2ce266cb9b",
     "open-default@1": "7ac0f4fc4d76333817b6e3edf21e156afec38ef4",
+    "catalog@2": "1a3dcc6575849a57f47257b8daaf5eb30d995be9",
+    "open-default@2": "550cb664b4d64a304f9d14bbd995379d16602601",
 }
 _CATALOG = re.compile(r"^catalog@([1-9][0-9]*)$")
 _HOUSE = re.compile(r"^([a-z][a-z0-9-]*)@([1-9][0-9]*)$")
@@ -178,6 +180,16 @@ def frozen_problems(root: Path) -> list[str]:
                     f"{label}: the folder {relative(label)} has the tree {found}, frozen as "
                     f"{version.tree}: a frozen version does not change; a change is a new "
                     "version (ADR-020, decision 4)")
+    for label, pinned in PINNED.items():  # whatever the default pair (review, pass 2, G1)
+        version = versions.get(label)
+        if version is None or version.status != "frozen":
+            said = "does not list it" if version is None else f"calls it {version.status}"
+            problems.append(f"{label}: pinned as frozen, and {VERSIONS} {said}")
+        path = folder(root, label)
+        found = tree_hash(path) if path.is_dir() else "none"
+        if found != pinned:
+            problems.append(f"{label}: the folder {relative(label)} has the tree {found}, "
+                            f"pinned as {pinned}: a frozen version does not change")
     base = root / "standard"
     on_disk = sorted(p.name for p in base.glob("catalog@*") if p.is_dir())
     on_disk += sorted(p.name for p in (base / "houses").glob("*@*") if p.is_dir())

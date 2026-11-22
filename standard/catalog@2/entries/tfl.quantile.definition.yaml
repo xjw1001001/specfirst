@@ -1,12 +1,16 @@
 id: tfl.quantile.definition
-units: [tfl-demographics, tfl-vitals-by-visit]
+unit: tfl-demographics
 applies_when: design.always
 question: Which quantile definition gives the median and the quartiles?
 alternatives:
   - id: sas5
-    statement: "Quantiles in {output} follow SAS definition 5, the empirical distribution function with averaging."
+    statement: "Quantiles in the demographics table follow SAS definition 5 (R type 2), the empirical distribution function with averaging."
   - id: r7
-    statement: "Quantiles in {output} follow R type 7, linear interpolation of the order statistics."
+    statement: "Quantiles in the demographics table follow R type 7, linear interpolation of the order statistics."
+notes: >-
+  Only the demographics table can show quartiles (decision tfl.demog.stats);
+  the vital signs table shows the median and no quartile, and both
+  definitions give the same median.
 compile: templates/tfl.quantile.definition.yaml
 phrasings: phrasings/tfl.quantile.definition.yaml
 reading: knowledge/tfl.quantile.definition.md
