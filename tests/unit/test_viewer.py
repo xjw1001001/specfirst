@@ -156,3 +156,9 @@ def test_a_cell_without_a_panel_a_broken_path_and_a_decision_off_the_sheet_are_s
     off.sheet = []
     _, found = check.acceptance(off, text, ("Out_X",))
     assert found == ["the sheet does not list the decision demo.sex (mod-demographics)"]
+    # An entry of the catalog the kit names that the sheet does not list.
+    entries = copy.deepcopy(made)
+    entries.catalog_keys = ["demo.sex (mod-demographics)", "demo.bmi.rule (mod-demographics)"]
+    _, found = check.acceptance(entries, text, ("Out_X",))
+    assert found == ["the sheet does not list the entry demo.bmi.rule (mod-demographics) of "
+                     "the catalog"]

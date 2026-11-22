@@ -30,16 +30,15 @@ What a panel says, and where it comes from:
 
 from __future__ import annotations
 
-import html
 import json
-import shutil
-import subprocess
+import re
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from specfirst import kit as kits
 from specfirst.machine import ars
+from specfirst.machine import decisions as decision_records
 from specfirst.machine.canonical import read_jsonl
 from specfirst.paths import build_dir
 from specfirst.recompute import reading
@@ -67,6 +66,7 @@ class Citation:
     verified: bool  # a script found the text at the document
     approved_by: str | None
     origin: str  # imported (another project's), built, or record (a decision record)
+    checkable: bool = True  # False: the source is no document of the kit (the owner's answers)
 
 
 @dataclass
@@ -98,6 +98,7 @@ class DecisionView:
     binds: list[str]
     p4: str  # the class of the P4 matrix, or NOT_TESTED
     source: str  # the decisions file
+    house_sources: list[str] = field(default_factory=list)  # of the house's default, if taken
 
 
 @dataclass
@@ -161,55 +162,16 @@ class Review:
     decisions: dict[str, DecisionView]
     sheet: list[SheetLine]
     problems: list[str]
+    catalog_keys: list[str] = field(default_factory=list)  # every <entry> (<unit>) of the catalog
 
 
 def _json(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(", ", ": "))
 
 
-def _squeeze(text: str) -> str:
-    return "".join(html.unescape(str(text)).split())
-
-
-class Quotes:
-    """The texts of a kit's documents, to check a quote by script: a PDF by poppler's
-    pdftotext, an XML or text file as it is; blanks do not count."""
-
-    def __init__(self, kit: kits.Kit, folder: Path):
-        self.kit, self.folder = kit, folder
-        self._texts: dict[str, str] = {}
-
-    def text(self, doc_id: str) -> str | None:
-        if doc_id not in self._texts:
-            document = next((d for d in self.kit.documents if d.id == doc_id), None)
-            path = None if document is None else self.folder / document.file
-            if path is None or not path.is_file():
-                return None
-            if path.suffix.lower() == ".pdf":
-                if shutil.which("pdftotext") is None:
-                    raise ReviewError("pdftotext is not installed; it comes with poppler")
-                done = subprocess.run(["pdftotext", "-layout", str(path), "-"],
-                                      capture_output=True, text=True, encoding="utf-8",
-                                      errors="replace", check=False)
-                if done.returncode != 0:
-                    raise ReviewError(f"pdftotext exited {done.returncode} on {document.file}")
-                self._texts[doc_id] = _squeeze(done.stdout)
-            else:
-                self._texts[doc_id] = _squeeze(path.read_text(encoding="utf-8",
-                                                              errors="replace"))
-        return self._texts[doc_id]
-
-    def found(self, doc_id: str, quote: str) -> bool:
-        text = self.text(doc_id)
-        return bool(text) and bool(_squeeze(quote)) and _squeeze(quote) in (text or "")
-
-
 def record_files(kit: kits.Kit) -> list[str]:
     """The decision files the kit names, in order."""
-    named = kit.decisions
-    if not named:
-        return []
-    return [named] if isinstance(named, str) else list(named)
+    return list(kit.decisions)
 
 
 def _closure(start: str, following: dict[tuple[str, str], list[str]]) -> set[str]:
@@ -296,24 +258,24 @@ def load(root: Path, kit_id: str, folder: Path | None = None, recompute: Path | 
         following.setdefault((edge["type"], edge["from"]), []).append(edge["to"])
         by_from.setdefault((edge["type"], edge["from"]), []).append(edge)
     registry = json.loads((root / REGISTRY).read_text(encoding="ascii"))["methods"]
-    quotes = Quotes(kit, folder)
+    quotes = decision_records.kit_quotes(root, kit, folder)
 
     # The decision records, by key.
     records: list[tuple[dict, str]] = []
     for name in record_files(kit):
         path = folder / name if (folder / name).is_file() else root / "kits" / kit_id / name
         records += [(record, name) for record in read_jsonl(path)]
-    standard = getattr(kit, "standard", None)
+    standard = kit.standard
     catalog = house = None
     if standard:
         from specfirst.compile import house as houses
 
         catalog, house = houses.load_pair(root, standard[0], standard[1])
-    features = getattr(kit, "design", None)
+    features = None  # the design features of the study: no kit states them yet
     decisions: dict[str, DecisionView] = {}
     for record, source in records:
         key = f"{record['id']} ({record['unit']})"
-        decisions[key] = _decision(record, source, catalog, house, features, quotes,
+        decisions[key] = _decision(record, source, catalog, house, quotes,
                                    (p4 or {}).get((record["id"], record["unit"]), NOT_TESTED))
     bound: dict[str, list[str]] = {}
     for key, view in decisions.items():
@@ -422,11 +384,12 @@ def load(root: Path, kit_id: str, folder: Path | None = None, recompute: Path | 
                 view.script = scripts.get((spec.id, name))
                 analyses[key] = view
     sheet = _sheet(decisions, analyses, cells, kit, catalog, house, features)
+    keys = [f"{entry} ({unit})" for entry, unit in catalog.keys()] if catalog is not None else []
     return Review(kit.id, standard, outputs, analyses, cells, columns, decisions, sheet,
-                  problems)
+                  problems, keys)
 
 
-def _decision(record: dict, source: str, catalog, house, features, quotes: Quotes,
+def _decision(record: dict, source: str, catalog, house, quotes: decision_records.Quotes,
               p4: str) -> DecisionView:
     """A decision record as the page shows it: mark, alternatives, checked quotes."""
     entry = None
@@ -435,27 +398,31 @@ def _decision(record: dict, source: str, catalog, house, features, quotes: Quote
             entry = catalog.entry(record["id"])
         except KeyError:
             entry = None
-    mark, alternatives = CUSTOMIZED, []
+    mark, alternatives, sources = CUSTOMIZED, [], []
     value = record.get("value") or {}
     if entry is not None:
-        from specfirst.compile import house as houses
-
-        default = houses.default_value(catalog, house, entry.id, record["unit"], features)
-        if default is not None and _json(default) == _json(value):
+        # A default by design is one value per case: the record takes the house's default
+        # when its value is that of one of them (the case is the study's design).
+        if any(_json(default) == _json(value) for default in decision_records.house_values(
+                catalog, house, entry.id, record["unit"])):
             mark = HOUSE_DEFAULT
+            sources = decision_records.house_sources(catalog, house, entry.id, record["unit"],
+                                                     value)
         phrase = catalog.units[record["unit"]].phrase if record["unit"] in catalog.units else ""
-        alternatives = [alternative.statement.replace("{output}", phrase or "the output")
+        # A slot of an alternative not taken has no value: it is shown as <name>.
+        alternatives = [re.sub(r"\{(\w+)\}", r"<\1>", alternative.statement.replace(
+                            "{output}", phrase or "the output"))
                         for alternative in entry.alternatives
                         if alternative.id != value.get("rule")]
     citations = [Citation(f"doc:{c.get('doc')}#{c.get('anchor')}", str(c.get("quote") or ""),
                           quotes.found(str(c.get("doc")), str(c.get("quote") or "")),
-                          c.get("approved_by"), "record")
+                          c.get("approved_by"), "record", quotes.knows(str(c.get("doc"))))
                  for c in record.get("citations") or []]
     return DecisionView(
         f"{record['id']} ({record['unit']})", record["id"], record["unit"],
         str(record.get("statement") or ""), _json(value), str(record.get("status") or ""),
         str(record.get("class") or ""), mark, citations, alternatives,
-        sorted(record.get("binds") or []), p4, source)
+        sorted(record.get("binds") or []), p4, source, sources)
 
 
 def _sheet(decisions, analyses, cells, kit, catalog, house, features) -> list[SheetLine]:
@@ -470,7 +437,6 @@ def _sheet(decisions, analyses, cells, kit, catalog, house, features) -> list[Sh
                        view.mark, view.citations, view.p4, len(reached.get(key, ())))
              for key, view in decisions.items()]
     if catalog is not None:
-        from specfirst.compile import house as houses
         from specfirst.compile import predicate
 
         taken = {(view.id, view.unit) for view in decisions.values()}
@@ -481,14 +447,10 @@ def _sheet(decisions, analyses, cells, kit, catalog, house, features) -> list[Sh
             if features is not None and not predicate.evaluate(
                     predicate.parse(entry.applies_when), features):
                 continue
-            try:
-                default = houses.default_value(catalog, house, entry_id, unit, features)
-            except houses.HouseError:
-                default = None
+            default = decision_records.house_values(catalog, house, entry_id, unit)
             lines.append(SheetLine(
                 "catalog entry", f"{entry_id} ({unit})", unit, entry.question, "no record",
-                "", HOUSE_DEFAULT if default is not None else "no house default", [],
-                NOT_TESTED, 0))
+                "", HOUSE_DEFAULT if default else "no house default", [], NOT_TESTED, 0))
     for spec in kit.results:
         for method, options in sorted(((spec.binding or {}).get("options") or {}).items()):
             for option, value in sorted(options.items()):

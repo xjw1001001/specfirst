@@ -498,8 +498,8 @@ def csr_comparison(root: Path, kit: kits.Kit, folder: Path, display: kits.Displa
     table = csr.read_table(folder / reference.file, reference.page, reference.table)
     write_json(csr_reference_dir(root, kit.id) / f"{reference.table}.json", table)
     decisions: dict[str, dict] = {}
-    if kit.decisions:
-        decisions = {record["id"]: record for record in read_jsonl(folder / kit.decisions)}
+    for name in kit.decisions:
+        decisions.update({record["id"]: record for record in read_jsonl(folder / name)})
     return csr_against(made, table, event, layout, rows, entries, decisions)
 
 
@@ -635,7 +635,7 @@ def decision_checks(root: Path, kit_id: str, folder: Path | None = None,
         out("decisions: the kit names no decision records")
         return True
     try:
-        records = decisions.load(folder / kit.decisions)
+        records = [record for name in kit.decisions for record in decisions.load(folder / name)]
         events, engines = [], []
         registry = None
         for spec in kit.results:
@@ -644,8 +644,17 @@ def decision_checks(root: Path, kit_id: str, folder: Path | None = None,
             engines.append(ard.Engine(inputs.event, inputs.registry, inputs.binding,
                                       inputs.tables, spec.subject_key))
             registry = inputs.registry
-        lines, problems = decisions.problems(root, records, events, registry, engines)
-    except (ars.ArsError, registries.RegistryError, OSError, ValueError) as error:
+        standard = None
+        if kit.standard is not None:
+            from specfirst.compile import house as houses
+
+            standard = houses.load_pair(root, *kit.standard)
+        columns = {node["id"] for node in read_jsonl(folder / GRAPH / "nodes.jsonl")
+                   if node["id"].startswith("adam:")}
+        quotes = decisions.kit_quotes(root, kit, folder)
+        lines, problems = decisions.problems(root, records, events, registry, engines,
+                                             standard, columns, quotes)
+    except (ars.ArsError, registries.RegistryError, OSError, ValueError, KeyError) as error:
         out(f"decisions: {error}")
         return False
     for line in lines:

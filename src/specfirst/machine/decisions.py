@@ -46,7 +46,10 @@ decides; the owner decided those of the pilot on 2026-11-20 (ADR-015).
 
 from __future__ import annotations
 
+import html
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -81,6 +84,136 @@ LAST_VISIT = "custom:eff-mmrm-visit"
 def load(path: Path) -> list[dict]:
     with open(path, encoding="ascii") as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def _squeeze(text: str) -> str:
+    return "".join(html.unescape(str(text)).split())
+
+
+class Quotes:
+    """The texts of a kit's documents, to check a quote by script (issue #31): a PDF by
+    poppler's pdftotext, an XML or text file as it is (its entities read); blanks do not
+    count. A quote is found when it stands in the text of its document."""
+
+    def __init__(self, documents: dict[str, Path]):
+        self.documents = documents  # document ID -> file
+        self._texts: dict[str, str | None] = {}
+
+    def text(self, doc_id: str) -> str | None:
+        if doc_id not in self._texts:
+            path = self.documents.get(doc_id)
+            if path is None or not path.is_file():
+                self._texts[doc_id] = None
+            elif path.suffix.lower() == ".pdf":
+                if shutil.which("pdftotext") is None:
+                    raise ValueError("pdftotext is not installed; it comes with poppler")
+                done = subprocess.run(["pdftotext", "-layout", str(path), "-"],
+                                      capture_output=True, text=True, encoding="utf-8",
+                                      errors="replace", check=False)
+                if done.returncode != 0:
+                    raise ValueError(f"pdftotext exited {done.returncode} on {path.name}")
+                self._texts[doc_id] = _squeeze(done.stdout)
+            else:
+                self._texts[doc_id] = _squeeze(path.read_text(encoding="utf-8",
+                                                              errors="replace"))
+        return self._texts[doc_id]
+
+    def knows(self, doc_id: str) -> bool:
+        """The citation names a document whose text a script can read."""
+        return doc_id in self.documents
+
+    def found(self, doc_id: str, quote: str) -> bool:
+        text = self.text(doc_id)
+        return bool(text) and bool(_squeeze(quote)) and _squeeze(quote) in (text or "")
+
+
+# The document a default cites: the house standard the kit names, as its STANDARD.md states
+# every default (specfirst.compile.house, DOCUMENT_ID).
+HOUSE_DOCUMENT = "house"
+# Sources a record may cite that are no document of a kit, so that no script checks their
+# quotes; any other name is a problem (a document misnamed). The owner's answers of
+# 2026-11-20 (ADR-015, "The owner's answers (2026-11-20)").
+OTHER_SOURCES = {"answers": "the owner's answers (ADR-015)"}
+
+
+def kit_quotes(root: Path, kit, folder: Path) -> Quotes:
+    """The documents of a kit whose quotes a script checks: its documents in the build, and
+    the standards document of the house it names (`house`, its STANDARD.md)."""
+    documents = {doc.id: folder / doc.file for doc in kit.documents}
+    if kit.standard is not None:
+        from specfirst.compile import house as houses
+
+        documents[HOUSE_DOCUMENT] = houses.default_dir(root, kit.standard[1]) / "STANDARD.md"
+    return Quotes(documents)
+
+
+def _normal(value: object) -> str:
+    return json.dumps(value, sort_keys=True)
+
+
+def house_values(catalog, house, entry_id: str, unit: str) -> list[dict]:
+    """The values of the house's default for an entry and unit: one, or one per case of a
+    default by design (each with its `when`); empty where the house has no default."""
+    from specfirst.compile import house as houses
+
+    entry = catalog.entry(entry_id)
+    if house.defaults_file is None:
+        found = houses.default_value(catalog, house, entry_id, unit)
+        return [found] if found is not None else []
+    made = []
+    for case in houses.choices(house, entry_id, unit, entry.per_family):
+        if case.get("rule") is not None:
+            made.append({"rule": case["rule"], **(case.get("values") or {})})
+    return made
+
+
+def house_sources(catalog, house, entry_id: str, unit: str, value: dict) -> list[str]:
+    """The sources the house gives for its default of an entry and unit, where the value is
+    that default (of one of its cases): `ref path: where`, in the house's order."""
+    from specfirst.compile import house as houses
+
+    if house.defaults_file is None:
+        return []
+    said = []
+    for case in houses.choices(house, entry_id, unit, catalog.entry(entry_id).per_family):
+        if case.get("rule") is None or _normal(
+                {"rule": case["rule"], **(case.get("values") or {})}) != _normal(value):
+            continue
+        for source in case.get("sources") or []:
+            where = " ".join(str(source.get(key)) for key in ("ref", "path", "where")
+                             if source.get(key))
+            said.append(where)
+    return said
+
+
+def catalog_problems(record: dict, catalog, house) -> list[str]:
+    """Why a record of the catalog the kit names does not fit it (issue #31, ADR-022): its
+    entry and unit, its value (an alternative with its slots), its statement (the one the
+    catalog renders), and a `default` that is not the house's default."""
+    from specfirst.compile.standard_form import StandardForm, StandardFormError
+
+    name, unit = str(record.get("id")), str(record.get("unit"))
+    try:
+        entry = catalog.entry(name)
+    except KeyError:
+        return [f"{name}: no entry of {catalog.directory.name}"]
+    if unit not in entry.units:
+        return [f"{name}: the unit {unit} is not one of the entry's ({', '.join(entry.units)})"]
+    form = StandardForm(catalog)
+    try:
+        form.check_value(name, unit, record.get("value") or {})
+        statement = form.render(name, unit, record.get("value") or {})
+    except StandardFormError as error:
+        return [f"{name} ({unit}): its value is not an alternative of the entry: {error}"]
+    found = []
+    if record.get("statement") != statement:
+        found.append(f"{name} ({unit}): the statement is not the one the catalog renders: "
+                     f"{statement!r}")
+    if record.get("status") == "default" and _normal(record.get("value")) not in {
+            _normal(value) for value in house_values(catalog, house, name, unit)}:
+        found.append(f"{name} ({unit}): status default, and the value is not the house's "
+                     "default")
+    return found
 
 
 def model_records(engine: ard.Engine, analysis: dict, options: dict) -> np.ndarray:
@@ -173,12 +306,25 @@ def _last_visit_problems(record: dict, elements: dict, engines: dict) -> tuple[i
 
 
 def problems(root: Path, records: list[dict], events: list[tuple[ars.Event, ars.Binding]],
-             registry: Registry,
-             engines: list[ard.Engine] | None = None) -> tuple[list[str], list[str]]:
+             registry: Registry, engines: list[ard.Engine] | None = None,
+             standard: tuple | None = None, columns: set[str] | None = None,
+             quotes: Quotes | None = None) -> tuple[list[str], list[str]]:
     """Lines to print and the problems of the records against the events.
 
     `engines` are the Python engines of the events, in their order, on the
     built ADaM data; the visit of the LS means is held on them (`LAST_VISIT`).
+    `standard`: the (catalog, house) the kit names; with it, a record may have
+    the ID of an entry of that catalog, and it must fit the entry
+    (`catalog_problems`). `columns`: the ADaM columns of the build
+    (`adam:<DATASET>.<COLUMN>`), which a record may bind besides the ARS
+    elements and outputs of the events. `quotes`: the texts of the kit's
+    documents; every citation's quote must stand in its document, and a
+    stated record cites at least one (issue #31).
+
+    What this does not hold (ADR-022): a catalog record of the reference
+    build is held for its form, its binds, its quotes and its house default,
+    not by result: whether the reference build does what the value says is
+    std-2's check (PLAN.md section 13.4), not this one.
     """
     lines, found = [], []
     seen: set[str] = set()
@@ -187,19 +333,46 @@ def problems(root: Path, records: list[dict], events: list[tuple[ars.Event, ars.
         for kind in ("analyses", "sets", "subsets", "groupings", "methods"):
             for key in getattr(event, kind):
                 elements[f"ars:{key}"] = (event, binding)
-    checked = 0
+        for key in ars.outputs(event):
+            elements[f"ars:{key}"] = (event, binding)
+    checked = quoted = 0
+    unchecked: dict[str, int] = {}  # source that is no document of the kit -> citations
     for record in records:
         name = str(record.get("id"))
         found += [f"{name}: {problem}" for problem in
                   schemas.problems("decision-record", record, root=root)]
         if not name.startswith("custom:"):
-            found.append(f"{name}: a decision outside catalog@1 has a custom ID (section 10)")
-        if name in seen:
-            found.append(f"{name}: two records")
-        seen.add(name)
+            if standard is None:
+                found.append(f"{name}: a decision outside catalog@1 has a custom ID (section 10)")
+            else:
+                found += catalog_problems(record, *standard)
+        key = name if name.startswith("custom:") else f"{name} ({record.get('unit')})"
+        if key in seen:
+            found.append(f"{key}: two records")
+        seen.add(key)
         bound = list(record.get("binds") or [])
-        found += [f"{name}: binds {key}, which no reporting event of the kit has"
-                  for key in bound if key not in elements]
+        found += [f"{name}: binds {element}, which no reporting event of the kit has, nor its "
+                  "built ADaM" for element in bound
+                  if element not in elements and element not in (columns or set())]
+        if quotes is not None:
+            cited = record.get("citations") or []
+            if record.get("status") == "stated" and not cited:
+                found.append(f"{key}: stated, and it cites nothing")
+            for citation in cited:
+                doc = str(citation.get("doc"))
+                if not quotes.knows(doc):
+                    # Another source, such as the owner's answers (doc `answers`, ADR-015):
+                    # no document of the kit, and no script checks it.
+                    if doc in OTHER_SOURCES:
+                        unchecked[doc] = unchecked.get(doc, 0) + 1
+                    else:
+                        found.append(f"{key}: cites {doc}, which is neither a document of the "
+                                     "kit, nor the house standard, nor a source the check knows")
+                    continue
+                quoted += 1
+                if not quotes.found(doc, str(citation.get("quote") or "")):
+                    found.append(f"{key}: the quote {citation.get('quote')!r} does not stand in "
+                                 f"the document {doc}")
         for key, option in PARAMETERS.get(name, {}).items():
             wanted = (record.get("value") or {}).get(key)
             resolved = []
@@ -233,5 +406,10 @@ def problems(root: Path, records: list[dict], events: list[tuple[ars.Event, ars.
         found += more
     lines.append(f"decisions: {len(records)} records, {len(seen)} IDs; {checked} options of "
                  f"analyses held against the decisions that set them; the last visit held on "
-                 f"the model records of {held} analyses; {len(found)} problems")
+                 f"the model records of {held} analyses; {quoted} quotes held against their "
+                 f"documents; {len(found)} problems")
+    if unchecked:
+        lines.append("decisions: citations of sources that are no document of the kit, not "
+                     "checked by script: " + ", ".join(f"{doc} {count}" for doc, count in
+                                                       sorted(unchecked.items())))
     return lines, found

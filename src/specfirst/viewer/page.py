@@ -74,8 +74,12 @@ def _citation(item: model.Citation) -> str:
         return (f'<li class="citation">{_kind("judged")} <code>{escape(item.target)}</code> '
                 f"({escape(item.origin)}; it names a span and carries no quote to check; "
                 f"{approval})</li>")
-    found = "a script finds the quote in the document" if item.verified else \
-        "a script does not find the quote in the document"
+    if item.verified:
+        found = "a script finds the quote in the document"
+    elif item.checkable:
+        found = "a script does not find the quote in the document"
+    else:
+        found = "no document of the kit: no script checks it"
     return (f'<li class="citation">{_kind("judged")} <code>{escape(item.target)}</code>: '
             f"&ldquo;{escape(item.text)}&rdquo; ({escape(item.origin)}; {found}; "
             f"{approval})</li>")
@@ -93,12 +97,17 @@ def _decision(view: model.DecisionView) -> str:
     parts = [f'<li class="decision" data-key="{escape(view.key)}">'
              f'<a href="#{escape(_anchor("s-", view.key))}"><b>{escape(view.key)}</b></a> '
              f"{_kind(view.mark)} {_p4(view.p4)}<br>{escape(view.statement)}",
-             f"<br>status {escape(view.status)}, class {escape(view.klass)}; value "
+             f"<br>status {escape(view.status)}, class "
+             f"{escape(view.klass or 'none (a person decides)')}; value "
              f"<code>{escape(view.value)}</code>; in {escape(view.source)}"]
     if view.citations:
         parts.append("<ul>" + "".join(_citation(c) for c in view.citations) + "</ul>")
     else:
         parts.append("<br>No citation.")
+    if view.mark == model.HOUSE_DEFAULT:
+        parts.append("<br>The house's source for its default: " + (
+            "; ".join(escape(s) for s in view.house_sources) if view.house_sources
+            else "the house gives none") + ".")
     if view.alternatives:
         parts.append("<br>Alternatives not chosen:<ul>" + "".join(
             f"<li>{escape(text)}</li>" for text in view.alternatives) + "</ul>")

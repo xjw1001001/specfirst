@@ -166,6 +166,10 @@ def acceptance(review: model.Review, text: str, outputs: tuple[str, ...]) -> tup
     listed = {line.key for line in review.sheet}
     missing = [key for key in review.decisions if key not in listed]
     found += [f"the sheet does not list the decision {key}" for key in missing]
+    # Every entry of the catalog the kit names, for every unit: a record, or an entry
+    # without one (the study-level decisions the study has not written down yet).
+    found += [f"the sheet does not list the entry {key} of the catalog"
+              for key in review.catalog_keys if key not in listed]
     by_kind = Counter(line.kind for line in review.sheet)
     lines.append("sheet: " + ", ".join(f"{count} {kind}" for kind, count in sorted(
         by_kind.items())) + f"; {len(review.decisions) - len(missing)} of "

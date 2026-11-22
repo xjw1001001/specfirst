@@ -33,6 +33,8 @@ PINNED_AREAS = ("inputs", "gold/spec", "gold/reference", "gold/claims")
 _ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _COMMIT = re.compile(r"^[0-9a-f]{40}$")
+# A version of the standard (ADR-020): catalog@<n> or <house>@<n>.
+_LABEL = re.compile(r"^[a-z][a-z0-9-]*@[1-9][0-9]*$")
 _PLAIN = re.compile(r"^[A-Za-z0-9_./-]+$")
 
 
@@ -108,9 +110,13 @@ class Kit:
     results: tuple[ResultSet, ...] = ()
     # Our own file in the kit folder: the classified differences from the references.
     exceptions: str | None = None
-    # Our own file in the kit folder: decision records (PLAN.md section 4.3), one per
-    # line, for decisions the catalog does not hold yet (custom:<slug>, section 10).
-    decisions: str | None = None
+    # Our own files in the kit folder: decision records (PLAN.md section 4.3), one per
+    # line: custom decisions the catalog does not hold yet (custom:<slug>, section 10) and,
+    # with a `standard`, records of the catalog it names (issue #31, ADR-022).
+    decisions: tuple[str, ...] = ()
+    # The catalog and house version the kit's catalog records are written over (ADR-022):
+    # (catalog label, house label), e.g. ("catalog@2", "open-default@2"), or None.
+    standard: tuple[str, str] | None = None
 
     def paths(self) -> set[str]:
         return {entry.path for entry in self.files}
@@ -119,7 +125,7 @@ class Kit:
         """The files of our own that the kit folder holds next to the manifest."""
         layouts = [display.layout for spec in self.results for display in spec.displays]
         events = [spec.ars for spec in self.results if spec.ars not in self.paths()]
-        named = [name for name in (self.exceptions, self.decisions) if name]
+        named = [name for name in (self.exceptions, *self.decisions) if name]
         return sorted({*layouts, *events, *named})
 
     def document(self, cited_as: str) -> Document | None:
@@ -259,11 +265,26 @@ def parse_kit(data: object) -> Kit:
         problems.append("build.exceptions: must be a file of our own under gold/, outside "
                         f"{', '.join(PINNED_AREAS)}")
         exceptions = None
-    decisions = build.get("decisions")
-    if decisions is not None and (not own(decisions) or decisions == exceptions):
+    # A file, or a list of files (issue #31: the efficacy records and the safety records).
+    given = build.get("decisions")
+    named = [given] if isinstance(given, str) else given if isinstance(given, list) else []
+    decisions: tuple[str, ...] = ()
+    if given is not None and (not named or len(set(named)) != len(named) or not all(
+            own(name) and name != exceptions for name in named)):
         problems.append("build.decisions: must be a file of our own under gold/, outside "
-                        f"{', '.join(PINNED_AREAS)}")
-        decisions = None
+                        f"{', '.join(PINNED_AREAS)}, or a list of such files, each once")
+    else:
+        decisions = tuple(named)
+    standard = None
+    pair = data.get("standard")
+    if pair is not None:
+        if (not isinstance(pair, dict) or set(pair) != {"catalog", "house"}
+                or not all(isinstance(v, str) and _LABEL.match(v) for v in pair.values())
+                or not pair["catalog"].startswith("catalog@")):
+            problems.append("standard: names the 'catalog' and the 'house' by their labels, "
+                            "such as catalog@2 and open-default@2")
+        else:
+            standard = (pair["catalog"], pair["house"])
 
     result_sets: list[ResultSet] = []
     for i, entry in enumerate(data.get("results") or []):
@@ -282,7 +303,7 @@ def parse_kit(data: object) -> Kit:
                 problems.append(f"{where}: an output needs exactly its 'id' and its 'layout', "
                                 "and may name its 'reference'")
                 continue
-            if not own(item["layout"]) or item["layout"] in (exceptions, decisions):
+            if not own(item["layout"]) or item["layout"] in (exceptions, *decisions):
                 problems.append(f"{where}, output '{item['id']}': the layout must be a file of "
                                 f"our own under gold/, outside {', '.join(PINNED_AREAS)}")
                 continue
@@ -310,7 +331,7 @@ def parse_kit(data: object) -> Kit:
         if any(known.id == set_id for known in result_sets):
             problems.append(f"{where}: id '{set_id}' is used twice")
         if ars_file and ars_file not in seen and (
-                not own(ars_file) or ars_file in (exceptions, decisions)):
+                not own(ars_file) or ars_file in (exceptions, *decisions)):
             problems.append(f"{where}: ars '{ars_file}' is neither in the list of files nor a "
                             f"file of our own under gold/, outside {', '.join(PINNED_AREAS)}")
         if schema is not None and schema not in seen:
@@ -340,6 +361,7 @@ def parse_kit(data: object) -> Kit:
         claims=claims.rstrip("/") if claims else None,
         documents=tuple(documents), files=tuple(files), trace_gaps=dict(gaps),
         results=tuple(result_sets), exceptions=exceptions, decisions=decisions,
+        standard=standard,
     )
 
 

@@ -109,7 +109,10 @@ def test_the_pilot_kit_is_pinned_like_the_sources(root):
     assert cibic.ars == "gold/events/efficacy-cibic.json" and cibic.ars in kit.own_files()
     assert [(d.output, d.reference.page, d.reference.table) for d in cibic.displays] == [
         ("Out14-3-13", 61, "14-3.13")]
-    assert kit.decisions == "gold/decisions/efficacy.jsonl" and kit.decisions in kit.own_files()
+    # Issue #31: the records of the demographics and AE tables over the standard it names.
+    assert kit.decisions == ("gold/decisions/efficacy.jsonl", "gold/decisions/safety.jsonl")
+    assert set(kit.decisions) <= set(kit.own_files())
+    assert kit.standard == ("catalog@2", "open-default@2")
     assert all((root / "kits" / "cdiscpilot01" / name).is_file() for name in kit.own_files())
 
 
@@ -180,6 +183,34 @@ def test_an_event_of_our_own_a_csr_reference_and_decision_records():
          "build.decisions: must be a file of our own"),
         (manifest(files=files, results=[{"id": "eff", "ars": "gold/reference/csr/eff.json"}]),
          "is neither in the list of files nor a file of our own"),
+    ):
+        with pytest.raises(kits.KitError, match=message):
+            kits.parse_kit(data)
+
+
+def test_decision_files_and_the_standard_of_a_kit():
+    """Issue #31 (ADR-022): a list of decision files, and the catalog and house it names."""
+    files = [*manifest()["files"]]
+    build = {**manifest()["build"], "decisions": ["gold/decisions/a.jsonl",
+                                                  "gold/decisions/b.jsonl"]}
+    kit = kits.parse_kit(manifest(files=files, build=build,
+                                  standard={"catalog": "catalog@2", "house": "open-default@2"}))
+    assert kit.decisions == ("gold/decisions/a.jsonl", "gold/decisions/b.jsonl")
+    assert kit.standard == ("catalog@2", "open-default@2")
+    assert set(kit.decisions) <= set(kit.own_files())
+    # One file, as before; no standard.
+    one = kits.parse_kit(manifest(build={**build, "decisions": "gold/decisions/a.jsonl"}))
+    assert (one.decisions, one.standard) == (("gold/decisions/a.jsonl",), None)
+    for data, message in (
+        (manifest(build={**build, "decisions": ["gold/decisions/a.jsonl",
+                                                "gold/decisions/a.jsonl"]}), "each once"),
+        (manifest(build={**build, "decisions": []}), "or a list of such files"),
+        (manifest(build={**build, "decisions": ["gold/spec/a.jsonl"]}), "a file of our own"),
+        (manifest(standard={"catalog": "catalog@2"}), "names the 'catalog' and the 'house'"),
+        (manifest(standard={"catalog": "open-default@2", "house": "open-default@2"}),
+         "names the 'catalog' and the 'house'"),
+        (manifest(standard={"catalog": "catalog@two", "house": "open-default@2"}),
+         "names the 'catalog' and the 'house'"),
     ):
         with pytest.raises(kits.KitError, match=message):
             kits.parse_kit(data)

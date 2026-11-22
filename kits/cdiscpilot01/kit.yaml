@@ -37,10 +37,21 @@ build:
   # Our own file, in this folder: every difference between our results and a
   # reference, with its class and its proof (PLAN.md section 4.8, ADR-002).
   exceptions: gold/exceptions.yaml
-  # Our own file, in this folder: the decision records of the efficacy tables of
+  # Our own files, in this folder: the decision records of the efficacy tables of
   # real-5a, custom decisions (custom:<slug>) until catalog@2 (PLAN.md section 10,
-  # ADR-012 decision 2, ADR-015).
-  decisions: gold/decisions/efficacy.jsonl
+  # ADR-012 decision 2, ADR-015); and those of the demographics and AE tables of
+  # CDISC's example over the catalog and house of `standard` below (issue #31, ADR-022;
+  # std-2 takes that file over and extends it to the whole pilot).
+  decisions:
+    - gold/decisions/efficacy.jsonl
+    - gold/decisions/safety.jsonl
+
+# The catalog and house the kit's catalog records are written over (ADR-022, the owner's
+# answer of 2026-11-21). The build does not compile them: it is Pilot 7's specifications
+# and the ARS files; the records are held against it by the decisions check.
+standard:
+  catalog: catalog@2
+  house: open-default@2
 
 # The ARS reporting events whose analyses the result engines run on the ADaM
 # datasets of the build (ADR-002).

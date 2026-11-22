@@ -348,6 +348,56 @@ for 3,580 of them):
 - Display rules that are not registry entries yet: p-value formats and the
   truncation of long terms (E25).
 
+## Handed over by issue #31
+
+- `specfirst view <kit> [--build DIR] [--p4 FILE]` writes the review page of a built kit,
+  build/kits/<kit>/viewer/index.html (`specfirst.viewer`: model, page, check, command;
+  ADR-022). It reads the build, the kit's decision records, the catalog and house of
+  kit.yaml's `standard`, the recomputation of issue #29 and, with `--p4`, a P4 matrix. The
+  page has no script; a panel opens by its anchor (`:target`, `:has(:target)`).
+- The grids of CDISC's example now include the demographics (Out14-1-1) and the table by
+  organ class and term (Out14-3-2-1): the extra cells of a groups block, the block kind
+  `terms` and the spanner of an extra column (ADR-003, amendment of issue #31).
+  `gates.PILOT_GRIDS` holds the three outputs with their counts; a new output there changes
+  the gates real-3a, real-5a and issue-31 together. D7 and D8 plant in the AE summary
+  (`SUMMARY_OUTPUT`).
+- gold/exceptions.yaml has a section `formats` (a difference of display only, proof
+  `not_its_own_pattern`); one entry, the Fisher p-value of 1 shown "1".
+- The page references of an ARS file become judged, imported `cites` edges from analyses to
+  SAP pages (`graph.add_citations`); a kit names an ARS reference document in a document's
+  `cited_as`.
+- kits/cdiscpilot01/gold/decisions/safety.jsonl: 48 records of the demographics and AE
+  tables over catalog@2 / open-default@2 (44 of catalog entries, 4 custom). std-2 (PLAN.md
+  13.4) takes this file over, extends it to the whole pilot and adds its check by result
+  (the compiled fragment leaves the ADaM unchanged); the decisions check of #31 holds the
+  records for their form, binds and quotes only, and nothing claims std-2's check (the
+  owner's answer of 2026-11-21). The records were written by a reading of the SAP, the
+  Define-XML and the build; a record's value is the build's, its status says where it comes
+  from (stated, default, conflict, asked).
+- The kit format: `build.decisions` is a file or a list; kit.yaml has `standard: {catalog,
+  house}`. `kit.decisions` is a tuple of files.
+- The decisions check (`specfirst.machine.decisions`) takes catalog IDs when the kit names a
+  standard (`catalog_problems`), binds to built ADaM columns and ARS outputs, and checks
+  every quote of a document of the kit or of the house standard (`kit_quotes`; doc
+  `house` is the house's STANDARD.md). Citations of other sources (the owner's answers, doc
+  `answers`) are counted, not checked.
+- P4 on the page waits for catalog-2c: `specfirst view --p4` reads the matrix of `specfirst
+  gen separate cdiscpilot01` once its classes are those of catalog@2; until then every
+  decision of the page is "not tested".
+
+For the owner, from issue #31 (none blocks; docs/reports/issue-31.md has each):
+
+- Seven records are `conflict`: a kit document says other than the build (the build follows
+  CDISC's example or Pilot 7's specifications): the start of treatment (Define-XML: SV
+  visit 3; the build: the first exposure), AE start-date imputation (SAP: conservative;
+  Define-XML and the build: day 01), treatment emergence (the SAP's two more criteria of
+  worsening and recurrence), the total column, the rows and the statistics of the
+  demographics table, and its two age groups (the SAP: three).
+- Six records are `asked`, class `gold_quirk`: CDISC's example does it and no document of
+  the kit says so (exposure-date imputation, the related causalities, the population and
+  the p-value format and the decimals of the demographics, the rows of the AE summary).
+- Every judged edge awaits approval (Q4); recording approvals is the edit loop of PLAN 7.6.
+
 ## Handed over by issue #29
 
 - `specfirst recompute <kit> [--build DIR] [--export DIR]` writes, from a

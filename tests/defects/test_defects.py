@@ -33,9 +33,9 @@ the kit's exceptions, `results.agreement` for rule R11).
     D13-review   the review page and the acceptance of issue #31: a cell
                  without a panel, a script, a handler, a link that leaves the
                  page, a judged edge drawn as proven, an unseparated decision
-                 drawn as proven, a decision left off the sheet, a broken path
-                 to SDTM in the graph files, and an entry of `formats` that is
-                 no difference (ADR-022)
+                 drawn as proven, a decision or a catalog entry left off the
+                 sheet, a broken path to SDTM in the graph files, and an entry
+                 of `formats` that is no difference (ADR-022)
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -820,7 +820,8 @@ def efficacy(pilot: Pilot) -> Efficacy:
             spec, inputs.event, {key: value[0] for key, value in found.items()},
             {key: value[1] for key, value in found.items()},
             csr.load_exceptions(pilot.folder / kit.exceptions),
-            {record["id"]: record for record in results_jsonl(pilot.folder / kit.decisions)},
+            {record["id"]: record for name in kit.decisions
+             for record in results_jsonl(pilot.folder / name)},
             results.by_id(results_jsonl(pilot.folder / build.ARD / f"{EFFICACY}.jsonl")))
     return _EFFICACY[id(pilot)]
 
@@ -962,7 +963,8 @@ def d9_efficacy(pilot: Pilot, tmp_path) -> list[str]:
     # what custom:eff-model-terms says (gate check `decisions`).
     from specfirst.machine import decisions
 
-    records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
+    # The efficacy records: the kit's first decisions file (issue #31 adds the second).
+    records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions[0])
     cibic = efficacy_5b(pilot)[CIBIC]  # the records of real-5b bind its analyses
     for name, value in (("unchanged", data()),
                         ("the ANCOVA without the baseline covariate",
@@ -1133,7 +1135,8 @@ def efficacy_5b(pilot: Pilot) -> dict[str, Efficacy]:
                 {d.output: csr.read_table(pilot.folder / d.reference.file, d.reference.page,
                                           d.reference.table) for d in displays},
                 csr.load_exceptions(pilot.folder / kit.exceptions),
-                {record["id"]: record for record in results_jsonl(pilot.folder / kit.decisions)},
+                {record["id"]: record for name in kit.decisions
+             for record in results_jsonl(pilot.folder / name)},
                 results.by_id(results_jsonl(pilot.folder / build.ARD / f"{set_id}.jsonl")))
         _EFFICACY_5B[id(pilot)] = made
     return _EFFICACY_5B[id(pilot)]
@@ -1248,7 +1251,8 @@ def d11_efficacy_5b(pilot: Pilot, tmp_path) -> list[str]:
     # The decision records against the events (gate check `decisions`).
     from specfirst.machine import decisions
 
-    records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions)
+    # The efficacy records: the kit's first decisions file (issue #31 adds the second).
+    records = decisions.load(pilot.folder / kits.load_kit(pilot.root, KIT).decisions[0])
 
     def with_value(wanted: str, **value) -> list[dict]:
         return [dict(record, value={**record["value"], **value}) if record["id"] == wanted
@@ -1483,6 +1487,9 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
     record = sorted(review.decisions)[0]
     off = copy.deepcopy(review)
     off.sheet = [line for line in off.sheet if line.key != record]
+    entry = next(line.key for line in review.sheet if line.kind == "catalog entry")
+    no_entry = copy.deepcopy(review)
+    no_entry.sheet = [line for line in no_entry.sheet if line.key != entry]
     p4 = {(review.decisions[record].id, review.decisions[record].unit): model.UNSEPARATED}
     unseparated = model.load(pilot.root, KIT, pilot.folder, recompute=none, p4=p4)
     unseparated_text = page.html(unseparated)
@@ -1503,6 +1510,8 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
         "an unseparated decision drawn as proven": lambda: checks.page_problems(
             unseparated_text.replace("kind unseparated", "kind static"), unseparated),
         "a decision left off the sheet": lambda: checks.acceptance(off, text, REVIEWED)[1],
+        "an entry of the catalog left off the sheet": lambda: checks.acceptance(
+            no_entry, text, REVIEWED)[1],
     }
     for name, seen in planted.items():
         found = seen()
