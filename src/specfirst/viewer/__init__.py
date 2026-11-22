@@ -8,9 +8,10 @@ reviewer's questions in their order, with the layout out of the way:
   folded;
 - every printed number is a link to a side panel: the analysis in sentences
   (who, which records, which groups, which statistic, its options and where
-  each comes from); the decision records that bind it, each with its
-  standard-form sentence, the alternatives not chosen, its citations and
-  whether its value is the house default or customized for the study; the
+  each comes from); the decision records that bind it or a column of its
+  derivation chain, each with its standard-form sentence, the alternatives
+  not chosen, its citations and whether its value is the house default or
+  customized for the study; the
   ADaM columns it reads, each with why (the decision that binds it) and its
   derivation as the study spec words it, followed down to SDTM; and the
   recomputation of its analysis with the script that ran;
@@ -18,10 +19,10 @@ reviewer's questions in their order, with the layout out of the way:
   of the kit's catalog that applies to the study, the kit's bindings and the
   layout settings, each marked `house default` or `study customized`.
 
-Edges are drawn in five kinds and never merged: executed, static, judged
+Edges are drawn in six kinds and never merged: executed, static, judged
 (a citation: awaiting approval until a person approves it), not proven by
-the data (a decision whose P4 class is `unseparated`) and not tested (no P4
-run reaches it).
+the data (a decision whose P4 class is `unseparated`), tested (another class
+of a P4 run) and not tested (no P4 run reaches it).
 
 The page has no script and fetches nothing: a panel opens by its anchor and
 CSS `:target`, a fold is `<details>`. The same build gives the same bytes.

@@ -43,13 +43,18 @@ def test_the_records_of_the_two_tables_fit_the_catalog_the_kit_names(root, pair,
     units = {r["unit"] for r in records}
     assert units == {"mod-treatment", "mod-populations", "mod-demographics", "mod-ae-emergence",
                      "tfl-demographics", "tfl-ae-summary", "tfl-ae-soc-pt"}
-    assert len({(r["id"], r["unit"]) for r in records}) == len(records) == 48
-    assert Counter(r["status"] for r in records) == {"default": 20, "stated": 15,
-                                                      "conflict": 7, "asked": 6}
-    # Every custom record is one the catalog has no alternative for.
+    assert len({(r["id"], r["unit"]) for r in records}) == len(records) == 49
+    # The SAP's mock tables (section 13.2) count as what it states, their masks included
+    # (ADR-022, decision 7).
+    assert Counter(r["status"] for r in records) == {"stated": 18, "default": 12,
+                                                      "conflict": 17, "asked": 2}
+    # Every custom record is one the catalog has no alternative or no unit for.
     assert sorted(r["id"] for r in records if r["id"].startswith("custom:")) == [
         "custom:demog-age-display", "custom:demog-baseline-visits", "custom:demog-decimals",
-        "custom:socpt-fisher"]
+        "custom:socpt-fisher", "custom:socpt-pvalue-format"]
+    # A conflict keeps the build's value and cites the document that says otherwise.
+    assert all(r["citations"] and "class" not in r for r in records
+               if r["status"] == "conflict")
 
 
 def test_a_default_cites_the_house_standard_by_its_statement(root, records):

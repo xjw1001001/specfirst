@@ -13,11 +13,12 @@ What a panel says, and where it comes from:
   reads it for the scripts of issue #29 (its set, subset, groupings, method,
   operations, and each option with where its value comes from);
 - the decisions: the kit's records that bind the analysis or one of its
-  elements (rule: `binds`), each with its statement, value, status, class,
-  citations (a quote is checked against the text of its document by script),
-  the alternatives of its catalog entry it does not take, the mark `house
-  default` (its value is the house's default for its unit) or `study
-  customized`, and its P4 class or `not tested`;
+  elements (rule: `binds`), and those that bind a column it reads or a column
+  that one derives from, down to SDTM; each with its statement, value,
+  status, class, citations (a quote is checked against the text of its
+  document by script), the alternatives of its catalog entry it does not
+  take, the mark `house default` (its value is the house's default for its
+  unit) or `study customized`, and its P4 class or `not tested`;
 - the ADaM columns: the `reads` edges of the analysis with their roles
   (coverage.json), each column with the records that bind it, its label, the
   study spec's own comment (the Define-XML comment of the resolved
@@ -111,6 +112,9 @@ class AnalysisView:
     options: list[str]
     elements: list[str]  # ars:<id> of the analysis, its set, subset, groupings, method
     decisions: list[str] = field(default_factory=list)
+    # The records of its columns: (record key, the column it binds, the column read that
+    # is or derives from it), once each, those of `decisions` left out.
+    column_decisions: list[tuple[str, str, str]] = field(default_factory=list)
     cites: list[Citation] = field(default_factory=list)
     columns: list[tuple[str, list[str]]] = field(default_factory=list)  # (column, roles)
     recompute: dict | None = None
@@ -380,6 +384,7 @@ def load(root: Path, kit_id: str, folder: Path | None = None, recompute: Path | 
                               for edge in by_from.get(("cites", "ars:" + name), [])]
                 view.columns = [(item["column"], item["roles"])
                                 for item in read.get("ars:" + name, {}).get("reads", [])]
+                view.column_decisions = _column_decisions(view, bound, following)
                 view.recompute = report.get((spec.id, name))
                 view.script = scripts.get((spec.id, name))
                 analyses[key] = view
@@ -387,6 +392,34 @@ def load(root: Path, kit_id: str, folder: Path | None = None, recompute: Path | 
     keys = [f"{entry} ({unit})" for entry, unit in catalog.keys()] if catalog is not None else []
     return Review(kit.id, standard, outputs, analyses, cells, columns, decisions, sheet,
                   problems, keys)
+
+
+def _column_decisions(view: AnalysisView, bound: dict[str, list[str]],
+                      following: dict[tuple[str, str], list[str]]) -> list[tuple[str, str, str]]:
+    """The records behind the columns an analysis reads: those that bind a column it reads,
+    then those that bind a column one of them derives from, nearest first (the review of
+    issue #31, F2)."""
+    found, seen = [], set(view.decisions)
+    for column, _ in view.columns:
+        order, queue, met = [], deque([column]), {column}
+        while queue:
+            name = queue.popleft()
+            order.append(name)
+            for target in sorted(following.get(("derives_from", name), [])):
+                if target not in met:
+                    met.add(target)
+                    queue.append(target)
+        for name in order:
+            for key in sorted(bound.get(name, [])):
+                if key not in seen:
+                    seen.add(key)
+                    found.append((key, name, column))
+    return found
+
+
+def behind(view: AnalysisView) -> list[str]:
+    """Every record behind the numbers of an analysis: its own, then its columns'."""
+    return [*view.decisions, *(key for key, _, _ in view.column_decisions)]
 
 
 def _decision(record: dict, source: str, catalog, house, quotes: decision_records.Quotes,
@@ -431,7 +464,7 @@ def _sheet(decisions, analyses, cells, kit, catalog, house, features) -> list[Sh
     reached: dict[str, set[str]] = {}
     for cell in cells.values():
         for key in cell.analyses:
-            for decision in analyses[key].decisions if key in analyses else []:
+            for decision in behind(analyses[key]) if key in analyses else []:
                 reached.setdefault(decision, set()).add(cell.id)
     lines = [SheetLine("record", key, view.unit, view.statement, view.status, view.klass,
                        view.mark, view.citations, view.p4, len(reached.get(key, ())))
@@ -454,13 +487,42 @@ def _sheet(decisions, analyses, cells, kit, catalog, house, features) -> list[Sh
     for spec in kit.results:
         for method, options in sorted(((spec.binding or {}).get("options") or {}).items()):
             for option, value in sorted(options.items()):
+                text = (f"{method}: {option} = {_json(value)}, bound in kit.yaml (the ARS file "
+                        "leaves it to code)")
+                mark = CUSTOMIZED
+                for entry_id, unit, rule in _alternatives_setting(catalog, option, value):
+                    taken = {"rule": rule}
+                    default = any(_json(taken) == _json(v) for v in
+                                  decision_records.house_values(catalog, house, entry_id, unit))
+                    text += (f"; the alternative {rule} of the catalog's {entry_id} ({unit}), "
+                             + ("the house default" if default else "not the house default"))
+                    mark = HOUSE_DEFAULT if default else mark
                 lines.append(SheetLine("kit binding", f"{spec.id}: {method}.{option}", spec.id,
-                                       f"{method}: {option} = {_json(value)}", "stated", "",
-                                       CUSTOMIZED, [], NOT_TESTED, 0))
+                                       text, "kit binding", "", mark, [], NOT_TESTED, 0))
         for display in spec.displays:
-            lines.append(SheetLine("layout", f"{display.output}: {display.layout}", spec.id,
-                                   f"the layout of {display.output}, a file of the kit", "stated",
-                                   "", CUSTOMIZED, [], NOT_TESTED, sum(
-                                       1 for cell in cells.values()
-                                       if cell.output == display.output)))
+            lines.append(SheetLine(
+                "layout", f"{display.output}: {display.layout}", spec.id,
+                f"the layout of {display.output}: {display.layout}, a file of the kit (layout "
+                "spec v0); its comments name its source, a table shell or the CSR's table",
+                "kit layout", "", CUSTOMIZED, [], NOT_TESTED,
+                sum(1 for cell in cells.values() if cell.output == display.output)))
     return lines
+
+
+def _alternatives_setting(catalog, option: str, value: object) -> list[tuple[str, str, str]]:
+    """The alternatives of the catalog whose compiled parameters set a registry option to a
+    value: (entry, unit, alternative), from the entries' compile templates."""
+    if catalog is None:
+        return []
+    found = []
+    for entry_id, unit in catalog.keys():
+        entry = catalog.entry(entry_id)
+        try:
+            template = catalog.read_yaml(entry.compile) if entry.compile else {}
+        except OSError:
+            template = {}
+        for rule, alternative in sorted(((template or {}).get("alternatives") or {}).items()):
+            params = (alternative or {}).get("params") or {}
+            if option in params and _json(params[option]) == _json(value):
+                found.append((entry_id, unit, str(rule)))
+    return found

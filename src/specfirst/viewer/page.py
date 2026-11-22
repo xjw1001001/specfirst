@@ -8,7 +8,8 @@ block in it shows only when it is the target. A fold is `<details>`.
 The kinds of an edge stay apart (PLAN.md section 4.2): every judged edge
 carries the class `judged` and the words "awaiting approval" until a person
 approves it; a decision that the data do not separate carries `unseparated`;
-one that no P4 run reached carries `not-tested`.
+one with another class of a P4 run carries `tested`; one that no P4 run
+reached carries `not-tested`.
 """
 
 from __future__ import annotations
@@ -41,6 +42,7 @@ a.number { color: #00e; }
 .static { background: #d8e4f8; border: 1px solid #36a; }
 .judged { background: #fde8c8; border: 1px dashed #c60; }
 .unseparated { background: #f8d0d0; border: 1px solid #a00; }
+.tested { background: #e0f4e8; border: 1px solid #296; }
 .not-tested { background: #e8e8e8; border: 1px dotted #666; }
 .house-default { background: #eef; border: 1px solid #88a; }
 .study-customized { background: #fee; border: 1px solid #a88; }
@@ -54,6 +56,8 @@ LEGEND = (
                "document; a person must approve that it supports the decision"),
     ("unseparated", "not proven by the data: P4 finds another value of the decision that "
                     "gives the same results"),
+    ("tested", "tested by P4: a run of the decision's other values on the data gives its "
+               "class (separated, inert, or separated at dataset level only)"),
     ("not-tested", "not tested: no P4 run reaches the decision"),
 )
 
@@ -90,13 +94,13 @@ def _p4(text: str) -> str:
         return _kind("unseparated", "not proven by the data: unseparated")
     if text == model.NOT_TESTED:
         return _kind("not-tested")
-    return _kind("static", f"P4: {text}")
+    return _kind("tested", f"P4: {text}")
 
 
-def _decision(view: model.DecisionView) -> str:
+def _decision(view: model.DecisionView, via: str = "") -> str:
     parts = [f'<li class="decision" data-key="{escape(view.key)}">'
              f'<a href="#{escape(_anchor("s-", view.key))}"><b>{escape(view.key)}</b></a> '
-             f"{_kind(view.mark)} {_p4(view.p4)}<br>{escape(view.statement)}",
+             f"{_kind(view.mark)} {_p4(view.p4)}{via}<br>{escape(view.statement)}",
              f"<br>status {escape(view.status)}, class "
              f"{escape(view.klass or 'none (a person decides)')}; value "
              f"<code>{escape(view.value)}</code>; in {escape(view.source)}"]
@@ -115,6 +119,13 @@ def _decision(view: model.DecisionView) -> str:
         parts.append("<br>Alternatives not chosen: none listed; a custom record (the catalog "
                      "has no entry for it).")
     return "".join(parts) + "</li>"
+
+
+def _via(bound: str, read: str) -> str:
+    if bound == read:
+        return f"<br>It binds <code>{escape(bound)}</code>, which the analysis reads."
+    return (f"<br>It binds <code>{escape(bound)}</code>, from which "
+            f"<code>{escape(read)}</code>, which the analysis reads, derives.")
 
 
 def _column(review: model.Review, column_id: str, roles: list[str]) -> str:
@@ -145,8 +156,10 @@ def _column(review: model.Review, column_id: str, roles: list[str]) -> str:
     if chain:
         out.append(f"<br>It derives from {_kind('static', 'derives_from')}:<ul>"
                    + "".join(chain) + "</ul>")
-    out.append("<br>Down to SDTM: " + (", ".join(f"<code>{escape(s)}</code>" for s in view.sdtm)
-                                       or "no SDTM column") + ".")
+    out.append("<br>Down to SDTM: " + (
+        ", ".join(f"<code>{escape(s)}</code>" for s in view.sdtm)
+        or ("no SDTM column: a literal of the study spec, built on rows only"
+            if view.terminal == "literal" else "no SDTM column")) + ".")
     if view.cites:
         out.append("<br>Citations of the column:<ul>"
                    + "".join(_citation(c) for c in view.cites) + "</ul>")
@@ -193,10 +206,14 @@ def _panel(review: model.Review, view: model.AnalysisView) -> str:
                    + "".join(_citation(c) for c in view.cites) + "</ul>")
     out.append("<h3>2. The decisions behind it</h3>")
     if view.decisions:
-        out.append("<ul>" + "".join(_decision(review.decisions[key])
-                                    for key in view.decisions) + "</ul>")
+        out.append("<p>Of the analysis and its elements:</p><ul>" + "".join(
+            _decision(review.decisions[key]) for key in view.decisions) + "</ul>")
     else:
         out.append("<p>No decision record of the kit binds this analysis or its elements.</p>")
+    if view.column_decisions:
+        out.append("<p>Of the columns it reads, and of the columns those derive from:</p><ul>"
+                   + "".join(_decision(review.decisions[key], _via(bound, read))
+                             for key, bound, read in view.column_decisions) + "</ul>")
     out.append("<h3>3. The ADaM columns it reads</h3><ul>"
                + "".join(_column(review, column, roles) for column, roles in view.columns)
                + "</ul>")

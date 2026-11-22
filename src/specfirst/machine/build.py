@@ -545,6 +545,13 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
         for output in sorted(set(cell_entries) - outputs):
             out(f"grids: the exceptions name cells of {output}, which has no CSR reference")
             passed = False
+        # A difference of display is read for the result sets with grids only: an entry of
+        # any other key would be read by nothing (the review of issue #31, F5).
+        shown_sets = {spec.id for spec in kit.results if spec.displays}
+        for key in sorted(set(formats) - shown_sets):
+            out(f"grids: the exceptions list differences of display of {key}, which is no "
+                "result set of the kit with a grid")
+            passed = False
         for spec in kit.results:
             if not spec.displays:
                 continue

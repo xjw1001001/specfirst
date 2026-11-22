@@ -49,7 +49,9 @@ def main(root: Path, kit_id: str, folder: Path | None = None, p4_file: Path | No
     except (model.ReviewError, OSError, ValueError, KeyError) as error:
         out(f"view {kit_id}: FAIL ({error})")
         return 1
-    problems = check.page_problems(text, review)
+    # What the review could not read (no recomputation, a result the ARD lacks) is printed
+    # on the page and counted here (the review of issue #31, F3).
+    problems = [*review.problems, *check.page_problems(text, review)]
     lines, found = check.acceptance(review, text, tuple(o.id for o in review.outputs))
     for line in lines:
         out(line)

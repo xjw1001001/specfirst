@@ -364,16 +364,23 @@ for 3,580 of them):
 - gold/exceptions.yaml has a section `formats` (a difference of display only, proof
   `not_its_own_pattern`); one entry, the Fisher p-value of 1 shown "1".
 - The page references of an ARS file become judged, imported `cites` edges from analyses to
-  SAP pages (`graph.add_citations`); a kit names an ARS reference document in a document's
-  `cited_as`.
-- kits/cdiscpilot01/gold/decisions/safety.jsonl: 48 records of the demographics and AE
-  tables over catalog@2 / open-default@2 (44 of catalog entries, 4 custom). std-2 (PLAN.md
+  SAP pages (`graph.add_citations`), or to the SAP as a whole where a reference gives no
+  page; a kit names an ARS reference document in a document's `cited_as`.
+- A panel shows the records of the analysis and those of every column of its derivation
+  chain; the acceptance reads the page back (the SDTM columns, citations, decision blocks
+  and sheet rows drawn), and `specfirst view` and the gate count what the review could not
+  read.
+- kits/cdiscpilot01/gold/decisions/safety.jsonl: 49 records of the demographics and AE
+  tables over catalog@2 / open-default@2 (44 of catalog entries, 5 custom). std-2 (PLAN.md
   13.4) takes this file over, extends it to the whole pilot and adds its check by result
   (the compiled fragment leaves the ADaM unchanged); the decisions check of #31 holds the
   records for their form, binds and quotes only, and nothing claims std-2's check (the
-  owner's answer of 2026-11-21). The records were written by a reading of the SAP, the
-  Define-XML and the build; a record's value is the build's, its status says where it comes
-  from (stated, default, conflict, asked).
+  owner's answer of 2026-11-21). The records were written by a reading of the SAP (its
+  text and its mock tables, section 13.2, which state what they show, masks included: the
+  owner's answer of 2026-11-22), the Define-XML and the build; a record's value is the
+  build's, its status says where it comes from (stated, default, conflict, asked). They
+  were written by a script outside the repository; a change is a new reading, held again by
+  the decisions check and tests/unit/test_safety_records.py.
 - The kit format: `build.decisions` is a file or a list; kit.yaml has `standard: {catalog,
   house}`. `kit.decisions` is a tuple of files.
 - The decisions check (`specfirst.machine.decisions`) takes catalog IDs when the kit names a
@@ -387,15 +394,24 @@ for 3,580 of them):
 
 For the owner, from issue #31 (none blocks; docs/reports/issue-31.md has each):
 
-- Seven records are `conflict`: a kit document says other than the build (the build follows
-  CDISC's example or Pilot 7's specifications): the start of treatment (Define-XML: SV
-  visit 3; the build: the first exposure), AE start-date imputation (SAP: conservative;
-  Define-XML and the build: day 01), treatment emergence (the SAP's two more criteria of
-  worsening and recurrence), the total column, the rows and the statistics of the
-  demographics table, and its two age groups (the SAP: three).
-- Six records are `asked`, class `gold_quirk`: CDISC's example does it and no document of
-  the kit says so (exposure-date imputation, the related causalities, the population and
-  the p-value format and the decimals of the demographics, the rows of the AE summary).
+- Seventeen records are `conflict`: a kit document says other than the build (the build
+  follows CDISC's example or Pilot 7's specifications):
+  - of the modules: the start of treatment (Define-XML: SV visit 3; the build: the first
+    exposure), AE start-date imputation (SAP: conservative; Define-XML and the build: day
+    01), treatment emergence (the SAP's two more criteria of worsening and recurrence), the
+    baseline height and weight (SAP and Define-XML: Visit 1 and Visit 3; the build: the
+    first height by visit, the weight flagged VSBLFL);
+  - of the demographics: its population (Template 3: intent-to-treat; the build: safety),
+    the total column, the rows, the statistics, the two age groups (the SAP: three), the
+    decimals of the minimum and maximum (Template 3: one), the percents (Template 3: none;
+    the build: one decimal), the p-values (Template 3: three decimals; the build: four);
+  - of the AE summary: the table itself (the SAP's list of tables, 13.1.1, has none) and
+    its row of AEs leading to discontinuation (SAP 11.4: no formal summary of them);
+  - of the table by organ class and term: the events (Template 13: n (%) and total events;
+    the build: subjects), the percents (Template 13: none), the p-values (Template 13:
+    three decimals).
+- Two records are `asked`, class `gold_quirk`: CDISC's example does it and no document of
+  the kit says so (exposure-date imputation, the related causalities).
 - Every judged edge awaits approval (Q4); recording approvals is the edit loop of PLAN 7.6.
 
 ## Handed over by issue #29

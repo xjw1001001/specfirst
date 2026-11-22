@@ -13,8 +13,8 @@
 # Patterns are the ARS operations' ("(N=XX)", "XX", "XX.X", "(XX.XX)", "XXX",
 # "( XX.X)", "X.XXXX"), except the minimum and the maximum of height: the example
 # shows them with the decimals of the data (137.2 under "XX"), and so does this layout
-# ("XX.X"). That is the decision tfl.decimals.rule of the pilot's records
-# (gold/decisions/safety.jsonl).
+# ("XX.X"). That is the decision custom:demog-decimals of the pilot's records
+# (gold/decisions/safety.jsonl); catalog@2's tfl.decimals.rule has no alternative that fits.
 layout: 0
 output: Out14-1-1
 footnotes:

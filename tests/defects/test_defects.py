@@ -34,8 +34,10 @@ the kit's exceptions, `results.agreement` for rule R11).
                  without a panel, a script, a handler, a link that leaves the
                  page, a judged edge drawn as proven, an unseparated decision
                  drawn as proven, a decision or a catalog entry left off the
-                 sheet, a broken path to SDTM in the graph files, and an entry
-                 of `formats` that is no difference (ADR-022)
+                 sheet of the page, the record of an upstream column left off
+                 the panels, no SDTM column named in the panels, a broken path
+                 to SDTM in the graph files, an entry of `formats` that is no
+                 difference, and one under a misspelt result set (ADR-022)
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -51,8 +53,10 @@ These tests need `specfirst fetch`, the engine and R, and carry the marker
 from __future__ import annotations
 
 import copy
+import html
 import json
 import os
+import re
 import shutil
 from collections import Counter
 from dataclasses import dataclass
@@ -1485,11 +1489,23 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
         problems.append("the page of the same build is not the same twice")
     cell = sorted(c.id for c in review.cells.values() if c.output == "Out14-3-2-1")[0]
     record = sorted(review.decisions)[0]
-    off = copy.deepcopy(review)
-    off.sheet = [line for line in off.sheet if line.key != record]
     entry = next(line.key for line in review.sheet if line.kind == "catalog entry")
-    no_entry = copy.deepcopy(review)
-    no_entry.sheet = [line for line in no_entry.sheet if line.key != entry]
+
+    def row_gone(key: str) -> str:
+        """The page without the row of the sheet of a key: planted in the page (F3)."""
+        anchor = html.escape("s-" + key.replace(" ", "_"))
+        row = f'<tr class="decision" id="{anchor}" data-key="{html.escape(key)}">'
+        assert row in text, row
+        return text.replace(row, "<tr>")
+
+    # A record that binds a column the TEAE counts read, through the columns it derives from
+    # (ADAE.ASTDT, from which TRTEMFL derives): its block is taken out of every panel.
+    teae = next(view for view in review.analyses.values()
+                if view.id == "An07_01_TEAE_Summ_ByTrt")
+    upstream = next(key for key, bound, read in teae.column_decisions if bound != read)
+    no_block = text.replace(f'<li class="decision" data-key="{html.escape(upstream)}">', "<li>")
+    # The panels name no SDTM column: the lines "Down to SDTM" are emptied.
+    no_sdtm = re.sub(r"Down to SDTM: (<code>[^<]*</code>(, )?)+", "Down to SDTM: none", text)
     p4 = {(review.decisions[record].id, review.decisions[record].unit): model.UNSEPARATED}
     unseparated = model.load(pilot.root, KIT, pilot.folder, recompute=none, p4=p4)
     unseparated_text = page.html(unseparated)
@@ -1509,9 +1525,16 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
             '<li class="citation"><span class="kind executed">', 1), review),
         "an unseparated decision drawn as proven": lambda: checks.page_problems(
             unseparated_text.replace("kind unseparated", "kind static"), unseparated),
-        "a decision left off the sheet": lambda: checks.acceptance(off, text, REVIEWED)[1],
+        "a decision left off the sheet": lambda: checks.acceptance(
+            review, row_gone(record), REVIEWED)[1],
         "an entry of the catalog left off the sheet": lambda: checks.acceptance(
-            no_entry, text, REVIEWED)[1],
+            review, row_gone(entry), REVIEWED)[1],
+        f"the decision {upstream} left off the panels": lambda: [
+            p for p in checks.acceptance(review, no_block, REVIEWED)[1]
+            if "does not draw the decision" in p],
+        "no SDTM column named in the panels": lambda: [
+            p for p in checks.acceptance(review, no_sdtm, REVIEWED)[1]
+            if "reaches no SDTM column" in p],
     }
     for name, seen in planted.items():
         found = seen()
@@ -1551,6 +1574,23 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
     print(f"planted in the exceptions, a difference of display no cell shows: passes {passed}")
     if passed or not any("no cell of a built grid" in line for line in said):
         problems.append("an entry of formats that is no difference: not seen")
+    # In the exceptions: the entry of a difference that a cell shows, under a misspelt result
+    # set (the review of issue #31, F5).
+    shown = real(pilot.folder / "gold" / "exceptions.yaml")[pilot.spec.id]
+
+    def misspelt(path):
+        made = real(path)
+        made.pop(pilot.spec.id, None)
+        made[pilot.spec.id[:-1]] = shown
+        return made
+
+    said = []
+    with mock.patch.object(results, "load_formats", misspelt):
+        passed, _ = build.display_checks(pilot.root, KIT, pilot.folder, said.append)
+    print(f"planted in the exceptions, a difference of display under {pilot.spec.id[:-1]}: "
+          f"passes {passed}")
+    if passed or not any("which is no result set of the kit" in line for line in said):
+        problems.append("an entry of formats under a misspelt result set: not seen")
     return problems
 
 

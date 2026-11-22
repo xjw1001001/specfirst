@@ -729,7 +729,8 @@ def add_displays(graph: Graph, kit_dir: Path, displays: list[Display]) -> None:
     graph.coverage = {**graph.coverage, "analyses": analyses_read, "displays": coverage_displays}
 
 
-PageText = Callable[[Path, int], str]  # a page of a PDF as text (specfirst.machine.csr)
+# A page of a PDF as text, or the whole document for page None (specfirst.machine.csr).
+PageText = Callable[[Path, int | None], str]
 
 
 def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display],
@@ -747,8 +748,13 @@ def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display]
     approves an edge (section 4.2): that the page supports the analysis is a
     person's judgment.
 
-    A reference to a document the kit does not hold (the CSR, a table shell)
-    gives no edge; coverage.json lists it under `documents`.
+    A reference without page numbers (CDISC's example gives none for its
+    adverse event analyses) names the document as a whole: its span is
+    `doc:<document>#<label>`, and its quote is verified where the label stands
+    anywhere in the document's text (`page_text` of page None); coverage.json
+    counts these edges apart. A reference to a document the kit does not hold
+    (the CSR, a table shell) gives no edge; coverage.json lists it under
+    `documents`.
     """
     if page_text is None:
         from specfirst.machine.csr import page_text
@@ -756,8 +762,8 @@ def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display]
     edges = {(edge["type"], edge["from"], edge["to"]): edge for edge in graph.edges}
     hashes = {entry.path: entry.sha256 for entry in kit.files}
     shown = {node["id"] for node in graph.nodes if node.get("kind") == "analysis"}
-    texts: dict[tuple[str, int], str] = {}
-    taken, verified, elsewhere = 0, 0, Counter()
+    texts: dict[tuple[str, int | None], str] = {}
+    taken, verified, whole, elsewhere = 0, 0, 0, Counter()
     for display in displays:
         event = display.event
         methods = {method["id"]: method for method in event.data.get("methods") or []}
@@ -776,8 +782,11 @@ def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display]
                         continue
                     for page_ref in ref.get("pageRefs") or []:
                         label = str(page_ref.get("label") or "")
-                        for page in page_ref.get("pageNumbers") or []:
-                            anchor = quote(f"{page}/{label}", safe=_ANCHOR_SAFE)
+                        pages: list[int | None] = [
+                            int(page) for page in page_ref.get("pageNumbers") or []] or [None]
+                        for page in pages:
+                            anchor = quote(label if page is None else f"{page}/{label}",
+                                           safe=_ANCHOR_SAFE)
                             span = f"doc:{document.id}#{anchor}"
                             if span not in nodes:
                                 nodes[span] = {
@@ -785,15 +794,16 @@ def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display]
                                     "hash": content_hash({"document": hashes[document.file],
                                                           "anchor": anchor}),
                                     "source": {"file": document.file, "line": 1}}
-                            key_text = (document.file, int(page))
+                            key_text = (document.file, page)
                             if key_text not in texts:
                                 texts[key_text] = "".join(page_text(
-                                    kit_dir / document.file, int(page)).split())
+                                    kit_dir / document.file, page).split())
                             found = bool(label) and "".join(label.split()) in texts[key_text]
                             key = ("cites", ars_id(name), span)
                             if key not in edges:
                                 taken += 1
                                 verified += found
+                                whole += page is None
                                 edges[key] = {
                                     "type": "cites", "from": ars_id(name), "to": span,
                                     "proof": "judged", "origin": "imported",
@@ -803,6 +813,7 @@ def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display]
     graph.edges = [edges[key] for key in sorted(edges)]
     graph.coverage = {**graph.coverage, "documents": {
         "cites_edges_of_analyses": taken, "quotes_verified": verified,
+        "edges_to_a_whole_document": whole,
         "references_not_to_kit_documents": dict(sorted(elsewhere.items()))}}
 
 

@@ -624,7 +624,7 @@ def _review(ctx: Context) -> bool:
     from specfirst.viewer import check, command, model, page
 
     target, review, text = command.write(ctx.root, PILOT, _first_build(ctx))
-    problems = check.page_problems(text, review)
+    problems = [*review.problems, *check.page_problems(text, review)]
     lines, found = check.acceptance(review, text, REVIEW_OUTPUTS)
     for line in lines:
         ctx.out(line)
