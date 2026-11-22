@@ -30,9 +30,11 @@ docs/decisions/ADR-021.md.
   run_all.sh in a fresh folder gives the sealed run's outputs byte for byte
   and the same report.
 - The gate issue-29 and the gates real-5a, real-5b, real-2 and real-3a pass
-  on clean clones of `22c2932`. PLAN.md, `standard/` (the schemas,
-  `catalog@1`, `open-default@1`, the method registry), `env/` and the kit
-  are not changed. Nothing is for the owner.
+  on clean clones of `22c2932`, and again, with catalog-2b's, on clean
+  clones of `711c032`, the work with `main` `6cdeded` merged in. The work
+  changes neither PLAN.md, nor `standard/` (the schemas, `catalog@1`,
+  `open-default@1`, the method registry), nor `env/` or the kit. Nothing
+  is for the owner.
 
 ## What the issue asks for, and where it stands
 
@@ -373,7 +375,9 @@ that hold the pilot kit, real-5a, real-5b, real-2 and real-3a, on commit
 `22c2932`: one gate at a time, each under the heavy lock and on four
 processors; each clone gets a fresh install and a fresh fetch. The
 commits after `22c2932` change documents only (this report, the review,
-the logs, the state file). Each log is committed in full.
+the logs, the state file). Each log is committed in full. The exit codes
+and seconds below are the lines of the loop that ran the five gates, which
+is not a committed file; each log shows its own checks and verdict.
 
 ```text
 $ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh <gate> <repository> 22c2932
@@ -393,8 +397,47 @@ real-3a exit 0 after 945 s
 | real-3a | 16 PASS, 0 FAIL | 1317 passed, 36 deselected | `GATE real-3a: PASS`, `clean clone gate real-3a: PASS` | docs/reports/issue-29.real-3a.gate.log |
 
 The gate issue-29 passed on a clean clone of `694709b` too (12 of 12,
-1170 s). The runs on `b43c336`, `0e06dd4` and `ae07c86` were stopped
-when the review found a further route; only the runs on `22c2932` count.
+1170 s); its log was not kept, the run on `22c2932` wrote over it. The
+runs on `b43c336`, `0e06dd4` and `ae07c86` were stopped when the review
+found a further route; only the runs on `22c2932` and on the merge below
+count.
+
+### On the merge with main
+
+`main` moved to `6cdeded` (catalog-2b: `catalog@2` and `open-default@2`
+frozen) while the gates above ran. It was merged into `track/real` as
+`711c032`, without a conflict; the two sides both change
+src/specfirst/cli.py and src/specfirst/gates.py, in other places. The same
+five gates and catalog-2b's, whose checks stand in gates.py too, ran again
+on clean clones of `711c032`, in the same way; the seconds are again the
+loop's. Each log is committed in full as
+`docs/reports/issue-29.merged.<gate>.gate.log` (issue-29's own as
+issue-29.merged.clean-clone.gate.log).
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash scripts/clean_clone_gate.sh <gate> <repository> 711c032
+issue-29 exit 0 after 1116 s
+real-5a exit 0 after 1042 s
+real-5b exit 0 after 1259 s
+real-2 exit 0 after 1012 s
+real-3a exit 0 after 845 s
+catalog-2b exit 0 after 538 s
+```
+
+| Gate | Checks | Unit tests | Last lines |
+| --- | --- | --- | --- |
+| issue-29 | 12 PASS, 0 FAIL | 1353 passed, 36 deselected | `GATE issue-29: PASS`, `clean clone gate issue-29: PASS` |
+| real-5a | 18 PASS, 0 FAIL | 1353 passed, 36 deselected | `GATE real-5a: PASS`, `clean clone gate real-5a: PASS` |
+| real-5b | 19 PASS, 0 FAIL | 1353 passed, 36 deselected | `GATE real-5b: PASS`, `clean clone gate real-5b: PASS` |
+| real-2 | 15 PASS, 0 FAIL | 1353 passed, 36 deselected | `GATE real-2: PASS`, `clean clone gate real-2: PASS` |
+| real-3a | 16 PASS, 0 FAIL | 1353 passed, 36 deselected | `GATE real-3a: PASS`, `clean clone gate real-3a: PASS` |
+| catalog-2b | 17 PASS, 0 FAIL | 1353 passed, 36 deselected | `GATE catalog-2b: PASS`, `clean clone gate catalog-2b: PASS` |
+
+The unit tests are 36 more than on `22c2932`: those of catalog-2b. The
+gate issue-29 on the merge prints the same results as on `22c2932`: 69 of
+69 `reproduced`, the static check 69 of 69, the three planted breaks with
+the same rows and analyses, the reviewer's report equal to the sealed
+run's.
 
 ## The review
 
@@ -417,8 +460,13 @@ A fresh-context reviewer (rule R7) signs docs/reports/issue-29.review.md.
   other forms that bind a name without an assignment (`except ... as`, a
   type parameter) and every store into an attribute. `22c2932` is the
   commit the gates above ran on.
-- Pass 2, part 2, of this report and the five gate logs: its verdict
-  stands in docs/reports/issue-29.review.md.
+- Pass 2, part 2, of `c5afc28` (this report and the five logs of
+  `22c2932`): nothing blocks. G1 (the seconds come from the loop, not a
+  log) and G2 (the run of `694709b` has no log) are answered in the
+  section "The gates on clean clones"; G3 (each log names the repository
+  it clones by its path, which holds no user folder) needs nothing. Then
+  the merge with `main` and its six logs; the final verdict stands in
+  docs/reports/issue-29.review.md.
 
 ## What is not done
 

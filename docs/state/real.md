@@ -81,8 +81,10 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   the LS-means weights, and the quartile and CMH plants, are found. Gates:
   `scripts/clean_clone_gate.sh` exited 0 for issue-29 (12 of 12), real-5a,
   real-5b, real-2 and real-3a on clean clones of commit `22c2932` (the
-  work on `main` `9dc6b20`). Evidence: docs/reports/issue-29.md and
-  issue-29.clean-clone.gate.log, issue-29.<gate>.gate.log. Review:
+  work on `main` `9dc6b20`), and, with catalog-2b, on clean clones of
+  `711c032` (`main` `6cdeded` merged in). Evidence:
+  docs/reports/issue-29.md, issue-29.clean-clone.gate.log,
+  issue-29.<gate>.gate.log and issue-29.merged.<gate>.gate.log. Review:
   docs/reports/issue-29.review.md. Decisions: docs/decisions/ADR-021.md.
 
 ## Open
