@@ -68,6 +68,15 @@ _DOSES = {"Placebo": 0.0, "Low Dose": 10.0, "High Dose": 20.0}
 # The arms in the order of the protocol, as a build takes them (specfirst.gen.gold.arms_of).
 ARMS = [{"code": _CODES[name], "dose": dose, "names": sorted({name, name.upper()})}
         for name, dose in _DOSES.items()]
+# The features of the design of the study: every subject is randomized (a default of
+# the house depends on it, pop.safety.rule of open-default@2).
+FEATURES = {
+    "design.always": True, "design.randomized": True, "design.multiple_arms": True,
+    "design.has_exposure": True, "design.has_efficacy_set": False,
+    "design.collects_adverse_events": True, "design.collects_vital_signs": True,
+    "design.has_bds_parameters": True, "design.fixed_visits": True,
+    "design.unscheduled_visits": False,
+}
 STATED: dict[Key, dict] = {
     ("ae.teae.end", "mod-ae-emergence"): {"rule": "last_dose_plus_days", "days": 35},
     ("ae.related.values", "mod-ae-emergence"):
@@ -100,16 +109,21 @@ EVENTS = [
 
 # The adverse event summary of the gold decisions, by hand. The first row is the header
 # row: the subjects of the safety set in each column (by actual treatment: L4 is High Dose).
+# The house of the default pair (open-default@2): the standard rows of the ARS example,
+# no total column, a count of zero with its percentage. L1's nausea is serious and
+# possibly related; H2's cardiac arrest is serious and not related.
 _ROWS = ("Any adverse event", "Related adverse event", "Serious adverse event",
-         "Adverse event leading to discontinuation of study treatment", "Fatal adverse event")
-_COLUMNS = ("Placebo", "Low Dose", "High Dose", "Total")
+         "Serious related adverse event", "Fatal adverse event",
+         "Adverse event leading to discontinuation of study treatment")
+_COLUMNS = ("Placebo", "Low Dose", "High Dose")
 EXPECTED = {
-    "": ("(N=3)", "(N=3)", "(N=3)", "(N=9)"),
-    _ROWS[0]: ("2 ( 66.7)", "2 ( 66.7)", "2 ( 66.7)", "6 ( 66.7)"),
-    _ROWS[1]: ("0", "1 ( 33.3)", "1 ( 33.3)", "2 ( 22.2)"),
-    _ROWS[2]: ("0", "1 ( 33.3)", "1 ( 33.3)", "2 ( 22.2)"),
-    _ROWS[3]: ("0", "0", "1 ( 33.3)", "1 ( 11.1)"),
-    _ROWS[4]: ("0", "0", "1 ( 33.3)", "1 ( 11.1)"),
+    "": ("(N=3)", "(N=3)", "(N=3)"),
+    _ROWS[0]: ("2 ( 66.7)", "2 ( 66.7)", "2 ( 66.7)"),
+    _ROWS[1]: ("0 (  0.0)", "1 ( 33.3)", "1 ( 33.3)"),
+    _ROWS[2]: ("0 (  0.0)", "1 ( 33.3)", "1 ( 33.3)"),
+    _ROWS[3]: ("0 (  0.0)", "1 ( 33.3)", "0 (  0.0)"),
+    _ROWS[4]: ("0 (  0.0)", "0 (  0.0)", "1 ( 33.3)"),
+    _ROWS[5]: ("0 (  0.0)", "0 (  0.0)", "1 ( 33.3)"),
 }
 
 # What P4 by class gives on SEP01, decision by decision: what the mutation finds, not what
@@ -117,9 +131,11 @@ EXPECTED = {
 # three the study is made for are named in the docstring. The others, in short: the data
 # have one exposure record per subject with full dates and no times, every subject is
 # randomized, no percent lies on a half, the protocol order is the order of the dose, no
-# causality is PROBABLE, and the table counts the safety set by actual treatment. The
-# example "Active Control" of tfl.columns.total names no arm of the study, so a total over
-# the arms but that control is the total over all arms.
+# causality is PROBABLE, and the table counts the safety set by actual treatment. Under
+# open-default@2 the table has no total column, so every total column changes it
+# (tfl.columns.total was unseparated under open-default@1, whose default is the total
+# over all arms: the example "Active Control" names no arm of the study, and a total over
+# the arms but that control is that total).
 CLASSES: dict[Key, str] = {
     ("trt.planned.source", "mod-treatment"): "inert",
     ("trt.actual.source", "mod-treatment"): "separated",
@@ -139,7 +155,7 @@ CLASSES: dict[Key, str] = {
     ("tfl.output.include", "tfl-ae-summary"): "separated",
     ("tfl.population", "tfl-ae-summary"): "separated",
     ("tfl.columns.arms", "tfl-ae-summary"): "unseparated",
-    ("tfl.columns.total", "tfl-ae-summary"): "unseparated",
+    ("tfl.columns.total", "tfl-ae-summary"): "separated",
     ("tfl.percent.format", "tfl-ae-summary"): "separated",
     ("tfl.rounding.rule", "tfl-ae-summary"): "unseparated",
     ("tfl.ae.summary.rows", "tfl-ae-summary"): "separated",
@@ -222,7 +238,8 @@ def tables(subjects: dict | None = None, events: list | None = None) -> dict[str
     counts: dict[str, int] = {}
     for subject, term, start, causality, serious, action, fatal in events:
         counts[subject] = counts.get(subject, 0) + 1
-        ae.append((STUDY, subject, counts[subject], term.title(), term, "GENERAL DISORDERS",
+        ae.append((STUDY, subject, counts[subject], term.title(), term,
+                   "GENERAL DISORDERS", "GENERAL DISORDERS",
                    "MILD", serious, causality, action,
                    "FATAL" if fatal == "Y" else "RECOVERED/RESOLVED", fatal, start, None))
     return {
@@ -239,8 +256,9 @@ def tables(subjects: dict | None = None, events: list | None = None) -> dict[str
                       "VSSTRESU", "VSDTC", "VISIT", "VISITNUM", "VISITDY"], vs,
                      {"VSSEQ": integer, "VSSTRESN": number, "VISITNUM": number,
                       "VISITDY": number}),
-        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AESOC", "AESEV",
-                      "AESER", "AEREL", "AEACN", "AEOUT", "AESDTH", "AESTDTC", "AEENDTC"], ae,
+        "ae": _table(["STUDYID", "USUBJID", "AESEQ", "AETERM", "AEDECOD", "AEBODSYS", "AESOC",
+                      "AESEV", "AESER", "AEREL", "AEACN", "AEOUT", "AESDTH", "AESTDTC",
+                      "AEENDTC"], ae,
                      {"AESEQ": integer}),
     }
 
@@ -269,4 +287,4 @@ def records(catalog, house) -> list[dict]:
     """The gold decision vector: id, unit and value, in catalog order."""
     from specfirst.gen.separate import house_vector
 
-    return house_vector(catalog, house, STATED)
+    return house_vector(catalog, house, STATED, features=FEATURES)

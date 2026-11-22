@@ -195,7 +195,8 @@ def case(kit: Kit, catalog: Catalog, stage: str = "C") -> scorer.Case:
         data=dict(kit.data), documents=kit.documents, stage=stage,
         standard_form=tuple(gendocs.standard_id(doc) for doc in gendocs.STANDARD),
         oracle=dict(kit.oracle),
-        variants=lambda key: options(kit, catalog, key)[1:])
+        variants=lambda key: options(kit, catalog, key)[1:],
+        features=designs.features(kit.design))
 
 
 # ---- the gold of the kit, built again ----------------------------------------------------
@@ -659,7 +660,8 @@ def planted(machine: Machine, kit: Kit, scored: KitScore, out: Out) -> bool:
     # one whose value is not the house default (in a kit of the tier full a default is
     # stated too, and without its statement the default stands in with the right value).
     defaults = {(r["id"], r["unit"]): r["value"]
-                for r in houses.default_decisions(catalog, machine.house)}
+                for r in houses.default_decisions(catalog, machine.house,
+                                                  designs.features(kit.design))}
     scoped = [r for r in kit.records if r["unit"] in kit.units and r["status"] == "stated"]
     stated = next((r for r in scoped if defaults.get((r["id"], r["unit"])) != r["value"]),
                   scoped[0])

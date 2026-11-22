@@ -127,20 +127,25 @@ def filler_wanted() -> list[dict]:
 
 
 def without_default(catalog: catalogs.Catalog, house: houses.House, listed: list[dict],
-                    units: tuple[str, ...]) -> set[tuple[str, str]]:
-    """The decisions of the scope that have no house default."""
-    base = {(r["id"], r["unit"]) for r in houses.default_decisions(catalog, house)}
+                    units: tuple[str, ...], features: dict[str, bool] | None = None
+                    ) -> set[tuple[str, str]]:
+    """The decisions of the scope that have no house default for a design of these
+    features."""
+    base = {(r["id"], r["unit"]) for r in houses.default_decisions(catalog, house, features)}
     return {(r["id"], r["unit"]) for r in listed
             if r["unit"] in units and (r["id"], r["unit"]) not in base}
 
 
 def statuses(catalog: catalogs.Catalog, house: houses.House, listed: list[dict], tier: str,
-             units: tuple[str, ...]) -> dict[tuple[str, str], str]:
-    """stated, default or asked, for every decision of a vector, under a tier."""
+             units: tuple[str, ...], features: dict[str, bool] | None = None
+             ) -> dict[tuple[str, str], str]:
+    """stated, default or asked, for every decision of a vector, under a tier; a default
+    that depends on the design is the one of these features."""
     if tier not in TIERS:
         raise ValueError(f"a tier is one of {', '.join(TIERS)}, not '{tier}'")
-    base = {(r["id"], r["unit"]): r["value"] for r in houses.default_decisions(catalog, house)}
-    asked = without_default(catalog, house, listed, units) if tier == "ask" else set()
+    base = {(r["id"], r["unit"]): r["value"]
+            for r in houses.default_decisions(catalog, house, features)}
+    asked = without_default(catalog, house, listed, units, features) if tier == "ask" else set()
     found = {}
     for record in listed:
         key = (record["id"], record["unit"])
@@ -260,8 +265,9 @@ def write(catalog: catalogs.Catalog, house: houses.House, design: dict, listed: 
     """
     store = store or natural.Store.load()
     form = StandardForm(catalog)
-    state = statuses(catalog, house, listed, tier, units)
-    base = {(r["id"], r["unit"]): r for r in houses.default_decisions(catalog, house)}
+    features = designs.features(design)
+    state = statuses(catalog, house, listed, tier, units, features)
+    base = {(r["id"], r["unit"]): r for r in houses.default_decisions(catalog, house, features)}
     statements = {(r["id"], r["unit"]): form.render(r["id"], r["unit"], r["value"])
                   for r in listed}
     stated = [r for r in listed if state[(r["id"], r["unit"])] == "stated"]
@@ -471,6 +477,17 @@ MAX_LINES, MAX_WIDTH = 60, 100
 _TWIN = {"separated": "yes", "unseparated": "no"}
 
 
+def _cited(cite: dict, entry_id: str) -> str:
+    """A citation as "doc anchor". An anchor by entry ID (the house standard of
+    open-default@2) is shown by what follows the ID: the Decision column names it."""
+    anchor = str(cite["anchor"])
+    if anchor == entry_id:
+        return str(cite["doc"])
+    if anchor.startswith(entry_id + "/"):
+        return f"{cite['doc']} /{anchor[len(entry_id) + 1:]}"
+    return f"{cite['doc']} {anchor}"
+
+
 def summary(manifest: dict, design: dict, records: list[dict], visible: list[str],
             twin: list[str]) -> str:
     """One page about a kit, for people (ADR-009, decision 9)."""
@@ -487,13 +504,13 @@ def summary(manifest: dict, design: dict, records: list[dict], visible: list[str
              f"{sources['model']}, phrasing template {sources['template']}, missing "
              f"{sources['missing']}.",
              f"Probes: {len(twin)} in the twin, {len(visible)} of them in the visible data.", "",
-             "Where: the natural paragraph (its standard-form anchor). Twin: separated there.",
+             "Where: natural paragraph (its standard-form anchor), house anchor after its ID. "
+             "Twin: separated.",
              "", "| Decision | Value | Status | Where | Twin |", "| --- | --- | --- | --- | --- |"]
     for record in records:
         cited = record.get("citations") or []
         where = (f"{cited[1]['doc']} {cited[1]['anchor']} ({cited[0]['anchor']})"
-                 if len(cited) > 1 else f"{cited[0]['doc']} {cited[0]['anchor']}"
-                 if cited else "")
+                 if len(cited) > 1 else _cited(cited[0], record["id"]) if cited else "")
         unit = f" ({record['unit']})" if record["id"] == "tfl.output.include" else ""
         lines.append(f"| {record['id']}{unit} | {record['value']['rule']} | {record['status']} | "
                      f"{where or 'oracle'} | {_TWIN.get(record.get('identifiable'), '-')} |")
@@ -593,7 +610,8 @@ def problems(catalog: catalogs.Catalog, house: houses.House, kit_dir: Path, mani
             elif (gold.get("citations") or [None])[0] != wanted:
                 found["parser"].append(f"{key[0]}: the record does not cite "
                                        f"{wanted['doc']}#{wanted['anchor']} first")
-    defaults = {(r["id"], r["unit"]): r["value"] for r in houses.default_decisions(catalog, house)}
+    defaults = {(r["id"], r["unit"]): r["value"]
+                for r in houses.default_decisions(catalog, house, designs.features(design))}
     answers = {(a["decision"], a["unit"]): a for a in oracle.get("answers") or []}
     for key, gold in by_key.items():
         if gold["status"] == "stated":
@@ -675,7 +693,7 @@ def problems(catalog: catalogs.Catalog, house: houses.House, kit_dir: Path, mani
         found["tiers"].append(f"kit.yaml names no tier of the documents ({tier!r})")
     else:
         listed = [{"id": r["id"], "unit": r["unit"], "value": r["value"]} for r in records]
-        wanted = statuses(catalog, house, listed, tier, units)
+        wanted = statuses(catalog, house, listed, tier, units, designs.features(design))
         for key, gold in by_key.items():
             if gold["status"] != wanted[key]:
                 found["tiers"].append(f"{key[0]} ({key[1]}): {gold['status']}, the tier "

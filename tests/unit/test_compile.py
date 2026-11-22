@@ -26,15 +26,18 @@ from specfirst.compile.template import (
     names_used,
 )
 
+# The std-1 tests hold the frozen pair of version 1 (ADR-020: loadable by label).
+V1 = ("catalog@1", "open-default@1")
+
 
 @pytest.fixture(scope="module")
 def catalog(root):
-    return catalog_module.load(catalog_module.default_dir(root))
+    return catalog_module.load(catalog_module.default_dir(root, V1[0]))
 
 
 @pytest.fixture(scope="module")
 def house(root):
-    return house_module.load(house_module.default_dir(root))
+    return house_module.load(house_module.default_dir(root, V1[1]))
 
 
 @pytest.fixture(scope="module")

@@ -35,8 +35,11 @@ def test_a_pinned_file_is_found_by_its_hash(tmp_path, monkeypatch):
 
 
 def test_every_analysis_of_the_examples_summary_has_its_place_in_the_crosswalk():
-    """Five analyses count what a row of the house table counts; three have no row."""
+    """Every analysis counts what a row of catalog@2 counts (#13); the key's list of rows
+    is the trace's stated value of tfl.ae.summary.rows."""
     assert len(pilot.ROWS) == 8
     assert sorted(code for code in pilot.ROWS.values() if code) == [
-        "ANY", "DISCONTINUATION", "FATAL", "RELATED", "SERIOUS"]
-    assert sum(1 for code in pilot.ROWS.values() if code is None) == 3
+        "ANY", "DISCONTINUATION", "DOSE_MODIFIED", "FATAL", "FATAL_RELATED", "RELATED",
+        "SERIOUS", "SERIOUS_RELATED"]
+    assert sum(1 for code in pilot.ROWS.values() if code is None) == 0
+    assert pilot.KEY_ROWS["rows"] == list(pilot.ROWS.values())

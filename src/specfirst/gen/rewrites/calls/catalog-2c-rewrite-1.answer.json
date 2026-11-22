@@ -1,0 +1,23 @@
+{"paragraphs": [
+{"key": "027d3ea21e53817d", "text": "Percentages in the adverse event summary table are reported with 0 decimals, and a count of zero is displayed without a percentage."},
+{"key": "07bef8324c8ef2e6", "text": "The planned arm code (DM.ARMCD) determines planned treatment: SFX50 is decoded as Low Dose, SFX100 as Medium Dose, SFX200 as High Dose, and PBO as Placebo."},
+{"key": "143a8d33ae44cda8", "text": "Treatment emergence ends 14 days after the treatment end date, and that day is included in the window."},
+{"key": "2fe18f9d6a560beb", "text": "The planned arm code (DM.ARMCD) determines planned treatment: KRD5 is decoded as Low Dose, KRD10 as High Dose, and PBO as Placebo."},
+{"key": "34974de52735ab09", "text": "Percentages in the adverse event summary table are reported with 1 decimal, and a count of zero is displayed without a percentage."},
+{"key": "37aa6bde64164442", "text": "The randomized set consists of every randomized subject."},
+{"key": "38c12d5b2492c335", "text": "The adverse event summary table has the rows ANY, RELATED, FATAL, in that order."},
+{"key": "65f32453edbaf64a", "text": "The adverse event summary table has the rows ANY, RELATED, FATAL, FATAL_RELATED, in that order."},
+{"key": "6e3358242e0cd045", "text": "The adverse event summary table has these rows: any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment."},
+{"key": "82ba8cef9b7a9151", "text": "The planned arm code (DM.ARMCD) determines planned treatment: TNB50 is decoded as Low Dose, TNB100 as Medium Dose, TNB200 as High Dose, and PBO as Placebo."},
+{"key": "abb2c99bc1baa39e", "text": "An adverse event is treatment-emergent if it starts on or after the first dose; date and time are compared where both were collected, and dates alone are compared otherwise."},
+{"key": "ac81399c30e18ad0", "text": "An adverse event is considered related to study treatment when its causality is UNLIKELY RELATED, POSSIBLY RELATED, PROBABLY RELATED, or RELATED."},
+{"key": "bf307444266ccb81", "text": "Actual treatment is the treatment named on the first exposure record of the subject (EX.EXTRT)."},
+{"key": "c1f1d520c9123a92", "text": "An adverse event is considered related to study treatment when its causality is POSSIBLY RELATED, PROBABLY RELATED, or RELATED."},
+{"key": "c87fc302310e2787", "text": "Baseline body mass index is derived from baseline weight and height and is kept at full precision."},
+{"key": "ca3dc711daecb13a", "text": "The planned arm code (DM.ARMCD) determines planned treatment: PBO is decoded as Placebo, ZQR200 as High Dose, ZQR100 as Medium Dose, and ZQR50 as Low Dose."},
+{"key": "d401a45eb85b9e31", "text": "Percentages in the adverse event summary table are reported with 2 decimals, and a count of zero is displayed without a percentage."},
+{"key": "dba38110190a1563", "text": "The treatment end date is the latest start date among the exposure records that have a dose."},
+{"key": "dc7d127743ce3c1b", "text": "Age is grouped as below 65 years and 65 years and above."},
+{"key": "ed02605ba655cb8b", "text": "Percentages in the adverse event summary table are reported with 1 decimal, and a count of zero is displayed with its percentage."},
+{"key": "ed7774c0a2045961", "text": "An adverse event is considered related to study treatment when its causality is PROBABLE."}
+], "filler": []}

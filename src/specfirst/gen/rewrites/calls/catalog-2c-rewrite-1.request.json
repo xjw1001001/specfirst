@@ -1,0 +1,156 @@
+{
+ "rules": [
+  "Write one paragraph per statement, one to three sentences, in the plain voice of a clinical study protocol or statistical analysis plan, in the future or present tense.",
+  "Keep every number, unit, visit name, variable name (such as DM.ARMCD), quoted value and the name of the table exactly as the statement writes it, and in the same order as in the statement. Quotation marks may be dropped; the words inside them may not change.",
+  "Say the same rule and nothing else: add no rule, no example, no number, no value and no reason. Do not mention the standard form, a catalog or a template.",
+  "Reword freely: change the sentence structure and the ordinary words; the meaning must stay exactly the same.",
+  "One line of plain ASCII text: no line breaks, no Markdown, no brackets around numbers, no curly quotes, no dashes other than the ASCII hyphen."
+ ],
+ "paragraphs": [
+  {
+   "key": "027d3ea21e53817d",
+   "document": "sap",
+   "statement": "The number of decimals of percentages in the adverse event summary table is 0, and a count of zero is shown without a percentage.",
+   "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+  },
+  {
+   "key": "07bef8324c8ef2e6",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"SFX50\" means \"Low Dose\"; \"SFX100\" means \"Medium Dose\"; \"SFX200\" means \"High Dose\"; \"PBO\" means \"Placebo\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "143a8d33ae44cda8",
+   "document": "sap",
+   "statement": "Treatment emergence ends 14 days after the treatment end date, that day included.",
+   "meaning": "An event that starts later than that many days after the treatment end date is not treatment-emergent; one that starts on the last day of the window still is."
+  },
+  {
+   "key": "2fe18f9d6a560beb",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"KRD5\" means \"Low Dose\"; \"KRD10\" means \"High Dose\"; \"PBO\" means \"Placebo\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "34974de52735ab09",
+   "document": "sap",
+   "statement": "The number of decimals of percentages in the adverse event summary table is 1, and a count of zero is shown without a percentage.",
+   "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+  },
+  {
+   "key": "37aa6bde64164442",
+   "document": "protocol",
+   "statement": "The randomized set holds every randomized subject.",
+   "meaning": "The randomized set is written to ITTFL: the FDA guide calls it the randomized population, often referred to as the intent-to-treat population."
+  },
+  {
+   "key": "38c12d5b2492c335",
+   "document": "sap",
+   "statement": "The rows of the adverse event summary table are, in this order, ANY, RELATED, FATAL.",
+   "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related)."
+  },
+  {
+   "key": "65f32453edbaf64a",
+   "document": "sap",
+   "statement": "The rows of the adverse event summary table are, in this order, ANY, RELATED, FATAL, FATAL_RELATED.",
+   "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related)."
+  },
+  {
+   "key": "6e3358242e0cd045",
+   "document": "sap",
+   "statement": "The rows of the adverse event summary table are any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment.",
+   "meaning": "The rows and their order are those of the ARS example \"Common Safety Displays\", output Out14-3-1-1, without its rows of related fatal events and of events leading to dose modification."
+  },
+  {
+   "key": "82ba8cef9b7a9151",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"TNB50\" means \"Low Dose\"; \"TNB100\" means \"Medium Dose\"; \"TNB200\" means \"High Dose\"; \"PBO\" means \"Placebo\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "abb2c99bc1baa39e",
+   "document": "sap",
+   "statement": "An adverse event is treatment-emergent when it starts on or after the first dose, comparing date and time where both were collected and dates otherwise.",
+   "meaning": "On the first dose date, an event is not treatment-emergent only when both its start time and the time of the first dose were collected and it starts before the dose; an event on that date without a collected time is treatment-emergent."
+  },
+  {
+   "key": "ac81399c30e18ad0",
+   "document": "protocol",
+   "statement": "An adverse event is related to study treatment when its causality is one of \"UNLIKELY RELATED\", \"POSSIBLY RELATED\", \"PROBABLY RELATED\", \"RELATED\".",
+   "meaning": "The causality is the collected value of AEREL, compared exactly."
+  },
+  {
+   "key": "bf307444266ccb81",
+   "document": "sap",
+   "statement": "Actual treatment is the treatment named on the first exposure record of the subject (EX.EXTRT).",
+   "meaning": "The first exposure record is the one with the earliest start date; the lowest EXSEQ breaks a tie."
+  },
+  {
+   "key": "c1f1d520c9123a92",
+   "document": "protocol",
+   "statement": "An adverse event is related to study treatment when its causality is one of \"POSSIBLY RELATED\", \"PROBABLY RELATED\", \"RELATED\".",
+   "meaning": "The causality is the collected value of AEREL, compared exactly."
+  },
+  {
+   "key": "c87fc302310e2787",
+   "document": "sap",
+   "statement": "Baseline body mass index is derived from baseline weight and height, at full precision.",
+   "meaning": "Weight in kg divided by the square of height in m, with height collected in cm and divided by 100; weight in kg and height in cm are assumed. The value is kept at full precision: a table rounds it once, at display (PLAN.md section 7.2)."
+  },
+  {
+   "key": "ca3dc711daecb13a",
+   "document": "sap",
+   "statement": "Planned treatment is decoded from the planned arm code (DM.ARMCD) as follows: \"PBO\" means \"Placebo\"; \"ZQR200\" means \"High Dose\"; \"ZQR100\" means \"Medium Dose\"; \"ZQR50\" means \"Low Dose\".",
+   "meaning": "A code that the list does not name gives no planned treatment."
+  },
+  {
+   "key": "d401a45eb85b9e31",
+   "document": "sap",
+   "statement": "The number of decimals of percentages in the adverse event summary table is 2, and a count of zero is shown without a percentage.",
+   "meaning": "With 0 decimals a percentage is a whole number. A count above zero always has its percentage."
+  },
+  {
+   "key": "dba38110190a1563",
+   "document": "sap",
+   "statement": "The treatment end date is the latest start date of an exposure record with a dose."
+  },
+  {
+   "key": "dc7d127743ce3c1b",
+   "document": "sap",
+   "statement": "Age groups are below 65 years, and 65 years and above.",
+   "meaning": "The groups are labelled <65 and >=65."
+  },
+  {
+   "key": "ed02605ba655cb8b",
+   "document": "sap",
+   "statement": "The number of decimals of percentages in the adverse event summary table is 1, and a count of zero is shown with its percentage.",
+   "meaning": "With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals."
+  },
+  {
+   "key": "ed7774c0a2045961",
+   "document": "protocol",
+   "statement": "An adverse event is related to study treatment when its causality is one of \"PROBABLE\".",
+   "meaning": "The causality is the collected value of AEREL, compared exactly."
+  }
+ ],
+ "filler_rules": [
+  "Write one neutral paragraph of two to four sentences for the heading given, in the voice of a clinical study protocol or statistical analysis plan.",
+  "It must state no analysis rule at all: nothing about analysis sets or populations, treatment dates or groups, study days, disposition, adverse events, causality, imputation of dates, baseline values, age or race groups, body mass index, which tables are produced, table columns, rows, percentages, rounding or decimals.",
+  "No numbers, no dates, no names of variables or datasets. One line of plain ASCII text."
+ ],
+ "filler": [],
+ "answer": {
+  "paragraphs": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ],
+  "filler": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ]
+ }
+}

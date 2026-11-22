@@ -1,0 +1,7 @@
+{"paragraphs": [
+{"key": "143a25f85d7f62f4", "text": "In the adverse event summary table, percentages will be presented with 0 decimals, and a count of zero will be displayed together with its percentage."},
+{"key": "38ada0f9a172ae32", "text": "The efficacy-evaluable set will consist of all subjects in the safety set who have a baseline value and at least one post-baseline value of the vital sign WEIGHT."},
+{"key": "cb149eac0baa5239", "text": "The treatment end date will be the latest end date found among all exposure records."},
+{"key": "d1314e75c2820be3", "text": "In the adverse event summary table, percentages will be presented with 2 decimals, and a count of zero will be displayed together with its percentage."},
+{"key": "df27755fc9e15ca1", "text": "The period of treatment emergence will run until 30 days after the treatment end date, with that last day included."}
+], "filler": []}

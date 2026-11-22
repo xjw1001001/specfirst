@@ -2,10 +2,12 @@
 (PLAN.md section 10; docs/decisions/ADR-010.md, decision 10).
 
     skills/core-reader/SKILL.md   the shared procedure, written by hand
-    skills/<unit>/SKILL.md        reading notes v0 of a unit, rendered from the catalog:
-                                  for every entry of the unit its question, its
-                                  alternatives with their statements, the house default
-                                  and its reading note (standard/catalog@<n>/knowledge/)
+    skills/<unit>/SKILL.md        reading notes v0 of a unit, rendered from the catalog
+                                  and the house of the default pair: for every entry of
+                                  the unit its question, its alternatives with their
+                                  statements, the house default (from catalog@2 the
+                                  house's, ADR-020) and its reading note
+                                  (standard/catalog@<n>/knowledge/)
 
 Both are Agent Skill folders: a SKILL.md whose front matter names the skill
 and says what it is for (the format of pharma-skills, PLAN.md E16).
@@ -21,7 +23,7 @@ import json
 import re
 from pathlib import Path
 
-from specfirst.compile import catalog as catalogs
+from specfirst.compile import house as houses
 from specfirst.compile.catalog import Catalog
 from specfirst.gen import kits as genkits
 from specfirst.harness import task as tasks
@@ -41,8 +43,32 @@ def _note_body(text: str) -> list[str]:
     return [("#" + line) if line.startswith("## ") else line for line in lines]
 
 
-def render_unit(catalog: Catalog, unit: str) -> str:
-    """The reading notes v0 of a unit, from the catalog."""
+def _slots(value: dict) -> str:
+    return "".join(f", {name} {value[name]}" for name in value if name != "rule")
+
+
+def house_default(catalog: Catalog, house: houses.House, entry_id: str,
+                  unit: str) -> tuple[set[str], str]:
+    """The alternatives the house takes by default for a question, and the words that
+    say so: one default, one per case of the design, or none."""
+    if houses.by_design(catalog, house, entry_id, unit):
+        cases = houses.choices(house, entry_id, unit, catalog.entry(entry_id).per_family)
+        parts = []
+        for case in cases:
+            value = {"rule": case["rule"], **(case.get("values") or {})}
+            when = (f"for a study where {case['when']} holds" if "when" in case
+                    else "for any other study")
+            parts.append(f"`{case['rule']}`{_slots(value)} {when}")
+        return ({case["rule"] for case in cases},
+                "it depends on the design: " + "; ".join(parts) + ".")
+    value = houses.default_value(catalog, house, entry_id, unit)
+    if value is None:
+        return set(), "none. A document states it, or it is asked."
+    return {value["rule"]}, f"`{value['rule']}`{_slots(value)}."
+
+
+def render_unit(catalog: Catalog, house: houses.House, unit: str) -> str:
+    """The reading notes v0 of a unit, from the catalog and the house."""
     title = catalog.units[unit].title
     entries = [entry for entry in catalog.entries.values() if unit in entry.units]
     lines = [
@@ -51,12 +77,14 @@ def render_unit(catalog: Catalog, unit: str) -> str:
         f"description: Reading notes v0 for the unit {unit} ({title}). For each of its "
         f"{len(entries)} catalog questions, where a protocol or a statistical analysis plan "
         "states the decision, the words to look for and the traps. Rendered from the "
-        f"decision catalog {catalog.name} {catalog.version}.",
+        f"decision catalog {catalog.name} {catalog.version} and the house standard "
+        f"{house.label}.",
         "---",
         "",
         f"# {title} ({unit}): reading notes v0",
         "",
-        f"Rendered from the decision catalog `{catalog.name}` version {catalog.version} by "
+        f"Rendered from the decision catalog `{catalog.name}` version {catalog.version} and "
+        f"the house standard `{house.label}` by "
         "`specfirst run skills --write`; do not edit by hand. Read `core-reader` first: it "
         "says how to record a decision. Here, for every question of the unit: its "
         "alternatives with the statement each gives, the house default, and where documents "
@@ -65,17 +93,16 @@ def render_unit(catalog: Catalog, unit: str) -> str:
         "Questions of this unit: " + ", ".join(f"`{entry.id}`" for entry in entries) + ".",
     ]
     for entry in entries:
-        default = entry.default_for(unit)
+        defaults, said = house_default(catalog, house, entry.id, unit)
         lines += ["", f"## `{entry.id}`: {entry.question}", "", "Alternatives:", ""]
         for alternative in entry.alternatives:
             slots = ", ".join(slot.name for slot in alternative.slots)
-            mark = " (the house default)" if alternative.id == default else ""
+            mark = " (the house default)" if alternative.id in defaults else ""
             lines.append(f"- `{alternative.id}`{mark}" + (f", slots {slots}" if slots else "")
                          + f": \"{alternative.statement}\"")
             if alternative.definition:
                 lines.append(f"  Meaning: {' '.join(alternative.definition.split())}")
-        lines += ["", "House default: " + (f"`{default}`." if default else
-                                           "none. A document states it, or it is asked."), ""]
+        lines += ["", "House default: " + said, ""]
         note = catalog.directory / entry.reading if entry.reading else None
         if note is not None and note.is_file():
             lines += _note_body(note.read_text(encoding="ascii"))
@@ -84,12 +111,12 @@ def render_unit(catalog: Catalog, unit: str) -> str:
 
 def write(root: Path) -> list[Path]:
     """Render the reading notes of the units into skills/<unit>/SKILL.md."""
-    catalog = catalogs.load(catalogs.default_dir(root))
+    catalog, house = houses.load_pair(root)
     written = []
     for unit in UNITS:
         path = tasks.skill_path(root, unit)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(render_unit(catalog, unit), encoding="ascii", newline="\n")
+        path.write_text(render_unit(catalog, house, unit), encoding="ascii", newline="\n")
         written.append(path)
     return written
 
@@ -186,7 +213,7 @@ def problems(root: Path, secrets: list[str], paragraphs: list[str]) -> list[str]
     missing or malformed SKILL.md, notes that are not their rendering, a leak. A
     paragraph of the store that the catalog itself states (a rewrite that kept the
     statement) is no leak."""
-    catalog = catalogs.load(catalogs.default_dir(root))
+    catalog, house = houses.load_pair(root)
     known = catalog_text(catalog)
     paragraphs = [p for p in paragraphs if _squeeze(p) not in known]
     found = []
@@ -197,7 +224,7 @@ def problems(root: Path, secrets: list[str], paragraphs: list[str]) -> list[str]
             continue
         text = path.read_text(encoding="ascii")
         found += format_problems(name, text)
-        if name in UNITS and text != render_unit(catalog, name):
+        if name in UNITS and text != render_unit(catalog, house, name):
             found.append(f"{name}: SKILL.md is not the rendering of the catalog "
                          "(`specfirst run skills --write`)")
         found += [f"{name}: {leak}" for leak in leaks(text, secrets, paragraphs)]

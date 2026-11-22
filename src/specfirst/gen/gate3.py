@@ -237,6 +237,43 @@ def _paragraph(root: Path, number: int,
     raise AssertionError("no paragraph of the kit has what the planted defect needs")
 
 
+def _word(token: str) -> str:
+    return rf"(?<![\w.]){re.escape(token)}(?![\w.])"
+
+
+def _two_tokens(root: Path, number: int) -> tuple[dict, str, tuple[str, str]]:
+    """A stated decision of a kit with two tokens, each once in its paragraph and neither
+    a part of the other, in the order of the statement."""
+    def pair(record: dict, body: str) -> tuple[str, str] | None:
+        tokens = list(dict.fromkeys(natural.tokens(_context(root)[0], record["id"],
+                                                   record["unit"], record["value"])))
+        once = [t for t in tokens if len(re.findall(_word(t), body)) == 1]
+        for index, first in enumerate(once):
+            for second in once[index + 1:]:
+                if first not in second and second not in first:
+                    return first, second
+        return None
+
+    texts = documents.read_texts(kit_dir(number))
+    for record in kits.read_decisions(kit_dir(number)):
+        if record["status"] != "stated":
+            continue
+        citation = record["citations"][1]
+        body = documents.paragraphs(texts[citation["doc"]])[citation["anchor"]]
+        found = pair(record, body)
+        if found:
+            return record, body, found
+    raise AssertionError("no paragraph of the kit has what the planted defect needs")
+
+
+def _exchanged(body: str, first: str, second: str) -> str:
+    """The paragraph with two tokens in each other's place."""
+    mark = "\x00"
+    text = re.sub(_word(first), mark, body, count=1)
+    text = re.sub(_word(second), first, text, count=1)
+    return text.replace(mark, second, 1)
+
+
 def slots(root: Path, out: Out) -> bool:
     """Every decision paragraph of every natural document passes the slot check."""
     if not _need_kits(out):
@@ -250,14 +287,11 @@ def slots(root: Path, out: Out) -> bool:
                     f"{record['id']}", number,
                     lambda f: _replace_paragraph(f, record["citations"][1], name, "the variable"),
                     "slots", f"'{variable}' is not in the paragraph")
-    number = _kit_with(lambda r: r["id"] == "demo.age.groups", "full")
-    record, body, wanted = _paragraph(root, number, lambda w: w[:2] == ["65", "65"])
-    first = re.search(r"\b65\b", body)
-    last = [m for m in re.finditer(r"\b80\b", body)][-1]
-    swapped = body[:first.start()] + "80" + body[first.end():last.start()] + "65" + \
-        body[last.end():]
-    seen &= _planted(root, out, f"the numbers 65 and 80 exchanged in the paragraph of "
-                     f"{record['id']}", number,
+    number = documents.TIER_PLAN.index("full") + 1
+    record, body, (first, second) = _two_tokens(root, number)
+    swapped = _exchanged(body, first, second)
+    seen &= _planted(root, out, f"the tokens {first} and {second} exchanged in the paragraph "
+                     f"of {record['id']}", number,
                      lambda f: _replace_paragraph(f, record["citations"][1], body, swapped),
                      "slots", "out of the order")
     if not seen:
@@ -317,14 +351,16 @@ def bad_rewrite(root: Path, out: Out) -> bool:
     if not _need_kits(out):
         return False
     catalog, _ = _context(root)
-    number = _kit_with(lambda r: r["id"] == "demo.age.groups", "full")
-    record, body, _ = _paragraph(root, number, lambda w: w[:2] == ["65", "65"])
-    changed = re.sub(r"\b80\b", "85", body, count=1)
+    number = documents.TIER_PLAN.index("full") + 1
+    record, body, wanted = _paragraph(root, number, lambda w: any(t.isdigit() for t in w))
+    old = next(t for t in wanted if t.isdigit())
+    new = str(int(old) + 5)
+    changed = re.sub(rf"\b{old}\b", new, body, count=1)
     citation = record["citations"][1]
     seen = _planted(root, out, f"the paragraph {citation['doc']}#{citation['anchor']} of "
-                    f"{record['id']} with 80 changed to 85", number,
+                    f"{record['id']} with {old} changed to {new}", number,
                     lambda f: _replace_paragraph(f, citation, body, changed), "slots",
-                    "'80' stands 1 times in the paragraph")
+                    f"the number {new} is not in the statement")
     seen &= _planted(root, out, "the same rewrite, held against the read-back", number,
                      lambda f: _replace_paragraph(f, citation, body, changed), "readback",
                      "no read-back of this text")
@@ -365,7 +401,9 @@ def tiers(root: Path, out: Out) -> bool:
     def default_in_full(folder: Path) -> None:
         records = kits.read_decisions(folder)
         catalog, house = _context(root)
-        base = {(r["id"], r["unit"]): r for r in houses.default_decisions(catalog, house)}
+        features = designs.features(designs.load(folder / "gold" / "design.yaml"))
+        base = {(r["id"], r["unit"]): r
+                for r in houses.default_decisions(catalog, house, features)}
         for index, record in enumerate(records):
             key = (record["id"], record["unit"])
             if key in base and base[key]["value"] == record["value"]:

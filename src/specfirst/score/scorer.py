@@ -63,6 +63,9 @@ class Case:
     variants: Callable[[Key], list[dict]] | None = None
     # What the oracle answers when asked (section 11.3): decision -> value.
     oracle: dict[Key, dict] = field(default_factory=dict)
+    # The features of the study's design: a house default may depend on them (ADR-020,
+    # `pop.safety.rule` of open-default@2). None: no default by design is taken.
+    features: dict[str, bool] | None = None
 
     def gold_vector(self) -> list[dict]:
         return [{"id": r["id"], "unit": r["unit"], "value": r["value"]} for r in self.gold
@@ -133,10 +136,12 @@ def run(machine: Machine, case: Case, candidate: list[dict], arm: str = "R",
         raise ScoreError(f"stage T reads table decisions only; the case scores "
                          f"{', '.join(modules)}")
     defaults = {(r["id"], r["unit"]): r
-                for r in houses.default_decisions(machine.catalog, machine.house)}
+                for r in houses.default_decisions(machine.catalog, machine.house,
+                                                  case.features)}
     read = reading.score(case.gold, candidate, defaults, case.units,
                          documents or case.documents, asked, unmapped, set())
-    ours = vector(machine.catalog, machine.house, case.gold, candidate, case.units)
+    ours = vector(machine.catalog, machine.house, case.gold, candidate, case.units,
+                  case.features)
     builds, owners, axes = {}, {}, {}
     waiting: dict[Key, dict[str, int]] = {}
     for name in case.data:
@@ -260,7 +265,7 @@ def control_records(machine: Machine, case: Case) -> tuple[list[dict], reading.D
         records += [decision_record(item, doc, "stated", "document_rule") for item in parsed]
     have = {(r["id"], r["unit"]) for r in records}
     wanted = {(r["id"], r["unit"]) for r in case.gold if r.get("status") == "default"}
-    defaults = houses.default_decisions(machine.catalog, machine.house)
+    defaults = houses.default_decisions(machine.catalog, machine.house, case.features)
     records += [r for r in defaults if (r["id"], r["unit"]) in wanted - have]
     # What neither the documents nor the house standard decide is asked; the oracle
     # answers it, as the oracle file of the case holds the answer.

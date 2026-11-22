@@ -99,12 +99,13 @@ def scan_slots(catalog: catalogs.Catalog, entry_id: str,
 
 
 def house_vector(catalog: catalogs.Catalog, house, stated: dict[Key, dict] | None = None,
-                 output: str = OUTPUT_UNIT) -> list[dict]:
-    """A vector for one output: every house default; the first example of the first
-    alternative where a decision has none; of the other table families only
-    `tfl.output.include`, as `not_included`; then the values of `stated`."""
+                 output: str = OUTPUT_UNIT,
+                 features: dict[str, bool] | None = None) -> list[dict]:
+    """A vector for one output: every house default, for a design of these features; the
+    first example of the first alternative where a decision has none; of the other table
+    families only `tfl.output.include`, as `not_included`; then the values of `stated`."""
     found = []
-    for record in checks.base_vector(catalog, house):
+    for record in checks.base_vector(catalog, house, features):
         kind = catalog.units[record["unit"]].kind
         if kind == "table_family" and record["unit"] != output:
             if record["id"] != "tfl.output.include":
@@ -434,13 +435,13 @@ def pilot_arms(data: Data) -> Arms:
     return sorted(found, key=lambda arm: arm["dose"])
 
 
-# Two vectors on the pilot, report only. `house`: the house standard alone for the adverse
-# event summary (the vector of arm S of read-1a's pilot report). `window`: the same with a
-# treatment-emergent window of 30 days, to show the interval of a numeric parameter on
-# real data; it is not the pilot's rule, and nothing is tuned on it.
+# The vector on the pilot, report only. `house`: the house standard alone for the adverse
+# event summary (the vector of arm S of read-1a's pilot report). Under open-default@2 its
+# treatment-emergent window of 30 days shows the interval of a numeric parameter on real
+# data; the vector `window` of issue #30 (the house of open-default@1 with that window)
+# is the same vector now and is gone (ADR-020, #3).
 PILOT_VECTORS: dict[str, dict[Key, dict]] = {
     "house": {},
-    "window": {("ae.teae.end", "mod-ae-emergence"): {"rule": "last_dose_plus_days", "days": 30}},
 }
 
 
@@ -451,7 +452,10 @@ def pilot_matrix(root: Path, vector: str = "house", span: int = SPAN,
         raise SeparationError(f"no vector {vector!r} of the pilot: {', '.join(PILOT_VECTORS)}")
     machine = machine or Machine(root)
     data = pilot_data(root)
-    records = house_vector(machine.catalog, machine.house, PILOT_VECTORS[vector])
+    from specfirst.score.pilot import PILOT_FEATURES
+
+    records = house_vector(machine.catalog, machine.house, PILOT_VECTORS[vector],
+                           features=PILOT_FEATURES)
     made = Mutation(machine, data, pilot_arms(data), records, span).matrix(
         study=f"{PILOT}, vector {vector}")
     made["vector"] = vector

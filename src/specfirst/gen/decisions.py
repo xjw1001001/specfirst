@@ -6,8 +6,9 @@ or states another alternative of its catalog entry.
 
     variants      what a study of a design can decide for an entry: every
                   alternative, each with the slot values that fit the design
-                  (the length of the emergence window is the follow-up length,
-                  the vital sign of a population rule is one the study measures)
+                  (the length of the emergence window is the house's default
+                  window, or the follow-up length of the design; the vital
+                  sign of a population rule is one the study measures)
     sample        the decision vector of one kit
     vector        the vector as (id, unit, value) for every decision of a kit; the
                   documents of a kit make the records (specfirst.gen.documents)
@@ -38,6 +39,8 @@ dev or test kit has; a sealed kit may have them.
 
 from __future__ import annotations
 
+from itertools import product
+
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import house as houses
 from specfirst.gen import design as designs
@@ -53,10 +56,13 @@ SPLITS = ("train", "dev", "test", "sealed")
 
 # The chance that a decision of a kit is another alternative than the house default.
 STATED_SHARE = 0.45
-# What an exam holds out (PLAN.md section 6.7): no train, dev or test kit has these.
+# What an exam holds out (PLAN.md section 6.7): no train, dev or test kit has these. The
+# combination is of two stated alternatives: under open-default@2 a table has no total
+# column by default, so the total over all arms stands where "none" stood under
+# open-default@1.
 HELD_OUT = {
     "design": "an allocation ratio other than 1 to 1",
-    "combination": {"tfl.columns.total": "none", "tfl.columns.arms": "protocol_order"},
+    "combination": {"tfl.columns.total": "all_arms", "tfl.columns.arms": "protocol_order"},
 }
 
 
@@ -70,11 +76,11 @@ SCENARIOS: tuple[dict, ...] = (
     {"values": {"tfl.population": "randomized"}, "arms": 3},
     {"values": {"ae.teae.end": "last_dose_plus_days"}},
     {"values": {"tfl.population": "efficacy"}, "feature": "design.has_efficacy_set"},
-    {"values": {"ae.teae.end": "end_of_study"}},
+    {"values": {"ae.teae.end": "no_end"}},
     {"values": {"pop.safety.grouping": "planned"}, "arms": 3},
     {"values": {"ae.teae.end": "last_dose_plus_days",
                 "trt.end.source": "ds_date_when_ex_missing"}},
-    {"values": {"tfl.population": "randomized", "ae.teae.end": "end_of_study"}},
+    {"values": {"tfl.population": "randomized", "ae.teae.end": "no_end"}},
     {"values": {"tfl.population": "efficacy", "ae.teae.end": "last_dose_plus_days"},
      "feature": "design.has_efficacy_set"},
     {"values": {"tfl.population": "safety", "pop.safety.grouping": "actual",
@@ -166,7 +172,10 @@ def slot_values(entry_id: str, rule: str, design: dict, parameters: dict) -> dic
         return {"subcategory": [parameters["treatment_subcategory"],
                                 parameters["study_subcategory"]]}
     if key == ("ae.teae.end", "last_dose_plus_days"):
-        return {"days": [parameters["window_days"]]}
+        # The probes are built around the first (the house's default window, 30 days under
+        # open-default@2); a study may state the follow-up length of its design instead.
+        days = [parameters["window_days"], parameters.get("follow_up_days")]
+        return {"days": [day for n, day in enumerate(days) if day and day not in days[:n]]}
     if key == ("ae.related.values", "stated_list"):
         scale = list(design["collection"]["adverseEvents"]["causality"])
         middle = (len(scale) + 1) // 2
@@ -177,8 +186,25 @@ def slot_values(entry_id: str, rule: str, design: dict, parameters: dict) -> dic
         return {"control": [placebo["description"]]}
     if key == ("tfl.ae.summary.rows", "stated_rows"):
         return {"rows": [["ANY", "SERIOUS", "FATAL"], ["ANY", "RELATED", "FATAL"],
-                         ["FATAL", "SERIOUS", "RELATED", "ANY"], ["ANY", "FATAL"]]}
+                         ["FATAL", "SERIOUS", "RELATED", "ANY"], ["ANY", "FATAL"],
+                         ["ANY", "SERIOUS", "SERIOUS_RELATED", "DOSE_MODIFIED", "FATAL"],
+                         ["ANY", "RELATED", "FATAL", "FATAL_RELATED"]]}
+    if entry_id == "tfl.percent.format":
+        # Any number of decimals separates the two alternatives at a count of zero.
+        return {"decimals": [1, 0, 2]}
     return {}
+
+
+def stated(entry_id: str, options: list[dict], design: dict, parameters: dict) -> list[dict]:
+    """Every value a study can state for an entry: each alternative of `options` with every
+    combination of the values its slots can take (`slot_values`)."""
+    found = []
+    for option in options:
+        slots = slot_values(entry_id, option["rule"], design, parameters)
+        names = sorted(slots)
+        for combination in product(*(slots[name] for name in names)):
+            found.append({**option, **dict(zip(names, combination, strict=True))})
+    return found
 
 
 def entries(catalog: catalogs.Catalog, design: dict,
@@ -220,14 +246,12 @@ def fits(values: Values, parameters: dict) -> list[str]:
                         "two completions to a day give the same table")
     record = values["disp.status.record"]
     end = values["ae.teae.end"]["rule"]
-    read = end == "end_of_study" or (
-        end == "last_dose_plus_days" and values["trt.end.source"]["rule"]
-        == "ds_date_when_ex_missing")
+    read = end == "last_dose_plus_days" and values["trt.end.source"]["rule"] \
+        == "ds_date_when_ex_missing"
     if record.get("subcategory") == parameters["treatment_subcategory"]:
         # Only the planted subject has a treatment record. With it as the end-of-study
-        # record no other subject has an end-of-study date: an end of emergence at the
-        # end of the study is no end, and the disposition date never stands in for a
-        # missing exposure end date.
+        # record no other subject has an end-of-study date: the disposition date never
+        # stands in for a missing exposure end date.
         problems.append("disp.status.record: with the treatment record as the end-of-study "
                         "record nearly no subject has an end-of-study date, and the decisions "
                         "that read that date cannot be told apart")
@@ -257,8 +281,11 @@ def sample(catalog: catalogs.Catalog, house: houses.House, design: dict, paramet
         for entry in entries(catalog, design):
             options = variants(entry, design, parameters)
             default = base.get(entry.id)
-            others = [value for value in options
-                      if default is None or value["rule"] != default["rule"]]
+            # Every other alternative, and the default's alternative with other slot
+            # values (open-default@2 has defaults with slots: a window of 30 days, one
+            # decimal). An alternative is drawn first, then its slot values.
+            others = [value for value in stated(entry.id, options, design, parameters)
+                      if default is None or value != default]
             stream = draw.child(entry.id)
             if entry.id == "tfl.output.include":
                 value = default
@@ -269,10 +296,9 @@ def sample(catalog: catalogs.Catalog, house: houses.House, design: dict, paramet
                                         f"'{given[entry.id]}'")
                 value = dict(found[0])
             elif default is None or (others and stream.chance(stated_share)):
-                value = dict(stream.choice(others))
-                slots = slot_values(entry.id, value["rule"], design, parameters)
-                for name, choices in slots.items():
-                    value[name] = stream.child(name).choice(choices)
+                rule = stream.choice(list(dict.fromkeys(value["rule"] for value in others)))
+                value = dict(stream.child(rule).choice(
+                    [value for value in others if value["rule"] == rule]))
             else:
                 value = default
             values[entry.id] = value

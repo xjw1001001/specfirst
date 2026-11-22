@@ -1,11 +1,11 @@
 ---
 name: tfl-ae-summary
-description: Reading notes v0 for the unit tfl-ae-summary (Summary table of adverse events). For each of its 7 catalog questions, where a protocol or a statistical analysis plan states the decision, the words to look for and the traps. Rendered from the decision catalog specfirst-m1 1.
+description: Reading notes v0 for the unit tfl-ae-summary (Summary table of adverse events). For each of its 7 catalog questions, where a protocol or a statistical analysis plan states the decision, the words to look for and the traps. Rendered from the decision catalog specfirst-m1 2 and the house standard open-default@2.
 ---
 
 # Summary table of adverse events (tfl-ae-summary): reading notes v0
 
-Rendered from the decision catalog `specfirst-m1` version 1 by `specfirst run skills --write`; do not edit by hand. Read `core-reader` first: it says how to record a decision. Here, for every question of the unit: its alternatives with the statement each gives, the house default, and where documents state it.
+Rendered from the decision catalog `specfirst-m1` version 2 and the house standard `open-default@2` by `specfirst run skills --write`; do not edit by hand. Read `core-reader` first: it says how to record a decision. Here, for every question of the unit: its alternatives with the statement each gives, the house default, and where documents state it.
 
 Questions of this unit: `tfl.output.include`, `tfl.population`, `tfl.columns.arms`, `tfl.columns.total`, `tfl.percent.format`, `tfl.rounding.rule`, `tfl.ae.summary.rows`.
 
@@ -47,7 +47,7 @@ family applies.
   outputs is silent; it does not say that the output is left out.
 - A listing or a figure of the same data is not the table.
 - Answer each table family on its own; one can be included and another not.
-- Silent documents: use the house default `included` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `tfl.population`: Which analysis set does the output use?
 
@@ -76,6 +76,8 @@ The answer is given once per table family.
   "randomized set".
 - `efficacy`: "efficacy-evaluable set", "evaluable population", when it is the set that
   `pop.efficacy.rule` defines.
+- A protocol written to ICH M11 says "participant" for subject and "study intervention" for
+  study treatment; read them as the same words.
 
 ### Traps
 
@@ -85,9 +87,12 @@ The answer is given once per table family.
   if the text names several and no main one, report the passage.
 - If a shell subtitle and the SAP text disagree, cite both passages in the answer.
 - "All enrolled" or "all screened" subjects match no alternative; report the passage.
-- Silent documents: the house default depends on the table family. It is `randomized` for the
-  demographics table and `safety` for the two adverse event tables and the vital signs table.
-  Cite the house standard.
+- For the demographics table, the pilot CSR (Table 14-2.01) and ICH E3 section 11.2 use the
+  randomized set; the FDA guide's Table 2, the ARS example's demographics analyses
+  (AnalysisSet_02_SAF) and cardinal's Table 2 use the safety set. A house may take either;
+  its house standard says which.
+- Silent documents: the house default depends on the table family; take the default of the
+  output's family and cite the house standard.
 
 ## `tfl.columns.arms`: In which order are the treatment columns?
 
@@ -124,19 +129,18 @@ once per table family; the counts do not change.
 - An active comparator has no place in a dose order. If the study has one and the text does
   not say where its column goes, report that.
 - The total column is `tfl.columns.total`, not this entry.
-- Silent documents: use the house default `ascending_dose_placebo_first` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `tfl.columns.total`: Is there a total column?
 
 Alternatives:
 
-- `all_arms` (the house default): "A total column of {output} pools all treatment arms."
-- `none`: "There is no total column in {output}."
+- `all_arms`: "A total column of {output} pools all treatment arms."
+- `none` (the house default): "There is no total column in {output}."
 - `active_arms`, slots control: "A total column of {output} pools the treatment arms other than {control}."
   Meaning: The control is named by its treatment label as the treatment columns show it.
 
-House default: `all_arms`.
+House default: `none`.
 
 The answer decides whether the table has a last column that pools arms, and which arms it
 pools. It is given once per table family.
@@ -166,19 +170,22 @@ pools. It is given once per table family.
   that leaves out more than one arm, matches no alternative; report the passage.
 - A total column is the last column. If a shell puts it elsewhere, mention that with the
   answer.
-- Silent documents: use the house default `all_arms` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `tfl.percent.format`: How are percentages displayed?
 
 Alternatives:
 
-- `one_decimal_zero_blank` (the house default): "Percentages in {output} have one decimal, and a count of zero is shown without a percentage."
-- `one_decimal_always`: "Percentages in {output} have one decimal, and a count of zero is shown with its percentage."
+- `one_decimal_zero_blank`, slots decimals: "The number of decimals of percentages in {output} is {decimals}, and a count of zero is shown without a percentage."
+  Meaning: With 0 decimals a percentage is a whole number. A count above zero always has its percentage.
+- `one_decimal_always` (the house default), slots decimals: "The number of decimals of percentages in {output} is {decimals}, and a count of zero is shown with its percentage."
+  Meaning: With 0 decimals a percentage is a whole number. A count of zero shows a percentage of zero with the same decimals.
 
-House default: `one_decimal_zero_blank`.
+House default: `one_decimal_always`, decimals 1.
 
-The answer decides what a cell with a count of zero shows: the count alone, or the count
-with its percentage. It is given once per table family.
+The answer decides how many decimals a percentage has, and what a cell with a count of
+zero shows: the count alone, or the count with its percentage. It is given once per table
+family.
 
 ### Where it is stated
 
@@ -188,23 +195,27 @@ with its percentage. It is given once per table family.
 
 ### Words to look for
 
-- `one_decimal_zero_blank`: "percentages are shown to one decimal place; no percentage is
-  shown for a count of zero", shell cells written "0" where others are "xx (xx.x)".
-- `one_decimal_always`: "percentages are shown to one decimal place" together with zero
-  cells written "0 (0.0)", or "a percentage is always displayed".
+- The decimals: "percentages are shown to one decimal place", "rounded to the nearest whole
+  percent" (0 decimals), "xx.x" or "xx" in the shells.
+- `one_decimal_zero_blank`: "no percentage is shown for a count of zero", shell cells
+  written "0" where others are "xx (xx.x)".
+- `one_decimal_always`: zero cells written "0 (0.0)", or "a percentage is always
+  displayed".
 
 ### Traps
 
-- Both alternatives have one decimal. A SAP that asks for whole-number percentages or for
-  two decimals matches no alternative; report the passage.
-- "One decimal place" alone does not say what happens at zero. Use the house default then,
-  and say that only the decimal was stated.
-- Special displays such as "<0.1" for small percentages, or "100" without a decimal, are not
-  covered; report them.
+- The IDs of the alternatives say "one decimal" for historical reasons (catalog@1); from
+  catalog@2 the decimals are the slot `decimals`, 0 to 2.
+- "One decimal place" alone does not say what happens at zero. Use the house default for
+  the zero, take the decimals from the document, and say that only the decimals were
+  stated.
+- One document may use whole numbers in one table and one decimal in another (the pilot:
+  Table 14-2.01 and Table 14-5.01): the decision is per table family.
+- Special displays such as "(<1%)" for a small percentage that rounds to 0, or "100" without
+  a decimal, are not covered; report them.
 - A shell is a layout sketch: "xx (xx.x)" in every cell does not prove that a zero count gets
   a percentage.
-- Silent documents: use the house default `one_decimal_zero_blank` and cite the house
-  standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `tfl.rounding.rule`: How are displayed numbers rounded?
 
@@ -241,15 +252,16 @@ lies halfway between two values that can be displayed. It is given once per tabl
   the passage.
 - Truncation ("values are cut to one decimal") matches no alternative.
 - The number of decimals is not decided here (`tfl.decimals.rule`, `tfl.percent.format`).
-- Silent documents: use the house default `half_away_from_zero` and cite the house standard.
+- Silent documents: use the house default and cite the house standard.
 
 ## `tfl.ae.summary.rows`: Which rows does the adverse event summary table have?
 
 Alternatives:
 
-- `standard_rows` (the house default): "The rows of the adverse event summary table are any event, related events, serious events, events leading to discontinuation of study treatment, and fatal events."
+- `standard_rows` (the house default): "The rows of the adverse event summary table are any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment."
+  Meaning: The rows and their order are those of the ARS example "Common Safety Displays", output Out14-3-1-1, without its rows of related fatal events and of events leading to dose modification.
 - `stated_rows`, slots rows: "The rows of the adverse event summary table are, in this order, {rows}."
-  Meaning: Each row is named by its code: ANY, RELATED, SERIOUS, DISCONTINUATION or FATAL.
+  Meaning: Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related).
 
 House default: `standard_rows`.
 
@@ -264,18 +276,23 @@ Every row counts subjects with at least one treatment-emergent event of its kind
 
 ### Words to look for
 
-- `standard_rows`: exactly these five rows in this order: any event, related events, serious
-  events, events leading to discontinuation of study treatment, fatal events.
-- `stated_rows`: another selection or another order of those five. The slot `rows` lists
-  the codes in the stated order, out of ANY, RELATED, SERIOUS, DISCONTINUATION and FATAL.
+- `standard_rows`: exactly these six rows in this order, the order of the ARS example: any
+  event, related events, serious events, serious related events, fatal events, events
+  leading to discontinuation of study treatment.
+- `stated_rows`: another selection or another order. The slot `rows` lists the codes in the
+  stated order, out of ANY, RELATED, SERIOUS, SERIOUS_RELATED, DISCONTINUATION,
+  DOSE_MODIFIED, FATAL and FATAL_RELATED.
 
 ### Traps
 
-- Only these five kinds can be rows. Severe events, serious related events, events of
-  special interest or events leading to dose reduction cannot be expressed; report them with
-  the answer.
+- Only these eight kinds can be rows. Severe events, events by seriousness criterion, events
+  of special interest or events by action taken cannot be expressed; report them with the
+  answer.
 - "Leading to discontinuation" means that the action taken with study treatment was
-  withdrawal of the drug, not that the subject left the study.
-- "Fatal" is an event that resulted in death, not the number of deaths from any cause.
-- The same five rows in another order are `stated_rows`, not `standard_rows`.
-- Silent documents: use the house default `standard_rows` and cite the house standard.
+  withdrawal of the drug, not that the subject left the study. "Leading to dose
+  modification" is a dose reduction or an interruption.
+- "Fatal" is an event marked as resulting in death (AESDTH), not the number of deaths from
+  any cause. A SAP that counts events with an outcome of death (AEOUT) states another rule:
+  report the passage.
+- The same six rows in another order are `stated_rows`, not `standard_rows`.
+- Silent documents: use the house default and cite the house standard.

@@ -40,11 +40,13 @@ prediction; gen-2 verifies it by mutation (property P4).
 from __future__ import annotations
 
 import datetime
+import functools
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from itertools import combinations
 
 from specfirst.compile import catalog as catalogs
+from specfirst.compile import house as houses
 from specfirst.compile import predicate
 from specfirst.gen import GENERATOR, subjects
 from specfirst.gen import design as designs
@@ -116,9 +118,10 @@ REACHES: dict[str, dict] = {
         "when": {"all_of": [_WINDOW, _ROW_EVENT, _ANALYZED]},
         "pairs": {"last_ex_end_date|ds_date_when_ex_missing": {"none_of": [_TREATMENT_RECORD]}},
         "note": "only an emergence window reads the treatment end date, and the planted "
-                "event lies parameters.window_days + 2 days after the disposition date: a "
-                "window of exactly parameters.window_days days separates every pair. The "
-                "planted subject stops early, and it has no treatment record: with the "
+                "events lie parameters.window_days + 2 days after the disposition date and "
+                "after the last record with a dose: a window of exactly "
+                "parameters.window_days days separates every pair. The subject without an "
+                "exposure end date stops early, and it has no treatment record: with the "
                 "subcategory of that record as the end-of-study record it has no "
                 "disposition date to stand in for the missing end date"},
     "trt.date.imputation": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
@@ -138,10 +141,8 @@ REACHES: dict[str, dict] = {
                                           "is": ["same_as_planned"]}]}]}},
     "pop.efficacy.rule": {"when": {"decision": "tfl.population", "is": ["efficacy"]}},
     "disp.status.record": {
-        "when": {"all_of": [_ROW_EVENT, _ANALYZED, {"none_of": [_STUDY_RECORD]}, {"any_of": [
-            {"decision": "ae.teae.end", "is": ["end_of_study"]},
-            {"all_of": [_WINDOW, {"decision": "trt.end.source",
-                                  "is": ["ds_date_when_ex_missing"]}]}]}]},
+        "when": {"all_of": [_ROW_EVENT, _ANALYZED, {"none_of": [_STUDY_RECORD]}, _WINDOW,
+                            {"decision": "trt.end.source", "is": ["ds_date_when_ex_missing"]}]},
         "note": "the last disposition event of the planted subject is its study "
                 "participation record: the two alternatives differ for the subcategory "
                 "parameters.treatment_subcategory only, and a study whose end-of-study "
@@ -155,11 +156,8 @@ REACHES: dict[str, dict] = {
     "ae.teae.start": {"when": {"all_of": [_ROW_ANY, _ANALYZED]}, "note": _ONE_EVENT},
     "ae.teae.end": {
         "when": {"all_of": [_ROW_EVENT, _ANALYZED]},
-        "pairs": {"no_end|end_of_study": {"none_of": [_TREATMENT_RECORD]}},
         "note": "a window is one of parameters.window_days days; a window that is longer "
-                "or shorter may leave the planted events on one side. With the subcategory "
-                "of the treatment record as the end-of-study record nearly no subject has "
-                "an end-of-study date. Two of the planted subjects stop early"},
+                "or shorter may leave the planted events on one side"},
     "ae.related.values": {"when": {"all_of": [{"rows": ["RELATED"]}, _ANALYZED]}},
     "tfl.output.include": {"when": {"always": True}},
     "tfl.population": {"when": {"always": True}},
@@ -177,11 +175,16 @@ REACHES: dict[str, dict] = {
         "when": {"all_of": [_ROW_EVENT,
                             {"decision": "tfl.population", "is": ["safety"]},
                             {"decision": "pop.safety.grouping", "is": ["actual"]},
-                            {"decision": "trt.actual.source", "is": ["dm_actarm"]}]},
-        "note": "the counts of one arm are set for these decisions"},
+                            {"decision": "trt.actual.source", "is": ["dm_actarm"]},
+                            {"decision": "tfl.percent.format",
+                             "is": ["one_decimal_zero_blank", "one_decimal_always"],
+                             "slot": "decimals", "equals": 1}]},
+        "note": "the counts of one arm are set for these decisions; the planted percentages "
+                "lie on a half at one decimal, and at 0 or 2 decimals both rules agree"},
     "tfl.ae.summary.rows": {"when": {"always": True}},
 }
-_ALL_ROWS = ("ANY", "RELATED", "SERIOUS", "DISCONTINUATION", "FATAL")
+# tfl.ae.summary.rows/standard_rows (catalog@2): the rows of the ARS example, in its order.
+_ALL_ROWS = ("ANY", "RELATED", "SERIOUS", "SERIOUS_RELATED", "FATAL", "DISCONTINUATION")
 
 
 def shown_rows(value: dict | None) -> tuple[str, ...]:
@@ -238,16 +241,29 @@ def reaches(entry_id: str, first: str, second: str, values: dict[str, dict],
     return True
 
 
+@functools.lru_cache(maxsize=1)
+def house_window() -> int | None:
+    """The days of the default window of the house of the default pair (ae.teae.end), or
+    None when its default has no window. The probes of the window are built around it, so
+    that a kit that takes the default tells it apart (open-default@2: 30 days)."""
+    catalog, house = houses.load_pair(None)
+    value = houses.default_value(catalog, house, "ae.teae.end", "mod-ae-emergence")
+    return value.get("days") if value and value.get("rule") == "last_dose_plus_days" else None
+
+
 @dataclass
 class Parameters:
     """Values of decision slots that the recipes are built around."""
 
-    window_days: int            # ae.teae.end: days after the treatment end date
+    # ae.teae.end: days after the treatment end date; the house's default window, or the
+    # follow-up length when the house has none
+    window_days: int
     tests: tuple[str, ...]      # pop.randomized.rule, pop.efficacy.rule: vital sign tests
     visits: tuple[str, ...]     # pop.efficacy.rule: every planned visit after day 1
     spared_arm: str             # the arm of the count probes
     treatment_subcategory: str = ""   # disp.status.record: DSSCAT of the treatment record
     study_subcategory: str = ""       # and of the study participation record
+    follow_up_days: int = 0           # the follow-up length of the design: a stated window
 
     @classmethod
     def of(cls, design: dict) -> Parameters:
@@ -256,15 +272,18 @@ class Parameters:
         preferred = [c for c in ("SYSBP", "WEIGHT") if c in codes] or codes
         later = [e["label"] for e in designs.encounters(design) if e["plannedDay"] > 1]
         names = design["collection"]["disposition"]["subcategories"]
-        return cls(window_days=designs.follow_up_days(design), tests=tuple(preferred[:2]),
+        follow_up = designs.follow_up_days(design)
+        return cls(window_days=house_window() or follow_up, tests=tuple(preferred[:2]),
                    visits=tuple(later), spared_arm=designs.dose_order(design)[0],
-                   treatment_subcategory=names["treatment"], study_subcategory=names["study"])
+                   treatment_subcategory=names["treatment"], study_subcategory=names["study"],
+                   follow_up_days=follow_up)
 
     def as_record(self) -> dict:
         return {"window_days": self.window_days, "tests": list(self.tests),
                 "visits": list(self.visits), "spared_arm": self.spared_arm,
                 "treatment_subcategory": self.treatment_subcategory,
-                "study_subcategory": self.study_subcategory}
+                "study_subcategory": self.study_subcategory,
+                "follow_up_days": self.follow_up_days}
 
 
 @dataclass
@@ -359,6 +378,19 @@ def split_first(subject: Subject, days: int = 3) -> tuple[Dose, Dose]:
     return first, rest
 
 
+def split_last(subject: Subject, days: int = 3) -> tuple[Dose, Dose]:
+    """Cut the last exposure record `days` days before its end; return both parts."""
+    last = max(subject.doses, key=lambda d: d.start)
+    if last.end is None or (last.end - last.start).days <= days:
+        raise RuntimeError("the last exposure record is too short to cut")
+    cut = last.end - days * DAY
+    rest = Dose(treatment=last.treatment, dose=last.dose, start=cut + DAY, end=last.end)
+    last.end = cut
+    subject.doses.append(rest)
+    subject.doses.sort(key=lambda d: d.start)
+    return last, rest
+
+
 def delay_end(subject: Subject, date: Date) -> None:
     """Move the end of the study, and the follow-up visit if there is one, to a later date."""
     old = subject.end_of_study
@@ -447,17 +479,34 @@ def _no_end_date(p: Planter) -> Planted:
     subject.last_dose = None
     # An event later than the emergence window after the disposition date: emergent
     # while the subject has no treatment end date, not once the disposition date is one.
-    # The event is serious, and the only serious event of a planted subject. Between a
-    # window and the end of the study as the end of emergence this subject changes
-    # against the subject with an event between the two, and where both are in one arm
-    # the count of subjects with any event stays the same; the count of subjects with a
-    # serious event does not.
+    # The event is serious, and the only serious event of a planted subject: where
+    # another planted subject changes the other way in the same arm, the count of
+    # subjects with any event stays the same; the count of subjects with a serious
+    # event does not.
     days = p.parameters.window_days
     p.event(subject, subject.end_of_study + (days + 2) * DAY, None, serious=True,
             severity="MODERATE")
     return Planted(probe, "planted", [subject.key],
                    {"window_days": days, "event_days_after_disposition": days + 2,
                     "event_serious": True})
+
+
+def _undosed_after_last(p: Planter) -> Planted:
+    probe = "undosed_record_after_last_dose"
+    subject = p.fresh(probe, arm=p.rng.child(probe, "arm").choice(p.active))
+    last, rest = split_last(subject)
+    # A record of dose zero, not placebo: no dose, as trt.start.source defines one.
+    rest.dose = 0.0
+    subject.last_dose = last.end
+    # An event later than the window after the last record with a dose and within the
+    # window after the record of dose zero: emergent when every record ends treatment.
+    days = p.parameters.window_days
+    start = last.end + (days + 2) * DAY
+    delay_end(subject, max(subject.end_of_study, start + 3 * DAY))
+    p.event(subject, start, start + 2 * DAY)
+    return Planted(probe, "planted", [subject.key],
+                   {"zero_dose_days": 3, "window_days": days,
+                    "event_days_after_last_dose": days + 2})
 
 
 def _partial_exposure(p: Planter) -> Planted:
@@ -600,6 +649,19 @@ def _on_first_dose_date(p: Planter) -> Planted:
     return Planted(probe, "planted", [subject.key], {"dose_time": subject.first_dose_time})
 
 
+def _timed_before_dose(p: Planter) -> Planted:
+    probe = "ae_timed_before_timed_first_dose"
+    subject = p.fresh(probe)
+    # The first dose is given between 08:00 and 11:45 (specfirst.gen.subjects): the
+    # event starts two hours earlier on that day, with its time collected.
+    hour, minute = (int(part) for part in subject.first_dose_time.split(":"))
+    before = f"{hour - 2:02d}:{minute:02d}"
+    p.event(subject, subject.first_dose, subject.first_dose + 3 * DAY,
+            start_text=f"{subject.first_dose.isoformat()}T{before}")
+    return Planted(probe, "planted", [subject.key],
+                   {"dose_time": subject.first_dose_time, "event_time": before})
+
+
 def _after_window(p: Planter) -> Planted:
     probe = "ae_starts_after_emergence_window"
     days = p.parameters.window_days
@@ -614,24 +676,6 @@ def _after_window(p: Planter) -> Planted:
         keys.append(subject.key)
         after[subject.key] = {"days_after_last_dose": offset}
     return Planted(probe, "planted", keys, {"window_days": days}, after)
-
-
-def _after_end_of_study(p: Planter) -> Planted:
-    probe = "ae_starts_after_end_of_study"
-    subject = p.fresh(probe)
-    p.event(subject, subject.end_of_study + 2 * DAY, None)
-    return Planted(probe, "planted", [subject.key], {"days_after": 2})
-
-
-def _between_window_and_end(p: Planter) -> Planted:
-    probe = "ae_between_window_end_and_end_of_study"
-    days = p.parameters.window_days
-    stop = p.rng.child(probe, "stop").between(12, 20)
-    subject = p.fresh(probe, stop_day=stop, reason="PHYSICIAN DECISION")
-    delay_end(subject, subject.last_dose + (days + 10) * DAY)
-    start = subject.last_dose + (days + 2) * DAY
-    p.event(subject, start, start + 3 * DAY)
-    return Planted(probe, "planted", [subject.key], {"window_days": days})
 
 
 def _each_causality(p: Planter) -> Planted:
@@ -739,6 +783,7 @@ RECIPES: dict[str, Callable[[Planter], Planted | None]] = {
     "zero_dose_record_before_first_dose": _zero_dose,
     "rfxstdtc_differs_from_exposure": _rfxstdtc,
     "no_exposure_end_date": _no_end_date,
+    "undosed_record_after_last_dose": _undosed_after_last,
     "partial_exposure_date": _partial_exposure,
     "partial_exposure_date_not_earliest": _partial_not_earliest,
     "reference_start_before_first_dose": _reference_start,
@@ -751,9 +796,8 @@ RECIPES: dict[str, Callable[[Planter], Planted | None]] = {
     "partial_ae_start_in_month_of_first_dose": _partial_ae_in_month,
     "partial_ae_start_before_month_of_first_dose": _partial_ae_before_month,
     "ae_on_first_dose_date_without_time": _on_first_dose_date,
+    "ae_timed_before_timed_first_dose": _timed_before_dose,
     "ae_starts_after_emergence_window": _after_window,
-    "ae_starts_after_end_of_study": _after_end_of_study,
-    "ae_between_window_end_and_end_of_study": _between_window_and_end,
     "ae_with_each_causality_value": _each_causality,
     "dosed_without_postbaseline_value": _without_any_postbaseline,
     # After every planted subject exists:
