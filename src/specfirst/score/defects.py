@@ -289,6 +289,10 @@ def _sort_in_the_build(machine: Machine, case: Case, records: list[dict]) -> Pla
 def _rounded_twice(machine: Machine, case: Case, records: list[dict]) -> Planted | str:
     """Every percent rounded to a whole number after the engine; the grid then rounds
     that number again, to its one decimal: 66.7 becomes 67.0."""
+    shown = _gold_value(case, ("tfl.percent.format", TABLE_UNIT)) or {}
+    if shown.get("decimals") == 0:
+        return ("the gold table shows whole percentages: a percent rounded to a whole number "
+                "first is shown the same")
     def twice(rows: list[dict]) -> list[dict]:
         for row in rows:
             if row["operation_id"].endswith("_pct") and row.get("raw_value") is not None:

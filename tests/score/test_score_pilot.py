@@ -8,10 +8,11 @@
     P4-arm-r-no-output  a reader that leaves the output out: the trace goes
                through tfl.output.include first
 
-The numbers are those of the report docs/reports/read-1a.md. They are held
-here so that a change of the scorer that moves them is seen; they decide
-nothing about the reader, and nothing is tuned on them (PLAN.md section
-6.1).
+The numbers are those of the report docs/reports/read-1a.md, moved to the
+default pair of catalog-2c (`catalog@2`, `open-default@2`; its report says
+how). They are held here so that a change of the scorer that moves them is
+seen; they decide nothing about the reader, and nothing is tuned on them
+(PLAN.md section 6.1).
 
 The test needs `specfirst fetch` and carries the marker `evidence`: `make
 test` leaves it out and `specfirst gate read-1a` runs it. A missing cache
@@ -38,50 +39,52 @@ def arm_s() -> None:
     # The key: the header row and the eight analyses of the example, three arms.
     assert (score.produced, score.in_gold) == (1, 1)
     assert score.denominators() == {"shared_rows": 15, "produced": 27, "all": 27}
-    assert (score.correct, score.strict, score.lenient) == (10, 0, 0)
+    # open-default@2 shows a count of zero with its percent and has no total column, as
+    # the example: every cell of the rows both tables have is the key's.
+    assert (score.correct, score.strict, score.lenient) == (15, 0, 0)
     states = {state: sum(1 for item in found.cells if item.state == state)
               for state in pilot.STATES}
-    assert states == {"decision": 5, "open": 3, "no_row": 9, "unexplained": 0}
-    # The five cells that differ are counts of zero, which the house default shows
-    # without a percent and the example with one.
-    fits = {(key[0], value["rule"]) for item in found.cells for key, value in item.by}
-    assert fits == {("tfl.percent.format", "one_decimal_always")}
-    assert all(item.cell.gold.startswith("0 (") and item.cell.candidate == "0"
-               for item in found.cells if item.state == "decision")
+    assert states == {"decision": 0, "open": 6, "no_row": 6, "unexplained": 0}
     assert found.missing == [("ADAE", "RELGR1", ["ae.related.values"])]
     assert [f"{d}.{n}" for d, n, there in found.reads if there] == [
         "ADAE.AEACN", "ADAE.AESDTH", "ADAE.AESER", "ADAE.TRTEMFL", "ADAE.USUBJID",
         "ADSL.SAFFL", "ADSL.TRT01A", "ADSL.USUBJID"]
-    assert found.not_built == ["RELATED"]
-    assert len(found.no_row) == 3
-    # The house default has a total column; the example has none.
-    assert set(found.axes) == {"rows", "columns"}
-    assert [(key[0], value) for key, value in found.axes["columns"]] == [
-        ("tfl.columns.total", {"rule": "none"})]
-    assert found.axes["rows"] == []
+    # The rows of related and of serious related events read RELGR1; the related fatal
+    # events and the dose modifications are no row of the standard rows (catalog@2).
+    assert found.not_built == ["RELATED", "SERIOUS_RELATED"]
+    assert len(found.no_row) == 2
+    assert set(found.axes) == {"rows"} and found.axes["rows"] == []
     text = "\n".join(pilot.lines(found))
     assert "Any adverse event | Placebo | 65 ( 75.6) | 65 ( 75.6) | equal" in text
     assert "UNEXPLAINED" not in text
 
 
 def arm_r() -> None:
-    """Arm R with two table decisions read otherwise than the house: the five counts of
-    zero then have the key's text, and the columns are the key's."""
+    """Arm R with two table decisions read otherwise than the house (those of
+    open-default@1): the five counts of zero then lose the key's percent, explained by
+    tfl.percent.format, and the total column is one the key lacks."""
     records = [{"id": "tfl.percent.format", "unit": pilot.UNIT,
-                "value": {"rule": "one_decimal_always"}},
-               {"id": "tfl.columns.total", "unit": pilot.UNIT, "value": {"rule": "none"}}]
+                "value": {"rule": "one_decimal_zero_blank", "decimals": 1}},
+               {"id": "tfl.columns.total", "unit": pilot.UNIT, "value": {"rule": "all_arms"}}]
     found = pilot.run(Machine(repo_root()), records, "R")
     score = found.score
     assert score.denominators() == {"shared_rows": 15, "produced": 27, "all": 27}
-    assert (score.correct, score.strict, score.lenient) == (15, 0, 0)
+    assert (score.correct, score.strict, score.lenient) == (10, 0, 0)
     states = {state: sum(1 for item in found.cells if item.state == state)
               for state in pilot.STATES}
-    assert states == {"decision": 0, "open": 3, "no_row": 9, "unexplained": 0}
-    assert set(found.axes) == {"rows"} and found.axes["rows"] == []
+    assert states == {"decision": 5, "open": 6, "no_row": 6, "unexplained": 0}
+    fits = {(key[0], value["rule"]) for item in found.cells for key, value in item.by}
+    assert fits == {("tfl.percent.format", "one_decimal_always")}
+    assert all(item.cell.gold.startswith("0 (") and item.cell.candidate == "0"
+               for item in found.cells if item.state == "decision")
+    assert set(found.axes) == {"rows", "columns"} and found.axes["rows"] == []
+    assert [(key[0], value) for key, value in found.axes["columns"]] == [
+        ("tfl.columns.total", {"rule": "none"})]
     text = "\n".join(pilot.lines(found))
     assert "arm R (a reader's table decisions" in text
-    assert 'tfl.columns.total = {"rule": "none"}' in text.split("\n")[2]
-    assert "Fatal adverse event | Xanomeline High Dose | 0 (  0.0) | 0 (  0.0) | equal" in text
+    assert 'tfl.columns.total = {"rule": "all_arms"}' in text.split("\n")[2]
+    assert ("Fatal adverse event | Xanomeline High Dose | 0 (  0.0) | 0 | differs; explained "
+            "by tfl.percent.format") in text
 
 
 def arm_r_no_output() -> None:
@@ -96,14 +99,13 @@ def arm_r_no_output() -> None:
     assert found.first == ((pilot.INCLUDE, pilot.UNIT), {"rule": "included"})
     alone = [item for item in found.cells if item.by == [found.first] and item.first is None]
     joint = [item for item in found.cells if item.state == "decision" and item.first]
-    assert len(found.cells) == 27 and len(alone) == 10 and len(joint) == 5
-    assert {(key[0], value["rule"]) for item in joint for key, value in item.by} == {
-        ("tfl.percent.format", "one_decimal_always")}
+    # Under open-default@2 the output decision alone gives the key's text in the 15
+    # cells of the rows both tables have; no cell needs one more decision.
+    assert len(found.cells) == 27 and len(alone) == 15 and joint == []
     states = {state: sum(1 for item in found.cells if item.state == state)
               for state in pilot.STATES}
-    assert states == {"decision": 15, "open": 3, "no_row": 9, "unexplained": 0}
-    assert [(key[0], value) for key, value in found.axes["columns"]] == [
-        ("tfl.columns.total", {"rule": "none"})]
+    assert states == {"decision": 15, "open": 6, "no_row": 6, "unexplained": 0}
+    assert set(found.axes) == {"rows"} and found.axes["rows"] == []
     text = "\n".join(pilot.lines(found))
     assert "arm R built no output" in text and "UNEXPLAINED" not in text
     assert ('Any adverse event | Placebo | 65 ( 75.6) | - | 65 ( 75.6) | missing; explained '
