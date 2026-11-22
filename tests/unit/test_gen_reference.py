@@ -270,6 +270,11 @@ def test_the_start_of_emergence_and_partial_dates():
     late = {**TABLES, "AE": [{**AE[0], "AESTDTC": "2024-03-10T08:00"}, *AE[1:]]}
     found = reference.table(late, {**HOUSE, "ae.teae.start": collected}, ARMS)
     assert _row(found, "Any adverse event")["Placebo"] == "1 (100.0)"
+    # A time of the hour alone counts from the start of that hour (review of catalog-2c, F8).
+    for hour, shown in (("07", "0"), ("09", "1 (100.0)")):
+        timed = {**TABLES, "AE": [{**AE[0], "AESTDTC": f"2024-03-10T{hour}"}, *AE[1:]]}
+        found = reference.table(timed, {**HOUSE, "ae.teae.start": collected}, ARMS)
+        assert _row(found, "Any adverse event")["Placebo"] == shown
     # L1's partial start "2024-03": to the day of the first dose (emergent), to the first of
     # the month (before the dose, and the event has not ended: not emergent), or not
     # completed (no analysis start date: emergent).

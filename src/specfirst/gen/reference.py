@@ -136,8 +136,10 @@ def known_month(text: object) -> Date | None:
 
 
 def seconds_of(text: object) -> int:
-    """The time of day of a date and time, in seconds; 0 when no time was collected."""
-    if not isinstance(text, str) or len(text) < 16 or text[10] != "T":
+    """The time of day of a date and time, in seconds; 0 when no time was collected. A time
+    of the hour alone ("T09") counts from the start of that hour, as the compile template
+    reads it (its missing minutes are imputed first)."""
+    if not isinstance(text, str) or len(text) < 13 or text[10] != "T":
         return 0
     parts = [int(part) for part in text[11:].split(":")[:3]]
     parts += [0] * (3 - len(parts))

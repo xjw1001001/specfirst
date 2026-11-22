@@ -40,11 +40,13 @@ prediction; gen-2 verifies it by mutation (property P4).
 from __future__ import annotations
 
 import datetime
+import functools
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from itertools import combinations
 
 from specfirst.compile import catalog as catalogs
+from specfirst.compile import house as houses
 from specfirst.compile import predicate
 from specfirst.gen import GENERATOR, subjects
 from specfirst.gen import design as designs
@@ -173,8 +175,12 @@ REACHES: dict[str, dict] = {
         "when": {"all_of": [_ROW_EVENT,
                             {"decision": "tfl.population", "is": ["safety"]},
                             {"decision": "pop.safety.grouping", "is": ["actual"]},
-                            {"decision": "trt.actual.source", "is": ["dm_actarm"]}]},
-        "note": "the counts of one arm are set for these decisions"},
+                            {"decision": "trt.actual.source", "is": ["dm_actarm"]},
+                            {"decision": "tfl.percent.format",
+                             "is": ["one_decimal_zero_blank", "one_decimal_always"],
+                             "slot": "decimals", "equals": 1}]},
+        "note": "the counts of one arm are set for these decisions; the planted percentages "
+                "lie on a half at one decimal, and at 0 or 2 decimals both rules agree"},
     "tfl.ae.summary.rows": {"when": {"always": True}},
 }
 # tfl.ae.summary.rows/standard_rows (catalog@2): the rows of the ARS example, in its order.
@@ -235,16 +241,29 @@ def reaches(entry_id: str, first: str, second: str, values: dict[str, dict],
     return True
 
 
+@functools.lru_cache(maxsize=1)
+def house_window() -> int | None:
+    """The days of the default window of the house of the default pair (ae.teae.end), or
+    None when its default has no window. The probes of the window are built around it, so
+    that a kit that takes the default tells it apart (open-default@2: 30 days)."""
+    catalog, house = houses.load_pair(None)
+    value = houses.default_value(catalog, house, "ae.teae.end", "mod-ae-emergence")
+    return value.get("days") if value and value.get("rule") == "last_dose_plus_days" else None
+
+
 @dataclass
 class Parameters:
     """Values of decision slots that the recipes are built around."""
 
-    window_days: int            # ae.teae.end: days after the treatment end date
+    # ae.teae.end: days after the treatment end date; the house's default window, or the
+    # follow-up length when the house has none
+    window_days: int
     tests: tuple[str, ...]      # pop.randomized.rule, pop.efficacy.rule: vital sign tests
     visits: tuple[str, ...]     # pop.efficacy.rule: every planned visit after day 1
     spared_arm: str             # the arm of the count probes
     treatment_subcategory: str = ""   # disp.status.record: DSSCAT of the treatment record
     study_subcategory: str = ""       # and of the study participation record
+    follow_up_days: int = 0           # the follow-up length of the design: a stated window
 
     @classmethod
     def of(cls, design: dict) -> Parameters:
@@ -253,15 +272,18 @@ class Parameters:
         preferred = [c for c in ("SYSBP", "WEIGHT") if c in codes] or codes
         later = [e["label"] for e in designs.encounters(design) if e["plannedDay"] > 1]
         names = design["collection"]["disposition"]["subcategories"]
-        return cls(window_days=designs.follow_up_days(design), tests=tuple(preferred[:2]),
+        follow_up = designs.follow_up_days(design)
+        return cls(window_days=house_window() or follow_up, tests=tuple(preferred[:2]),
                    visits=tuple(later), spared_arm=designs.dose_order(design)[0],
-                   treatment_subcategory=names["treatment"], study_subcategory=names["study"])
+                   treatment_subcategory=names["treatment"], study_subcategory=names["study"],
+                   follow_up_days=follow_up)
 
     def as_record(self) -> dict:
         return {"window_days": self.window_days, "tests": list(self.tests),
                 "visits": list(self.visits), "spared_arm": self.spared_arm,
                 "treatment_subcategory": self.treatment_subcategory,
-                "study_subcategory": self.study_subcategory}
+                "study_subcategory": self.study_subcategory,
+                "follow_up_days": self.follow_up_days}
 
 
 @dataclass

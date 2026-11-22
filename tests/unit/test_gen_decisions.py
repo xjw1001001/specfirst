@@ -45,10 +45,12 @@ def test_every_alternative_of_the_slice_is_a_variant_with_fitting_slots(catalog)
         for option in options:
             form.check_value(entry.id, unit, option)   # raises on a missing or a stray slot
     by_id = {e.id: decisions.variants(e, design, parameters) for e in found}
-    # The slots fit the design: the window is the follow-up length, the tests are measured,
+    # The slots fit the design: the window is the house's (30 days, the probes are built
+    # around it), the follow-up length a study may state instead; the tests are measured,
     # the subcategory is that of the treatment record, the map names every arm.
-    assert by_id["ae.teae.end"][1] == {"rule": "last_dose_plus_days",
-                                       "days": designs.follow_up_days(design)}
+    assert by_id["ae.teae.end"][1] == {"rule": "last_dose_plus_days", "days": 30}
+    assert decisions.slot_values("ae.teae.end", "last_dose_plus_days", design, parameters)[
+        "days"] == list(dict.fromkeys([30, designs.follow_up_days(design)]))
     assert by_id["pop.randomized.rule"][1]["test"] == parameters["tests"][0]
     assert by_id["disp.status.record"][1]["subcategory"] == "STUDY TREATMENT"
     assert [pair["code"] for pair in by_id["trt.planned.source"][1]["map"]] == [

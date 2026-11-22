@@ -435,14 +435,13 @@ def pilot_arms(data: Data) -> Arms:
     return sorted(found, key=lambda arm: arm["dose"])
 
 
-# Two vectors on the pilot, report only. `house`: the house standard alone for the adverse
-# event summary (the vector of arm S of read-1a's pilot report). `window`: the same with a
-# treatment-emergent window of 30 days, to show the interval of a numeric parameter on
-# real data; it is not the pilot's rule, and nothing is tuned on it. Under open-default@2
-# the house default is that window (ADR-020, #3), and the two vectors are the same.
+# The vector on the pilot, report only. `house`: the house standard alone for the adverse
+# event summary (the vector of arm S of read-1a's pilot report). Under open-default@2 its
+# treatment-emergent window of 30 days shows the interval of a numeric parameter on real
+# data; the vector `window` of issue #30 (the house of open-default@1 with that window)
+# is the same vector now and is gone (ADR-020, #3).
 PILOT_VECTORS: dict[str, dict[Key, dict]] = {
     "house": {},
-    "window": {("ae.teae.end", "mod-ae-emergence"): {"rule": "last_dose_plus_days", "days": 30}},
 }
 
 

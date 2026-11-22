@@ -341,12 +341,16 @@ track left alone meanwhile. Report: docs/reports/catalog-2c.md.
   `ae.teae.end/end_of_study`, which catalog@2 removed (#3), are gone. In
   `REACHES` the end-of-study record is read only by the disposition date
   that stands in for a missing exposure end date.
-- Sampling: a stated value may be the default's alternative with other slot
-  values (a window of the follow-up length, against the house's 30 days);
-  `tfl.percent.format` draws its decimals from 1, 0 and 2; `stated_rows`
-  has two more lists with the new rows; the held-out combination is the
-  total over all arms with the protocol order (the house has no total
-  column now).
+- Sampling: a stated value is any alternative with any of its slot values
+  but the default's (`decisions.stated`): an alternative first, then its slot
+  values; `tfl.percent.format` with 0, 1 or 2 decimals; `stated_rows` has two
+  more lists with the new rows; the held-out combination is the total over
+  all arms with the protocol order (the house has no total column now; this
+  changes ADR-007, decision 10).
+- The probes of the window are built around the house's default window
+  (`probes.house_window()`, 30 days); `Parameters.follow_up_days` is the
+  follow-up length, which a study may state as its window instead. The
+  rounding claim of `REACHES` holds at one decimal only.
 - The reference (`reference.py`) reads catalog@2: the six standard rows in
   the order of the ARS example, the decimals slot (a whole number is not
   padded), emergence by time where both times were collected, the latest

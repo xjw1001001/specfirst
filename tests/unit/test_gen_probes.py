@@ -484,7 +484,8 @@ def _reach(entry_id, first, second, parameters, **changed):
               "ae.teae.start": {"rule": "on_or_after_first_dose_date"},
               "trt.end.source": {"rule": "last_ex_end_date"},
               "disp.status.record": {"rule": "disposition_event"},
-              "tfl.ae.summary.rows": {"rule": "standard_rows"}}
+              "tfl.ae.summary.rows": {"rule": "standard_rows"},
+              "tfl.percent.format": {"rule": "one_decimal_always", "decimals": 1}}
     values.update({name.replace("__", "."): value for name, value in changed.items()})
     return probes.reaches(entry_id, first, second, values, parameters)
 
@@ -547,6 +548,16 @@ def test_reaches_is_evaluated_on_a_decision_vector(catalog, full):
                   trt__end__source=by_ds)
     assert not _reach("disp.status.record", *pair, parameters, ae__teae__end=window,
                       trt__end__source=by_ds, disp__status__record=study)
+    # The probes of the window are built around the house's default window (open-default@2:
+    # 30 days), so that a kit that takes the default separates it (review of catalog-2c, F1).
+    assert days == probes.house_window() == 30
+    assert parameters["follow_up_days"] in (7, 14, 28, 30)
+    # The rounding probe lies on a half at one decimal only (F1).
+    pair = ("half_away_from_zero", "half_even")
+    assert _reach("tfl.rounding.rule", *pair, parameters)
+    for decimals in (0, 2):
+        assert not _reach("tfl.rounding.rule", *pair, parameters, tfl__percent__format={
+            "rule": "one_decimal_always", "decimals": decimals})
     # The latest end of any exposure record (#24) is read by the window as well.
     assert not _reach("trt.end.source", "last_ex_end_date", "last_ex_record_end", parameters)
     assert _reach("trt.end.source", "last_ex_end_date", "last_ex_record_end", parameters,
@@ -587,6 +598,13 @@ def _f9_placebo_on_day_one(t, r, d):
     t["EX"].append(like)
 
 
+def _f9_zero_record_placebo(t, r, d):
+    # A record of dose zero named placebo has a dose by the catalog's definition.
+    for row in _rows(t, "EX", r["subjects"][0]):
+        if row["EXDOSE"] == 0:
+            row["EXTRT"] = "PLACEBO"
+
+
 def _f9_event_over_before_the_dose(t, r, d):
     subject = r["subjects"][0]
     for row in _rows(t, "AE", subject):
@@ -615,6 +633,9 @@ def _f9_one_more_serious_on_day_one(t, r, d):
 
 F9 = [
     ("ae_on_first_dose_date_without_time", _f9_dose_time_in_dm_only),
+    ("ae_timed_before_timed_first_dose", _f9_dose_time_in_dm_only),
+    ("undosed_record_after_last_dose", _f9_zero_record_placebo),
+    ("undosed_record_after_last_dose", _f9_no_event),
     ("no_exposure_end_date", _f9_no_dose),
     ("dosed_but_not_randomized", _f9_no_dose),
     ("zero_dose_record_before_first_dose", _f9_placebo_on_day_one),
