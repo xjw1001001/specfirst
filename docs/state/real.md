@@ -75,6 +75,19 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   docs/reports/real-5b-answers.review.md (pass 1 SIGNED, four findings that
   do not block). Decisions: ADR-015, section "The owner's answers
   (2026-11-20)".
+- Issue #29 A standalone recomputation script per analysis (2026-11-21):
+  `specfirst recompute cdiscpilot01` writes, runs sealed and compares 69
+  scripts (42 Python, 27 R), 69 of 69 `reproduced`; the planted break of
+  the LS-means weights, and the quartile and CMH plants, are found. Gates:
+  `scripts/clean_clone_gate.sh` exited 0 for issue-29 (12 of 12), real-5a,
+  real-5b, real-2 and real-3a on clean clones of commit `22c2932` (the
+  work on `main` `9dc6b20`), and, with catalog-2b, on clean clones of
+  `711c032` (`main` `6cdeded` merged in). Evidence:
+  docs/reports/issue-29.md, issue-29.clean-clone.gate.log,
+  issue-29.<gate>.gate.log and issue-29.merged.<gate>.gate.log. Review:
+  docs/reports/issue-29.review.md (pass 1 and pass 2 no blocking finding;
+  final SIGNED of `0ae9b24`, nothing for the owner). Decisions:
+  docs/decisions/ADR-021.md.
 
 ## Open
 
@@ -334,6 +347,43 @@ for 3,580 of them):
   read from the ARD; the rows themselves are still layout work.
 - Display rules that are not registry entries yet: p-value formats and the
   truncation of long terms (E25).
+
+## Handed over by issue #29
+
+- `specfirst recompute <kit> [--build DIR] [--export DIR]` writes, from a
+  build of the kit, one standalone script per analysis of its reporting
+  events into build/recompute/<kit>/bundle/ (with plan.json, manifest.json,
+  the gold ARD rows, adam_csv.py, compare.py, run_all.sh and README.txt; no
+  study data), runs each script sealed on copies of the reference ADaM, and
+  writes build/recompute/<kit>/run/ (outputs, logs, report.json,
+  report.txt, checks.json). ADR-021 has the design.
+- A script is written by a template per registry method: Python
+  (`specfirst.recompute.pywrite`) for count, percent, continuous summary,
+  chi-square and one-way ANOVA; R (`rwrite`) for Fisher, CMH, ANCOVA and
+  the mixed model. An analysis whose method or shape no template covers is
+  `not covered`, with the reason: a new registry method, a new kind of
+  grouping or a new comparator needs a template first. The templates cite
+  registry statements by number (`common.statement` finds an option's
+  statement by its first words): add statements at the end, as before.
+- The generator reads the ARS, kit.yaml, the decision records and
+  registry.json as plain data, with its own reading of the rules of
+  standard/methods/README.md it needs (B1 to B3, I3 to I5, I8 to I10, I12
+  to I19; `specfirst.recompute.reading` and the writers). Of specfirst it
+  imports only `specfirst.recompute`, `kit`, `paths` and `machine.canonical`
+  (`static.GENERATOR_IMPORTS`; a unit test holds it).
+- The static check (`specfirst.recompute.static`) holds the scripts to
+  allow-lists (Python imports, builtins and attributes; R calls) and to one
+  form of a read (`adam / "<d>.parquet"`, `file.path(adam, "<d>.csv")`): a
+  template that needs another function, attribute or form of a read needs
+  it added there, and a reason. seal.py's audit hook refuses every import
+  of specfirst or yamaa and every open by Python in the checkout and the
+  build, so a script writes its output in its own folder and run.py copies
+  it out. Neither check is a proof (ADR-021, decision 5, says what they do
+  not hold).
+- The gate issue-29 holds the pilot at 69 analyses
+  (`gates.RECOMPUTE_ANALYSES`): an analysis added to a reporting event of
+  the kit changes that number. tests/recompute plants three breaks of the
+  engine and the checks' own defects (RC1 to RC6).
 
 ## Handed over by real-5b
 
