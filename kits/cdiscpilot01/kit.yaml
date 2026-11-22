@@ -67,11 +67,16 @@ results:
         summary.continuous: {quantile_definition: sas5}
     # The outputs of the event that are built as grids, each with its layout: a
     # file of our own in this folder (ADR-003). The list is the limit of the
-    # display checks. real-3a builds the adverse event summary (ADR-005); the
-    # rest of real-3 adds the other four outputs of the example.
+    # display checks. real-3a builds the adverse event summary (ADR-005); issue #31
+    # the demographics and the table by organ class and term (ADR-022); the rest of
+    # real-3 adds the vital signs.
     outputs:
+      - id: Out14-1-1
+        layout: gold/layout/Out14-1-1.yaml
       - id: Out14-3-1-1
         layout: gold/layout/Out14-3-1-1.yaml
+      - id: Out14-3-2-1
+        layout: gold/layout/Out14-3-2-1.yaml
   # real-5a (ADR-012, ADR-015): ADAS-Cog (11), change from baseline to weeks 24, 8
   # and 16, LOCF, by ANCOVA. The reporting event is our own file, written from the
   # SAP, the analysis results metadata of the Define-XML and the CSR's shells; it
@@ -108,11 +113,13 @@ results:
         layout: gold/layout/Out14-3-13.yaml
         reference: {csr: gold/reference/csr/CSR.pdf, page: 61, table: "14-3.13"}
 
-# The documents of the kit. `cited_as` is how Pilot 7's claims name them.
+# The documents of the kit. `cited_as` is how Pilot 7's claims name them, and how the
+# `referenceDocuments` of an ARS file do (issue #31): CDISC's example names the SAP
+# CDISCPILOT01_SAP, and its sap.pdf has the SHA-256 of this one (210b7f1f...).
 documents:
   - id: sap
     file: inputs/docs/sap.pdf
-    cited_as: [spec/source/SAP.pdf]
+    cited_as: [spec/source/SAP.pdf, CDISCPILOT01_SAP]
   - id: dataguide
     file: inputs/docs/dataguide.pdf
     cited_as: [spec/source/dataguide.pdf]

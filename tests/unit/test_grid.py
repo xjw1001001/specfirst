@@ -279,6 +279,37 @@ def test_a_cell_differs_by_a_result_that_has_a_class(spec, made, rows):
         in found.problems[0])
 
 
+def test_a_difference_of_display_only_has_the_class_of_its_entry(spec, made, rows):
+    """Issue #31: the reference's raw value is ours, its formatted value is not that raw value
+    under its own pattern. With an entry of `formats`, the cell has the entry's class; the
+    proof fails when the raw values differ, or when the entry's text is not the reference's."""
+    def own_text(found):
+        found[("A_TEAE", "M_CAT_n", ("Arm_A",))]["formattedValue"] = "2.0"
+
+    event = displays.reference(rows, change=own_text)
+    entry = {"result": "ard:A_TEAE/M_CAT_n/Arm_A", "formatted": "2.0",
+             "class": "reference_error", "proof": {"kind": "not_its_own_pattern"}}
+    found = compared(event, spec, made, rows)
+    assert len(found.problems) == 1 and found.formats_used == set()
+    found = grid.compare_reference(event, spec, made, rows, {}, {entry["result"]: entry})
+    assert found.problems == [] and found.classified == {"reference_error": 1}
+    assert found.formats_used == {"ard:A_TEAE/M_CAT_n/Arm_A"}
+    # The entry's text is not the reference's.
+    found = grid.compare_reference(event, spec, made, rows, {}, {
+        entry["result"]: {**entry, "formatted": "2.00"}})
+    assert len(found.problems) == 1 and "the exceptions give the formatted value '2.00'" in \
+        found.problems[0]
+
+    # The raw values differ: that is a difference of the result, not of its display.
+    def other_value(found):
+        found[("A_TEAE", "M_CAT_n", ("Arm_A",))].update(rawValue="3", formattedValue="2.0")
+
+    found = grid.compare_reference(displays.reference(rows, change=other_value), spec, made,
+                                   rows, {}, {entry["result"]: entry})
+    assert len(found.problems) == 1 and "the values differ, not their display" in \
+        found.problems[0]
+
+
 def test_a_cell_with_two_classes_has_none(spec, made, rows):
     def change(found):
         exchange(found)

@@ -40,6 +40,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import quote
@@ -726,6 +727,83 @@ def add_displays(graph: Graph, kit_dir: Path, displays: list[Display]) -> None:
     graph.nodes = [nodes[key] for key in sorted(nodes)]
     graph.edges = [edges[key] for key in sorted(edges)]
     graph.coverage = {**graph.coverage, "analyses": analyses_read, "displays": coverage_displays}
+
+
+PageText = Callable[[Path, int], str]  # a page of a PDF as text (specfirst.machine.csr)
+
+
+def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display],
+                  page_text: PageText | None = None) -> None:
+    """The page references of the ARS file as candidate `cites` edges (issue #31, ADR-022).
+
+    An ARS analysis and its method may name pages of a reference document
+    (`documentRefs`, `pageRefs` with `pageNumbers` and a `label`). Where the
+    document is one of the kit's (its `cited_as` names the reference
+    document's ID), every page gives a span `doc:<document>#<page>/<label>`,
+    and every analysis of a built grid an edge to it: judged, imported (the
+    ARS file is CDISC's), `approved_by` null. Its quote is the label: a
+    script finds it on that page of the document's text (`page_text`, poppler's
+    pdftotext) or it does not, and `quote_verified` says which. Nothing here
+    approves an edge (section 4.2): that the page supports the analysis is a
+    person's judgment.
+
+    A reference to a document the kit does not hold (the CSR, a table shell)
+    gives no edge; coverage.json lists it under `documents`.
+    """
+    if page_text is None:
+        from specfirst.machine.csr import page_text
+    nodes = {node["id"]: node for node in graph.nodes}
+    edges = {(edge["type"], edge["from"], edge["to"]): edge for edge in graph.edges}
+    hashes = {entry.path: entry.sha256 for entry in kit.files}
+    shown = {node["id"] for node in graph.nodes if node.get("kind") == "analysis"}
+    texts: dict[tuple[str, int], str] = {}
+    taken, verified, elsewhere = 0, 0, Counter()
+    for display in displays:
+        event = display.event
+        methods = {method["id"]: method for method in event.data.get("methods") or []}
+        names = [name for name in event.analyses if ars_id(name) in shown]
+        lines = _id_lines(kit_dir / display.ars_file, {*names, *methods})
+        for name in sorted(names):
+            analysis = event.analyses[name]
+            method = methods.get(str(analysis.get("methodId")), {})
+            for owner, refs in ((name, analysis.get("documentRefs") or []),
+                                (str(method.get("id")), method.get("documentRefs") or [])):
+                source = {"file": display.ars_file, "line": lines.get(owner, 1)}
+                for ref in refs:
+                    document = kit.document(str(ref.get("referenceDocumentId", "")))
+                    if document is None:
+                        elsewhere[str(ref.get("referenceDocumentId", ""))] += 1
+                        continue
+                    for page_ref in ref.get("pageRefs") or []:
+                        label = str(page_ref.get("label") or "")
+                        for page in page_ref.get("pageNumbers") or []:
+                            anchor = quote(f"{page}/{label}", safe=_ANCHOR_SAFE)
+                            span = f"doc:{document.id}#{anchor}"
+                            if span not in nodes:
+                                nodes[span] = {
+                                    "id": span, "layer": "L0", "kind": "span", "label": label,
+                                    "hash": content_hash({"document": hashes[document.file],
+                                                          "anchor": anchor}),
+                                    "source": {"file": document.file, "line": 1}}
+                            key_text = (document.file, int(page))
+                            if key_text not in texts:
+                                texts[key_text] = "".join(page_text(
+                                    kit_dir / document.file, int(page)).split())
+                            found = bool(label) and "".join(label.split()) in texts[key_text]
+                            key = ("cites", ars_id(name), span)
+                            if key not in edges:
+                                taken += 1
+                                verified += found
+                                edges[key] = {
+                                    "type": "cites", "from": ars_id(name), "to": span,
+                                    "proof": "judged", "origin": "imported",
+                                    "quote_verified": found, "approved_by": None,
+                                    "source": source}
+    graph.nodes = [nodes[key] for key in sorted(nodes)]
+    graph.edges = [edges[key] for key in sorted(edges)]
+    graph.coverage = {**graph.coverage, "documents": {
+        "cites_edges_of_analyses": taken, "quotes_verified": verified,
+        "references_not_to_kit_documents": dict(sorted(elsewhere.items()))}}
 
 
 def check_cells(folder: Path, grids: dict[str, dict]) -> tuple[list[str], list[str]]:

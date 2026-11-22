@@ -1,0 +1,79 @@
+# Layout of the output Out14-3-2-1 of CDISC's ARS example "Common Safety
+# Displays": Summary of TEAE by System Organ Class and Preferred Term (issue #31).
+#
+# Layout spec v0 (specfirst.machine.layout, ADR-003 and its amendments), with the block
+# kind `terms` and the spanner of an extra column of issue #31 (ADR-022). This file is
+# our own. It holds what the ARS file does not: which analysis stands in which rows, the
+# cell templates, the order of the rows and the two columns of the Fisher p-values,
+# which are no treatment group. The columns follow the example's table shell,
+# AE_SOC_PT_Table_Shell.rtf in the pinned ARS repository (workfiles/examples/ARS v1):
+# placebo versus each active arm, under one header.
+#
+# The rows of organ class and term are the values the results have (the analyses by
+# term give the pairs that occur, ADR-011), each organ class followed by its terms,
+# both A to Z: the decision tfl.ae.socpt.sort of the pilot's records
+# (gold/decisions/safety.jsonl). A p-value cell is empty where the comparison has no
+# result for the row: its data subset has no record of that term.
+#
+# The patterns are those of the ARS operations ("(N=XX)", "XXX", "( XX.X)", "X.XXXX").
+# The shell's footnote [b] appends an asterisk to p-values below 0.15; the example's
+# formatted values have none, and neither has this layout.
+layout: 0
+output: Out14-3-2-1
+columns:
+  grouping: AnlsGrouping_01_Trt
+  extra:
+    - {id: vs_low, label: "Placebo vs. Low Dose", spanner: "Fisher's Exact p-values [b]"}
+    - {id: vs_high, label: "Placebo vs. High Dose", spanner: "Fisher's Exact p-values [b]"}
+rows:
+  - kind: header
+    cell: "{N}"
+    parts:
+      N: {analysis: An01_05_SAF_Summ_ByTrt, operation: Mth01_CatVar_Count_ByGrp_1_n}
+  - kind: statistics
+    analysis: An07_01_TEAE_Summ_ByTrt
+    rows:
+      - label: Number of subjects with at least one event
+        cell: "{n} {pct}"
+        parts:
+          n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+          pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
+        extra:
+          vs_low:
+            cell: "{p}"
+            parts:
+              p: {analysis: An07_01_TEAE_Comp_ByTrt_PlacLow, operation: Mth03_CatVar_Comp_FishEx_1_pval}
+          vs_high:
+            cell: "{p}"
+            parts:
+              p: {analysis: An07_01_TEAE_Comp_ByTrt_PlacHigh, operation: Mth03_CatVar_Comp_FishEx_1_pval}
+  - kind: terms
+    analysis: An07_09_Soc_Summ_ByTrt
+    grouping: AnlsGrouping_06_Soc
+    sort: alphabetical
+    cell: "{n} {pct}"
+    parts:
+      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+      pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
+    extra:
+      vs_low:
+        cell: "{p}"
+        parts:
+          p: {analysis: An07_09_Soc_Comp_ByTrt_PlacLow, operation: Mth03_CatVar_Comp_FishEx_1_pval}
+      vs_high:
+        cell: "{p}"
+        parts:
+          p: {analysis: An07_09_Soc_Comp_ByTrt_PlacHigh, operation: Mth03_CatVar_Comp_FishEx_1_pval}
+    nested:
+      analysis: An07_10_SocPt_Summ_ByTrt
+      grouping: AnlsGrouping_07_Pt
+      indent: 1
+      extra:
+        vs_low:
+          cell: "{p}"
+          parts:
+            p: {analysis: An07_10_SocPt_Comp_ByTrt_PlacLow, operation: Mth03_CatVar_Comp_FishEx_1_pval}
+        vs_high:
+          cell: "{p}"
+          parts:
+            p: {analysis: An07_10_SocPt_Comp_ByTrt_PlacHigh, operation: Mth03_CatVar_Comp_FishEx_1_pval}

@@ -131,8 +131,14 @@ def build(root: Path, kit_id: str, into: Path | None = None, out: Out = print) -
             # build like any other input that cannot be run.
             out(f"build {kit_id}: FAIL ({error})")
             return 1
-        # The trace from the cells of the grids to the ADaM columns (real-3).
+        # The trace from the cells of the grids to the ADaM columns (real-3), and the
+        # page references of the ARS files as candidate citations (issue #31).
         graph.add_displays(trace, dest, displays)
+        try:
+            graph.add_citations(trace, kit, dest, displays)
+        except csr.CsrError as error:
+            out(f"build {kit_id}: FAIL ({error})")
+            return 1
     written += graph.write_graph(into / GRAPH, trace)
     files = {path.relative_to(into).as_posix(): sha256_file(path) for path in sorted(written)}
     write_json(into / MANIFEST, {**record, "files": files})
@@ -444,20 +450,22 @@ def _read_json(path: Path) -> object:
 
 def display_problems(root: Path, event: ars.Event, layout: layouts.Layout, made: object,
                      shell: object, pages: dict[str, str], rows: results.Rows,
-                     other_rows: results.Rows,
-                     classes: dict[str, str]) -> tuple[grid.DisplayComparison, list[str]]:
+                     other_rows: results.Rows, classes: dict[str, str],
+                     formats: dict[str, dict] | None = None,
+                     ) -> tuple[grid.DisplayComparison, list[str]]:
     """What is wrong with the built display of one output: `display_checks` has the list.
 
     `pages` holds the page of the grid under "" and that of the mock shell
     under ".shell". `rows` are the gold ARD, `other_rows` those of the second
     engine. `classes` gives the class of every result whose difference from
-    the reference is explained.
+    the reference is explained; `formats` the entries of the exceptions file
+    for a difference of display only (issue #31).
     """
     problems = [f"grid: {p}" for p in grid.grid_problems(made, root)]
     problems += [f"shell: {p}" for p in grid.grid_problems(shell, root)]
     if problems:
         return grid.DisplayComparison(layout.output), problems
-    compared = grid.compare_reference(event, layout, made, rows, classes)
+    compared = grid.compare_reference(event, layout, made, rows, classes, formats)
     problems += compared.problems
     try:
         if grid.build(event, layout, other_rows) != made:
@@ -531,6 +539,7 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
     try:
         listed = results.load_exceptions(folder / kit.exceptions) if kit.exceptions else {}
         cell_entries = csr.load_exceptions(folder / kit.exceptions) if kit.exceptions else {}
+        formats = results.load_formats(folder / kit.exceptions) if kit.exceptions else {}
         outputs = {display.output for spec in kit.results for display in spec.displays
                    if display.reference is not None}
         for output in sorted(set(cell_entries) - outputs):
@@ -547,6 +556,8 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                 comparison, listed.get(spec.id, []), rows["Python"], inputs.registry,
                 proof_evidence(root, folder, spec))
             classes = {key: entry["class"] for key, entry in explained.items()}
+            own_formats = formats.get(spec.id, {})
+            used: set[str] = set()
             for display in spec.displays:
                 layout = layouts.read(folder / display.layout)
                 made = _read_json(folder / GRID / f"{display.output}.json")
@@ -555,7 +566,8 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                     encoding="utf-8") for kind in ("", ".shell")}
                 compared, problems = display_problems(
                     root, inputs.event, layout, made, shell, pages, rows["Python"], rows["R"],
-                    classes)
+                    classes, own_formats)
+                used |= compared.formats_used
                 if display.reference is not None:
                     # The reference is a CSR table: the event embeds no formatted value.
                     against = csr_comparison(root, kit, folder, display, inputs.event, layout,
@@ -594,8 +606,14 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                     "results": compared.results, "equal": compared.equal,
                     "differing": len(compared.differing),
                     "classified": sum(compared.classified.values()),
-                    "no_reference": len(compared.no_reference), "problems": len(problems),
+                    "no_reference": len(compared.no_reference),
+                    "uncompared": compared.uncompared, "problems": len(problems),
                 })
+            # An entry for a difference of display that no cell shows is no difference.
+            for key in sorted(set(own_formats) - used):
+                out(f"grids: the exceptions list a difference of display of {key}, and no cell "
+                    "of a built grid of the result set differs by it")
+                passed = False
     except (ars.ArsError, ard.EngineError, results.ResultsError, registries.RegistryError,
             layouts.LayoutError, csr.CsrError, grid.GridError, OSError, ValueError) as error:
         out(f"grids: {error}")

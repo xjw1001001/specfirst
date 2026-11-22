@@ -1,0 +1,152 @@
+# Layout of the output Out14-1-1 of CDISC's ARS example "Common Safety
+# Displays": Summary of Demographics (issue #31).
+#
+# Layout spec v0 (specfirst.machine.layout, ADR-003 and its amendments), with the
+# extra cells of a groups block of issue #31 (ADR-022). This file is our own. It holds
+# what the ARS file does not: which analysis stands in which rows, the cell templates,
+# the row labels and the column of the p-values, which is no treatment group. The rows
+# and their labels follow the example's table shell, Demog_Table_Shell.rtf in the pinned
+# ARS repository (workfiles/examples/ARS v1); its footnote [1] is given here, because
+# the display of the ARS file has no footnote section. The p-value of a test stands in
+# the first row of its characteristic, as in the shell.
+#
+# Patterns are the ARS operations' ("(N=XX)", "XX", "XX.X", "(XX.XX)", "XXX",
+# "( XX.X)", "X.XXXX"), except the minimum and the maximum of height: the example
+# shows them with the decimals of the data (137.2 under "XX"), and so does this layout
+# ("XX.X"). That is the decision tfl.decimals.rule of the pilot's records
+# (gold/decisions/safety.jsonl).
+layout: 0
+output: Out14-1-1
+footnotes:
+  - "[1] P-values are results of ANOVA treatment group comparison for continuous variable and Pearson's chi-square test for categorical variables."
+columns:
+  grouping: AnlsGrouping_01_Trt
+  extra:
+    - {id: pvalue, label: "p-value [1]"}
+rows:
+  - kind: header
+    cell: "{N}"
+    parts:
+      N: {analysis: An01_05_SAF_Summ_ByTrt, operation: Mth01_CatVar_Count_ByGrp_1_n}
+  - kind: statistics
+    analysis: An03_01_Age_Summ_ByTrt
+    section: Age (years)
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth02_ContVar_Summ_ByGrp_1_n}
+        extra:
+          pvalue:
+            cell: "{p}"
+            parts:
+              p: {analysis: An03_01_Age_Comp_ByTrt, operation: Mth04_ContVar_Comp_Anova_1_pval}
+      - label: Mean (SD)
+        cell: "{mean} {sd}"
+        parts:
+          mean: {operation: Mth02_ContVar_Summ_ByGrp_2_Mean}
+          sd: {operation: Mth02_ContVar_Summ_ByGrp_3_SD}
+      - label: Median
+        cell: "{median}"
+        parts:
+          median: {operation: Mth02_ContVar_Summ_ByGrp_4_Median}
+      - label: Q1, Q3
+        cell: "{q1}, {q3}"
+        parts:
+          q1: {operation: Mth02_ContVar_Summ_ByGrp_5_Q1}
+          q3: {operation: Mth02_ContVar_Summ_ByGrp_6_Q3}
+      - label: Min, Max
+        cell: "{min}, {max}"
+        parts:
+          min: {operation: Mth02_ContVar_Summ_ByGrp_7_Min}
+          max: {operation: Mth02_ContVar_Summ_ByGrp_8_Max}
+  - kind: groups
+    analysis: An03_02_AgeGrp_Summ_ByTrt
+    grouping: AnlsGrouping_03_AgeGp
+    section: Age Group, n (%)
+    indent: 1
+    cell: "{n} {pct}"
+    parts:
+      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+      pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
+    extra:
+      pvalue:
+        cell: "{p}"
+        parts:
+          p: {analysis: An03_02_AgeGrp_Comp_ByTrt, operation: Mth03_CatVar_Comp_PChiSq_1_pval}
+  - kind: groups
+    analysis: An03_03_Sex_Summ_ByTrt
+    grouping: AnlsGrouping_02_Sex
+    section: Gender, n (%)
+    indent: 1
+    cell: "{n} {pct}"
+    parts:
+      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+      pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
+    extra:
+      pvalue:
+        cell: "{p}"
+        parts:
+          p: {analysis: An03_03_Sex_Comp_ByTrt, operation: Mth03_CatVar_Comp_PChiSq_1_pval}
+  - kind: groups
+    analysis: An03_04_Ethnic_Summ_ByTrt
+    grouping: AnlsGrouping_05_Ethnic
+    section: Ethnicity, n (%)
+    indent: 1
+    cell: "{n} {pct}"
+    parts:
+      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+      pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
+    extra:
+      pvalue:
+        cell: "{p}"
+        parts:
+          p: {analysis: An03_04_Ethnic_Comp_ByTrt, operation: Mth03_CatVar_Comp_PChiSq_1_pval}
+  - kind: groups
+    analysis: An03_05_Race_Summ_ByTrt
+    grouping: AnlsGrouping_04_Race
+    section: Primary Race, n (%)
+    indent: 1
+    cell: "{n} {pct}"
+    parts:
+      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+      pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
+    extra:
+      pvalue:
+        cell: "{p}"
+        parts:
+          p: {analysis: An03_05_Race_Comp_ByTrt, operation: Mth03_CatVar_Comp_PChiSq_1_pval}
+  - kind: statistics
+    analysis: An03_06_Height_Summ_ByTrt
+    section: Height (cm)
+    indent: 1
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth02_ContVar_Summ_ByGrp_1_n}
+        extra:
+          pvalue:
+            cell: "{p}"
+            parts:
+              p: {analysis: An03_06_Height_Comp_ByTrt, operation: Mth04_ContVar_Comp_Anova_1_pval}
+      - label: Mean (SD)
+        cell: "{mean} {sd}"
+        parts:
+          mean: {operation: Mth02_ContVar_Summ_ByGrp_2_Mean}
+          sd: {operation: Mth02_ContVar_Summ_ByGrp_3_SD}
+      - label: Median
+        cell: "{median}"
+        parts:
+          median: {operation: Mth02_ContVar_Summ_ByGrp_4_Median}
+      - label: Q1, Q3
+        cell: "{q1}, {q3}"
+        parts:
+          q1: {operation: Mth02_ContVar_Summ_ByGrp_5_Q1}
+          q3: {operation: Mth02_ContVar_Summ_ByGrp_6_Q3}
+      - label: Min, Max
+        cell: "{min}, {max}"
+        parts:
+          min: {operation: Mth02_ContVar_Summ_ByGrp_7_Min, pattern: "XX.X"}
+          max: {operation: Mth02_ContVar_Summ_ByGrp_8_Max, pattern: "XX.X"}

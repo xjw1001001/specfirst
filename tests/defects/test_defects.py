@@ -30,6 +30,12 @@ the kit's exceptions, `results.agreement` for rule R11).
                  decision records (real-5b)
     D12-cmh-engines  the CMH test planted in the R engine's input alone: the
                  two engines must be seen to disagree (rule R11, real-5b)
+    D13-review   the review page and the acceptance of issue #31: a cell
+                 without a panel, a script, a handler, a link that leaves the
+                 page, a judged edge drawn as proven, an unseparated decision
+                 drawn as proven, a decision left off the sheet, a broken path
+                 to SDTM in the graph files, and an entry of `formats` that is
+                 no difference (ADR-022)
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -446,9 +452,14 @@ def d6_proofs(pilot: Pilot, tmp_path) -> list[str]:
 # ---- real-3a: the grid and the trace of its cells (ADR-005) ---------------------------
 
 
+# The output D7 and D8 plant in: the adverse event summary of real-3a. Issue #31 builds the
+# demographics before it and the table by organ class and term after it.
+SUMMARY_OUTPUT = "Out14-3-1-1"
+
+
 def _display(pilot: Pilot):
-    """The first output the kit builds as a grid: its layout, its built grid, the classes."""
-    shown = pilot.spec.displays[0]
+    """The adverse event summary: its layout, its built grid, the classes of its results."""
+    shown = next(display for display in pilot.spec.displays if display.output == SUMMARY_OUTPUT)
     spec = layouts.read(pilot.folder / shown.layout)
     with open(pilot.folder / build.GRID / f"{shown.output}.json", encoding="ascii") as handle:
         made = json.load(handle)
@@ -605,15 +616,17 @@ def _graph_of(pilot: Pilot) -> tuple[list[dict], list[dict]]:
 def shows_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
     """The `shows` edges against the grid builder (lesson 16).
 
-    A result that a cell shows is changed: exactly the cells with a `shows`
-    edge to it must get another text. Then every result that no cell shows
-    is changed at once: the grid must stay as it is.
+    A result that a cell shows is changed: exactly the cells of this grid with
+    a `shows` edge to it must get another text. Then every result that no cell
+    of it shows is changed at once: the grid must stay as it is. A result may
+    stand in other grids too (the count of a header, issue #31); their cells
+    are not this grid's.
     """
-    _, spec, made, _ = _display(pilot)
+    shown, spec, made, _ = _display(pilot)
     event, rows = pilot.reference, pilot.gold
     cells_of: dict[str, set[str]] = {}
     for edge in edges:
-        if edge["type"] == "shows":
+        if edge["type"] == "shows" and edge["from"].startswith(f"cell:{shown.output}/"):
             cells_of.setdefault(edge["to"], set()).add(edge["from"])
     texts = {cell["id"]: cell["text"] for row in made["rows"] for cell in row["cells"]}
     problems = []
@@ -1428,11 +1441,115 @@ def d12_cmh_engines(pilot: Pilot, tmp_path) -> list[str]:
     return problems
 
 
+# ---- issue #31: the review page (ADR-022) -------------------------------------------------
+
+# The outputs the acceptance of issue #31 names: the demographics and AE tables of the pilot.
+REVIEWED = ("Out14-1-1", "Out14-3-1-1", "Out14-3-2-1")
+
+
+def _linked_build(pilot: Pilot, tmp_path: Path) -> Path:
+    """A build that is the pilot's but for its graph, which is a copy: the rest is linked."""
+    work = tmp_path / "linked" / KIT
+    (work / "gold").mkdir(parents=True)
+    for item in pilot.folder.iterdir():
+        if item.name != "gold":
+            (work / item.name).symlink_to(item)
+    for item in (pilot.folder / "gold").iterdir():
+        if item.name != "graph":
+            (work / "gold" / item.name).symlink_to(item)
+    shutil.copytree(pilot.folder / build.GRAPH, work / build.GRAPH)
+    return work
+
+
+def d13_review(pilot: Pilot, tmp_path) -> list[str]:
+    """The review page of the pilot and the acceptance of issue #31: they hold on the build,
+    and each defect planted in the page, the review or the graph files is seen."""
+    from unittest import mock
+
+    from specfirst.viewer import check as checks
+    from specfirst.viewer import model, page
+
+    none = tmp_path / "no-recompute"
+    review = model.load(pilot.root, KIT, pilot.folder, recompute=none)
+    text = page.html(review)
+    problems = [f"the unchanged page: {p}" for p in checks.page_problems(text, review)[:3]]
+    lines, found = checks.acceptance(review, text, REVIEWED)
+    for line in lines:
+        print(line)
+    problems += [f"the unchanged acceptance: {p}" for p in found[:3]]
+    if page.html(model.load(pilot.root, KIT, pilot.folder, recompute=none)) != text:
+        problems.append("the page of the same build is not the same twice")
+    cell = sorted(c.id for c in review.cells.values() if c.output == "Out14-3-2-1")[0]
+    record = sorted(review.decisions)[0]
+    off = copy.deepcopy(review)
+    off.sheet = [line for line in off.sheet if line.key != record]
+    p4 = {(review.decisions[record].id, review.decisions[record].unit): model.UNSEPARATED}
+    unseparated = model.load(pilot.root, KIT, pilot.folder, recompute=none, p4=p4)
+    unseparated_text = page.html(unseparated)
+    problems += [f"the page with an unseparated decision: {p}"
+                 for p in checks.page_problems(unseparated_text, unseparated)[:3]]
+    planted = {
+        "a cell without a panel": lambda: checks.acceptance(
+            review, text.replace(f'id="c-{cell}"', 'id="c-gone"'), REVIEWED)[1],
+        "a script": lambda: checks.page_problems(
+            text.replace("</body>", "<script>fetch('x')</script></body>"), review),
+        "a handler": lambda: checks.page_problems(
+            text.replace('<a class="number"', '<a onmouseover="x()" class="number"', 1), review),
+        "a link that leaves the page": lambda: checks.page_problems(
+            text.replace('href="#sheet"', 'href="https://example.org/"'), review),
+        "a judged edge drawn as proven": lambda: checks.page_problems(text.replace(
+            '<li class="citation"><span class="kind judged">',
+            '<li class="citation"><span class="kind executed">', 1), review),
+        "an unseparated decision drawn as proven": lambda: checks.page_problems(
+            unseparated_text.replace("kind unseparated", "kind static"), unseparated),
+        "a decision left off the sheet": lambda: checks.acceptance(off, text, REVIEWED)[1],
+    }
+    for name, seen in planted.items():
+        found = seen()
+        print(f"planted, {name}: {len(found)} problems"
+              + (f", for example: {found[0][:140]}" if found else ""))
+        if not found:
+            problems.append(f"{name}: not seen")
+    # In the graph files: the derives_from edges of a column the demographics read are lost,
+    # and coverage.json still says that it reaches SDTM.
+    work = _linked_build(pilot, tmp_path)
+    edges_file = work / build.GRAPH / "edges.jsonl"
+    kept = [line for line in edges_file.read_text(encoding="ascii").splitlines(keepends=True)
+            if not (json.loads(line)["type"] == "derives_from"
+                    and json.loads(line)["from"] == "adam:ADSL.AGEGR1")]
+    edges_file.write_text("".join(kept), encoding="ascii")
+    broken = model.load(pilot.root, KIT, work, recompute=none)
+    found = [p for p in checks.acceptance(broken, page.html(broken), REVIEWED)[1]
+             if "reaches no SDTM column" in p]
+    print(f"planted in the graph files, the derives_from edges of ADSL.AGEGR1 left out: "
+          f"{len(found)} cells seen")
+    if not found:
+        problems.append("a broken path to SDTM in the graph files: not seen")
+    # In the exceptions: a difference of display that no cell shows (issue #31, formats).
+    extra = {"result": f"ard:{OVERVIEW}/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1",
+             "formatted": "65.0", "class": "reference_error",
+             "proof": {"kind": "not_its_own_pattern"}}
+    real = results.load_formats
+
+    def more(path):
+        made = real(path)
+        made.setdefault(pilot.spec.id, {})[extra["result"]] = extra
+        return made
+
+    said: list[str] = []
+    with mock.patch.object(results, "load_formats", more):
+        passed, _ = build.display_checks(pilot.root, KIT, pilot.folder, said.append)
+    print(f"planted in the exceptions, a difference of display no cell shows: passes {passed}")
+    if passed or not any("no cell of a built grid" in line for line in said):
+        problems.append("an entry of formats that is no difference: not seen")
+    return problems
+
+
 CASES = {"D1-arms": d1_arms, "D2-set": d2_set, "D3-quantile": d3_quantile,
          "D4-subset": d4_subset, "D5-engines": d5_engines, "D6-proofs": d6_proofs,
          "D7-display": d7_display, "D8-trace": d8_trace, "D9-efficacy": d9_efficacy,
          "D10-trace-model": d10_trace_model, "D11-efficacy-5b": d11_efficacy_5b,
-         "D12-cmh-engines": d12_cmh_engines}
+         "D12-cmh-engines": d12_cmh_engines, "D13-review": d13_review}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

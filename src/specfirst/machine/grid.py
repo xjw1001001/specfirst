@@ -85,6 +85,7 @@ class Plan:
     columns: tuple[tuple[str, results.Group, str], ...]  # (column ID, group, label)
     rows: tuple[PlannedRow, ...]
     missing: str
+    spanners: tuple[tuple[str, str], ...] = ()  # (column ID, spanner), issue #31
 
 
 EXTRA = "extra"  # the kind of the group of an extra column: it is no group (real-5b)
@@ -126,13 +127,31 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
     sections = ars.display_sections(event, layout.output)
     used = {part.analysis or analysis_id for block in layout.blocks
             for analysis_id, _ in (block.analyses or ((None, None),)) for part in block.parts}
-    used |= {block.analysis for block in layout.blocks if block.kind in ("statistics", "groups")}
+    used |= {block.analysis for block in layout.blocks
+             if block.kind in ("statistics", "groups", "terms")}
     found_columns = _columns(event, layout, rows, used)
     if not found_columns:
         raise GridError(f"the column grouping {layout.grouping} has no group")
     found_columns += [((EXTRA, name), label) for name, label in layout.extra]
     columns = [(f"c{number}", group, label) for number, (group, label)
                in enumerate(found_columns, start=1)]
+    spanned = dict(layout.spanners)
+    spanners = tuple((column, spanned[group[1]]) for column, group, _ in columns
+                     if group[0] == EXTRA and group[1] in spanned)
+
+    def extra_cell(column: str, cell: layouts.ExtraCell | None,
+                   groups: dict[str, results.Group], optional: bool = False) -> PlannedCell:
+        """The cell of an extra column. `optional`: a result the ARD does not have leaves it
+        empty (a terms block: a comparison has no result for a value it has no record of)."""
+        if cell is None:
+            return PlannedCell(column, ())
+        shown = tuple(Shown(part.name, ard_id(event, event.analyses[part.analysis],
+                                              part.operation, groups),
+                            layouts.pattern_of(event, part), part.analysis)
+                      for part in cell.parts)
+        if optional and (rows is None or any(item.ard not in rows for item in shown)):
+            return PlannedCell(column, ())
+        return PlannedCell(column, shown, cell.cell)
 
     def cells(block: layouts.Block, analysis_id: str | None) -> tuple[PlannedCell, ...]:
         made = []
@@ -161,12 +180,7 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
             extra = {cell.column: cell for cell in row.extra}
             for column, group, _ in columns:
                 if group[0] == EXTRA:
-                    cell = extra.get(group[1])
-                    row_cells.append(PlannedCell(column, () if cell is None else tuple(
-                        Shown(part.name, ard_id(event, event.analyses[part.analysis],
-                                                part.operation, {}),
-                              layouts.pattern_of(event, part), part.analysis)
-                        for part in cell.parts), None if cell is None else cell.cell))
+                    row_cells.append(extra_cell(column, extra.get(group[1]), {}))
                     continue
                 if block.columns is not None and group[1] not in block.columns:
                     row_cells.append(PlannedCell(column, ()))
@@ -188,11 +202,14 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
         ordered = sorted(enumerate(grouping["groups"]),
                          key=lambda item: (item[1].get("order", 0), item[0]))
         made = []
-        for _, group in ordered:
+        extra = {cell.column: cell for cell in block.extra}
+        for number, (_, group) in enumerate(ordered):
             row_cells = []
             for column, column_group, _ in columns:
                 if column_group[0] == EXTRA:
-                    row_cells.append(PlannedCell(column, ()))
+                    # The extra cells of a groups block stand in its first row (issue #31).
+                    row_cells.append(extra_cell(column, extra.get(column_group[1])
+                                                if number == 0 else None, {}))
                     continue
                 groups = {layout.grouping: column_group, block.grouping: ("id", group["id"])}
                 row_cells.append(PlannedCell(column, tuple(
@@ -204,6 +221,65 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
                                    block.indent))
         return made
 
+    def values_of(analysis_id: str, names: list[str]) -> list[tuple[str, ...]]:
+        """The combinations of values of data-driven groupings that the results of an
+        analysis have, sorted A to Z level by level (the sort `alphabetical`)."""
+        found = set()
+        for row in (rows or {}).values():
+            if row["analysis_id"] != analysis_id:
+                continue
+            groups = results.row_groups(row)
+            picked = [groups.get(name) for name in names]
+            if all(item is not None and item[0] == "value" for item in picked):
+                found.add(tuple(str(item[1]) for item in picked))
+        return sorted(found)
+
+    def term_row(block: layouts.Block, analysis_id: str, cells_extra: tuple,
+                 values: dict[str, results.Group], label: str, indent: int) -> PlannedRow:
+        analysis = event.analyses[analysis_id]
+        extra = {cell.column: cell for cell in cells_extra}
+        row_cells = []
+        for column, column_group, _ in columns:
+            if column_group[0] == EXTRA:
+                row_cells.append(extra_cell(column, extra.get(column_group[1]), dict(values),
+                                            optional=True))
+                continue
+            groups = {layout.grouping: column_group, **values}
+            row_cells.append(PlannedCell(column, tuple(
+                Shown(part.name, ard_id(event, analysis, part.operation, groups),
+                      layouts.pattern_of(event, part), analysis["id"])
+                for part in block.parts)))
+        return PlannedRow(label, block.cell, tuple(row_cells), block.section, indent)
+
+    def terms(block: layouts.Block) -> list[PlannedRow]:
+        """One row per value of a data-driven row grouping, each followed by the rows of the
+        values of the nested grouping that occur with it (a terms block, issue #31). A mock
+        shell has no results: one placeholder row per level, naming no ARD row."""
+        nested = block.nested
+        if rows is None:
+            made = []
+            for name, indent in [(block.grouping, block.indent),
+                                 *([(nested.grouping, nested.indent)] if nested else [])]:
+                label = f"<{event.groupings[name].get('name') or name}>"
+                made.append(PlannedRow(label, block.cell, tuple(
+                    PlannedCell(column, () if group[0] == EXTRA else tuple(
+                        Shown(part.name, "", layouts.pattern_of(event, part),
+                              block.analysis or "") for part in block.parts))
+                    for column, group, _ in columns), block.section, indent))
+            return made
+        outer = [value for (value,) in values_of(block.analysis, [block.grouping])]
+        pairs = values_of(nested.analysis, [block.grouping, nested.grouping]) if nested else []
+        made = []
+        for value in outer:
+            made.append(term_row(block, block.analysis, block.extra,
+                                 {block.grouping: ("value", value)}, value, block.indent))
+            for first, second in pairs:
+                if first == value:
+                    made.append(term_row(block, nested.analysis, nested.extra, {
+                        block.grouping: ("value", value), nested.grouping: ("value", second)},
+                        second, nested.indent))
+        return made
+
     planned = []
     for block in layout.blocks:
         if block.kind == "statistics":
@@ -211,6 +287,9 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
             continue
         if block.kind == "groups":
             planned += by_group(block)
+            continue
+        if block.kind == "terms":
+            planned += terms(block)
             continue
         if block.kind == "header":
             label = block.label if block.label is not None else " ".join(
@@ -225,7 +304,8 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
     titles = layout.titles if layout.titles is not None else tuple(sections.get("Title", []))
     footnotes = layout.footnotes if layout.footnotes is not None else tuple(
         [*sections.get("Abbreviation", []), *sections.get("Footnote", [])])
-    return Plan(layout.output, titles, footnotes, tuple(columns), tuple(planned), layout.missing)
+    return Plan(layout.output, titles, footnotes, tuple(columns), tuple(planned), layout.missing,
+                spanners)
 
 
 Texts = dict[tuple[str, str], str]  # (ARD row, pattern) -> the text it is shown as
@@ -239,8 +319,9 @@ def cell_text(template: str, shown: tuple[Shown, ...], texts: Texts) -> str:
 
 
 def cell_rows(shown: tuple[Shown, ...]) -> list[str]:
-    """The ARD rows of a cell, each once, in the order of its parts."""
-    return list(dict.fromkeys(item.ard for item in shown))
+    """The ARD rows of a cell, each once, in the order of its parts. A placeholder of a
+    mock shell (its ARD row is "") names none."""
+    return list(dict.fromkeys(item.ard for item in shown if item.ard))
 
 
 def _our_texts(planned: Plan, rows: Rows | None) -> tuple[Texts, list[str]]:
@@ -280,8 +361,11 @@ def fill(planned: Plan, rows: Rows | None) -> dict:
             "ard": cell_rows(cell.shown),
         } for cell in row.cells]
         made.append(record)
+    spanners = dict(planned.spanners)
     return {"schema": SCHEMA, "output_id": planned.output, "titles": list(planned.titles),
-            "columns": [{"id": column, "label": label} for column, _, label in planned.columns],
+            "columns": [{"id": column, "label": label,
+                         **({"spanner": spanners[column]} if column in spanners else {})}
+                        for column, _, label in planned.columns],
             "rows": made, "footnotes": list(planned.footnotes)}
 
 
@@ -333,6 +417,8 @@ class DisplayComparison:
     differing: dict[str, tuple[str, str]] = field(default_factory=dict)  # cell -> (ours, theirs)
     no_reference: list[str] = field(default_factory=list)  # results the reference does not format
     problems: list[str] = field(default_factory=list)
+    formats_used: set[str] = field(default_factory=set)  # entries of `formats` that hold
+    uncompared: int = 0  # cells with a result the reference does not format (issue #31)
 
     def lines(self) -> list[str]:
         said = [f"grid {self.output}: {self.cells} cells show {self.results} results; "
@@ -358,7 +444,8 @@ def reference_text(item: results.Embedded, pattern: str) -> str | None:
 
 
 def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows: Rows,
-                      explained: dict[str, str]) -> DisplayComparison:
+                      explained: dict[str, str],
+                      formats: dict[str, dict] | None = None) -> DisplayComparison:
     """Compare every cell text of a grid with the formatted values the event embeds.
 
     The expected text of a cell is its template filled with the reference's
@@ -367,7 +454,11 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
     difference from the reference has a class and a proof that holds
     (`explained`: ARD row -> class), the reference's formatted value is its
     own raw value under the same pattern, and all such parts have the same
-    class. Any other difference is a difference with no class.
+    class. A part may differ by display only (`formats`, issue #31: ARD row ->
+    entry of the exceptions file): the reference's raw value under the
+    pattern is our text, and its formatted value, the entry's, is not; the
+    part then has the entry's class. Any other difference is a difference
+    with no class.
 
     The grid is also held against the plan: its cells must show the results
     the layout asks for, with the text our display rule gives; every result
@@ -429,6 +520,7 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
                        if key not in embedded or embedded[key].formatted is None]
             if without:
                 found.no_reference += without
+                found.uncompared += 1
                 continue
             theirs = cell_text(template_of(row, cell), cell.shown, {
                 (item.ard, item.pattern): embedded[item.ard].formatted for item in cell.shown})
@@ -440,6 +532,22 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
             for item in cell.shown:
                 text = ours[(item.ard, item.pattern)]
                 if text == embedded[item.ard].formatted:
+                    continue
+                if item.ard in (formats or {}):
+                    entry = formats[item.ard]
+                    raw = reference_text(embedded[item.ard], item.pattern)
+                    if entry["formatted"] != embedded[item.ard].formatted:
+                        reasons.append(f"{item.ard}: the exceptions give the formatted value "
+                                       f"{entry['formatted']!r}, the reference has "
+                                       f"{embedded[item.ard].formatted!r}")
+                    elif raw != text:
+                        reasons.append(f"{item.ard}: the reference's raw value "
+                                       f"{embedded[item.ard].printed} under the pattern "
+                                       f"{item.pattern!r} is {raw!r}, ours is {text!r}: the "
+                                       "values differ, not their display")
+                    else:
+                        classes.add(entry["class"])
+                        found.formats_used.add(item.ard)
                     continue
                 if item.ard not in explained:
                     reasons.append(f"{item.ard} is shown as {text!r}, the reference "
