@@ -30,7 +30,8 @@ read with `df -h /` and `du -xsh`.
 | --- | --- | --- | --- | --- |
 | first look | 18.6 GB | 486.2 GB | 485 GB | `/tmp` 474 GB: 103 folders `specfirst-clean-*`, 4.6 to 4.7 GB each |
 | after deleting the unused folders | 14.6 GB | 490.8 GB | 28 GB | gates ran meanwhile and grew the file; then 3 minutes of readings every 30 s: 490.79 GB each time |
-| after `fstrim` and the owner's compaction | 500.4 GB | 27.1 GB | 15 GB | WSL started again; `specfirst doctor`: ok |
+| after deleting the 6 folders of gates finished since, before `fstrim` | 25.3 GB | not read | 18 GB | `fstrim -v /`: 121.5 GiB trimmed |
+| after the owner's compaction | 500.4 GB | 27.1 GB | 15 GB | WSL started again; `specfirst doctor`: ok |
 
 The cleanup was done by hand, with the owner's approval. Two sessions
 deleted every folder that no process used, keeping the one a running gate
@@ -80,7 +81,8 @@ What callers see:
   and then the trap's lines. After a FAIL the FAIL line used to be the last
   line; now the trap's lines follow it.
 - A run stopped by a signal has no PASS or FAIL line. Its exit code is 129,
-  130 or 143. The log ends with the last `$ ` line, then the trap's lines.
+  130 or 143. The log ends with the last `$ ` line and that step's output,
+  then the trap's lines.
 
 Also changed:
 - `CLAUDE.md`: the line on the script.
@@ -180,9 +182,10 @@ clones after: 0
 == done
 ```
 
-Every case ended with `clones after: 0`. In T8 the caller's end of the
-output closed after one byte, and the log still holds every line up to
-`clone deleted`.
+Every case that made a folder under `/tmp` ended with `clones after: 0`.
+T4's folder was under `/root/scratch/reltmp`, and none was left there. T1 and
+T5 made no folder. In T8 the caller's end of the output closed after one
+byte, and the log still holds every line up to `clone deleted`.
 
 The gate of T8 (`specfirst gate base-0 --clean` in the clone):
 
@@ -229,6 +232,15 @@ Earlier runs, for the record:
   before.
 - **One handover text is out of date.** `docs/state/gen.md` (lines 492-493)
   still says that a clean clone lasts a minute after the last command, and to
-  copy what must last in the same command (lesson 39). That remains safe to
-  do, and the file belongs to the gen track. docs/state/base.md names it for
-  gen.
+  copy what must last in the same command (lesson 39). That no longer works,
+  because the clone is gone when the script returns. What the gate keeps
+  under build/gates/<wp>/ is in build/gates/<wp>/clone/. The file belongs to
+  the gen track; docs/state/base.md names the text for gen.
+- **The wait for tee has no time limit** (review, pass 2, N1). If a step
+  leaves a background process that holds the output open, the script waits
+  for that process, and the heavy lock stays held until it ends. No gate of
+  base-0 does this. The other gates have not yet run with the new script.
+  docs/state/base.md keeps this open.
+
+After the review signed `00f740c`, this report was changed in wording only,
+for the review's point N2. The script and the logs did not change.

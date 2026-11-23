@@ -19,6 +19,11 @@ Result: repository, environment, pins, shared formats (PLAN.md section 13.2).
   492) still says that a clean clone lasts a minute after the last command.
   Since clone-cleanup the script deletes it and keeps build/gates/<wp>/ in
   build/gates/<wp>/clone/.
+- Open, from review N1 of clone-cleanup: the trap of
+  `scripts/clean_clone_gate.sh` waits for tee without a time limit. A step
+  that leaves a background process holding the output open would keep the
+  script, and the heavy lock, until that process ends. Bound the wait with
+  the next change of the script.
 
 ## Open
 
