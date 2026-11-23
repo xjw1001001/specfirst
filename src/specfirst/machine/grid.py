@@ -535,17 +535,21 @@ def reference_text(item: results.Embedded, pattern: str) -> str | None:
 def half_problem(item: results.Embedded, ours: object, pattern: str, cls: str) -> str | None:
     """Why the proof `half_in_floating_error` does not hold; None when it does (real-3).
 
-    The reference's raw value, as decimal text, lies exactly on a half at the decimals of
-    the pattern, and its formatted value is that value under the pattern (rounded half away
-    from zero); our value is the same number within the relative 1e-9 of rule R11 and
-    lies on the other side of the half, so the display rule rounds it the other way. The
-    exact value is the reference's: ours carries the error of binary floating point from
-    the data (a change from baseline of 0.1 held as 0.0999999999999943).
+    What it shows, and no cause beyond it: the reference's raw value, as it is written,
+    lies exactly on a half at the decimals of the pattern, and its formatted value is that
+    value under the pattern; our value is the same number within the relative 1e-9 of
+    rule R11, on the other side of the half, so our display rule rounds it the other way;
+    and the other rule, which first rounds the value to 12 significant digits (as the
+    reference writes its raw values) and then applies the pattern, gives the reference's
+    formatted value from our value. That is the build of the alternative that PLAN.md
+    section 4.8 asks of a `rule_choice`, for one result. On the pilot the value is a change
+    of 0.05 (such as 36.94 - 36.89) that binary floating point holds as
+    0.04999999999999716, in the public reference ADaM as in ours.
     """
     from decimal import Decimal, InvalidOperation
 
-    if cls != "data_difference":
-        return "a value at a half in floating error proves a data_difference only"
+    if cls != "rule_choice":
+        return "a value at a half in floating error proves a rule_choice only"
     decimals = len(methods.pattern_mask(pattern)[1].partition(".")[2])
     try:
         exact = Decimal(item.printed)
@@ -562,6 +566,10 @@ def half_problem(item: results.Embedded, ours: object, pattern: str, cls: str) -
     if reference_text(item, pattern) != item.formatted:
         return (f"the reference's formatted value {item.formatted!r} is not its raw value "
                 f"{item.printed} under the pattern {pattern!r}")
+    other = methods.pattern_text(float(f"{ours:.12g}"), pattern)
+    if other != item.formatted:
+        return (f"our value rounded to 12 significant digits under the pattern is {other!r}, "
+                f"not the reference's {item.formatted!r}")
     return None
 
 
@@ -593,6 +601,9 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
     Which results share a cell, in which order, and with what text between
     them is held against the example's table shell where the kit pins one
     (specfirst.machine.shells, F1), as are the row labels and the sections;
+    two parts with the same mask ("XX.X, XX.X") are told apart only by the
+    label of a statistic row, which the layout holds against the labels of
+    the ARS operations it shows ("Q1, Q3"; the review of real-3, F2);
     a part of a body row that names another analysis than its row's is
     refused by the layout unless the row's results are computed from it
     (F3). Held against nothing here: the titles, the footnotes and the

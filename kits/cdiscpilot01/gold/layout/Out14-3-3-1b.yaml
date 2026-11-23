@@ -12,22 +12,20 @@
 # baseline the same for the change from baseline, under "<visit> Change from
 # Baseline".
 #
-# The display of this output in the ARS file has its first title only and no
-# footnote, no legend and no header of the row labels; the shell has them, and so
-# has this layout (the second title without the shell's "<Vertical Layout>"). The
-# patterns are those of the ARS operations, as in Out14-3-3-1a.
+# The display of this output in the ARS file takes its second title, its legend
+# and the two headers of the row labels from the display of Out14-3-3-1a, by the IDs
+# of their subsections, and its third title from the global sections ("Safety
+# Population"); the grid takes them so (ars.display_sections). The note on
+# baseline is that legend, which a grid does not take on its own. The patterns are
+# those of the ARS operations, as in Out14-3-3-1a.
 layout: 0
 output: Out14-3-3-1b
-titles:
-  - Table 14.3.3.1b
-  - Summary of Observed and Change from Baseline by Scheduled Visits - Vital Signs
 footnotes:
-  - "Notes: Baseline is defined as the last assessment that is non-missing prior to first dose of investigational product."
+  - "Note: Baseline is defined as the last assessment that is non-missing prior to first dose of investigational product."
 columns:
   grouping: AnlsGrouping_01_Trt
 rows:
   - kind: header
-    label: Parameter (Units) Visit
     cell: "{N}"
     parts:
       N: {analysis: An01_05_SAF_Summ_ByTrt, operation: Mth01_CatVar_Count_ByGrp_1_n}

@@ -124,6 +124,13 @@ block the part names its analysis). Its pattern is a pattern of the
 registry's display.pattern; when the layout gives none, the `resultPattern`
 of the ARS operation is taken, and a part with neither is an error.
 
+A statistic row (of a statistics or a by_groups block) names its statistics
+in its label: every label of an ARS operation of its method that stands in
+the row label as a word is a part of the row, in that order ("Q1, Q3"). A
+label the layout gives a group is not the name of another group of its
+grouping. The analyses of a by_groups block stand in the order the
+reference lists them (the review of real-3, F2).
+
 A part of an analyses block that names an analysis shows a result the
 row's results are computed from (the denominator of a percent, "{n}/{N}");
 the result of another row is refused. An analysis stands in one block of the
@@ -706,6 +713,7 @@ def problems(layout: Layout, event: ars.Event) -> list[str]:
                   for key, _ in layout.labels if key not in known]
         found += [f"columns.extra: '{name}' is the ID of a group of {layout.grouping}"
                   for name, _ in layout.extra if name in known]
+        found += _named_otherwise(grouping, layout.labels, "columns")
     for number, block in enumerate(layout.blocks):
         where = f"rows[{number}]"
         if block.kind == "statistics":
@@ -755,6 +763,44 @@ def problems(layout: Layout, event: ars.Event) -> list[str]:
                     found.append(f"{at}: {error}")
     found += _repeated_problems(layout)
     return sorted(set(found))
+
+
+def _label_problems(event: ars.Event, row: StatisticRow, at: str) -> list[str]:
+    """A statistic row names its statistics in its label (the review of real-3, F2): every
+    label of an ARS operation of the row's method that stands in the row label as a word is
+    a part of the row, and the parts it names stand in the cell in the order the label names
+    them. "Q1, Q3" shows the first quartile, then the third. A label that names no
+    operation's label holds nothing ("LS Means (SE)" when no operation is labelled so)."""
+    import re
+
+    operations = {part.operation for part in row.parts}
+    method = event.operations.get(next(iter(operations), ""), ("", {}))[0]
+    named = []
+    for operation_id, (method_id, operation) in event.operations.items():
+        label = operation.get("label")
+        if method_id != method or not isinstance(label, str) or not label.strip():
+            continue
+        found = re.search(rf"(?<![A-Za-z0-9]){re.escape(label)}(?![A-Za-z0-9])", row.label)
+        if found:
+            named.append((found.start(), operation_id, label))
+    named.sort()
+    problems = [f"{at}: the label names {label!r}, and the row does not show "
+                f"'{operation_id}'" for _, operation_id, label in named
+                if operation_id not in operations]
+    wanted = [operation_id for _, operation_id, _ in named]
+    shown = [part.operation for part in row.parts if part.operation in wanted]
+    if not problems and shown != wanted:
+        problems.append(f"{at}: the parts stand in the cell in another order than the label "
+                        f"names them ({', '.join(label for _, _, label in named)})")
+    return problems
+
+
+def _named_otherwise(grouping: dict, labels: tuple[tuple[str, str], ...], at: str) -> list[str]:
+    """A label the layout gives a group may not be the name of another group of the same
+    grouping: two groups would show each other's results (the review of real-3, F2)."""
+    names = {str(group.get("name") or ""): group["id"] for group in grouping.get("groups") or []}
+    return [f"{at}: labels: '{key}' is labelled {text!r}, the name of the group '{names[text]}'"
+            for key, text in labels if text in names and names[text] != key]
 
 
 def _referenced(analysis: dict) -> set[str]:
@@ -835,6 +881,7 @@ def _statistics_problems(layout: Layout, event: ars.Event, block: Block, where: 
         for part in row.parts:
             found += _part_problems(event, analysis, part,
                                     f"{at}, row '{row.label}', part '{part.name}'")
+        found += _label_problems(event, row, f"{at}, row '{row.label}'")
         for cell in row.extra:
             here = f"{at}, row '{row.label}', extra '{cell.column}'"
             if cell.column not in extra:
@@ -873,6 +920,7 @@ def _groups_problems(layout: Layout, event: ars.Event, block: Block, where: str)
     known = {group["id"] for group in rows["groups"]}
     found += [f"{at}: labels: '{key}' is not a group of {block.grouping}"
               for key, _ in block.labels if key not in known]
+    found += _named_otherwise(rows, block.labels, at)
     for part in block.parts:
         found += _part_problems(event, analysis, part, f"{at}, part '{part.name}'")
     found += _extra_problems(layout, event, block.extra, at, [
@@ -923,6 +971,15 @@ def _by_groups_problems(layout: Layout, event: ars.Event, block: Block,
         return found
     found += [f"{where}: labels: '{key}' is not a group of {' or '.join(block.by)}"
               for key, _ in block.labels if key not in groups]
+    for name in block.by:
+        found += _named_otherwise(event.groupings[name], block.labels, where)
+    listed = ars.listed_analyses(event, layout.output)
+    order = [item.analysis for item in block.shown if item.analysis in listed]
+    if order != sorted(order, key=listed.index):
+        found.append(f"{where}: the analyses stand in another order than the reference lists "
+                     f"them ({', '.join(name for name in listed if name in order)})")
+    for row in block.statistics:
+        found += _label_problems(event, row, f"{where}, row '{row.label}'")
     wanted = sorted([(layout.grouping, True), *((name, True) for name in block.by)])
     methods_of = set()
     for item in block.shown:

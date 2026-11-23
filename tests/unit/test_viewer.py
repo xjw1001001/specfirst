@@ -143,6 +143,20 @@ def planted_page(text: str, old: str, new: str) -> str:
     # One citation's approval words moved into another: as many words as citations, and
     # one citation without them (the review of issue #31, F3).
     ("; awaiting approval)</li>", ")</li>", "citation 1 is not marked awaiting approval"),
+    # Every kind the check names, planted (the review of real-3, F6), and the ways to fetch
+    # that passed it (F3).
+    ("</body>", '<iframe title="x"></iframe></body>', "the page has a <iframe>"),
+    ("</body>", '<img alt="x"></body>', "the page has a <img>"),
+    ("</body>", "<form></form></body>", "the page has a <form>"),
+    ("</body>", "<style>@import 'x.css';</style></body>", "the page holds '@import'"),
+    ("</head>", '<meta http-equiv="refresh" content="0"></head>', "the page refreshes itself"),
+    ("<body>", '<body background="https://example.org/x.png">', "leaves the page"),
+    ("</body>", '<video poster="https://example.org/x.png"></video></body>',
+     "the page has a <video>"),
+    ("</body>", '<svg><image xlink:href="https://example.org/x.png"/></svg></body>',
+     "the page has a <svg>"),
+    ('<a class="number"', '<a style="background-image: image-set(\'x.png\' 1x)" '
+     'class="number"', "the page holds 'image-set('"),
 ])
 def test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen(old, new, message):
     made = review()

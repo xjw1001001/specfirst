@@ -35,8 +35,13 @@ from specfirst.viewer import model
 
 # What a page that loads or runs nothing must not hold (the review of real-3a, F6).
 FORBIDDEN_TAGS = ("script", "iframe", "frame", "img", "object", "embed", "link", "base",
-                  "audio", "video", "source", "form", "input")
-FORBIDDEN_TEXT = ("@import", "url(", "javascript:", "http-equiv")
+                  "audio", "video", "source", "form", "input", "svg", "image", "use", "picture",
+                  "track")
+FORBIDDEN_TEXT = ("@import", "url(", "image-set(", "javascript:", "http-equiv")
+# Attributes that fetch, on any element: each must be a link to an anchor of the page (the
+# review of real-3, F3: background, poster and xlink:href passed).
+LINK_ATTRIBUTES = ("href", "src", "action", "srcset", "data", "background", "poster",
+                   "xlink:href", "formaction", "lowsrc", "dynsrc", "ping")
 APPROVAL = re.compile(r"awaiting approval|approved by \S")
 
 
@@ -62,11 +67,7 @@ class _Page(HTMLParser):
         self.tags[tag] += 1
         values = dict(attrs)
         self.handlers += [name for name, _ in attrs if name.lower().startswith("on")]
-        if "href" in values:
-            self.hrefs.append(str(values["href"]))
-        for name in ("src", "action", "srcset", "data"):
-            if name in values:
-                self.hrefs.append(str(values[name]))
+        self.hrefs += [str(value) for name, value in attrs if name.lower() in LINK_ATTRIBUTES]
         if "id" in values:
             self.ids.append(str(values["id"]))
         classes = str(values.get("class") or "").split()

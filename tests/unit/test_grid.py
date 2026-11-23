@@ -103,6 +103,9 @@ def test_a_layout_that_is_not_of_the_format_is_refused(change, message):
         (lambda d: d["rows"][1].update(analyses=["A_SEX"]), "whose only grouping is the column"),
         (lambda d: d["rows"][1]["parts"]["n"].pop("pattern"),
          "neither the layout nor the ARS operation gives a pattern"),
+        # The review of real-3, F2: a column labelled with the name of another group.
+        (lambda d: d["columns"]["labels"].update(Arm_A="Arm_B"),
+         "is labelled 'Arm_B', the name of the group 'Arm_B'"),
     ],
 )
 def test_a_layout_that_does_not_fit_its_event_is_refused(event, change, message):
@@ -133,6 +136,26 @@ def test_the_grid_shows_every_result_by_its_pattern(root, event, spec, made):
     assert cell == {"id": "cell:Out_AE/r3/c2", "column": "c2", "text": "2 ( 66.7)",
                     "ard": ["ard:A_TEAE/M_CAT_n/Arm_B", "ard:A_TEAE/M_CAT_pct/Arm_B"]}
     assert all(grid.numeric(cell) for row in made["rows"] for cell in row["cells"])
+
+
+def test_a_display_takes_a_subsection_another_display_writes():
+    """The review of real-3, F4: the vertical vital signs of CDISC's example name the titles,
+    the legend and the row-label headers of the horizontal display by their IDs."""
+    data = displays.event_data()
+    data["outputs"].append({"id": "Out_AE2", "name": "Again", "version": 1, "displays": [
+        {"order": 1, "display": {"id": "Disp_AE2", "name": "Again", "version": 1,
+                                 "displaySections": [
+                                     {"sectionType": "Title", "orderedSubSections": [
+                                         {"order": 1, "subSection": {"id": "T2",
+                                                                     "text": "Table 2"}},
+                                         {"order": 2, "subSectionId": "T1"},
+                                         {"order": 3, "subSectionId": "G_Title"},
+                                         {"order": 4, "subSectionId": "NOWHERE"}]},
+                                     {"sectionType": "Rowlabel Header", "orderedSubSections": [
+                                         {"order": 1, "subSectionId": "R1"}]}]}}]})
+    found = ars.display_sections(ars.index(data), "Out_AE2")
+    assert found == {"Title": ["Table 2", "Table 1 <draft>", "Safety set"],
+                     "Rowlabel Header": ["Subjects, n (%)"]}
 
 
 def test_a_missing_value_and_the_options_of_a_layout(event, rows):
@@ -325,20 +348,59 @@ def test_a_difference_of_display_only_has_the_class_of_its_entry(spec, made, row
         found.problems[0]
 
 
+def _statistics_rows(*rows: tuple[str, str, dict]) -> dict:
+    return {"layout": 0, "output": displays.OUTPUT, "columns": {"grouping": "ARM"}, "rows": [
+        {"kind": "statistics", "analysis": "A_AGE", "rows": [
+            {"label": label, "cell": cell, "parts": {
+                name: {"operation": f"M_CONT_{operation}", "pattern": "XX.X"}
+                for name, operation in parts.items()}} for label, cell, parts in rows]}]}
+
+
+@pytest.mark.parametrize(("rows", "message"), [
+    ((("n", "{n}", {"n": "n"}), ("Mean (SD)", "{mean} {sd}", {"mean": "mean", "sd": "sd"}),
+      ("Q1, Q3", "{q1}, {q3}", {"q1": "q1", "q3": "q3"}),
+      ("Min, Max", "{lo}, {hi}", {"lo": "min", "hi": "max"}),
+      ("Median (Range)", "{m} ({lo}, {hi})", {"m": "median", "lo": "min", "hi": "max"})), None),
+    ((("Q1, Q3", "{q3}, {q1}", {"q1": "q1", "q3": "q3"}),), "another order than the label"),
+    ((("Min, Max", "{lo}, {hi}", {"lo": "max", "hi": "min"}),), "another order than the label"),
+    ((("Median", "{m}", {"m": "mean"}),), "the label names 'Median'"),
+    ((("n", "{n}", {"n": "min"}),), "the label names 'n'"),
+])
+def test_a_statistic_row_names_its_statistics(rows, message):
+    """The review of real-3, F2: two parts with one mask, or a statistic under the label of
+    another, passed every check; the label is held against the labels of the operations."""
+    data = displays.event_data()
+    method = next(m for m in data["methods"] if m["id"] == "M_CONT")
+    for operation, label in zip(method["operations"],
+                                ["n", "Mean", "SD", "Median", "Q1", "Q3", "Min", "Max"],
+                                strict=True):
+        operation["label"] = label
+    event = ars.index(data)
+    found = layout.problems(layout.parse(_statistics_rows(*rows)), event)
+    if message is None:
+        assert found == []
+    else:
+        assert any(message in problem for problem in found), found
+
+
 @pytest.mark.parametrize(("printed", "ours", "formatted", "cls", "message"), [
-    ("0.05", 0.04999999999999716, " 0.1", "data_difference", None),
-    ("-0.05", -0.04999999999999716, "- 0.1", "data_difference", None),
-    ("0.05", 0.04999999999999716, " 0.1", "reference_error", "proves a data_difference only"),
-    ("0.06", 0.05999999999999716, " 0.1", "data_difference", "is not on a half"),
-    ("0.05", 0.0499, " 0.1", "data_difference", "within a relative 1e-9"),
-    ("0.05", 0.05000000000000284, " 0.1", "data_difference", "not on the other side"),
-    ("0.05", 0.04999999999999716, " 0.0", "data_difference", "is not its raw value"),
-    ("", 0.04999999999999716, " 0.1", "data_difference", "is no number"),
+    ("0.05", 0.04999999999999716, " 0.1", "rule_choice", None),
+    ("-0.05", -0.04999999999999716, "- 0.1", "rule_choice", None),
+    ("0.05", 0.04999999999999716, " 0.1", "reference_error", "proves a rule_choice only"),
+    ("0.05", 0.04999999999999716, " 0.1", "data_difference", "proves a rule_choice only"),
+    ("0.06", 0.05999999999999716, " 0.1", "rule_choice", "is not on a half"),
+    ("0.05", 0.0499, " 0.1", "rule_choice", "within a relative 1e-9"),
+    ("0.05", 0.04999999999, " 0.1", "rule_choice", "rounded to 12 significant digits"),
+    ("0.05", 0.05000000000000284, " 0.1", "rule_choice", "not on the other side"),
+    ("0.05", 0.04999999999999716, " 0.0", "rule_choice", "is not its raw value"),
+    ("", 0.04999999999999716, " 0.1", "rule_choice", "is no number"),
 ])
 def test_a_value_at_a_half_in_floating_error(printed, ours, formatted, cls, message):
-    """The proof of real-3 for four medians of the vital signs: the reference's 0.05 is on a
-    half at one decimal, ours is 0.05 up to the error of binary floating point and below the
-    half, so the display rule shows " 0.0" where the reference shows " 0.1"."""
+    """The proof of real-3 for four medians of the vital signs: the reference writes 0.05,
+    on a half at one decimal, and shows " 0.1"; ours is 36.94 - 36.89 held in binary
+    floating point, 0.04999999999999716, below the half, which our display rule shows as
+    " 0.0"; rounded to 12 significant digits first (the reference's other rule) it gives
+    " 0.1"."""
     item = results.Embedded(printed, 1, "A", "M", frozenset(), formatted)
     found = grid.half_problem(item, ours, "XX.X", cls)
     assert (found is None) if message is None else (message in (found or "")), found
@@ -555,6 +617,22 @@ def _header_in_body(page: str) -> str:
         (lambda p: p.replace('<meta charset="utf-8">',
                              '<meta charset="utf-8"><meta http-equiv="refresh" content="0">'),
          "a <meta> other than the character set"),
+        # The review of real-3, F3: hidden cells and other ways to fetch.
+        (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c2">',
+                             '<td style="display: none" data-cell="cell:Out_AE/r2/c2">'),
+         "the attribute 'style' of <td>"),
+        (lambda p: p.replace('<tr data-row="r3">', '<tr hidden data-row="r3">'),
+         "the attribute 'hidden' of <tr>"),
+        (lambda p: p.replace("<body>", '<body background="https://example.org/x.png">'),
+         "refers to something outside itself: <body>"),
+        (lambda p: p.replace("</body>", '<video poster="x.png"></video></body>'),
+         "refers to something outside itself: <video>"),
+        (lambda p: p.replace("</body>", '<svg><image xlink:href="x.png"/></svg></body>'),
+         "refers to something outside itself: <svg>"),
+        (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c2">',
+                             '<td style="background: image-set(\'x.png\' 1x)" '
+                             'data-cell="cell:Out_AE/r2/c2">'),
+         "the attribute 'style' of <td>"),
     ],
 )
 def test_where_a_text_stands_and_what_a_page_may_not_hold(made, plant, message):

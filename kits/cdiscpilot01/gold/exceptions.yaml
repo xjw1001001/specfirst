@@ -282,13 +282,14 @@ results:
 # under the pattern of its operation. An entry has
 #   result     the ID of the ARD row
 #   formatted  the reference's formatted value
-#   class      reference_error; data_difference for the second proof
+#   class      reference_error; rule_choice for the second proof
 #   proof      not_its_own_pattern: the reference's raw value under the pattern is
 #              our text, and its formatted value is another (specfirst.machine.grid);
-#              half_in_floating_error (real-3): the reference's raw value lies on a
-#              half at the decimals of the pattern and is its formatted value, and
-#              ours is the same number within a relative 1e-9, on the other side of
-#              the half (grid.half_problem)
+#              half_in_floating_error (real-3): the reference's raw value, as written,
+#              lies on a half at the decimals of the pattern and is its formatted
+#              value; ours is the same number within a relative 1e-9, on the other
+#              side of the half; rounded to 12 significant digits first, ours gives
+#              the reference's formatted value (grid.half_problem)
 #   sources    what else supports the class, for a reader; not checked
 #
 # Out14-3-2-1: the one Fisher p-value of 1 that the example embeds is formatted "1"
@@ -298,9 +299,11 @@ results:
 # Out14-3-3-1a and Out14-3-3-1b (real-3): 119 minima and maxima of temperature, 59 and
 # 60, observed and changed, which the example formats with the decimals of the data
 # ("35.33", "-0.56", trailing zeros dropped) under their pattern XX. The example's own
-# table shells of the two outputs show "Min, Max" as "XX, XX", and the SAP's templates
-# of the vital signs (Templates 21 and 22, section 13.2) show the minimum and the
-# maximum without decimals; the grids follow the pattern. The other 385 of the 504
+# table shells of the two outputs show "Min, Max" as "XX, XX", and the grids follow the
+# pattern. (The SAP's Templates 21 and 22, "for example only", show the minimum and the
+# maximum of blood pressure and heart rate without decimals; they do not list
+# temperature.) Per recommendation, pending SME review (docs/state/sme-review.md,
+# real-3/vs-minmax-decimals). The other 385 of the 504
 # minima and maxima of the vital signs are whole numbers and agree. Each result stands
 # once, though both grids show it. The entries were written by a script from the build, which
 # kept every result whose formatted value is not its raw value under the pattern while
@@ -789,27 +792,31 @@ formats:
       formatted: "0.89"
       class: reference_error
       proof: {kind: not_its_own_pattern}
-    # Four medians of the change of temperature from baseline (real-3; the owner's answer
-    # on them is recorded in ADR-003, amendment of real-3). The example's raw value is
-    # 0.05, the half of the two middle changes 0.0 and 0.1, which it shows as " 0.1". Our
-    # engines both give 0.04999999999999716: the change 0.1 is held in the ADaM as
-    # 0.0999999999999943, the result of AVAL - BASE in binary floating point (our ADVS
-    # equals the pilot's reference ADVS, P2), and the display rule shows " 0.0".
+    # Four medians of the change of temperature from baseline (real-3; ADR-003, amendment
+    # of real-3, point 13). Each is one record's change of 0.05, such as AVAL 36.94 - BASE
+    # 36.89, which binary floating point holds as 0.04999999999999716, in the pilot's
+    # reference ADVS as in ours (P2); our display rule shows " 0.0". The example writes
+    # its raw values in 12 characters ("0.05") and shows " 0.1": its display rounds in a
+    # way that absorbs the floating error (most likely SAS's ROUND fuzz), another
+    # alternative of the rounding than gold's (rule_choice). The owner's answer of
+    # 2026-11-23 (A): keep gold's display rule and record the four here. Per
+    # recommendation, pending SME review (docs/state/sme-review.md,
+    # real-3/vs-medians-at-half).
     - result: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_4_Median/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_06
       formatted: " 0.1"
-      class: data_difference
+      class: rule_choice
       proof: {kind: half_in_floating_error}
     - result: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_4_Median/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_07
       formatted: " 0.1"
-      class: data_difference
+      class: rule_choice
       proof: {kind: half_in_floating_error}
     - result: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_4_Median/AnlsGrouping_01_Trt_2/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_11
       formatted: " 0.1"
-      class: data_difference
+      class: rule_choice
       proof: {kind: half_in_floating_error}
     - result: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_4_Median/AnlsGrouping_01_Trt_3/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_02
       formatted: " 0.1"
-      class: data_difference
+      class: rule_choice
       proof: {kind: half_in_floating_error}
 
 # cells: differences between a grid and its table in the CSR (real-5a, ADR-015;

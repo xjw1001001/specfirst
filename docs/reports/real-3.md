@@ -4,7 +4,7 @@ Date: 2026-11-23. Branch: `track/real`. Work package real-3 of PLAN.md
 section 13.3, on top of real-3a (the adverse event summary) and issue #31
 (the demographics, the table by organ class and term, the review page).
 Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
-12).
+15).
 
 ## Verdict
 
@@ -13,7 +13,9 @@ Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
   1,263 numeric cells each and show 2,019 results. Every cell equals the
   example's text, or differs by a result with one class: 63 cells by 119
   minima and maxima (proof `not_its_own_pattern`) and 4 by 4 medians (the
-  new proof `half_in_floating_error`, which awaits the owner's answer).
+  new proof `half_in_floating_error`, class `rule_choice`: the owner's
+  answer A). Both classifications are per recommendation, pending SME
+  review.
 - The gate real-3 passes on a clean clone of `b71c200`, 19 of 19 checks.
   Every numeric cell of the five grids, 3,815 in all, has a complete path
   to SDTM columns. Two builds give the same 72 files. The review page shows
@@ -28,8 +30,9 @@ Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
 - The layout format stays version 0, with one new kind of block
   (`by_groups`) and columns per group (`columns.within`); PLAN.md,
   `standard/` and `env/` are unchanged.
-- Nothing is merged before the owner answers the question on the four
-  medians (section "For the owner").
+- The fresh-context review: pass 1 NOT SIGNED (F1 blocking: the facts of
+  the four medians as first given to the owner were wrong); its six
+  findings are carried out (section "Review"). @@PASS2@@
 
 ## What real-3 asks for, and where it stands
 
@@ -184,16 +187,29 @@ pattern of its operation (the shells show the same masks):
 
 The 119 are entries of `formats` in gold/exceptions.yaml with the existing
 proof `not_its_own_pattern` and the class `reference_error`: the example's
-own shells show "Min, Max" as "XX, XX", and so do the SAP's templates of
-the vital signs (Templates 21 and 22, section 13.2: "Min." "xx", "Max."
-"xxx"); the grid follows its pattern, as issue #31 did for the one Fisher
-p-value of 1. The demographics follow the other way, because their SAP
-template shows the minimum and the maximum of height with one decimal
-(custom:demog-decimals). The 4 medians need a decision (section "For the
-owner"): no rule of the registry and no proof kind of the exceptions file
-covers them. The commit carries the recommended answer, a proof kind
-`half_in_floating_error` with the class `data_difference`; nothing is merged
-before the owner answers.
+own shells show "Min, Max" as "XX, XX"; the grid follows its pattern, as
+issue #31 did for the one Fisher p-value of 1. (The SAP's Templates 21 and
+22, "for example only", show the minimum and the maximum of blood pressure
+and heart rate without decimals; they do not list temperature.) The
+demographics follow the other way, because their SAP template shows the
+minimum and the maximum of height with one decimal (custom:demog-decimals).
+Per recommendation, pending SME review (real-3/vs-minmax-decimals).
+
+The 4 medians: each is one record's change of 0.05, such as AVAL 36.94 -
+BASE 36.89, which binary floating point holds as 0.04999999999999716 (three
+of the four cells have an odd n, the fourth two equal middle records). The
+pilot's reference ADVS holds the same value in the same 56 records as ours
+(P2), and the example writes its raw values of the vital signs in at most 12
+characters, so its "0.05" is that value too. The data are the same: the
+example's display rounds in a way that absorbs the floating error (most
+likely SAS's ROUND fuzz; not verified here), another alternative of the
+rounding than gold's. They are entries of `formats` with the proof kind
+`half_in_floating_error` and the class `rule_choice` (ADR-003, point 13):
+the owner's answer A, per recommendation, pending SME review
+(real-3/vs-medians-at-half). The first version of this report described
+them as the half of the changes 0.0 and 0.1 and proposed the class
+`data_difference`; the review found that wrong (pass 1, F1), and the owner
+was told.
 
 In the cells: of the 1,263 numeric cells of each grid, 63 show a minimum and
 a maximum of temperature one of which is an entry of the 119, and 4 show
@@ -323,7 +339,7 @@ The gate text, statement by statement:
   of 72 files the same, the three graph files among them.
 - The viewer opens from the file system with no network: check 14. The page
   has no script, handler, frame, image, form, style that imports, link
-  outside itself or refresh (D13 plants each), and the two builds give the
+  outside itself or refresh (D13 and tests/unit/test_viewer.py plant each), and the two builds give the
   same page.
 - The report walks one cell end to end: section "One cell, end to end".
 
@@ -432,41 +448,68 @@ The example's formatted values of the two results are "- 3.3" and
 - F7 is open (section "For the owner").
 - What the pilot data cannot show, printed by tests/defects on every run:
   as before (the safety and intent-to-treat sets hold the same subjects; no
-  result of the AE summary lies on a half). Of the vital signs, 4 results
-  lie on a half up to floating error; they are the 4 medians.
+  result of the AE summary lies on a half). Of the vital signs, results lie
+  exactly on a half at their displayed decimals (among them the third
+  quartile 0.25, " 0.3"); D14 prints them and plants the rounding rule
+  half_even, which changes the grid.
+- The labels of a statistic row are held against the labels of the ARS
+  operations it shows; a row whose label names no operation's label ("LS
+  Means (SE)" when no operation is labelled so) is held against nothing.
 
 ## For the owner
 
-1. **Four medians of the vital signs (blocks the merge only).** The
-   question went to the base session on 2026-11-23. Recommendation (A):
-   keep the display rule, record the 4 results in `formats` with the class
-   `data_difference` and the proof kind `half_in_floating_error`; no number
-   changes, the 4 cells show " 0.0". Alternative (B): round a value to 12
-   significant digits before the display rule; the 4 cells show " 0.1" as
-   the example does, nothing else of the pilot changes (0 of 1,562 results
-   shown in the other grids, 4 of 3,053 results of the example), and
-   `display.pattern` changes, so read-2a's kept dry run must be made again
-   (a model call of about USD 0.6). @@ANSWER@@
+1. **Four medians of the vital signs: answered (A), 2026-11-23.** Keep
+   gold's display rule and record the four as exceptions with a proof kind
+   of their own and a planted defect; spend nothing. Class `rule_choice`
+   (the base session's reading, which the review's pass 1 supports with the
+   data). Per recommendation, pending SME review (docs/state/sme-review.md,
+   real-3/vs-medians-at-half). The question first went out with wrong
+   facts (the half of 0.0 and 0.1); the correction went to the owner the
+   same day. The other answer (B), a display rule that rounds to 12
+   significant digits first, changes 4 texts of the 3,323 results held as
+   floating-point numbers that the ten grids show (the 4 medians, now
+   " 0.1"; measured by a script of this session on a build of the work) and
+   changes `display.pattern`, so read-2a's kept dry run would be made again.
 2. **F7 (does not block).** Statement 3 of `display.pattern` loses a blank
    in registry.json. Any fix changes the entry's bytes, which bind read-2a's
-   kept dry run (ADR-017). Left open; it rides on the next change of
-   `display.pattern` that needs a new dry run (with B above, that one).
-3. **The 119 minima and maxima (does not block, no question).** Classed
-   `reference_error` by the existing proof, because the example's own
-   shells and the SAP's templates show no decimals. The alternative, a
-   pattern per parameter with the decimals of the data (as the demographics
-   do for height), would print "35.33" in 63 cells of each grid and leave 9
-   differences where the example drops trailing zeros ("36.1").
+   kept dry run (ADR-017). It waits for the next remake of the kept dry run
+   (ADR-003, point 7, has the exact fix; gen-2b remakes the run before this
+   work merges, so it is not that one).
+3. **The 119 minima and maxima (does not block).** Classed `reference_error`
+   by the existing proof, because the example's own shells show no
+   decimals; per recommendation, pending SME review
+   (real-3/vs-minmax-decimals). The alternative, a pattern with the decimals
+   of the data (`XX.XX` for the observed values, `X.XX` for the changes),
+   would print "35.33" in 63 cells of each grid and leave 10 of the 126
+   minima and maxima of temperature different, where the example drops
+   trailing zeros ("37.5", "-1").
 4. **The layout of the AE summary changed (does not block).** Its eight
    rows now stand in the section "Number of subjects with at least one
    event", indented, as the example's shell shows them; the count's mask in
    the mock shell is the shell's `XX`. No cell text changes.
-5. **ADR-003, amendment of real-3 (points 1 to 12)** stands unless the
+5. **ADR-003, amendment of real-3 (points 1 to 15)** stands unless the
    owner objects, as the earlier amendments do.
 
 ## Review
 
-@@REVIEW@@
+The independent review (rule R7) is docs/reports/real-3.review.md. Pass 1,
+of `10805f6`, by a fresh-context agent that did not write the work: NOT
+SIGNED. It ran the gate real-3 on its own clone of `10805f6` (19 of 19),
+built a third time under other settings (72 of 72 files the same), recounted
+both grids of the vital signs and walked all five grids without the checking
+code (3,815 of 3,815 numeric cells reach SDTM), and planted its own defects.
+The four statements of the gate text held. Six findings:
+
+| # | Finding | Done |
+| --- | --- | --- |
+| F1 (blocking) | The four medians: the facts given to the owner were wrong (no change of 0.1 exists; each median is one record's change of 0.05 held as 0.04999999999999716, the same in the public ADVS), and the proof kind stated a cause it does not show | The report, ADR-003 point 13, the exceptions file and `grid.half_problem` say what the data show; the proof states only what it shows and builds the alternative rounding on our value; class `rule_choice`; the owner was told the corrected facts (the answer A stands; per recommendation, pending SME review) |
+| F2 | Nothing held which statistic a row shows, or the order of two parts with one mask; the order of the analyses of a by_groups block; labels exchanged | The label of a statistic row is held against the labels of the ARS operations it shows; a label that is another group's name is refused; the analyses of a by_groups block follow the reference's list (ADR-003, point 15); D14 and the unit tests plant each of the review's cases |
+| F3 | Both page checks passed hidden cells and other ways to fetch | The grid page refuses `hidden`, any style but the indent, and every fetching element and attribute; the review page treats `background`, `poster`, `xlink:href` and the like as links and refuses `image-set(` and SVG elements; unit tests plant each |
+| F4 | The vertical grid lacked "Safety Population"; a sentence of its layout was wrong | `ars.display_sections` takes subsections that another display writes; the layout takes the titles and headers from the ARS file |
+| F5 | The report and the state file were not finished; point 13 of the ADR glued to point 12 | Finished; the ADR is mended |
+| F6 | Small things: the owner's answer said recorded; the sentence on results at a half; "D13 plants each"; 1,562 and 9 not reproduced; Templates 21 and 22 do not cover temperature | Corrected; D14 plants the rounding rule half_even; test_viewer.py plants every kind the page check names; the two numbers measured again (3,323 and 4; 10) |
+
+@@PASS2TEXT@@
 
 ## GitHub and CI
 

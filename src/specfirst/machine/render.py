@@ -20,6 +20,7 @@ row without a section after a section gets an empty separator line.
 
 from __future__ import annotations
 
+import re
 from html import escape
 from html.parser import HTMLParser
 from itertools import groupby
@@ -130,6 +131,15 @@ def html(grid: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+# What a page fetches or draws from elsewhere: elements, and attributes on any element.
+_FETCHING = {"script", "link", "img", "iframe", "frame", "object", "embed", "video", "audio",
+             "source", "track", "svg", "image", "use", "base", "form", "input", "picture"}
+_FETCHING_ATTRIBUTES = {"src", "href", "srcset", "background", "poster", "xlink:href", "data",
+                        "action", "formaction", "lowsrc", "dynsrc", "ping"}
+# The one style attribute the renderer writes: the indent of a row label.
+_INDENT = re.compile(r"padding-left: \d+\.\dem")
+
+
 class _Reader(HTMLParser):
     """Collects the texts of a page made by `html`, by what each one is, and where each
     stands: the rows of the table header, body and footer in order, each with the elements
@@ -159,12 +169,13 @@ class _Reader(HTMLParser):
         given = dict(attrs)
         if tag == "body":
             self._in_body = True
-        if tag in ("script", "link", "img", "iframe", "object", "embed") or "src" in given \
-                or "href" in given:
+        if tag in _FETCHING or set(given) & _FETCHING_ATTRIBUTES:
             self.external.append(tag)
-        self.unsafe += [f"the attribute '{name}' of <{tag}>" for name, _ in attrs
-                        if name.lower().startswith("on") or name.lower() == "style"
-                        and "url(" in str(given[name]).lower()]
+        # Handlers, attributes that hide, and any style but the indent of a row label (the
+        # review of real-3a, F6; of real-3, F3).
+        self.unsafe += [f"the attribute '{name}' of <{tag}>" for name, value in attrs
+                        if name.lower().startswith("on") or name.lower() == "hidden"
+                        or name.lower() == "style" and not _INDENT.fullmatch(str(value))]
         if tag == "meta" and set(given) != {"charset"}:
             self.unsafe.append("a <meta> other than the character set")
         if tag in ("thead", "tbody", "tfoot"):

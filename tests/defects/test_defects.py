@@ -42,8 +42,12 @@ the kit's exceptions, `results.agreement` for rule R11).
                  layouts, the observed value and the change exchanged between
                  their columns, the change shown at baseline, the minimum and
                  the maximum under another pattern, the median above the mean,
-                 a visit left out; judged by the formatted values, the table
-                 shells and the counts of the gate
+                 a visit left out, two parts of a cell or two statistics
+                 exchanged, the changes above the observed values, labels of
+                 two parameters exchanged; in the exceptions, the proofs of
+                 the medians at a half; the rounding rule half_even; judged by
+                 the formatted values, the table shells, the layout and the
+                 counts of the gate
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -1753,9 +1757,15 @@ def d14_vital_signs(pilot: Pilot, tmp_path) -> list[str]:
     against the example's table shell, and the counts of the gate (no result without a
     formatted value). Planted in the layouts, each must fail: the observed value and the
     change exchanged between their columns, the change shown at baseline, the minimum and
-    the maximum under XX.X, the median above the mean, a visit left out. What the shell
-    cannot show is printed, not counted: the heading of the change rows of the vertical
-    layout stands against a placeholder ("< Visit n Change from Baseline >")."""
+    the maximum under XX.X, the median above the mean, a visit left out; and (the review
+    of real-3, F2) Q1 and Q3 exchanged in their cell, the minimum and the maximum
+    exchanged, the mean in the row of the median, the n and the minimum exchanged between
+    their rows, the changes above the observed values, two parameters exchanged by their
+    labels. Planted in the kit's entries: a minimum proven to lie on a half, a median at a
+    half of another class or without its entry. The rounding rule half_even must change
+    the grid (results lie on a half). What the shell cannot show is printed, not counted:
+    the heading of the change rows of the vertical layout stands against a placeholder
+    ("< Visit n Change from Baseline >")."""
     from specfirst.machine import shells
 
     kit = kits.load_kit(pilot.root, KIT)
@@ -1816,9 +1826,49 @@ def d14_vital_signs(pilot: Pilot, tmp_path) -> list[str]:
         for item in by_groups(data)["analyses"]:
             item["skip"] = [*item.get("skip", []), "AnlsGrouping_09_Visit_02"]
 
+    def swapped(name: str, first: str, second: str):
+        """The operations of two parts of a statistic row exchanged (F2 of the review of
+        real-3: the two parts have one mask)."""
+        def change(data: dict) -> None:
+            for row in by_groups(data)["rows"]:
+                if row["label"] == name:
+                    parts = row["parts"]
+                    parts[first]["operation"], parts[second]["operation"] = (
+                        parts[second]["operation"], parts[first]["operation"])
+        return change
+
+    def across_rows(data: dict) -> None:
+        """The n in the row "Min, Max" and the minimum in the row "n"."""
+        rows = {row["label"]: row for row in by_groups(data)["rows"]}
+        rows["n"]["parts"]["n"]["operation"], rows["Min, Max"]["parts"]["min"]["operation"] = (
+            rows["Min, Max"]["parts"]["min"]["operation"], rows["n"]["parts"]["n"]["operation"])
+
+    def mean_as_median(data: dict) -> None:
+        rows = {row["label"]: row for row in by_groups(data)["rows"]}
+        rows["Median"]["parts"]["median"]["operation"] = \
+            rows["Mean (SD)"]["parts"]["mean"]["operation"]
+
+    def changes_first(data: dict) -> None:
+        shown = by_groups(data)["analyses"]
+        shown.reverse()
+
+    def parameters_exchanged(data: dict) -> None:
+        by_groups(data)["labels"] = {
+            "AnlsGrouping_08_Param_1": "Diastolic Blood Pressure (mmHg)",
+            "AnlsGrouping_08_Param_2": "Systolic Blood Pressure (mmHg)"}
+
     planted = {
         ("Out14-3-3-1a", "the observed value and the change exchanged between their columns"):
             exchanged,
+        ("Out14-3-3-1a", "Q1 and Q3 exchanged in their cell"): swapped("Q1, Q3", "q1", "q3"),
+        ("Out14-3-3-1b", "the minimum and the maximum exchanged in their cell"):
+            swapped("Min, Max", "min", "max"),
+        ("Out14-3-3-1a", "the mean in the row of the median"): mean_as_median,
+        ("Out14-3-3-1b", "the n and the minimum exchanged between their rows"): across_rows,
+        ("Out14-3-3-1b", "the rows of the changes above those of the observed values"):
+            changes_first,
+        ("Out14-3-3-1a", "the sections of two parameters exchanged by labels"):
+            parameters_exchanged,
         ("Out14-3-3-1a", "the change shown at baseline"):
             lambda d: by_groups(d)["analyses"][1].pop("skip"),
         ("Out14-3-3-1b", "the change shown at baseline"):
@@ -1862,6 +1912,29 @@ def d14_vital_signs(pilot: Pilot, tmp_path) -> list[str]:
         if not said:
             problems.append(f"Out14-3-3-1a, {name}: passes")
     formats = given
+    # The rounding rule (F6 of the review of real-3): results of the vital signs that lie
+    # exactly on a half at their displayed decimals tell half away from zero from half to
+    # even; the grid built with the other rule must differ from the example.
+    from unittest import mock
+
+    shown_spec = layouts.read(pilot.folder / next(
+        d for d in pilot.spec.displays if d.output == "Out14-3-3-1a").layout)
+    on_a_half = sorted({item.ard for row in grid.plan(event, shown_spec, rows).rows
+                        for cell in row.cells for item in cell.shown
+                        if _on_a_half(rows[item.ard]["raw_value"], item.pattern)})
+    real = methods.pattern_text
+
+    def half_even(value, pattern, mock=False, rounding="half_away_from_zero",
+                  zero_sign="dropped"):
+        return real(value, pattern, mock, "half_even", zero_sign)
+
+    with mock.patch.object(methods, "pattern_text", half_even):
+        said = judged("Out14-3-3-1a")
+    print(f"Out14-3-3-1a: results that lie exactly on a half at their displayed decimals: "
+          f"{len(on_a_half)}; with the rounding rule half_even: {len(said)} problems"
+          + (f", for example: {said[0][:140]}" if said else ""))
+    if not on_a_half or not said:
+        problems.append("Out14-3-3-1a, the rounding rule half_even: passes")
     said = judged("Out14-3-3-1b", lambda d: by_groups(d)["analyses"][1].update(
         heading="{group}"))
     print(f"not separable by the shell: Out14-3-3-1b, the change rows under the visit alone: "
