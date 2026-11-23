@@ -8,6 +8,22 @@ Result: repository, environment, pins, shared formats (PLAN.md section 13.2).
   clean clone of commit `1b509d2` (2026-11-11). Evidence:
   docs/reports/base-0.md and base-0.gate.log. Review:
   docs/reports/base-0.review.md.
+- clone-cleanup (2026-11-22, the owner's request): `scripts/clean_clone_gate.sh`
+  deletes its clone when it ends and keeps the clone's build/gates/<wp>/
+  in build/gates/<wp>/clone/ (lesson 73). Review finding N2 of base-0 (the
+  script took the checkout from a caller's `SPECFIRST_ROOT`) was fixed in
+  `4b12c86`; the runs of this change check it with `SPECFIRST_ROOT` set to
+  another worktree. Evidence: docs/reports/clone-cleanup.md. Review:
+  docs/reports/clone-cleanup.review.md.
+- For the gen track: docs/state/gen.md (the note on lesson 39, about line
+  492) still says that a clean clone lasts a minute after the last command.
+  Since clone-cleanup the script deletes it and keeps build/gates/<wp>/ in
+  build/gates/<wp>/clone/.
+- Open, from review N1 of clone-cleanup: the trap of
+  `scripts/clean_clone_gate.sh` waits for tee without a time limit. A step
+  that leaves a background process holding the output open would keep the
+  script, and the heavy lock, until that process ends. Bound the wait with
+  the next change of the script.
 
 ## Open
 
@@ -18,9 +34,6 @@ Result: repository, environment, pins, shared formats (PLAN.md section 13.2).
   read, with interim gates) was approved by the owner on 2026-11-17. The
   tracks real, gen and read follow it: real-3a and gen-1a come first.
   Items 2 to 4 of its last section are open questions for the owner.
-- Review finding N2: `scripts/clean_clone_gate.sh` should ignore a
-  caller's `SPECFIRST_ROOT` when it looks up the repository and commit.
-  Fix it with the next change to that script, then rerun a gate with it.
 - No container definition in env/ yet (section 12; needed in M2).
 - The Ubuntu distribution has no Linux user; the environment is root's.
 - `evidence/csr_hylaw_spike.py` holds typed-in CSR values: decide before
