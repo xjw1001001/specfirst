@@ -229,6 +229,12 @@ def _partial_exposure(record: dict, data: Data, design: dict) -> list[str]:
                    for d, r in data.event_starts(subject)):
             return ("no event between the first day of the month and the first complete "
                     "start date")
+        # The efficacy-evaluable set by a baseline value (gen-2b): a value of its test
+        # before the first day of the month, a baseline for the completed date.
+        test = record["detail"].get("value_before_month")
+        if test and not any((d := _date(r["VSDTC"])) and d < month
+                            for r in data.vitals(subject, test)):
+            return f"no value of {test} before the first day of the month of the first dose"
         return None
     return _each(record, check)
 
@@ -301,7 +307,13 @@ def _visit_missed(record: dict, data: Data, design: dict) -> list[str]:
                 return f"no baseline value or no later value of {test}"
         attended = {r["VISIT"] for r in data.rows("SV", subject)}
         both = sorted(attended & set(record["detail"]["visits"]))
-        return f"an SV record of {both[0]}" if both else None
+        if both:
+            return f"an SV record of {both[0]}"
+        # gen-2b: an event after the first dose, so that planted subjects without events
+        # who move the other way between the two rules do not leave the table the same.
+        dose = data.first_dose(subject)
+        return None if dose and any(d > dose for d, _ in data.event_starts(subject)) else \
+            "no adverse event after the first dose"
     return _each(record, check)
 
 

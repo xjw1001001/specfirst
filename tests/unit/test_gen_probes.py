@@ -507,6 +507,37 @@ def test_a_log_line_says_when_its_difference_reaches_the_output(catalog, full):
     assert all("pairs" not in reach for reach in probes.REACHES.values())
 
 
+def test_two_values_of_one_alternative_are_claimed_like_two_alternatives(full):
+    """Finding H1 of the gen-2b review: ae.related.values has one alternative and is changed
+    between the values of its slot; such a pair is claimed where a row of related events is
+    shown, so that the gate fails on a twin that does not separate it."""
+    from specfirst.gen import verify
+
+    _, _, log, _ = full
+    parameters = log[0]["parameters"]
+    table = probes.REACHES
+    one = {"rule": "stated_list", "values": ["POSSIBLE", "PROBABLE"]}
+    two = {"rule": "stated_list", "values": ["PROBABLE"]}
+    shown = {"tfl.ae.summary.rows": {"rule": "standard_rows"}}
+    hidden = {"tfl.ae.summary.rows": {"rule": "stated_rows", "rows": ["ANY", "SERIOUS", "FATAL"]}}
+    assert verify.claims("ae.related.values", one, two, shown, parameters, table) is True
+    assert verify.claims("ae.related.values", one, dict(one), shown, parameters, table) is False
+    assert verify.claims("ae.related.values", one, two, hidden, parameters, table) is False
+    assert verify.claims("ae.related.values", one, two, shown, parameters, {}) is False
+
+
+def test_a_subject_without_a_randomization_has_no_planned_arm(catalog, studies):
+    """What the row of pop.safety.rule in REACHES rests on (finding H2 of the gen-2b review;
+    per recommendation, pending SME review): in the data of the generator a subject has a
+    planned arm exactly when it has a disposition record RANDOMIZED."""
+    for _design, _, _, tables in studies.values():
+        randomized = {row["USUBJID"] for row in tables["DS"] if row["DSDECOD"] == "RANDOMIZED"}
+        assigned = {row["USUBJID"] for row in tables["DM"] if row["ARMCD"]}
+        assert randomized == assigned
+        unassigned = [row for row in tables["DM"] if not row["ARMCD"]]
+        assert unassigned and all(row["ARMNRS"] for row in unassigned)
+
+
 def _full_number(catalog):
     for number in range(50):
         design = pgfix.sample(f"probes-full-{number}", study.catalog_label(catalog))
@@ -698,6 +729,7 @@ F9 = [
     ("no_exposure_end_date", _f9_late_event_not_serious),
     ("reference_start_before_first_dose", _f9_no_event),
     ("statistic_at_rounding_half", _f9_one_more_serious_on_day_one),
+    ("postbaseline_value_but_visit_missed", _f9_no_event),
 ]
 
 
@@ -825,6 +857,13 @@ FOLLOW = {
         "pop__efficacy__rule": {"rule": "attended_visit", "visit": p["visits"][-1]},
         "disp__status__record": {"rule": "disposition_event_by_subcategory",
                                  "subcategory": p["treatment_subcategory"]}},
+    # Finding H3 of the gen-2b review: the treatment start from DM.RFXSTDTC, completed to the
+    # first day of the month, on the efficacy-evaluable set by a baseline value.
+    "efficacy, values, start from DM": lambda p: {
+        "tfl__population": {"rule": "efficacy"},
+        "pop__efficacy__rule": {"rule": "baseline_and_postbaseline", "test": p["tests"][0]},
+        "trt__start__source": {"rule": "dm_rfxstdtc"},
+        "trt__date__imputation": {"rule": "first_day_of_month"}},
 }
 
 
@@ -885,6 +924,84 @@ def test_the_probes_follow_the_decisions_of_the_study(catalog, case):
         assert all(getattr(persons[s], flag) for s in second)
     else:
         assert own == [{"records": ["study"], "event_after": "study"}]
+    # The subject with a partial first exposure date is in the analysis set when its date is
+    # completed to the first day of the month (finding H3 of the gen-2b review).
+    completed = {**values, "trt.date.imputation": {"rule": "first_day_of_month"}}
+    persons = {p.usubjid: p for p in reference.people(tables, completed)}
+    partial = by_probe["partial_exposure_date"]
+    assert getattr(persons[partial["subjects"][0]], flag), case
+    by_values = population == "efficacy" and values["pop.efficacy.rule"]["rule"] == \
+        "baseline_and_postbaseline"
+    assert partial["detail"]["value_before_month"] == (
+        values["pop.efficacy.rule"]["test"] if by_values else None)
+
+
+# Finding H5 of the gen-2b review: the branches gen-2b added to two checks of `present`, each
+# failing on a planted defect. Each case: the vector of a case of FOLLOW, the probe, a change
+# of the twin after which the probe is not found.
+def _h5_without_treatment_record(t, r, d):
+    names = d["collection"]["disposition"]["subcategories"]
+    subject = next(key for key, own in r["by_subject"].items() if "treatment" in own["records"])
+    _drop(t, "DS", lambda row: not (row["USUBJID"] == subject and row["DSCAT"] ==
+                                    "DISPOSITION EVENT" and row["DSSCAT"] == names["treatment"]))
+
+
+def _h5_event_after_both_windows(t, r, d):
+    names = d["collection"]["disposition"]["subcategories"]
+    subject = next(key for key, own in r["by_subject"].items()
+                   if own["records"] == ["treatment", "study"])
+    study_end = _row(t, "DS", subject, DSCAT="DISPOSITION EVENT", DSSCAT=names["study"])
+    late = datetime.date.fromisoformat(study_end["DSSTDTC"][:10]) + (
+        r["detail"]["window_days"] + 2) * DAY
+    for row in _rows(t, "AE", subject):
+        if row["AESER"] == "Y":
+            row["AESTDTC"] = late.isoformat()
+
+
+def _h5_second_with_study_record(t, r, d):
+    names = d["collection"]["disposition"]["subcategories"]
+    subject = next(key for key, own in r["by_subject"].items() if own["records"] == ["treatment"])
+    like = dict(_row(t, "DS", subject, DSCAT="DISPOSITION EVENT"))
+    like.update(DSSCAT=names["study"], DSSEQ=like["DSSEQ"] + 1)
+    t["DS"].append(like)
+
+
+def _h5_first_dose_with_time(t, r, d):
+    subject = next(key for key, own in r["by_subject"].items() if own["dose_time"] is None)
+    row = _row(t, "DM", subject)
+    row["RFXSTDTC"] = row["RFXSTDTC"][:10] + "T09:00"
+
+
+def _h5_no_value_before_month(t, r, d):
+    subject, test = r["subjects"][0], r["detail"]["value_before_month"]
+    month = min(_rows(t, "EX", subject), key=lambda x: x["EXSEQ"])["EXSTDTC"][:7]
+    _drop(t, "VS", lambda row: not (row["USUBJID"] == subject and row["VSTESTCD"] == test
+                                    and row["VSDTC"][:7] < month))
+
+
+H5 = [
+    ("treatment record", "no_exposure_end_date", _h5_without_treatment_record),
+    ("treatment record", "no_exposure_end_date", _h5_event_after_both_windows),
+    ("study record, read", "no_exposure_end_date", _h5_second_with_study_record),
+    ("time of the first dose, completed to a day", "partial_ae_start_in_month_of_first_dose",
+     _h5_first_dose_with_time),
+    ("efficacy, values, start from DM", "partial_exposure_date", _h5_no_value_before_month),
+]
+
+
+@pytest.mark.parametrize("case, probe, change", H5,
+                         ids=[f"{p}-{c.__name__[4:]}" for _, p, c in H5])
+def test_a_variant_of_gen_2b_that_is_undone_is_missed(catalog, case, probe, change):
+    seed = f"probes-full-{_full_number(catalog)}"
+    design = pgfix.sample(seed, study.catalog_label(catalog))
+    values = _vector(catalog, design, **FOLLOW[case](probes.Parameters.of(design).as_record()))
+    people, log = study.simulate(design, catalog, seed, "twin", values=values)
+    tables = sdtm.build(design, people)
+    record = next(r for r in log if r["probe"] == probe)
+    assert present.find(record, tables, design) == []
+    broken = copy.deepcopy(tables)
+    change(broken, record, design)
+    assert present.find(record, broken, design), f"{probe} is still found"
 
 
 def test_a_counted_column_with_a_planted_subject_gets_added_subjects(catalog):

@@ -29,4 +29,7 @@ sorted outputs.
 # The version of the generator. Change it whenever the same design and seed
 # would give other bytes; every generated file names it. gen-2b.1: the decisions of a
 # kit come first and its probes are planted for them (ADR-023); catalog-2c.2 before it.
-GENERATOR = "gen-2b.1"
+# gen-2b.2: the findings H1 to H3 of the review of gen-2b (slot pairs claimed, a baseline
+# value before the month of a partial first dose, an event of the subject who misses the
+# visits).
+GENERATOR = "gen-2b.2"

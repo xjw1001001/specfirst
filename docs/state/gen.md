@@ -126,26 +126,36 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
 - `gold/identifiability.json` is the matrix of the twin. Per decision:
   `read` (the output reads an element the decision sets), `applicable`
   (read, and no other decision of the kit makes its alternatives give the
-  same output on any data: `probes.REACHES` holds for every pair of the
-  gold value with another alternative), `identifiable` (`separated`,
+  same output on any data of the design that follow SDTMIG v3.4:
+  `probes.REACHES` holds for every pair of the gold value with another
+  value of the matrix; for `ae.related.values`, which has one alternative,
+  with another stated list, from `gen-2b.2`), `identifiable` (`separated`,
   `unseparated`, or `no_alternative`), `reason`, and `pairs` with `gold`,
   `claimed`, `separated` and the number of changed `cells`. The decision
   records repeat `identifiable`.
 - A decision that is `unseparated` on the twin cannot be scored by the
   table: compare decision values and report it apart (section 9.3). From
-  the generator `gen-2b.1` (ADR-023) two kinds occur, and no other. Not
+  the generator `gen-2b.2` (ADR-023) two kinds occur, and no other. Not
   read: the output does not read it under the decisions of the kit
   (`pop.randomized.rule` in a kit on the safety set; `date.studyday.origin`
   in every kit of this slice). Read, and equal by another decision on any
-  data: `pop.safety.rule` in a table by planned treatment (the subject
-  dosed without being randomized has no planned treatment),
-  `pop.safety.grouping` when actual treatment is the same as planned; the
-  matrix gives the reason `verify.NO_PROBE`. A decision that the output
+  data of the design that follow SDTMIG v3.4: `pop.safety.rule` in a table
+  by planned treatment, `pop.safety.grouping` when actual treatment is the
+  same as planned; the matrix gives the reason `verify.NO_PROBE` with the
+  note of the row of `probes.REACHES`. The row of `pop.safety.rule` rests on
+  a premise: a subject who is not randomized has no planned arm (DM.ARMCD
+  empty, ARMNRS NOT ASSIGNED: in a randomized design the arm is assigned at
+  randomization, SDTMIG v3.4 DM). Data that break it (a dosed subject with
+  a planned arm and no disposition record RANDOMIZED) separate the two
+  rules in a table by planned treatment; the generator writes no such
+  subject (a unit test checks it). Per recommendation, pending SME review
+  (ADR-023, finding H2 of the gen-2b review). A decision that the output
   reads and that data could separate is separated in every kit: a kit in
   which one is not is not written, and the gates gen-2a and gen-2b fail on
   it. (Kits of `gen-2a.*` and `catalog-2c.*` could leave such a decision
   unseparated, the rounding rule outside the safety set by actual treatment
-  among them: ADR-007, "The owner's answer on decision 6".)
+  among them: ADR-007, "The owner's answer on decision 6"; kits of
+  `gen-2b.1` could leave `ae.related.values` unseparated.)
 - The matrix changes one decision at a time, from the gold vector. Two
   wrong decisions can cancel in the table, and so can two planted subjects
   in one arm; a kit is written only when every claimed pair is separated,
@@ -153,11 +163,16 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
 - Slot values. A slot of an alternative is mutated to one value only, the
   one the probes are built around (`decisions.variants`). A wrong value of
   a slot of the gold alternative is not in the matrix, except for
-  `ae.related.values`, which has one alternative. The review of gen-1a
-  counted how often two values of a slot give the same table (F23).
-- `disp.status.record` is never "the record with the subcategory STUDY
-  TREATMENT" in a gold vector, and "STUDY PARTICIPATION" only where the
-  output does not read the decision: see "For the std track".
+  `ae.related.values`, which has one alternative: its pairs are claimed
+  where the table shows a row of related events (from `gen-2b.2`). The
+  review of gen-1a counted how often two values of a slot give the same
+  table (F23).
+- `disp.status.record`: from `gen-2b.1` a gold vector may name the record
+  with the subcategory STUDY TREATMENT or STUDY PARTICIPATION where the
+  output reads the decision (the owner lifted gen-2a's limits, ADR-023
+  decision 6). Kits of `gen-2a.*` never named the first, and the second
+  only where the output did not read the decision: see "For the std
+  track".
 - The visible data carry a part of the probes. There is no matrix for
   them; `verify.mutate(..., "visible", ...)` computes one.
 - The order of the treatment columns needs the arms of the protocol
@@ -243,7 +258,7 @@ subagents of a Claude Code session; the CLI on this machine is not logged
 in (ADR-009, decision 1).
 
 - Change `GENERATOR` with any change that gives other bytes. Kits are
-  generated again, never patched. It is `gen-2b.1` now (gen-2b; ADR-023).
+  generated again, never patched. It is `gen-2b.2` now (gen-2b; ADR-023).
 - `specfirst gate` refuses to run while `SPECFIRST_REWRITES` is set, and
   `specfirst gen natural requests|propose` refuses dev, test and sealed
   kits (but those of the gate seed) while the store lies inside a

@@ -8,10 +8,12 @@ The gate of gen-2, limited to the one output of the slice:
 "Applicable" is read as the owner answered finding G1 of the gen-2a review
 (2026-11-17; docs/decisions/ADR-007.md and ADR-023.md): a decision that the
 output reads is applicable unless another decision of the kit makes its
-alternatives give the same output on any data (`probes.REACHES`). The
-probes of a kit follow its decisions, so the twin must separate every such
-decision; the gate fails on a kit in which one is not, and that failure is
-planted (`planted_unfollowed`). gen-2b is the part that made it so; the gate
+alternatives give the same output on any data of the design that follow
+SDTMIG v3.4 (`probes.REACHES`). The probes of a kit follow its decisions, so
+the twin must separate every such decision; the gate fails on a kit in which
+one is not (check "kits"), and that failure is planted
+(`planted_unfit_build`; and on a twin, `planted_unfollowed`,
+`planted_one_causality`). gen-2b is the part that made it so; the gate
 gen-2a runs the same checks.
 
 The ten kits are the kits 1 to 10 of the set of the development seed
@@ -433,6 +435,53 @@ def planted_unfollowed(root: Path, out: Out, kit_dir: Path, seed: str, number: i
     return True
 
 
+def planted_one_causality(root: Path, out: Out, kit_dir: Path, number: int) -> bool:
+    """A twin on which the stated lists of related causality values give one table must fail
+    the kit (rule R5; finding H1 of the gen-2b review).
+
+    `ae.related.values` has one alternative and is changed between the values of its slot;
+    such a pair is claimed like any other. Every AEREL of the twin of kit `number` is set to
+    the last value of the scale, which every stated list holds: the lists then give the same
+    table, and the mutation must call the kit unfit for that decision.
+    """
+    catalog = catalogs.load(catalogs.default_dir(root))
+    house = houses.load(houses.default_dir(root))
+    design = designs.load(kit_dir / "gold" / "design.yaml")
+    records = kits.read_decisions(kit_dir)
+    log = study.read_probes(kit_dir)
+    with open(kit_dir / gold.PLACES["twin"][1] / gold.GRAPH / "coverage.json",
+              encoding="ascii") as handle:
+        reached = json.load(handle)["decisions"]
+    last = list(design["collection"]["adverseEvents"]["causality"])[-1]
+    copy_of = Path(tempfile.mkdtemp(prefix="specfirst-gen2b-causality-"))
+    scratch = Path(tempfile.mkdtemp(prefix="specfirst-gen2b-causality-work-"))
+    try:
+        place = gold.PLACES["twin"][0]
+        shutil.copytree(kit_dir / place, copy_of / place)
+        shutil.copytree(kit_dir / gold.HOUSE, copy_of / gold.HOUSE)
+        tables = study.read_tables(copy_of, "twin")
+        tables["AE"] = [{**row, "AEREL": last} for row in tables["AE"]]
+        stamp = datasetjson_stamp(copy_of / place / "dm.json")
+        study.write_dataset(copy_of / place, design, tables, study.catalog_label(catalog), stamp)
+        matrix, defects, unfit = verify.mutate(root, catalog, house, copy_of, "twin", design,
+                                               records, reached, log,
+                                               study.read_tables(copy_of, "twin"), scratch)
+    finally:
+        shutil.rmtree(copy_of, ignore_errors=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+    entry = "ae.related.values"
+    if entry not in unseparated_applicable(matrix) or not any(
+            line.startswith(f"{entry}:") for line in unfit) or defects:
+        out(f"the mutation did not call a twin unfit whose causality values cannot tell the "
+            f"stated lists apart (kit {number}): applicable and unseparated "
+            f"{unseparated_applicable(matrix)}, unfit {unfit[:2]}, defects {defects[:2]}")
+        return False
+    out(f"planted defect: every AEREL of the twin of kit {number} set to {last!r}: the stated "
+        f"lists give one table, and the kit is unfit: "
+        f"{next(line for line in unfit if line.startswith(entry))[:150]}")
+    return True
+
+
 def unseparated_applicable(matrix: dict) -> list[str]:
     """The decisions of a kit that fail the gate: read by the output, not made equal by
     another decision on any data, and not separated on the twin."""
@@ -504,8 +553,8 @@ def coverage(catalog: catalogs.Catalog, folder: Path, count: int) -> tuple[list[
             continue
         if not separated:
             holes.append(f"{entry_id}: separated in no kit")
-        if wanted and not any(i["applicable"] and i["identifiable"] == "separated"
-                              for i in items.values()):
+        if not any(i["applicable"] and i["identifiable"] == "separated"
+                   for i in items.values()):
             holes.append(f"{entry_id}: in no kit does the log of probes claim a probe for "
                          "it and the twin separate it")
         holes += [f"{entry_id}: {a} and {b} are separated in no kit"
@@ -517,7 +566,14 @@ def coverage(catalog: catalogs.Catalog, folder: Path, count: int) -> tuple[list[
 
 def separation_check(root: Path, out: Out, folder: Path, count: int = COUNT) -> bool:
     """Every applicable decision of the slice is separated on the twin, in every kit; and
-    over the ten kits the matrix has no hole."""
+    over the ten kits the matrix has no hole.
+
+    The generator writes no kit in which an applicable decision is unseparated
+    (`kits._generate`), so the loop over the written kits repeats what the check "kits"
+    decided: the gate fails on such a kit in that check (planted by `planted_unfit_build`;
+    `kits.check` mutates every written kit again). The plants of this check show that the
+    mutation names such decisions on a twin (`planted_unfollowed`,
+    `planted_one_causality`; finding H7 of the gen-2b review)."""
     catalog = catalogs.load(catalogs.default_dir(root))
     planted = kit_folder(folder, min(PLANTED, count))
     if not (planted_separation(root, out, planted) and planted_matrix(root, out, planted)):
@@ -526,6 +582,14 @@ def separation_check(root: Path, out: Out, folder: Path, count: int = COUNT) -> 
             root, out, kit_folder(folder, UNFOLLOWED), SEED, UNFOLLOWED):
         return False
     matrices = _matrices(folder, count)
+    related = [number for number, matrix in matrices.items() for item in matrix["decisions"]
+               if item["id"] == "ae.related.values" and item["applicable"]]
+    if not related:
+        out("no kit in which ae.related.values is applicable: the planted defect of its "
+            "stated lists cannot be made")
+        return False
+    if not planted_one_causality(root, out, kit_folder(folder, related[0]), related[0]):
+        return False
     ok = True
     for number, matrix in matrices.items():
         summary = matrix["summary"]

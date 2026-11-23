@@ -37,8 +37,9 @@ separate its decisions (`study.generate` with the vector).
 `generate` writes a kit only when it has the properties P2 to P4 and its two
 result engines agree. P4 includes: every decision that the output reads is
 separated on the twin, unless another decision of the kit makes its
-alternatives give the same output on any data (`probes.REACHES`). A kit in
-which one is not separated is not written; no other vector is drawn for it.
+alternatives give the same output on any data of the design that follow
+SDTMIG v3.4 (`probes.REACHES`). A kit in which one is not separated is not
+written; no other vector is drawn for it.
 A kit that cannot be written leaves no folder. `generate_checked` builds the
 kit a second time in a process of its own and compares every hash (P1).
 

@@ -28,8 +28,10 @@ Two things are known of a decision in a kit before anything is mutated:
               `reaches` of the log, which repeats `probes.REACHES`)
 
 A decision is applicable in a kit when every pair of its gold value with
-another alternative is claimed: data could separate it, and the probes of
-the kit are planted for its decisions so that the twin does. Every
+another value of `options` is claimed (another alternative; for an entry
+with one alternative, another value of its slots): data could separate it,
+and the probes of the kit are planted for its decisions so that the twin
+does. Every
 applicable decision must be separated: a kit in which a claimed pair gives
 the same output is not written (`unfit`), and the gate fails on it. A
 decision that is not read must change nothing; if it does, the reach is
@@ -62,7 +64,8 @@ NOT_READ = "the output does not read what the decision sets"
 # The state of a decision that has nothing to be changed to: neither separated nor not.
 NO_ALTERNATIVE = "no_alternative"
 NO_PROBE = ("the output reads it, but under the other decisions of the kit its alternatives "
-            "give the same output on any data (probes.REACHES)")
+            "give the same output on any data of this design that follow SDTMIG v3.4 "
+            "(probes.REACHES)")
 
 
 # ---- P2 --------------------------------------------------------------------------------
@@ -243,6 +246,16 @@ def label(value: dict, among: list[dict]) -> str:
     return f"{value['rule']}({slots})"
 
 
+def claims(entry_id: str, one: dict, two: dict, values: dict[str, dict], parameters: dict,
+           reach_tables: dict[str, dict]) -> bool:
+    """Whether the log of probes claims that two values of a decision can differ in the
+    output: the values differ (two alternatives, or two values of the slots of an entry with
+    one alternative: finding H1 of the gen-2b review), and the condition of `REACHES` that
+    the log repeats holds for the decision vector."""
+    return one != two and entry_id in reach_tables and probes.reaches(
+        entry_id, one["rule"], two["rule"], values, parameters, reach_tables)
+
+
 def mutate(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: Path,
            which: str, design: dict, records: list[dict], reached: dict[str, dict],
            log: list[dict], tables: reference.Tables, scratch: Path,
@@ -305,8 +318,7 @@ def mutate(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: 
         for first, second in combinations(range(len(choices)), 2):
             separated = views[first] != views[second]
             one, two = choices[first], choices[second]
-            claimed = one["rule"] != two["rule"] and entry.id in reach_tables and probes.reaches(
-                entry.id, one["rule"], two["rule"], values, parameters, reach_tables)
+            claimed = claims(entry.id, one, two, values, parameters, reach_tables)
             pairs.append({"first": label(one, choices), "second": label(two, choices),
                           "gold": first == 0, "separated": separated,
                           "cells": changed_cells(views[first], views[second]),
@@ -333,7 +345,9 @@ def mutate(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: 
         else:
             same = ", ".join(pair["second"] for pair in of_gold if not pair["separated"])
             state = "unseparated"
-            reason = f"{NO_PROBE}: the same output under {same}"
+            note = (reach_tables.get(entry.id) or {}).get("note")
+            reason = f"{NO_PROBE}" + (f"; {note}" if note else "") + \
+                f": the same output under {same}"
         matrix.append({"id": entry.id, "unit": unit, "read": read, "applicable": claimed_all,
                        "identifiable": state, "reason": reason,
                        "gold": label(choices[0], choices), "pairs": pairs})

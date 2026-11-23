@@ -28,7 +28,9 @@ first; the recipes then plant for it:
   rounding half exists;
 - a planted subject that carries the event of a probe lies inside the
   analysis set of the table (the subject without an exposure end date
-  completes its treatment when the set asks for a later visit or value);
+  completes its treatment when the set asks for a later visit or value; the
+  subject with a partial first exposure date has a value of the test before
+  the month of its first dose when the set asks for a baseline value);
 - the window probes are built around the kit's own emergence window;
 - the events of the causality probe are serious when the table shows
   serious related events and not related events.
@@ -44,8 +46,10 @@ disagree. Whether the difference reaches the one output of the slice, the
 adverse event summary, can depend on the values of other decisions: an
 output that groups by planned treatment does not read actual treatment, an
 output without an emergence window does not read the treatment end date.
-`REACHES` names only such conditions: under them the alternatives give the
-same output on any data (kind (a) of finding G1 of the gen-2a review).
+`REACHES` names only such conditions: where one does not hold, the
+alternatives give the same output on any data of the design that follow
+SDTMIG v3.4 (kind (a) of finding G1 of the gen-2a review; the note of a row
+names what it rests on).
 Every other pair of a decision that the output reads must be separated on
 the twin; gen-2 verifies that by mutation (property P4), and a kit in which
 one is not is not written.
@@ -128,8 +132,10 @@ REACHES: dict[str, dict] = {
         "when": {"all_of": [_BY_ACTUAL, {"decision": "trt.actual.source",
                                           "is": ["dm_actarm", "first_ex_treatment"]}]},
         "note": "the two rules differ in the subjects dosed without being randomized; "
-                "such a subject has no planned treatment, so it stands in a column only by "
-                "actual treatment, and only a table on the safety set reads the rule"},
+                "such a subject has no planned arm (in a randomized design the arm is "
+                "assigned at randomization: DM.ARMCD empty, ARMNRS NOT ASSIGNED, SDTMIG "
+                "v3.4 DM; per recommendation, pending SME review), so it stands in a column "
+                "only by actual treatment, and only a table on the safety set reads the rule"},
     "pop.safety.grouping": {
         "when": {"all_of": [{"decision": "tfl.population", "is": ["safety"]},
                             {"none_of": [{"decision": "trt.actual.source",
@@ -589,9 +595,23 @@ def _undosed_after_last(p: Planter) -> Planted:
 
 def _partial_exposure(p: Planter) -> Planted:
     probe = "partial_exposure_date"
-    subject = p.fresh(probe, need=lambda date: 4 <= date.day <= 24)
+    # The subject carries the event of the probe, so it lies inside the analysis set of the
+    # table when its partial date is completed to the first day of the month. Where the set
+    # asks for a value of a test on or before the treatment start (the efficacy-evaluable
+    # set by a baseline and a post-baseline value), the first dose falls on the second or
+    # third day of a month: the screening visit, at least three days earlier, lies in the
+    # month before, and its value of the test is a baseline value for the completed date
+    # (gen-2b, finding H3 of its review).
+    efficacy = p.values.get("pop.efficacy.rule") or {}
+    test = efficacy.get("test") if (p.values.get("tfl.population") or {}).get("rule") == \
+        "efficacy" and efficacy.get("rule") == "baseline_and_postbaseline" else None
+    low, high = (2, 3) if test else (4, 24)
+    subject = p.fresh(probe, need=lambda date: low <= date.day <= high)
     first, rest = split_first(subject)
     month = first.start.isoformat()[:7]
+    if test and not any(v.code == test and v.date.isoformat()[:7] < month
+                        for v in subject.vitals):
+        raise RuntimeError(f"probe {probe}: no value of {test} before the month of the first dose")
     first.start_text, first.start_time = month, None
     subject.first_exposure_text = month
     subject.reference_start = subject.first_dose
@@ -599,7 +619,8 @@ def _partial_exposure(p: Planter) -> Planted:
     # before that date: emergent when the partial date is completed, not when it is left out.
     p.event(subject, first.start + DAY, rest.start - DAY)
     return Planted(probe, "planted", [subject.key],
-                   {"collected": month, "event_on": (first.start + DAY).isoformat()})
+                   {"collected": month, "event_on": (first.start + DAY).isoformat(),
+                    "value_before_month": test})
 
 
 def _partial_not_earliest(p: Planter) -> Planted:
@@ -670,8 +691,15 @@ def _visit_missed(p: Planter) -> Planted:
                   date=subject.first_dose + 5 * DAY)
     subject.visits.append(visit)
     subject.vitals += subjects.measure(p.rng.child(probe, "vitals"), p.ctx, subject, visit)
+    # A mild event, emergent under every rule: other planted subjects without events move the
+    # other way between the two rules of the efficacy-evaluable set (the one without a
+    # baseline value of the test, the one without a later value of it); in one arm they
+    # would leave the table the same (gen-2b, a kit of the review of gen-2b).
+    start = subject.first_dose + 2 * DAY
+    p.event(subject, start, start + 2 * DAY)
     return Planted(probe, "planted", [subject.key],
-                   {"tests": list(p.parameters.tests), "visits": list(p.parameters.visits)})
+                   {"tests": list(p.parameters.tests), "visits": list(p.parameters.visits),
+                    "event_on": start.isoformat()})
 
 
 def _other_test_only(p: Planter) -> Planted:
