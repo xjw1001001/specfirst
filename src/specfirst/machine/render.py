@@ -138,6 +138,12 @@ _FETCHING_ATTRIBUTES = {"src", "href", "srcset", "background", "poster", "xlink:
                         "action", "formaction", "lowsrc", "dynsrc", "ping"}
 # The one style attribute the renderer writes: the indent of a row label.
 _INDENT = re.compile(r"padding-left: \d+\.\dem")
+# The elements and attributes the renderer writes, and no other (the review of real-3,
+# pass 2, G1: a table inside <template>, <details>, <noscript> or a closed <dialog>, a
+# <font>, or a cell that spans columns would show a text elsewhere or not at all).
+_ELEMENTS = {"html", "head", "meta", "title", "style", "body", "table", "caption", "div",
+             "thead", "tbody", "tfoot", "tr", "th", "td"}
+_ATTRIBUTES = {"lang", "charset", "class", "scope", "colspan", "style"}
 
 
 class _Reader(HTMLParser):
@@ -178,6 +184,17 @@ class _Reader(HTMLParser):
                         or name.lower() == "style" and not _INDENT.fullmatch(str(value))]
         if tag == "meta" and set(given) != {"charset"}:
             self.unsafe.append("a <meta> other than the character set")
+        if tag not in _ELEMENTS:
+            self.unsafe.append(f"the element <{tag}>, which the renderer does not write")
+        self.unsafe += [f"the attribute '{name}' of <{tag}>, which the renderer does not write"
+                        for name, _ in attrs if name not in _ATTRIBUTES
+                        and not name.startswith("data-") and not name.startswith("on")
+                        and name != "hidden"]
+        # Only a spanner, a section heading and a footnote span columns.
+        spans = "spanner" in str(given.get("class") or "").split() or (
+            "data-section" in given or "data-footnote" in given)
+        if "colspan" in given and not spans:
+            self.unsafe.append(f"a <{tag}> that spans columns")
         if tag in ("thead", "tbody", "tfoot"):
             self._part = tag
         elif tag == "tr":

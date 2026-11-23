@@ -106,6 +106,12 @@ def page_problems(text: str, review: model.Review | None = None) -> list[str]:
     found += [f"the page has the handler '{name}'" for name in sorted(set(parser.handlers))]
     lowered = text.lower()
     found += [f"the page holds '{word}'" for word in FORBIDDEN_TEXT if word in lowered]
+    # A CSS escape spells a forbidden word in a style ("\75 rl(", "@\69mport"; the review of
+    # real-3, pass 2, G1): no style of the page may hold a backslash.
+    styles = re.findall(r"<style[^>]*>(.*?)</style>", text, re.S | re.I) + re.findall(
+        r"style\s*=\s*\"([^\"]*)\"", text, re.I)
+    if any("\\" in style for style in styles):
+        found.append("a style of the page holds a backslash (a CSS escape)")
     if re.search(r"<meta[^>]*refresh", lowered):
         found.append("the page refreshes itself")
     ids = Counter(parser.ids)

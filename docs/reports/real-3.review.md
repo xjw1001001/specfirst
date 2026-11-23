@@ -855,3 +855,296 @@ event defines; take the titles of 1b from the ARS file; correct the comment.
   real-3a by a plant of the reviewer's (their unit tests were read).
 
 Verdict: NOT SIGNED
+
+## Pass 2
+
+Reviewed: `900978e` (`900978e7ea9375bfd4a41034b592dcfb770a3e8b`, on
+`track/real`), the delta `10805f6..900978e`: 16 files, 1,430 insertions,
+229 deletions, of which 857 lines are the file of pass 1, committed as the
+reviewer wrote it (SHA-256 `57d48f13...`, the same bytes). The code changes
+`machine/{ars,grid,layout,render}.py` and `viewer/check.py`; the kit changes
+gold/exceptions.yaml (the four medians: class `rule_choice`, new comments)
+and the layout of Out14-3-3-1b (titles, footnote and row-label header from
+the ARS file); the tests change D14, `test_grid.py` and `test_viewer.py`;
+the texts are the report, ADR-003 (points 7, 13 and a new 15), the state
+file and lesson 78. Same reviewer, same rules: the gate under the shared
+lock, nothing installed, nothing committed, no network, no model call.
+
+Read: the whole delta, as a diff; the state file's sections "Open",
+"Next" and "Handed over by real-3"; `standard/methods/display.pattern.yaml`
+and `registry.py` at the lines point 7 cites; the SME list
+`docs/state/sme-review.md` as it stands on `origin/track/base`.
+
+### What was run (pass 2)
+
+| # | What | Result |
+| --- | --- | --- |
+| S1 | `specfirst gate real-3 --clean` on a clone of `900978e` | `GATE real-3: PASS`, exit 0, 19 of 19 |
+| S2 | the build of S1 against the build of R1 | 4 of 72 files differ, all of Out14-3-3-1b |
+| S3 | the scripts of R3, R5, R9 and R10 again on the build of S1 | as in pass 1; the titles of 1b are those of its ARS display |
+| S4 | the plants of R6, R7 and R8 again | every plant of F2 and F3 is refused now; the labels of `within` still pass, as the report says |
+| S5 | 12 new plants in layouts against the new checks | 9 refused; 3 pass (G2) |
+| S6 | 8 new plants in a grid page, 3 in the review page | 8 and 3 pass (G1) |
+| S7 | `grid.half_problem` on eleven cases; D14's plant of a minimum | narrow; D14's plant fails for its class (G3) |
+
+#### S1 The gate on `900978e`
+
+```text
+$ git -C <scratch>/clone2 checkout --quiet --detach 900978e      (a fresh clone, as in R1)
+$ cd <scratch>/clone2 && export PYTHONPATH=$PWD/src SPECFIRST_ROOT=$PWD PYTHONDONTWRITEBYTECODE=1
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -u -m specfirst gate real-3 --clean
+gate real-3 at commit 900978e7ea9375bfd4a41034b592dcfb770a3e8b (clean)
+1478 passed, 38 deselected in 435.51s (0:07:15)
+P1 determinism: 72 of 72 files have the same SHA-256 in both builds
+trace of the grids: 5 outputs; numeric cells with a complete path: Out14-1-1 84, Out14-3-1-1 27, Out14-3-2-1 1178, Out14-3-3-1a 1263, Out14-3-3-1b 1263
+grid Out14-3-3-1b: 1515 cells show 2019 results; 1448 cells equal the reference's formatted values, 67 differ, 67 of them with one class
+grids: 10 outputs, pass
+review: build/p1/cdiscpilot01/first/viewer/index.html has 5597053 bytes, 63 panels of analyses, 4028 cells with a panel; it loads and runs nothing: True; the second build of P1 gives the same page: True
+Out14-3-3-1a, Q1 and Q3 exchanged in their cell: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Q1, Q3': the parts stand in the cell in another order than the label nam
+Out14-3-3-1b, the minimum and the maximum exchanged in their cell: 1 problems, [...]
+Out14-3-3-1a, the mean in the row of the median: 1 problems, [...] row 'Median': the label names 'Median', and the row does not s
+Out14-3-3-1b, the n and the minimum exchanged between their rows: 1 problems, [...]
+Out14-3-3-1b, the rows of the changes above those of the observed values: 1 problems, [...] the analyses stand in another order than the reference lists them
+Out14-3-3-1a, the sections of two parameters exchanged by labels: 1 problems, [...] labels: 'AnlsGrouping_08_Param_1' is labelled
+Out14-3-3-1a: results that lie exactly on a half at their displayed decimals: 5; with the rounding rule half_even: 5 problems, for example: cell:Out14-3-3-1a/r209/c6: text ' 0.0', reference ' 0.1': a
+101 passed in 131.56s (0:02:11)
+ASCII check: 948 files checked, 0 with non-ASCII bytes
+GATE real-3: PASS
+```
+
+It ran from 14:00:20 to 14:11:37. Against the committed clean-clone
+log of `b71c200`, after the normalisation of R2, 37 lines differ: the
+commit; 1,478 against 1,454 tests and 948 against 945 files; the folder of
+the clone; the four hash lines of Out14-3-3-1b; "classed rule_choice" for
+"classed data_difference" (twice); 5,597,053 against 5,597,006 bytes of
+the review page; and the seven new lines of D14 above. The 5 problems of
+the plant half_even are, by a script of the reviewer that builds the grid
+under that rule (`<scratch>/scripts/halfeven.py`): the cell of the third
+quartile 0.25 ("- 0.2,  0.2" for "- 0.2,  0.3") and the four cells of the
+medians, whose proof builds the alternative with the patched rule.
+
+#### S2 and S3 What changed in the build
+
+```text
+files listed: pass 1 72 pass 2 72
+differing: ['gold/grid/Out14-3-3-1b.json', 'gold/grid/Out14-3-3-1b.shell.json', 'gold/out/Out14-3-3-1b.html', 'gold/out/Out14-3-3-1b.shell.html']
+Out14-3-3-1b grid titles: ['Table 14.3.3.1b', 'Summary of Observed and Change from Baseline by Scheduled Visits - Vital Signs', 'Safety Population'] | footnotes: ['Note: Baseline is defined as ...'] | header row label: Parameter (Units) Visit
+```
+
+(The second title has the ARS file's dash outside ASCII, written here as
+"-".) The recount of R3 gives the same lines as in pass 1 with 0
+problems; the walk of R5 the same 3,815 of 3,815; R10 the same counts (4 of
+the 1,764 + 1,559 = 3,323 results held as floating-point numbers change
+under (B), as the report now says; 10 under `XX.XX` and `X.XX`). The six
+graph gaps of R8 fail as before.
+
+#### S4 The plants of pass 1 again
+
+```text
+Out14-3-3-1a, Q1 and Q3 exchanged in their cell: 2 problems; for example: rows[1], row 'Q1, Q3': the parts stand in the cell in another order than the label names them (Q1, Q3)
+Out14-3-3-1b, Q1 and Q3 exchanged in their cell: 2 problems
+Out14-3-3-1a, the minimum and the maximum exchanged in their cell: 2 problems
+Out14-3-3-1b, the minimum and the maximum exchanged in their cell: 2 problems
+Out14-3-3-1a, the mean in the row Median, the median in the row Mean (SD): 3 problems; for example: rows[1], row 'Mean (SD)': the label names 'Mean', and the row does not show 'Mth02_ContVar_Summ_ByGrp_2_Mean'
+Out14-3-3-1b, the mean in the row Median, the median in the row Mean (SD): 3 problems
+Out14-3-3-1a, the n in the place of the minimum, the minimum in the row n: 3 problems
+Out14-3-3-1a, the labels Observed and Change from Baseline exchanged: 0 problems
+Out14-3-3-1a, the labels of placebo and high dose exchanged (columns.labels): 3 problems; for example: columns: labels: 'AnlsGrouping_01_Trt_1' is labelled 'Xanomeline High Dose', the name of the group 'AnlsGrouping_01_Trt_3'
+Out14-3-3-1b, the labels of placebo and high dose exchanged (columns.labels): 3 problems
+Out14-3-3-1b, the change rows above the observed rows at every visit: 2 problems; for example: rows[1]: the analyses stand in another order than the reference lists them (An08_01_Obs_Summ_ByTrt, An08_02_ChgBl_Summ_ByTrt)
+Out14-3-3-1a, the sections of systolic and diastolic pressure exchanged (labels): 3 problems
+Out14-3-3-1b, the sections of systolic and diastolic pressure exchanged (labels): 3 problems
+Out14-3-3-1a, the visits Week 2 and Week 4 exchanged (labels): 3 problems
+Out14-3-3-1b, the visits Week 2 and Week 4 exchanged (labels): 3 problems
+Out14-3-1-1, the labels of placebo and high dose exchanged (columns.labels): 3 problems
+  render.projection_problems, the cells of column c2 hidden by a style attribute: 265 problems; the page holds the attribute 'style' of <td>
+  render.projection_problems, the row r3 hidden by the attribute hidden: 1 problems
+  render.projection_problems, <body background=...> (an image fetched): 1 problems; the page refers to something outside itself: <body>
+  render.projection_problems, <video poster=...> in the body: 1 problems
+  render.projection_problems, <svg><image xlink:href=...>: 2 problems
+  render.projection_problems, a style attribute with image-set(...): 1 problems
+  viewer.check.page_problems, <body background=...>: 1 problems; the link 'https://example.org/x.png' leaves the page
+  viewer.check.page_problems, <svg><image xlink:href=...>: 3 problems; the page has a <svg>
+  viewer.check.page_problems, a style attribute with image-set(...): 1 problems; the page holds 'image-set('
+```
+
+The controls give 0 problems; the plants of F1 and F3 of real-3a on the AE
+summary fail as in pass 1.
+
+#### S5 New plants in the layouts
+
+```text
+Out14-3-3-1a, control: unchanged: 0 problems
+Out14-3-3-1b, control: unchanged: 0 problems
+Out14-1-1, control: unchanged: 0 problems
+Out14-3-3-1a, the template of Q1, Q3 written '{q3}, {q1}' (the parts unchanged): 2 problems; for example: rows[1], row 'Q1, Q3': the parts stand in the cell in another order than the label names them (Q1, Q3)
+Out14-3-3-1b, the template of Min, Max written '{max}, {min}': 2 problems
+Out14-3-3-1a, the template of Mean (SD) written '{sd} {mean}': 2 problems
+Out14-3-3-1a, the row 'Q1, Q3' relabelled 'Q3, Q1' (parts and template unchanged): 2 problems
+Out14-3-3-1a, the row 'Median' relabelled 'Average': 46 problems; for example: shell: row r5 ('Average'): no row of the shell has this label and the masks ['XX.X', 'XX.X', 'XX.X']
+Out14-3-3-1b, the visit Week 2 labelled 'Week 3' (no group has that name): 0 problems
+Out14-3-3-1b, the visits Week 2 and Week 4 exchanged (labels): 3 problems
+Out14-3-3-1b, Week 2 labelled 'week 4' (another group's name in lower case): 0 problems
+Out14-3-3-1a, the labels Observed and Change from Baseline exchanged (columns.within): 0 problems
+Out14-3-3-1a, the labels of placebo and high dose exchanged (columns.labels): 3 problems
+Out14-3-3-1a, the analyses of the block listed in reverse (columns by `within`, the display unchanged): 2 problems; for example: rows[1]: the analyses stand in another order than the reference lists them (An08_01_Obs_Summ_ByTrt, An08_02_ChgBl_Summ_ByTrt)
+Out14-1-1, demographics: the template of Q1, Q3 written '{q3}, {q1}': 2 problems; for example: rows[1], analysis 'An03_01_Age_Summ_ByTrt', row 'Q1, Q3': the parts stand in the cell in another order than the label names them
+```
+
+Judged as in R6, with the classes of the kit's explained results made as
+`build.display_checks` makes them. The order of the parts is the order of
+the template, so the check holds what the cell shows. The last plant on
+the vital signs is a false refusal of a harmless order (with `within` the
+columns follow the items); it is strict, not wrong.
+
+#### S6 New plants in the pages
+
+```text
+page Out14-3-3-1a.html: 114248 characters
+  render.projection_problems, unchanged: 0 problems
+  render.projection_problems, the table inside <template> (not rendered): 0 problems
+  render.projection_problems, the table inside <details> (folded): 0 problems
+  render.projection_problems, the table inside <noscript>: 0 problems
+  render.projection_problems, the table inside <dialog> (not open): 0 problems
+  render.projection_problems, a cell's text in <font color="#ffffff">: 0 problems
+  render.projection_problems, colspan="2" on the first cell of row r3 (its other cells shift a column): 0 problems
+  render.projection_problems, rowspan="2" on the first cell of row r3: 0 problems
+  render.projection_problems, <td style="padding-left: 1.0em"> (the allowed indent, on a cell): 0 problems
+viewer page: 5597053 bytes; backslashes 0; '//' 0; 'http' 0; style attributes 0; <style> elements 1
+  viewer.check.page_problems, unchanged: 0 problems
+  viewer.check.page_problems, a style rule with an escaped url( ('\75 rl('): 0 problems
+  viewer.check.page_problems, an escaped @import ('@\69mport'): 0 problems
+  viewer.check.page_problems, a style attribute with an escaped url(: 0 problems
+  viewer.check.page_problems, <body background=...> (control): 1 problems; the link 'https://example.org/x.png' leaves the page
+  viewer.check.page_problems, <math><mglyph src=...> (control): 1 problems; the link 'https://example.org/x.png' leaves the page
+  viewer.check.page_problems, <a ping=...> (control): 1 problems; the link 'https://example.org/x.png' leaves the page
+```
+
+(The label of the indent plant says 1.0em; the plant writes 9.0em.) In CSS
+an escaped name is the name: `\75 rl(` is the function `url(`.
+
+#### S7 The proof `half_in_floating_error`
+
+```text
+the kit's case: accepted
+the kit's case, class data_difference: refused: a value at a half in floating error proves a rule_choice only
+the kit's case, class reference_error: refused: a value at a half in floating error proves a rule_choice only
+ours 2e-11 relative below (inside 1e-9; 12 digits give 0.0500000000): refused: our value rounded to 12 significant digits under the pattern is ' 0.0', not the reference's ' 0.1'
+ours 2e-10 relative below (inside 1e-9; 12 digits keep it below): refused: our value rounded to 12 significant digits under the pattern is ' 0.0', not the reference's ' 0.1'
+ours exactly the double 0.05: refused: our value 0.05 is not on the other side of the half 0.05
+a negative half, ours just above: accepted
+37.5 under XX, ours just below, the reference shows 38: accepted
+37.5 under XX, the reference shows 37.5 (not its own pattern): refused: the reference's formatted value '37.5' is not its raw value 37.5 under the pattern 'XX'
+0.25 under XX.X, ours just below: accepted
+a raw value that is not on a half: refused: the reference's raw value 0.06 is not on a half at 1 decimals
+a minimum proven to lie on a half, class data_difference: 1 problems; reason: a value at a half in floating error proves a rule_choice only
+a minimum proven to lie on a half, class rule_choice: 1 problems; reason: the reference's raw value 35.33 is not on a half at 0 decimals
+```
+
+(The label of the 2e-11 case is the reviewer's slip: 0.049999999999 has
+twelve significant digits and stays below the half; the proof refuses it
+rightly.) The last two lines are D14's plant of a minimum on a half, as
+D14 writes it and with the class the proof now asks for.
+
+### The findings of pass 1
+
+- F1 (blocking): closed. The report, ADR-003 point 13, the exceptions file,
+  the docstring and the test of `half_problem` and lesson 78 describe the
+  medians as the records show them (each one record's change of 0.05 held
+  as 0.04999999999999716, the same in the public ADVS; the example's raw
+  values in 12 characters), and nothing of the old description is left
+  but in the sentences that say it was wrong. The proof now states what it
+  holds and no cause; it is bound to `rule_choice` and builds the
+  alternative on our value (12 significant digits, then the pattern); S7
+  shows it narrow: it accepts our value only within the reach of that
+  rounding. The class `rule_choice` fits PLAN.md section 4.8 on these
+  data. The owner's answer and the SME status are the owner's and the base
+  session's; the reviewer did not check them.
+- F2: closed for every case of pass 1 (S4) and for the new ones of S5
+  except G2. The order of the parts is held by the template, so a cell
+  cannot show Q3 before Q1 under "Q1, Q3"; a statistic under the label of
+  another is refused; the order of the runs of the vertical grid is held
+  through the order of the analyses.
+- F3: the plants of pass 1 are refused (S4). Other ways remain (G1).
+- F4: closed. `ars.display_sections` resolves a subsection that another
+  display writes; the grid of 1b has the titles, the legend and the
+  row-label header of its ARS display, "Safety Population" among them, and
+  nothing else of the build changed (S2).
+- F5: the five placeholders of the report and the "Passed" entry of the
+  state file stay open by design until the final clean-clone gates, which
+  pass 3 is to see; "The other gates" is among them. The state file is
+  otherwise brought up to date (G4 has one stale sentence). Point 13 of the
+  ADR stands on its own line.
+- F6: closed. The exceptions comment no longer says the owner's answer is
+  recorded where it was not; the halves of the vital signs are counted and
+  D14 plants half_even (S1: it fails); `test_viewer.py` plants a frame, an
+  image, a form, an import and a refresh; 3,323 and 10 are the reviewer's
+  numbers; the SAP's templates are described as they are.
+
+### New findings (pass 2)
+
+#### G1 (not blocking) The page checks still pass hidden tables and an escaped url(
+
+`render.projection_problems` passes a grid page whose table stands inside
+`<template>`, `<details>`, `<noscript>` or a `<dialog>` that is not open
+(none of them is rendered as a table), a cell text in `<font
+color="#ffffff">`, and a `colspan` or `rowspan` on a cell, which moves the
+row's other values under other columns while the order of its elements is
+unchanged (S6). The commit says the page checks "refuse hidden cells".
+`viewer.check.page_problems` passes a style rule or a style attribute with
+`\75 rl(...)` or `@\69mport`, which CSS reads as `url(` and `@import`. The
+gate statement on the viewer still holds by the page: it has no backslash,
+no "//" and no "http" (S6). No gate statement names the grid pages, and
+both pages are written by deterministic code that P1 compares. Fix: allow
+only the elements and attributes the writers use (an allow-list, not a
+deny-list), and refuse a backslash or "//" in a style of the review page.
+
+#### G2 (not blocking) A label that is wrong but no other group's name passes
+
+`layout._named_otherwise` refuses a label that is exactly the name of
+another group. "Week 3" for Week 2, or "week 4" for Week 2, passes (S5),
+and the grid then shows the values of Week 2 under that row; against the
+shell's placeholder `<Visit n>` any text fits. The report names the
+placeholders, and the column labels of `within`, as held against nothing;
+it does not name a group label of the layout's own. Fix: compare without
+case and blanks, or name the limit.
+
+#### G3 (not blocking) D14's plant of a minimum on a half now fails for its class
+
+D14 plants "a minimum proven to lie on a half" with the class
+`data_difference`. Since the proof asks for `rule_choice`, the plant fails
+on the class, before the proof looks at the numbers; with `rule_choice` it
+fails for the reason its name gives, "35.33 is not on a half at 0
+decimals" (S7). The unit test `test_a_value_at_a_half_in_floating_error`
+holds the numbers, so the check is tested; the plant no longer is what it
+says (lesson 74). Fix: give the planted entry the class `rule_choice`.
+
+#### G4 (not blocking) Stale or unanchored sentences
+
+- docs/state/real.md, "Handed over by real-3": "`formats` has a second
+  proof kind, `half_in_floating_error` (class `data_difference`)"; and the
+  docstring of `results.load_formats`: "`half_in_floating_error`, class
+  `data_difference`". Both are `rule_choice` now.
+- The report, ADR-003 point 13, the exceptions file and the state file cite
+  "docs/state/sme-review.md, real-3/vs-medians-at-half" and
+  "real-3/vs-minmax-decimals". That file is not on `track/real` or `main`;
+  on `origin/track/base` it lists SME-01 to SME-32 and neither point. Its
+  own rule has the base session add points a session reports, so this may
+  be a matter of time; until then the citations lead nowhere.
+
+### Not checked (pass 2)
+
+- What the owner was told and answered, and the SME status (the owner's
+  and the base session's).
+- The author's run of the gate on a copy of the tree before the commit; S1
+  is the reviewer's own run on the commit.
+- The gates other than real-3 at `900978e`, and the final report and
+  clean-clone logs, which pass 3 is to see.
+- The pages in a browser.
+
+Pass 2 covers `900978e`. The blocking finding of pass 1 is closed, the
+four statements of the gate text hold on the reviewer's run, and nothing
+the fixes changed is broken in what the reviewer ran; G1 to G4 do not
+block.
+
+Verdict: SIGNED

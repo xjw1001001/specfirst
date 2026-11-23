@@ -335,7 +335,7 @@ def load_formats(path: Path) -> dict[str, dict[str, dict]]:
     `not_its_own_pattern`; specfirst.machine.grid.compare_reference holds it); or the
     reference's raw value lies on a half at the decimals of the pattern and ours is that
     value up to floating error, on the other side of the half (proof
-    `half_in_floating_error`, class `data_difference`; real-3). An entry has `result`,
+    `half_in_floating_error`, class `rule_choice`; real-3). An entry has `result`,
     `formatted` (the reference's text), `class` and `proof`, and may have `sources`."""
     with open(path, encoding="ascii") as handle:
         data = yaml.safe_load(handle) or {}

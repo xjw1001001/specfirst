@@ -455,6 +455,10 @@ The example's formatted values of the two results are "- 3.3" and
 - The labels of a statistic row are held against the labels of the ARS
   operations it shows; a row whose label names no operation's label ("LS
   Means (SE)" when no operation is labelled so) is held against nothing.
+- A label the layout gives a group is refused only when it is the name of
+  another group of the grouping; a wrong label that is no group's name
+  ("Week 3", "week 4") is held against nothing (the review, pass 2, G2). The
+  layouts of the vital signs give no label: the grids show the ARS names.
 
 ## For the owner
 

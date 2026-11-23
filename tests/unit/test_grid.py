@@ -633,6 +633,24 @@ def _header_in_body(page: str) -> str:
                              '<td style="background: image-set(\'x.png\' 1x)" '
                              'data-cell="cell:Out_AE/r2/c2">'),
          "the attribute 'style' of <td>"),
+        # Pass 2 of the review of real-3, G1: elements and spans the renderer never writes.
+        (lambda p: p.replace('<table class="grid"', '<template><table class="grid"').replace(
+            "</table>", "</table></template>"), "the element <template>"),
+        (lambda p: p.replace('<table class="grid"', '<details><table class="grid"').replace(
+            "</table>", "</table></details>"), "the element <details>"),
+        (lambda p: p.replace('<table class="grid"', '<noscript><table class="grid"').replace(
+            "</table>", "</table></noscript>"), "the element <noscript>"),
+        (lambda p: p.replace('<table class="grid"', '<dialog><table class="grid"').replace(
+            "</table>", "</table></dialog>"), "the element <dialog>"),
+        (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c2">2 ( 66.7)</td>',
+                             '<td data-cell="cell:Out_AE/r2/c2"><font color="white">2 ( 66.7)'
+                             '</font></td>'), "the element <font>"),
+        (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c1">',
+                             '<td colspan="2" data-cell="cell:Out_AE/r2/c1">'),
+         "a <td> that spans columns"),
+        (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c1">',
+                             '<td rowspan="2" data-cell="cell:Out_AE/r2/c1">'),
+         "the attribute 'rowspan' of <td>"),
     ],
 )
 def test_where_a_text_stands_and_what_a_page_may_not_hold(made, plant, message):

@@ -1898,8 +1898,10 @@ def d14_vital_signs(pilot: Pilot, tmp_path) -> list[str]:
                   if entry["proof"]["kind"] == "half_in_floating_error")
     for name, changed in {
         "a minimum proven to lie on a half": {
+            # The class the proof asks for, so that only its numbers can refuse it (the
+            # review of real-3, pass 2, G3).
             **given, minimum: dict(given[minimum], proof={"kind": "half_in_floating_error"},
-                                   **{"class": "data_difference"})},
+                                   **{"class": "rule_choice"})},
         "a median at a half classed reference_error": {
             **given, median: dict(given[median], **{"class": "reference_error"})},
         "a median at a half without its entry": {
