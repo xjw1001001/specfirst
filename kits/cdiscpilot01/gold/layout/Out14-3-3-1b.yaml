@@ -1,0 +1,64 @@
+# Layout of the output Out14-3-3-1b of CDISC's ARS example "Common Safety
+# Displays": Summary of Observed and Change from Baseline by Scheduled Visits -
+# Vital Signs, vertical (real-3).
+#
+# Layout spec v0 (specfirst.machine.layout, ADR-003 and its amendments), with the
+# block kind `by_groups` of real-3. This file is our own. The results are those of
+# Out14-3-3-1a; the rows follow the example's table shell,
+# Vitals_Obs_ChgBaseline_Table_Shell_vertical.pdf in the pinned ARS repository, which
+# kit.yaml pins and the mock shell is held against: under each parameter (the
+# section), each visit has a row without cells and the rows "n", "Mean (SD)",
+# "Median", "Q1, Q3" and "Min, Max" of the observed values, and each visit after
+# baseline the same for the change from baseline, under "<visit> Change from
+# Baseline".
+#
+# The display of this output in the ARS file has its first title only and no
+# footnote, no legend and no header of the row labels; the shell has them, and so
+# has this layout (the second title without the shell's "<Vertical Layout>"). The
+# patterns are those of the ARS operations, as in Out14-3-3-1a.
+layout: 0
+output: Out14-3-3-1b
+titles:
+  - Table 14.3.3.1b
+  - Summary of Observed and Change from Baseline by Scheduled Visits - Vital Signs
+footnotes:
+  - "Notes: Baseline is defined as the last assessment that is non-missing prior to first dose of investigational product."
+columns:
+  grouping: AnlsGrouping_01_Trt
+rows:
+  - kind: header
+    label: Parameter (Units) Visit
+    cell: "{N}"
+    parts:
+      N: {analysis: An01_05_SAF_Summ_ByTrt, operation: Mth01_CatVar_Count_ByGrp_1_n}
+  - kind: by_groups
+    by: [AnlsGrouping_08_Param, AnlsGrouping_09_Visit]
+    analyses:
+      - {analysis: An08_01_Obs_Summ_ByTrt}
+      - analysis: An08_02_ChgBl_Summ_ByTrt
+        heading: "{group} Change from Baseline"
+        skip: [AnlsGrouping_09_Visit_01]
+    rows:
+      - label: n
+        cell: "{n}"
+        parts:
+          n: {operation: Mth02_ContVar_Summ_ByGrp_1_n}
+      - label: Mean (SD)
+        cell: "{mean} {sd}"
+        parts:
+          mean: {operation: Mth02_ContVar_Summ_ByGrp_2_Mean}
+          sd: {operation: Mth02_ContVar_Summ_ByGrp_3_SD}
+      - label: Median
+        cell: "{median}"
+        parts:
+          median: {operation: Mth02_ContVar_Summ_ByGrp_4_Median}
+      - label: Q1, Q3
+        cell: "{q1}, {q3}"
+        parts:
+          q1: {operation: Mth02_ContVar_Summ_ByGrp_5_Q1}
+          q3: {operation: Mth02_ContVar_Summ_ByGrp_6_Q3}
+      - label: Min, Max
+        cell: "{min}, {max}"
+        parts:
+          min: {operation: Mth02_ContVar_Summ_ByGrp_7_Min}
+          max: {operation: Mth02_ContVar_Summ_ByGrp_8_Max}

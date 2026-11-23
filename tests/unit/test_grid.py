@@ -325,6 +325,25 @@ def test_a_difference_of_display_only_has_the_class_of_its_entry(spec, made, row
         found.problems[0]
 
 
+@pytest.mark.parametrize(("printed", "ours", "formatted", "cls", "message"), [
+    ("0.05", 0.04999999999999716, " 0.1", "data_difference", None),
+    ("-0.05", -0.04999999999999716, "- 0.1", "data_difference", None),
+    ("0.05", 0.04999999999999716, " 0.1", "reference_error", "proves a data_difference only"),
+    ("0.06", 0.05999999999999716, " 0.1", "data_difference", "is not on a half"),
+    ("0.05", 0.0499, " 0.1", "data_difference", "within a relative 1e-9"),
+    ("0.05", 0.05000000000000284, " 0.1", "data_difference", "not on the other side"),
+    ("0.05", 0.04999999999999716, " 0.0", "data_difference", "is not its raw value"),
+    ("", 0.04999999999999716, " 0.1", "data_difference", "is no number"),
+])
+def test_a_value_at_a_half_in_floating_error(printed, ours, formatted, cls, message):
+    """The proof of real-3 for four medians of the vital signs: the reference's 0.05 is on a
+    half at one decimal, ours is 0.05 up to the error of binary floating point and below the
+    half, so the display rule shows " 0.0" where the reference shows " 0.1"."""
+    item = results.Embedded(printed, 1, "A", "M", frozenset(), formatted)
+    found = grid.half_problem(item, ours, "XX.X", cls)
+    assert (found is None) if message is None else (message in (found or "")), found
+
+
 def test_a_cell_with_two_classes_has_none(spec, made, rows):
     def change(found):
         exchange(found)

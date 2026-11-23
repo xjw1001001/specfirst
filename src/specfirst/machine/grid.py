@@ -129,15 +129,31 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
             for analysis_id, _ in (block.analyses or ((None, None),)) for part in block.parts}
     used |= {block.analysis for block in layout.blocks
              if block.kind in ("statistics", "groups", "terms")}
+    used |= {item.analysis for block in layout.blocks for item in block.shown}
     found_columns = _columns(event, layout, rows, used)
     if not found_columns:
         raise GridError(f"the column grouping {layout.grouping} has no group")
-    found_columns += [((EXTRA, name), label) for name, label in layout.extra]
-    columns = [(f"c{number}", group, label) for number, (group, label)
-               in enumerate(found_columns, start=1)]
+    within: dict[str, str] = {}  # column ID -> the item of columns.within it is (real-3)
+    first: set[str] = set()  # the first column of each group, with `within`
+    spanners_of_groups: list[tuple[str, str]] = []
+    if layout.within:
+        columns = []
+        for group, label in found_columns:
+            for number, (name, item_label) in enumerate(layout.within):
+                column = f"c{len(columns) + 1}"
+                columns.append((column, group, item_label))
+                within[column] = name
+                spanners_of_groups.append((column, label))
+                if number == 0:
+                    first.add(column)
+    else:
+        found_columns += [((EXTRA, name), label) for name, label in layout.extra]
+        columns = [(f"c{number}", group, label) for number, (group, label)
+                   in enumerate(found_columns, start=1)]
     spanned = dict(layout.spanners)
-    spanners = tuple((column, spanned[group[1]]) for column, group, _ in columns
-                     if group[0] == EXTRA and group[1] in spanned)
+    spanners = tuple(spanners_of_groups) + tuple(
+        (column, spanned[group[1]]) for column, group, _ in columns
+        if group[0] == EXTRA and group[1] in spanned)
 
     def extra_cell(column: str, cell: layouts.ExtraCell | None,
                    groups: dict[str, results.Group], optional: bool = False) -> PlannedCell:
@@ -156,7 +172,8 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
     def cells(block: layouts.Block, analysis_id: str | None) -> tuple[PlannedCell, ...]:
         made = []
         for column, group, _ in columns:
-            if group[0] == EXTRA:
+            if group[0] == EXTRA or (within and column not in first):
+                # With columns.within the count of a group stands in its first column.
                 made.append(PlannedCell(column, ()))
                 continue
             shown = []
@@ -280,10 +297,70 @@ def plan(event: ars.Event, layout: layouts.Layout, rows: Rows | None = None) -> 
                         second, nested.indent))
         return made
 
+    def ordered_groups(name: str) -> list[dict]:
+        return [group for _, group in sorted(
+            enumerate(event.groupings[name]["groups"]),
+            key=lambda item: (item[1].get("order", 0), item[0]))]
+
+    def by_groups(block: layouts.Block) -> list[PlannedRow]:
+        """The statistic rows of the block's analyses for every pair of row groups (real-3):
+        a group of the first grouping is the section, one of the second a row without cells
+        above them; with columns.within the analyses stand side by side in their columns,
+        without it one after the other, each under its own heading."""
+        outer, inner = block.by
+        labels = dict(block.labels)
+        empty = tuple(PlannedCell(column, ()) for column, _, _ in columns)
+
+        def label(group: dict) -> str:
+            return labels.get(group["id"], str(group.get("name") or ""))
+
+        def stat_cells(row: layouts.StatisticRow, groups: dict[str, results.Group],
+                       showing: dict[str, layouts.Shown]) -> tuple[PlannedCell, ...]:
+            """The cells of a statistic row: in each column, the analysis it shows."""
+            made = []
+            for column, group, _ in columns:
+                item = showing.get(within.get(column, ""))
+                if item is None:
+                    made.append(PlannedCell(column, ()))
+                    continue
+                analysis = event.analyses[item.analysis]
+                every = {layout.grouping: group, **groups}
+                made.append(PlannedCell(column, tuple(
+                    Shown(part.name, ard_id(event, analysis, part.operation, every),
+                          layouts.pattern_of(event, part), analysis["id"])
+                    for part in row.parts)))
+            return tuple(made)
+
+        made = []
+        for first_group in ordered_groups(outer):
+            section = label(first_group)
+            for second_group in ordered_groups(inner):
+                groups = {outer: ("id", first_group["id"]), inner: ("id", second_group["id"])}
+                present = [item for item in block.shown if first_group["id"] not in item.skip
+                           and second_group["id"] not in item.skip]
+                if not present:
+                    continue
+                if within:
+                    made.append(PlannedRow(label(second_group), "", empty, section))
+                    showing = {item.column or "": item for item in present}
+                    made += [PlannedRow(row.label, row.cell, stat_cells(row, groups, showing),
+                                        section, row.indent) for row in block.statistics]
+                    continue
+                for item in present:
+                    made.append(PlannedRow(item.heading.format(group=label(second_group)), "",
+                                           empty, section))
+                    made += [PlannedRow(row.label, row.cell,
+                                        stat_cells(row, groups, {"": item}), section, row.indent)
+                             for row in block.statistics]
+        return made
+
     planned = []
     for block in layout.blocks:
         if block.kind == "statistics":
             planned += statistics(block)
+            continue
+        if block.kind == "by_groups":
+            planned += by_groups(block)
             continue
         if block.kind == "groups":
             planned += by_group(block)
@@ -455,6 +532,39 @@ def reference_text(item: results.Embedded, pattern: str) -> str | None:
         return None
 
 
+def half_problem(item: results.Embedded, ours: object, pattern: str, cls: str) -> str | None:
+    """Why the proof `half_in_floating_error` does not hold; None when it does (real-3).
+
+    The reference's raw value, as decimal text, lies exactly on a half at the decimals of
+    the pattern, and its formatted value is that value under the pattern (rounded half away
+    from zero); our value is the same number within the relative 1e-9 of rule R11 and
+    lies on the other side of the half, so the display rule rounds it the other way. The
+    exact value is the reference's: ours carries the error of binary floating point from
+    the data (a change from baseline of 0.1 held as 0.0999999999999943).
+    """
+    from decimal import Decimal, InvalidOperation
+
+    if cls != "data_difference":
+        return "a value at a half in floating error proves a data_difference only"
+    decimals = len(methods.pattern_mask(pattern)[1].partition(".")[2])
+    try:
+        exact = Decimal(item.printed)
+    except InvalidOperation:
+        return f"the reference's raw value {item.printed!r} is no number"
+    if not isinstance(ours, float) or not exact.is_finite() or (
+            abs(exact.scaleb(decimals)) % 1 != Decimal("0.5")):
+        return (f"the reference's raw value {item.printed} is not on a half at {decimals} "
+                "decimals")
+    if not results.same(float(exact), ours):
+        return f"our value {ours!r} is not the reference's {item.printed} within a relative 1e-9"
+    if (Decimal(repr(ours)) - exact) * (1 if exact > 0 else -1) >= 0:
+        return f"our value {ours!r} is not on the other side of the half {item.printed}"
+    if reference_text(item, pattern) != item.formatted:
+        return (f"the reference's formatted value {item.formatted!r} is not its raw value "
+                f"{item.printed} under the pattern {pattern!r}")
+    return None
+
+
 def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows: Rows,
                       explained: dict[str, str],
                       formats: dict[str, dict] | None = None) -> DisplayComparison:
@@ -557,10 +667,19 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
                 if item.ard in (formats or {}):
                     entry = formats[item.ard]
                     raw = reference_text(embedded[item.ard], item.pattern)
+                    half = entry["proof"].get("kind") == "half_in_floating_error"
                     if entry["formatted"] != embedded[item.ard].formatted:
                         reasons.append(f"{item.ard}: the exceptions give the formatted value "
                                        f"{entry['formatted']!r}, the reference has "
                                        f"{embedded[item.ard].formatted!r}")
+                    elif half:
+                        problem = half_problem(embedded[item.ard], rows[item.ard]["raw_value"],
+                                               item.pattern, entry["class"])
+                        if problem:
+                            reasons.append(f"{item.ard}: {problem}")
+                        else:
+                            classes.add(entry["class"])
+                            found.formats_used.add(item.ard)
                     elif raw != text:
                         reasons.append(f"{item.ard}: the reference's raw value "
                                        f"{embedded[item.ard].printed} under the pattern "

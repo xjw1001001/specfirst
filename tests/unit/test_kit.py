@@ -76,7 +76,7 @@ def test_manifest_problems_are_reported(data, message):
 
 def test_the_pilot_kit_is_pinned_like_the_sources(root):
     kit = kits.load_kit(root, "cdiscpilot01")
-    assert kit.tier == "C" and len(kit.files) == 68
+    assert kit.tier == "C" and len(kit.files) == 70
     manifest_of_sources = sources.load_manifest(sources.manifest_path(root))
     assert kits.pin_problems(kit, manifest_of_sources) == []
     # 64 files of Pilot 7; the ARS example, the schema of the ARS model and the example's
@@ -84,10 +84,15 @@ def test_the_pilot_kit_is_pinned_like_the_sources(root):
     # reference of the efficacy grids (real-5a).
     assert sorted(entry.path for entry in kit.files if entry.source == "ars") == [
         "gold/reference/shells/AE_Summary_Table_Shell.pdf",
+        "gold/reference/shells/Vitals_Obs_ChgBaseline_Table_Shell.pdf",
+        "gold/reference/shells/Vitals_Obs_ChgBaseline_Table_Shell_vertical.pdf",
         "gold/spec/ars/ars_ldm.schema.json", "gold/spec/ars/common-safety-displays.json"]
     shells = {display.output: display.shell for spec in kit.results for display in spec.displays
               if display.shell}
-    assert shells == {"Out14-3-1-1": "gold/reference/shells/AE_Summary_Table_Shell.pdf"}
+    assert shells == {
+        "Out14-3-1-1": "gold/reference/shells/AE_Summary_Table_Shell.pdf",
+        "Out14-3-3-1a": "gold/reference/shells/Vitals_Obs_ChgBaseline_Table_Shell.pdf",
+        "Out14-3-3-1b": "gold/reference/shells/Vitals_Obs_ChgBaseline_Table_Shell_vertical.pdf"}
     assert {entry.source for entry in kit.files} == {"p7", "ars", "p6"}
     assert [entry.path for entry in kit.files if entry.source == "p6"] == [
         "gold/reference/csr/CSR.pdf"]
@@ -119,6 +124,28 @@ def test_the_pilot_kit_is_pinned_like_the_sources(root):
     assert set(kit.decisions) <= set(kit.own_files())
     assert kit.standard == ("catalog@2", "open-default@2")
     assert all((root / "kits" / "cdiscpilot01" / name).is_file() for name in kit.own_files())
+
+
+def test_the_own_files_of_the_pilot_kit_can_be_read(root):
+    """The exceptions file and the layouts of the pilot are read as a build reads them. An edit
+    that joined two entries of the exceptions file passed the unit suite (real-3); only the
+    tests that need the fetch cache read the file."""
+    from specfirst.machine import csr, results
+    from specfirst.machine import layout as layouts
+
+    kit = kits.load_kit(root, "cdiscpilot01")
+    folder = root / "kits" / "cdiscpilot01"
+    listed = results.load_exceptions(folder / kit.exceptions)
+    formats = results.load_formats(folder / kit.exceptions)
+    cells = csr.load_exceptions(folder / kit.exceptions)
+    assert set(listed) == {"common-safety-displays"} and len(listed["common-safety-displays"]) == 25
+    assert set(formats) == {"common-safety-displays"}
+    kinds = [entry["proof"]["kind"] for entry in formats["common-safety-displays"].values()]
+    assert (kinds.count("not_its_own_pattern"), kinds.count("half_in_floating_error")) == (120, 4)
+    assert set(cells) <= {d.output for spec in kit.results for d in spec.displays}
+    outputs = [layouts.read(folder / d.layout).output for spec in kit.results
+               for d in spec.displays]
+    assert outputs == [d.output for spec in kit.results for d in spec.displays]
 
 
 def with_results(**changes) -> dict:

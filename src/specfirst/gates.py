@@ -8,6 +8,7 @@ which the report of the work package quotes (rule R8).
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import time
@@ -330,9 +331,11 @@ def _gen3(name: str) -> Callable[[Context], bool]:
 # no formatted value for (their cells are not compared); and the planted defects of the
 # display and of its trace. Issue #31 adds the demographics and the table by organ class
 # and term (ADR-022): the example embeds one Fisher p-value per test analysis, so most
-# p-values of the latter have no formatted value. The rest of real-3 adds the vital signs.
+# p-values of the latter have no formatted value. real-3 adds the vital signs, horizontal
+# and vertical: the five outputs of the example.
 PILOT_GRIDS = {"Out14-1-1": (104, 147, 0), "Out14-3-1-1": (27, 51, 0),
-               "Out14-3-2-1": (1275, 1940, 408)}
+               "Out14-3-2-1": (1275, 1940, 408), "Out14-3-3-1a": (1590, 2019, 0),
+               "Out14-3-3-1b": (1515, 2019, 0)}
 REAL3A_DEFECTS = (*REAL2_DEFECTS, "D6-proofs", "D7-display", "D8-trace")
 
 
@@ -650,6 +653,74 @@ def _review_defects(ctx: Context) -> bool:
     return _pytest(ctx, "tests/defects", "defects.xml", REVIEW_DEFECTS)
 
 
+# real-3 (PLAN.md section 13.3): the five outputs of CDISC's ARS example as grids. Every
+# numeric cell of each has a complete path to SDTM variables; the review page of issue #31
+# shows all five and opens with no network; the planted defects of the display, the trace,
+# the page and the vital signs (D14).
+REAL3_REVIEW_OUTPUTS = tuple(PILOT_GRIDS)
+REAL3_DEFECTS = (*REAL3A_DEFECTS, "D13-review", "D14-vital-signs")
+_TRACED = re.compile(r"grid (\S+): (\d+) cells, (\d+) print a number; (\d+) of the (\d+) cells "
+                     r"with results have a complete path to SDTM columns")
+
+
+def _trace_grids(ctx: Context) -> bool:
+    """100% of the numeric cells of the five grids have a complete path to SDTM variables:
+    the trace of the build passes, and it walked every cell of each of the five."""
+    from specfirst.machine import build
+
+    lines: list[str] = []
+
+    def out(line: str) -> None:
+        lines.append(line)
+        ctx.out(line)
+
+    passed = build.trace(ctx.root, PILOT, _first_build(ctx), out)
+    walked = {match.group(1): tuple(int(group) for group in match.groups()[1:])
+              for match in map(_TRACED.match, lines) if match}
+    for output, (cells, _, _) in PILOT_GRIDS.items():
+        found = walked.get(output)
+        if found is None:
+            ctx.out(f"trace of the grids: {output} was not walked")
+            passed = False
+            continue
+        total, numeric, complete, with_results = found
+        if total != cells or not numeric or complete != with_results or numeric > with_results:
+            ctx.out(f"trace of the grids: {output}: {total} cells, {numeric} numeric, "
+                    f"{complete} of {with_results} with results complete; the gate asks for "
+                    f"{cells} cells, every numeric cell with results and every one complete")
+            passed = False
+    ctx.out(f"trace of the grids: {len(PILOT_GRIDS)} outputs; numeric cells with a complete "
+            "path: " + ", ".join(f"{output} {walked[output][1]}" for output in PILOT_GRIDS
+                                 if output in walked))
+    return passed
+
+
+def _review_five(ctx: Context) -> bool:
+    """The review page of the first build with the five outputs of the example: it loads and
+    runs nothing (it opens from the file system with no network), every printed number of
+    the five opens a panel that reaches SDTM, and the second build gives the same page."""
+    from specfirst.viewer import check, command, model, page
+
+    target, review, text = command.write(ctx.root, PILOT, _first_build(ctx))
+    problems = [*review.problems, *check.page_problems(text, review)]
+    lines, found = check.acceptance(review, text, REAL3_REVIEW_OUTPUTS)
+    for line in lines:
+        ctx.out(line)
+    second = model.load(ctx.root, PILOT, _first_build(ctx).parent / "second")
+    same = page.html(second) == text
+    ctx.out(f"review: {target.relative_to(ctx.root)} has {len(text.encode('utf-8'))} bytes, "
+            f"{len(review.analyses)} panels of analyses, {len(review.cells)} cells with a panel; "
+            f"it loads and runs nothing: {not problems}; the second build of P1 gives the same "
+            f"page: {same}")
+    for problem in [*problems, *found][:20]:
+        ctx.out(f"  {problem}")
+    return not problems and not found and same
+
+
+def _defects_3(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/defects", "defects.xml", REAL3_DEFECTS)
+
+
 def _score(name: str) -> Callable[[Context], bool]:
     """A check of the scorer (specfirst.score.gate), by its function name."""
     def run(ctx: Context) -> bool:
@@ -742,6 +813,39 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("grids", f"{_REAL1_CHECK} (its last part)", _grids),
         Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
         Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_3a),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # PLAN.md section 13.3, real-3: the five outputs of the ARS example are grids, each cell
+    # text equal to the example's formatted value or with one classified difference, and
+    # each mock shell held against the example's table shell where the kit pins one
+    # (grids); 100% of their numeric cells have a complete path to SDTM variables (trace
+    # of the grids); the graph build is deterministic (P1); the viewer opens from the file
+    # system with no network, with the recomputation of issue #29 that it reads (recompute,
+    # review); the planted defects of each (planted defects). The report walks one cell end
+    # to end (docs/reports/real-3.md).
+    "real-3": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("registry", "specfirst methods", _registry),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q", _method_vectors),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("P2 reproduction", f"{_REAL1_CHECK} (its second part)", _p2),
+        Check("trace of the grids", f"{_REAL1_CHECK} (its third part), the five outputs",
+              _trace_grids),
+        Check("results", f"{_REAL1_CHECK} (its fourth part)", _results),
+        Check("grids", f"{_REAL1_CHECK} (its last part), the ARS example", _grids),
+        # The review page reads the recomputation of issue #29 (its panels).
+        Check("recompute", f"specfirst recompute {PILOT} --build build/p1/{PILOT}/first",
+              _recompute),
+        Check("review", f"specfirst view {PILOT} --build build/p1/{PILOT}/first", _review_five),
+        Check("decisions", f"specfirst.machine.build.decision_checks on build/p1/{PILOT}/first",
+              _decisions),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
+        Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q", _defects_3),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),

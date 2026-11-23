@@ -38,6 +38,12 @@ the kit's exceptions, `results.agreement` for rule R11).
                  the panels, no SDTM column named in the panels, a broken path
                  to SDTM in the graph files, an entry of `formats` that is no
                  difference, and one under a misspelt result set (ADR-022)
+    D14-vital-signs  the two grids of the vital signs (real-3): in their
+                 layouts, the observed value and the change exchanged between
+                 their columns, the change shown at baseline, the minimum and
+                 the maximum under another pattern, the median above the mean,
+                 a visit left out; judged by the formatted values, the table
+                 shells and the counts of the gate
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -1736,11 +1742,146 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
     return problems
 
 
+# ---- real-3: the vital signs (the block kind by_groups, the columns per group) -----------
+
+VITAL_SIGNS = ("Out14-3-3-1a", "Out14-3-3-1b")
+
+
+def d14_vital_signs(pilot: Pilot, tmp_path) -> list[str]:
+    """The two grids of the vital signs, held as the gate holds them: every cell against the
+    example's formatted values (with the kit's differences of display), the mock shell
+    against the example's table shell, and the counts of the gate (no result without a
+    formatted value). Planted in the layouts, each must fail: the observed value and the
+    change exchanged between their columns, the change shown at baseline, the minimum and
+    the maximum under XX.X, the median above the mean, a visit left out. What the shell
+    cannot show is printed, not counted: the heading of the change rows of the vertical
+    layout stands against a placeholder ("< Visit n Change from Baseline >")."""
+    from specfirst.machine import shells
+
+    kit = kits.load_kit(pilot.root, KIT)
+    formats = results.load_formats(pilot.folder / kit.exceptions).get(pilot.spec.id, {})
+    _, _, _, classes = _display(pilot)
+    event, rows = pilot.reference, pilot.gold
+    problems: list[str] = []
+
+    def judged(output: str, change=None) -> list[str]:
+        """What the gate would say of the output's grid with a changed layout."""
+        shown = next(d for d in pilot.spec.displays if d.output == output)
+        with open(pilot.folder / shown.layout, encoding="ascii") as handle:
+            data = yaml.safe_load(handle)
+        if change:
+            change(data)
+        spec = layouts.parse(data)
+        try:
+            made = grid.build(event, spec, rows)
+            found = grid.compare_reference(event, spec, made, rows, classes, formats)
+            said = list(found.problems)
+            said += shells.compare(grid.shell(event, spec),
+                                   shells.read(pilot.folder / shown.shell)).problems
+        except grid.GridError as error:
+            return [f"refused: {error}"]
+        if found.no_reference:
+            said.append(f"{len(found.no_reference)} results without a formatted value; the gate "
+                        "asks for none")
+        if (found.cells, found.results) != _gate_counts(output):
+            said.append(f"{found.cells} cells show {found.results} results; the gate asks for "
+                        f"{_gate_counts(output)}")
+        return said
+
+    for output in VITAL_SIGNS:
+        said = judged(output)
+        print(f"{output}, unchanged: {len(said)} problems")
+        problems += [f"{output}, unchanged: {p}" for p in said[:3]]
+
+    def by_groups(data: dict) -> dict:
+        return next(block for block in data["rows"] if block["kind"] == "by_groups")
+
+    def exchanged(data: dict) -> None:
+        shown = by_groups(data)["analyses"]
+        shown[0]["column"], shown[1]["column"] = shown[1]["column"], shown[0]["column"]
+
+    def statistic(name: str, **changed):
+        def change(data: dict) -> None:
+            for row in by_groups(data)["rows"]:
+                if row["label"] == name:
+                    for part in row["parts"].values():
+                        part.update(changed)
+        return change
+
+    def median_first(data: dict) -> None:
+        listed = by_groups(data)["rows"]
+        listed[1], listed[2] = listed[2], listed[1]
+
+    def without_week_2(data: dict) -> None:
+        for item in by_groups(data)["analyses"]:
+            item["skip"] = [*item.get("skip", []), "AnlsGrouping_09_Visit_02"]
+
+    planted = {
+        ("Out14-3-3-1a", "the observed value and the change exchanged between their columns"):
+            exchanged,
+        ("Out14-3-3-1a", "the change shown at baseline"):
+            lambda d: by_groups(d)["analyses"][1].pop("skip"),
+        ("Out14-3-3-1b", "the change shown at baseline"):
+            lambda d: by_groups(d)["analyses"][1].pop("skip"),
+        ("Out14-3-3-1a", "the minimum and the maximum under XX.X"):
+            statistic("Min, Max", pattern="XX.X"),
+        ("Out14-3-3-1b", "the minimum and the maximum under XX.X"):
+            statistic("Min, Max", pattern="XX.X"),
+        ("Out14-3-3-1a", "the median above the mean"): median_first,
+        ("Out14-3-3-1b", "the median above the mean"): median_first,
+        ("Out14-3-3-1a", "Week 2 left out"): without_week_2,
+        ("Out14-3-3-1b", "Week 2 left out"): without_week_2,
+    }
+    for (output, name), change in planted.items():
+        said = judged(output, change)
+        print(f"{output}, {name}: {len(said)} problems"
+              + (f", for example: {said[0][:140]}" if said else ""))
+        if not said:
+            problems.append(f"{output}, {name}: passes")
+    # The differences of display, planted in the kit's entries: a minimum proven to lie on a
+    # half; a median at a half classed as an error of the reference; a median whose entry
+    # is left out.
+    given = dict(formats)
+    minimum = next(key for key, entry in formats.items()
+                   if "_7_Min/" in key and entry["proof"]["kind"] == "not_its_own_pattern")
+    median = next(key for key, entry in formats.items()
+                  if entry["proof"]["kind"] == "half_in_floating_error")
+    for name, changed in {
+        "a minimum proven to lie on a half": {
+            **given, minimum: dict(given[minimum], proof={"kind": "half_in_floating_error"},
+                                   **{"class": "data_difference"})},
+        "a median at a half classed reference_error": {
+            **given, median: dict(given[median], **{"class": "reference_error"})},
+        "a median at a half without its entry": {
+            key: entry for key, entry in given.items() if key != median},
+    }.items():
+        formats = changed
+        said = judged("Out14-3-3-1a")
+        print(f"Out14-3-3-1a, {name}: {len(said)} problems"
+              + (f", for example: {said[0][:140]}" if said else ""))
+        if not said:
+            problems.append(f"Out14-3-3-1a, {name}: passes")
+    formats = given
+    said = judged("Out14-3-3-1b", lambda d: by_groups(d)["analyses"][1].update(
+        heading="{group}"))
+    print(f"not separable by the shell: Out14-3-3-1b, the change rows under the visit alone: "
+          f"{len(said)} problems (the shell has a placeholder there)")
+    return problems
+
+
+def _gate_counts(output: str) -> tuple[int, int]:
+    from specfirst import gates
+
+    cells, results_shown, _ = gates.PILOT_GRIDS[output]
+    return cells, results_shown
+
+
 CASES = {"D1-arms": d1_arms, "D2-set": d2_set, "D3-quantile": d3_quantile,
          "D4-subset": d4_subset, "D5-engines": d5_engines, "D6-proofs": d6_proofs,
          "D7-display": d7_display, "D8-trace": d8_trace, "D9-efficacy": d9_efficacy,
          "D10-trace-model": d10_trace_model, "D11-efficacy-5b": d11_efficacy_5b,
-         "D12-cmh-engines": d12_cmh_engines, "D13-review": d13_review}
+         "D12-cmh-engines": d12_cmh_engines, "D13-review": d13_review,
+         "D14-vital-signs": d14_vital_signs}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

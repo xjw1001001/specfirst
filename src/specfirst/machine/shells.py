@@ -33,11 +33,15 @@ cells, such as "Number of subjects with at least one event") is a section
 or a row without cells of the mock shell. Masks are compared without their
 case: the mock shell writes "xx.x", a shell "XX.X".
 
+Which column a cell stands in is held where the shell's rows with the most
+cells have one cell per column of the grid: pdftotext keeps the place of a
+text on its line, so the middles of their cells say where the columns
+stand, and a cell of a row with empty cells belongs to the nearest.
+
 What it does not hold: the titles, the footnotes and the header of the row
 labels (a shell writes them with placeholders and in its own words; ADR-003
 lists the differences), the labels of the columns (pdftotext breaks them
-over lines), the indent of a row, and which column a cell stands in beyond
-the order of the cells that are not empty.
+over lines) and the indent of a row.
 """
 
 from __future__ import annotations
@@ -64,6 +68,7 @@ class Line:
     label: str  # the text before the first cell, its pieces joined by one blank
     masks: tuple[str, ...]  # the cells, upper case
     pieces: int = 1  # how many pieces the line has: a text in one piece may be a heading
+    centres: tuple[float, ...] = ()  # where each cell stands on the line: its middle
 
     @property
     def header(self) -> bool:
@@ -80,13 +85,16 @@ def lines(text: str) -> list[Line]:
     """The lines of a shell's text that hold something, each cut into a label and cells."""
     found = []
     for number, raw in enumerate(text.splitlines(), start=1):
-        pieces = _PIECES.findall(raw)
+        spans = [(match.group(), match.start(), match.end())
+                 for match in _PIECES.finditer(raw)]
+        pieces = [piece for piece, _, _ in spans]
         if not pieces:
             continue
         first = next((n for n, piece in enumerate(pieces) if is_mask(piece)), len(pieces))
         found.append(Line(number, " ".join(" ".join(pieces[:first]).split()),
                           tuple(" ".join(piece.split()).upper() for piece in pieces[first:]),
-                          len(pieces)))
+                          len(pieces),
+                          tuple((start + end) / 2 for _, start, end in spans[first:])))
     return found
 
 
@@ -133,6 +141,18 @@ def compare(shell: dict, found: list[Line]) -> Held:
     used: set[int] = set()
     run: list[int] = []  # the shell lines of the current run of rows with cells
     section = None
+    by_number = {line.number: line for line in rows_of_shell}
+    # Where the columns stand: the middle of each cell of the shell's rows with the most
+    # cells, when they have as many cells as the grid has columns (pdftotext keeps the
+    # place of a text on its line). A row with empty cells is then held column by column.
+    full = max((len(line.masks) for line in rows_of_shell), default=0)
+    centres = [sum(line.centres[i] for line in rows_of_shell if len(line.masks) == full)
+               / sum(1 for line in rows_of_shell if len(line.masks) == full)
+               for i in range(full)] if full == len(shell["columns"]) else []
+
+    def columns_of(line: Line) -> list[int]:
+        return [min(range(len(centres)), key=lambda i: abs(centres[i] - middle))
+                for middle in line.centres]
     for row in shell["rows"]:
         masks = _masks(row)
         where = f"row {row['id']} ({row['label']!r})"
@@ -174,6 +194,11 @@ def compare(shell: dict, found: list[Line]) -> Held:
         else:
             run = [matches[0]]
         used.update(matches)
+        ours = [number for number, cell in enumerate(row["cells"]) if cell["text"]]
+        if centres and ours != columns_of(by_number[run[-1]]):
+            held.problems.append(f"{where}: its cells stand in the columns "
+                                 f"{[number + 1 for number in ours]}; on line {run[-1]} of the "
+                                 f"shell in {[n + 1 for n in columns_of(by_number[run[-1]])]}")
     held.lines = len(rows_of_shell)
     held.problems += [f"line {line.number} of the shell ({line.label!r}, {list(line.masks)}): no "
                       "row of the mock shell has it" for line in rows_of_shell
@@ -188,6 +213,7 @@ def compare(shell: dict, found: list[Line]) -> Held:
             f"line {line.number} of the shell ({line.label!r}): a heading no section and no row "
             "of the mock shell shows" for line in texts
             if headers[-1].number < line.number < rows_of_shell[-1].number and line.pieces == 1
-            and _PLACEHOLDER.search(line.label) is None and line.label.strip(". ")
+            and _PLACEHOLDER.search(line.label) is None
+            and any(character.isalnum() for character in line.label)  # not a rule or "..."
             and line.label not in ours]
     return held

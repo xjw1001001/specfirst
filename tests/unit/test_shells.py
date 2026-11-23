@@ -21,7 +21,7 @@ Study - Toy                                                     Page x of y
 
                                    Arm A          Arm B          Arm C
 Subjects, n (%)                   (N=XX)         (N=XX)         (N=XX)
-
+                              ______ ______ ______ ______ ______ ______
 {HEADING}
   With an adverse event        XX ( XX.X)     XX ( XX.X)     XX ( XX.X)
   Treatment-emergent           XX ( XX.X)     XX ( XX.X)     XX ( XX.X)
@@ -88,6 +88,41 @@ def test_the_mock_shell_is_held_against_the_shell(event):
 def test_what_the_shell_does_not_show_is_seen(event, change, message):
     found = held(event, change)
     assert any(message in problem for problem in found.problems), found.problems
+
+
+def _grid(cells: list[list[str]], labels: list[str]) -> dict:
+    """A mock shell made by hand: one row without cells, then rows with the given texts."""
+    return {"columns": [{"id": f"c{n}", "label": ""} for n in range(1, 5)], "rows": [
+        {"id": "r1", "label": "Baseline",
+         "cells": [{"id": f"x/r1/c{n}", "column": f"c{n}", "text": ""} for n in range(1, 5)]},
+        *({"id": f"r{n}", "label": label, "cells": [
+            {"id": f"x/r{n}/c{m}", "column": f"c{m}", "text": text}
+            for m, text in enumerate(texts, start=1)]}
+          for n, (label, texts) in enumerate(zip(labels, cells, strict=True), start=2))]}
+
+
+def test_where_a_cell_stands_in_a_row_with_empty_cells():
+    """Observed and change side by side under each arm: at baseline only the observed value.
+    A layout that put the observed value under the change shows the same masks in the same
+    order; the place of the cells on the line tells them apart."""
+    text = """\
+                     Observed    Change      Observed    Change
+Baseline
+  n                     XX                      XX
+  Mean                 XX.X                    XX.X
+Week 2
+  n                     XX          XX          XX          XX
+"""
+    found = shells.lines(text)
+    assert [line.masks for line in found if line.masks][0] == ("XX", "XX")
+    right = _grid([["xx", "", "xx", ""], ["xx.x", "", "xx.x", ""]], ["n", "Mean"])
+    assert shells.compare(right, found).problems == ["line 6 of the shell ('n', ['XX', 'XX', "
+                                                     "'XX', 'XX']): no row of the mock shell "
+                                                     "has it"]
+    swapped = _grid([["", "xx", "", "xx"], ["", "xx.x", "", "xx.x"]], ["n", "Mean"])
+    problems = shells.compare(swapped, found).problems
+    assert any("its cells stand in the columns [2, 4]; on line 3 of the shell in [1, 3]"
+               in problem for problem in problems), problems
 
 
 def test_a_section_may_fit_a_placeholder(event):
