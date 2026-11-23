@@ -88,6 +88,22 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   docs/reports/issue-29.review.md (pass 1 and pass 2 no blocking finding;
   final SIGNED of `0ae9b24`, nothing for the owner). Decisions:
   docs/decisions/ADR-021.md.
+- Issue #31 A calculation-first review page and a study decision sheet
+  (2026-11-22): `specfirst view cdiscpilot01`. A panel opens for each of the
+  1502 printed cells, and the sheet has 93 lines. The acceptance holds on
+  Out14-1-1, Out14-3-1-1 and Out14-3-2-1, now built as grids. The kit has
+  49 records of the two tables over catalog@2 / open-default@2. P4 comes
+  from the pilot's matrix of the house vector. Gates:
+  `scripts/clean_clone_gate.sh` exited 0 for issue-31 (14 of 14) on a clean
+  clone of commit `bfdcadf`, and for issue-31, read-1a, issue-29, real-2,
+  real-3a, real-5a and real-5b on clean clones of `78fb49b` (main 0046194,
+  catalog-2c, merged in). Evidence: docs/reports/issue-31.md,
+  issue-31.clean-clone.gate.log, issue-31.merged.issue-31.gate.log and
+  issue-31.<gate>.gate.log. Review: docs/reports/issue-31.review.md (pass 1
+  NOT SIGNED, its blocking F1 fixed; passes 2 and 3 SIGNED). For the owner:
+  17 conflicts and 2 asked records (section "Handed over by issue #31").
+  Decisions: docs/decisions/ADR-022.md, and the amendment of issue #31 at
+  the end of ADR-003.md.
 
 ## Open
 
@@ -314,11 +330,13 @@ Other open points:
   tables).
 - The findings F1 to F9 of the review of real-3a ("Open" above), as one
   commit with a gate run.
-- The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it:
-  the other four outputs of the example as grids, the citations through the
-  ARS `documentRefs`, the viewer. It runs the code of real-3a on more
-  outputs: add each to `outputs` in kit.yaml with a layout in
-  `kits/cdiscpilot01/gold/layout/`, and to `PILOT_GRIDS` in gates.py.
+- The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it.
+  Issue #31 built two of the other four outputs of the example as grids
+  (Out14-1-1 and Out14-3-2-1), the citations through the ARS
+  `documentRefs`, and the viewer (`specfirst view`). Left: the two outputs
+  of the vital signs, and the gate real-3 itself. It runs the code of
+  real-3a on more outputs: add each to `outputs` in kit.yaml with a layout
+  in `kits/cdiscpilot01/gold/layout/`, and to `PILOT_GRIDS` in gates.py.
 - Then real-4 (D1, node N2), real-5 (D2, node N2), in order.
 
 What the rest of real-3 will meet (measured in real-3a, on all 3,734
