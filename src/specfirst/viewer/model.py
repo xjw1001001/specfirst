@@ -18,7 +18,10 @@ What a panel says, and where it comes from:
   status, class, citations (a quote is checked against the text of its
   document by script), the alternatives of its catalog entry it does not
   take, the mark `house default` (its value is the house's default for its
-  unit) or `study customized`, and its P4 class or `not tested`;
+  unit) or `study customized`, and its P4 class or `not tested`. A class of
+  the matrix is the class of the value it was found at (the matrix's gold):
+  a record with another value is `not tested`, with the value the run tried
+  and its class named;
 - the ADaM columns: the `reads` edges of the analysis with their roles
   (coverage.json), each column with the records that bind it, its label, the
   study spec's own comment (the Define-XML comment of the resolved
@@ -70,6 +73,25 @@ class Citation:
     checkable: bool = True  # False: the source is no document of the kit (the owner's answers)
 
 
+@dataclass(frozen=True)
+class P4Run:
+    """A decision of a P4 matrix: its class, found at one value of the decision."""
+
+    klass: str  # separated, unseparated, inert, separated_at_dataset_only, no_alternative
+    value: str  # canonical JSON of the value the class was found at (the matrix's gold)
+    gold: str  # that value as the matrix names it, e.g. last_dose_plus_days(days=30)
+
+
+def p4_of(run: P4Run | None, value: str) -> tuple[str, str]:
+    """The P4 class a record is drawn with, and a note: the run's class when the record has
+    the value the run decided it at; `not tested` otherwise, naming what the run tried."""
+    if run is None:
+        return NOT_TESTED, ""
+    if run.value == value:
+        return run.klass, ""
+    return NOT_TESTED, f"the P4 run tried another value, {run.gold}: {run.klass}"
+
+
 @dataclass
 class ColumnView:
     id: str  # adam:<DATASET>.<COLUMN> or sdtm:<DOMAIN>.<COLUMN>
@@ -100,6 +122,7 @@ class DecisionView:
     p4: str  # the class of the P4 matrix, or NOT_TESTED
     source: str  # the decisions file
     house_sources: list[str] = field(default_factory=list)  # of the house's default, if taken
+    p4_note: str = ""  # not tested at this value: the value a P4 run tried, and its class
 
 
 @dataclass
@@ -153,6 +176,7 @@ class SheetLine:
     citations: list[Citation]
     p4: str
     cells: int
+    p4_note: str = ""
 
 
 @dataclass
@@ -169,8 +193,12 @@ class Review:
     catalog_keys: list[str] = field(default_factory=list)  # every <entry> (<unit>) of the catalog
 
 
-def _json(value: object) -> str:
+def canonical(value: object) -> str:
+    """A value as the page writes it: JSON with sorted keys (a record's, a matrix's)."""
     return json.dumps(value, sort_keys=True, separators=(", ", ": "))
+
+
+_json = canonical
 
 
 def record_files(kit: kits.Kit) -> list[str]:
@@ -245,8 +273,8 @@ def _sentences(event: reading.Event, analysis_id: str,
 
 
 def load(root: Path, kit_id: str, folder: Path | None = None, recompute: Path | None = None,
-         p4: dict[tuple[str, str], str] | None = None) -> Review:
-    """The review of a built kit. `p4`: (decision ID, unit) -> class, from a P4 matrix."""
+         p4: dict[tuple[str, str], P4Run] | None = None) -> Review:
+    """The review of a built kit. `p4`: (decision ID, unit) -> its run, from a P4 matrix."""
     kit = kits.load_kit(root, kit_id)
     folder = folder or build_dir(root) / "kits" / kit_id
     recompute = recompute or build_dir(root) / "recompute" / kit_id
@@ -280,7 +308,7 @@ def load(root: Path, kit_id: str, folder: Path | None = None, recompute: Path | 
     for record, source in records:
         key = f"{record['id']} ({record['unit']})"
         decisions[key] = _decision(record, source, catalog, house, quotes,
-                                   (p4 or {}).get((record["id"], record["unit"]), NOT_TESTED))
+                                   (p4 or {}).get((record["id"], record["unit"])))
     bound: dict[str, list[str]] = {}
     for key, view in decisions.items():
         for element in view.binds:
@@ -423,8 +451,8 @@ def behind(view: AnalysisView) -> list[str]:
 
 
 def _decision(record: dict, source: str, catalog, house, quotes: decision_records.Quotes,
-              p4: str) -> DecisionView:
-    """A decision record as the page shows it: mark, alternatives, checked quotes."""
+              p4: P4Run | None) -> DecisionView:
+    """A decision record as the page shows it: mark, alternatives, checked quotes, P4."""
     entry = None
     if catalog is not None and not str(record["id"]).startswith("custom:"):
         try:
@@ -451,11 +479,12 @@ def _decision(record: dict, source: str, catalog, house, quotes: decision_record
                           quotes.found(str(c.get("doc")), str(c.get("quote") or "")),
                           c.get("approved_by"), "record", quotes.knows(str(c.get("doc"))))
                  for c in record.get("citations") or []]
+    klass, note = p4_of(p4, _json(value))
     return DecisionView(
         f"{record['id']} ({record['unit']})", record["id"], record["unit"],
         str(record.get("statement") or ""), _json(value), str(record.get("status") or ""),
         str(record.get("class") or ""), mark, citations, alternatives,
-        sorted(record.get("binds") or []), p4, source, sources)
+        sorted(record.get("binds") or []), klass, source, sources, note)
 
 
 def _sheet(decisions, analyses, cells, kit, catalog, house, features) -> list[SheetLine]:
@@ -467,7 +496,8 @@ def _sheet(decisions, analyses, cells, kit, catalog, house, features) -> list[Sh
             for decision in behind(analyses[key]) if key in analyses else []:
                 reached.setdefault(decision, set()).add(cell.id)
     lines = [SheetLine("record", key, view.unit, view.statement, view.status, view.klass,
-                       view.mark, view.citations, view.p4, len(reached.get(key, ())))
+                       view.mark, view.citations, view.p4, len(reached.get(key, ())),
+                       view.p4_note)
              for key, view in decisions.items()]
     if catalog is not None:
         from specfirst.compile import predicate

@@ -388,9 +388,13 @@ for 3,580 of them):
   every quote of a document of the kit or of the house standard (`kit_quotes`; doc
   `house` is the house's STANDARD.md). Citations of other sources (the owner's answers, doc
   `answers`) are counted, not checked.
-- P4 on the page waits for catalog-2c: `specfirst view --p4` reads the matrix of `specfirst
-  gen separate cdiscpilot01` once its classes are those of catalog@2; until then every
-  decision of the page is "not tested".
+- P4 on the page (after catalog-2c merged): `specfirst view --p4 FILE` reads the matrix of
+  `specfirst gen separate cdiscpilot01 --out FILE` (the house vector over catalog@2 /
+  open-default@2; about 22 minutes on four processors; report only, no gate runs it). A
+  class holds at the value it was found at (the matrix's `value`): a record with another
+  value is "not tested", and its panel and sheet line name what the run tried. On the pilot:
+  21 records have a decision of the matrix, 14 at its value. A P4 run on the kit's own
+  values needs a vector of the kit's records in gen/separate.py (not done; gen's file).
 
 For the owner, from issue #31 (none blocks; docs/reports/issue-31.md has each):
 

@@ -9,7 +9,8 @@ The kinds of an edge stay apart (PLAN.md section 4.2): every judged edge
 carries the class `judged` and the words "awaiting approval" until a person
 approves it; a decision that the data do not separate carries `unseparated`;
 one with another class of a P4 run carries `tested`; one that no P4 run
-reached carries `not-tested`.
+reached at its value carries `not-tested` (with the value a run tried, if
+one did).
 """
 
 from __future__ import annotations
@@ -58,7 +59,7 @@ LEGEND = (
                     "gives the same results"),
     ("tested", "tested by P4: a run of the decision's other values on the data gives its "
                "class (separated, inert, or separated at dataset level only)"),
-    ("not-tested", "not tested: no P4 run reaches the decision"),
+    ("not-tested", "not tested: no P4 run reaches the decision at the value it has"),
 )
 
 
@@ -89,18 +90,20 @@ def _citation(item: model.Citation) -> str:
             f"{approval})</li>")
 
 
-def _p4(text: str) -> str:
+def _p4(text: str, note: str = "") -> str:
     if text == model.UNSEPARATED:
         return _kind("unseparated", "not proven by the data: unseparated")
     if text == model.NOT_TESTED:
-        return _kind("not-tested")
+        # Not tested at this value: the note names the value a P4 run tried, and its class.
+        return _kind("not-tested") + (f" ({escape(note)})" if note else "")
     return _kind("tested", f"P4: {text}")
 
 
 def _decision(view: model.DecisionView, via: str = "") -> str:
     parts = [f'<li class="decision" data-key="{escape(view.key)}">'
              f'<a href="#{escape(_anchor("s-", view.key))}"><b>{escape(view.key)}</b></a> '
-             f"{_kind(view.mark)} {_p4(view.p4)}{via}<br>{escape(view.statement)}",
+             f"{_kind(view.mark)} {_p4(view.p4, view.p4_note)}{via}<br>"
+             f"{escape(view.statement)}",
              f"<br>status {escape(view.status)}, class "
              f"{escape(view.klass or 'none (a person decides)')}; value "
              f"<code>{escape(view.value)}</code>; in {escape(view.source)}"]
@@ -294,8 +297,8 @@ def _sheet(review: model.Review) -> str:
                    f"<td>{escape(line.key)}</td>"
                    f"<td>{escape(line.unit)}</td><td>{escape(line.text)}</td>"
                    f"<td>{escape(line.status)}</td><td>{escape(line.klass)}</td>"
-                   f"<td>{_kind(line.mark)}</td><td>{cites}</td><td>{_p4(line.p4)}</td>"
-                   f"<td>{line.cells}</td></tr>")
+                   f"<td>{_kind(line.mark)}</td><td>{cites}</td>"
+                   f"<td>{_p4(line.p4, line.p4_note)}</td><td>{line.cells}</td></tr>")
     out.append("</tbody></table></section>")
     return "\n".join(out)
 

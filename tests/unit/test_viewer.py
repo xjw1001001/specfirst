@@ -171,6 +171,35 @@ def test_a_class_of_a_p4_run_is_drawn_tested_and_never_static():
     assert any("has the P4 class separated and is drawn otherwise" in p for p in found), found
 
 
+def test_a_class_of_a_p4_run_holds_only_at_the_value_it_was_found_at(tmp_path):
+    # The matrix of `specfirst gen separate` decides a class at its gold value; a record
+    # with another value is not tested, and says what the run tried.
+    matrix = tmp_path / "matrix.json"
+    matrix.write_text('{"decisions": [{"id": "ae.teae.end", "unit": "mod-ae-emergence", '
+                      '"class": "unseparated", "value": {"rule": "last_dose_plus_days", '
+                      '"days": 30}, "gold": "last_dose_plus_days(days=30)"}]}',
+                      encoding="ascii")
+    from specfirst.viewer import command
+
+    run = command.read_p4(matrix)[("ae.teae.end", "mod-ae-emergence")]
+    assert run == model.P4Run("unseparated", '{"days": 30, "rule": "last_dose_plus_days"}',
+                              "last_dose_plus_days(days=30)")
+    assert model.p4_of(None, run.value) == (model.NOT_TESTED, "")
+    assert model.p4_of(run, model.canonical({"rule": "last_dose_plus_days", "days": 30})) \
+        == ("unseparated", "")
+    assert model.p4_of(run, model.canonical({"rule": "no_end"})) == (
+        model.NOT_TESTED, "the P4 run tried another value, last_dose_plus_days(days=30): "
+        "unseparated")
+    # The page draws it not tested, with the note, in its panel and on the sheet.
+    made = review()
+    note = "the P4 run tried another value, last_dose_plus_days(days=30): unseparated"
+    made.decisions["demo.sex (mod-demographics)"].p4_note = note
+    made.sheet[0].p4_note = note
+    text = page.html(made)
+    assert check.page_problems(text, made) == []
+    assert text.count(f'<span class="kind not-tested">not-tested</span> ({note})') == 2
+
+
 def test_a_cell_without_a_panel_a_broken_path_and_a_decision_off_the_sheet_are_seen():
     made = review()
     text = page.html(made)

@@ -1506,7 +1506,8 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
     no_block = text.replace(f'<li class="decision" data-key="{html.escape(upstream)}">', "<li>")
     # The panels name no SDTM column: the lines "Down to SDTM" are emptied.
     no_sdtm = re.sub(r"Down to SDTM: (<code>[^<]*</code>(, )?)+", "Down to SDTM: none", text)
-    p4 = {(review.decisions[record].id, review.decisions[record].unit): model.UNSEPARATED}
+    chosen = review.decisions[record]
+    p4 = {(chosen.id, chosen.unit): model.P4Run(model.UNSEPARATED, chosen.value, "its value")}
     unseparated = model.load(pilot.root, KIT, pilot.folder, recompute=none, p4=p4)
     unseparated_text = page.html(unseparated)
     problems += [f"the page with an unseparated decision: {p}"
