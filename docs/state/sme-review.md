@@ -17,8 +17,8 @@ under the rule tells the base session the record or the decision, and the
 base session adds it here. The list has not had a review: each point names
 its source, so check the source before acting on a point.
 
-31 points: track real 26 (SME-01 to SME-26), read 1 (SME-27), gen 2
-(SME-28 and SME-29), std 2 (SME-30 and SME-31).
+32 points: track real 26 (SME-01 to SME-26), read 1 (SME-27), gen 3
+(SME-28, SME-29 and SME-32), std 2 (SME-30 and SME-31).
 
 Each point gives the question, where it is decided, the options, the
 recommended option with its public source, the current state, and whether
@@ -566,6 +566,24 @@ The records are in kits/cdiscpilot01/gold/decisions/efficacy.jsonl.
   the dose. Changing the template is a new catalog version (catalog@2 is
   frozen); changing the reference is gen's.
 - Numbers: none today: no generated dose or event has an hour-only time.
+
+#### SME-32 A subject in the study without a study-level disposition record
+
+- Question: To separate the study-participation record as the end-of-study
+  record, the generator plants a subject without an exposure end date who
+  stopped treatment and is still in the study. Its only disposition event
+  is the treatment record, and it has no study-level disposition record.
+  Is that a valid SDTM shape?
+- Where: gen-2b, ADR-023 decision 6(c); the CDISC CORE result on it in the
+  gen-1a log of docs/reports/gen-2b.md.
+- Options: A, plant such a subject (taken). B, give it a study-level
+  disposition record, and separate the decision some other way.
+- Recommended: A, per recommendation, pending SME review (2026-11-23).
+  Source: SDTMIG v3.4, DS records only disposition events that have
+  occurred.
+- Current state: follows the recommendation.
+- Numbers: in generated kits only. It is what makes the value "STUDY
+  PARTICIPATION" of the end-of-study record separable.
 
 ## Track std
 
