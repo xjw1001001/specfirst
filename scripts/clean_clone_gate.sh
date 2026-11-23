@@ -12,6 +12,14 @@
 # The gate runs with --clean, so it fails if the clone has uncommitted
 # changes. Everything printed is also written to
 # build/gates/<wp>/clean-clone.log here.
+#
+# The clone with its environment and cache takes about 5 GB. When the script
+# ends, whether the gate passed, failed or was stopped, the gate's own folder
+# of the clone (build/gates/<wp>/: gate.log and what the gate keeps there) is
+# copied to build/gates/<wp>/clone/ here, and the new folder is deleted.
+# SPECFIRST_KEEP_CLONE=1 keeps it. Under WSL /tmp is cleared only when the
+# instance restarts, and sessions can keep it running for days
+# (docs/lessons.md, lessons 39 and 73).
 set -uo pipefail
 
 wp="${1:-}"
@@ -19,6 +27,13 @@ if [ -z "$wp" ]; then
   echo "usage: scripts/clean_clone_gate.sh <wp> [<repository> [<commit or branch>]]" >&2
   exit 2
 fi
+# The name becomes a folder here that the script writes and deletes in.
+case "$wp" in
+  .* | *[!A-Za-z0-9._-]*)
+    echo "not a work package name: $wp" >&2
+    exit 2
+    ;;
+esac
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # git in this checkout, whatever SPECFIRST_ROOT the caller has set. It also
@@ -42,8 +57,41 @@ mkdir -p "$here/build/gates/$wp"
 log="$here/build/gates/$wp/clean-clone.log"
 exec > >(tee "$log") 2>&1
 
-work="$(mktemp -d "${TMPDIR:-/tmp}/specfirst-clean-XXXXXX")"
+keep="${SPECFIRST_KEEP_CLONE:-0}"
+work="$(mktemp -d "${TMPDIR:-/tmp}/specfirst-clean-XXXXXX")" || exit 2
 clone="$work/specfirst"
+
+# Runs once, however the script ends. A signal ends the script through exit,
+# so that this runs then too (bash runs it after the command in progress).
+finish() {
+  local code=$?
+  trap - EXIT
+  cd "$here" || cd / || true
+  if [ -d "$clone/build/gates/$wp" ]; then
+    rm -rf "$here/build/gates/$wp/clone"
+    if cp -r "$clone/build/gates/$wp" "$here/build/gates/$wp/clone"; then
+      echo "copied: the clone's build/gates/$wp/ to build/gates/$wp/clone/ here"
+    fi
+  fi
+  if [ "$keep" = 1 ]; then
+    echo "clone kept (SPECFIRST_KEEP_CLONE=1): $work"
+  else
+    case "$work" in
+      "${TMPDIR:-/tmp}"/specfirst-clean-??????)
+        if rm -rf --one-file-system "$work"; then
+          echo "clone deleted: $work"
+        else
+          echo "clone NOT deleted: $work"
+        fi
+        ;;
+    esac
+  fi
+  exit "$code"
+}
+trap finish EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # Nothing from the calling environment may leak into the clone.
 for name in $(env | sed -n 's/^\(PIP_[A-Za-z0-9_]*\)=.*/\1/p'); do
@@ -52,6 +100,7 @@ done
 unset SPECFIRST_CACHE _SPECFIRST_OWNS_CACHE SPECFIRST_VENV SPECFIRST_ROOT SPECFIRST_R_LIBS
 unset SPECFIRST_CORE SPECFIRST_CORE_URL SPECFIRST_REWRITES
 unset R_LIBS_USER VIRTUAL_ENV PYTHONPATH PYTHONHOME GIT_DIR GIT_WORK_TREE
+unset SPECFIRST_KEEP_CLONE
 export SPECFIRST_HOME="$work/env"
 
 step() {
@@ -60,7 +109,7 @@ step() {
   "$@"
   local code=$?
   if [ "$code" -ne 0 ]; then
-    echo "clean clone gate $wp: FAIL ('$*' exited $code; clone: $clone, which does not last)"
+    echo "clean clone gate $wp: FAIL ('$*' exited $code; clone: $clone)"
     exit "$code"
   fi
 }
@@ -81,6 +130,5 @@ step specfirst fetch
 step specfirst gate "$wp" --clean
 echo
 echo "clean clone gate $wp: PASS (clone: $clone)"
-echo "The clone does not last: under WSL /tmp is cleared when the instance restarts, about a"
-echo "minute after the last command ends. Copy what must be kept in the same command that"
-echo "runs this script (docs/lessons.md, lesson 39). The log is in build/gates/$wp/ here."
+echo "The log is in build/gates/$wp/ here; the clone is deleted now unless"
+echo "SPECFIRST_KEEP_CLONE=1 (docs/lessons.md, lesson 73)."
