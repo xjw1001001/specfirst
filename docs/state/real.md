@@ -88,6 +88,23 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   docs/reports/issue-29.review.md (pass 1 and pass 2 no blocking finding;
   final SIGNED of `0ae9b24`, nothing for the owner). Decisions:
   docs/decisions/ADR-021.md.
+- Issue #31 A calculation-first review page and a study decision sheet
+  (2026-11-22): `specfirst view cdiscpilot01`. A panel opens for each of the
+  1502 printed cells, and the sheet has 93 lines. The acceptance holds on
+  Out14-1-1, Out14-3-1-1 and Out14-3-2-1, now built as grids. The kit has
+  49 records of the two tables over catalog@2 / open-default@2. P4 comes
+  from the pilot's matrix of the house vector. Gates:
+  `scripts/clean_clone_gate.sh` exited 0 for issue-31 (14 of 14) on a clean
+  clone of commit `bfdcadf`, and for issue-31, read-1a, issue-29, real-2,
+  real-3a, real-5a and real-5b on clean clones of `78fb49b` (main 0046194,
+  catalog-2c, merged in). Evidence: docs/reports/issue-31.md,
+  issue-31.clean-clone.gate.log, issue-31.merged.issue-31.gate.log and
+  issue-31.<gate>.gate.log. Review: docs/reports/issue-31.review.md (pass 1
+  NOT SIGNED, its blocking F1 fixed; passes 2 and 3 SIGNED; final SIGNED
+  of `121dbe2`). For the owner:
+  17 conflicts and 2 asked records (section "Handed over by issue #31").
+  Decisions: docs/decisions/ADR-022.md, and the amendment of issue #31 at
+  the end of ADR-003.md.
 
 ## Open
 
@@ -314,11 +331,13 @@ Other open points:
   tables).
 - The findings F1 to F9 of the review of real-3a ("Open" above), as one
   commit with a gate run.
-- The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it:
-  the other four outputs of the example as grids, the citations through the
-  ARS `documentRefs`, the viewer. It runs the code of real-3a on more
-  outputs: add each to `outputs` in kit.yaml with a layout in
-  `kits/cdiscpilot01/gold/layout/`, and to `PILOT_GRIDS` in gates.py.
+- The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it.
+  Issue #31 built two of the other four outputs of the example as grids
+  (Out14-1-1 and Out14-3-2-1), the citations through the ARS
+  `documentRefs`, and the viewer (`specfirst view`). Left: the two outputs
+  of the vital signs, and the gate real-3 itself. It runs the code of
+  real-3a on more outputs: add each to `outputs` in kit.yaml with a layout
+  in `kits/cdiscpilot01/gold/layout/`, and to `PILOT_GRIDS` in gates.py.
 - Then real-4 (D1, node N2), real-5 (D2, node N2), in order.
 
 What the rest of real-3 will meet (measured in real-3a, on all 3,734
@@ -347,6 +366,78 @@ for 3,580 of them):
   read from the ARD; the rows themselves are still layout work.
 - Display rules that are not registry entries yet: p-value formats and the
   truncation of long terms (E25).
+
+## Handed over by issue #31
+
+- `specfirst view <kit> [--build DIR] [--p4 FILE]` writes the review page of a built kit,
+  build/kits/<kit>/viewer/index.html (`specfirst.viewer`: model, page, check, command;
+  ADR-022). It reads the build, the kit's decision records, the catalog and house of
+  kit.yaml's `standard`, the recomputation of issue #29 and, with `--p4`, a P4 matrix. The
+  page has no script; a panel opens by its anchor (`:target`, `:has(:target)`).
+- The grids of CDISC's example now include the demographics (Out14-1-1) and the table by
+  organ class and term (Out14-3-2-1): the extra cells of a groups block, the block kind
+  `terms` and the spanner of an extra column (ADR-003, amendment of issue #31).
+  `gates.PILOT_GRIDS` holds the three outputs with their counts; a new output there changes
+  the gates real-3a, real-5a and issue-31 together. D7 and D8 plant in the AE summary
+  (`SUMMARY_OUTPUT`).
+- gold/exceptions.yaml has a section `formats` (a difference of display only, proof
+  `not_its_own_pattern`); one entry, the Fisher p-value of 1 shown "1".
+- The page references of an ARS file become judged, imported `cites` edges from analyses to
+  SAP pages (`graph.add_citations`), or to the SAP as a whole where a reference gives no
+  page; a kit names an ARS reference document in a document's `cited_as`.
+- A panel shows the records of the analysis and those of every column of its derivation
+  chain; the acceptance reads the page back (the SDTM columns, citations, decision blocks
+  and sheet rows drawn), and `specfirst view` and the gate count what the review could not
+  read.
+- kits/cdiscpilot01/gold/decisions/safety.jsonl: 49 records of the demographics and AE
+  tables over catalog@2 / open-default@2 (44 of catalog entries, 5 custom). std-2 (PLAN.md
+  13.4) takes this file over, extends it to the whole pilot and adds its check by result
+  (the compiled fragment leaves the ADaM unchanged); the decisions check of #31 holds the
+  records for their form, binds and quotes only, and nothing claims std-2's check (the
+  owner's answer of 2026-11-21). The records were written by a reading of the SAP (its
+  text and its mock tables, section 13.2, which state what they show, masks included: the
+  owner's answer of 2026-11-22), the Define-XML and the build; a record's value is the
+  build's, its status says where it comes from (stated, default, conflict, asked). They
+  were written by a script outside the repository; a change is a new reading, held again by
+  the decisions check and tests/unit/test_safety_records.py.
+- The kit format: `build.decisions` is a file or a list; kit.yaml has `standard: {catalog,
+  house}`. `kit.decisions` is a tuple of files.
+- The decisions check (`specfirst.machine.decisions`) takes catalog IDs when the kit names a
+  standard (`catalog_problems`), binds to built ADaM columns and ARS outputs, and checks
+  every quote of a document of the kit or of the house standard (`kit_quotes`; doc
+  `house` is the house's STANDARD.md). Citations of other sources (the owner's answers, doc
+  `answers`) are counted, not checked.
+- P4 on the page (after catalog-2c merged): `specfirst view --p4 FILE` reads the matrix of
+  `specfirst gen separate cdiscpilot01 --out FILE` (the house vector over catalog@2 /
+  open-default@2; about 22 minutes on four processors; report only, no gate runs it). A
+  class holds at the value it was found at (the matrix's `value`): a record with another
+  value is "not tested", and its panel and sheet line name what the run tried. A class drawn
+  names the run's vector (every other decision at the house's value, not the kit's), and
+  `no_alternative` is drawn "not tested" (review pass 3, P3-F1 and P3-F2). On the pilot:
+  21 records have a decision of the matrix, 14 at its value. A P4 run on the kit's own
+  values needs a vector of the kit's records in gen/separate.py (not done; gen's file).
+
+For the owner, from issue #31 (none blocks; docs/reports/issue-31.md has each):
+
+- Seventeen records are `conflict`: a kit document says other than the build (the build
+  follows CDISC's example or Pilot 7's specifications):
+  - of the modules: the start of treatment (Define-XML: SV visit 3; the build: the first
+    exposure), AE start-date imputation (SAP: conservative; Define-XML and the build: day
+    01), treatment emergence (the SAP's two more criteria of worsening and recurrence), the
+    baseline height and weight (SAP and Define-XML: Visit 1 and Visit 3; the build: the
+    first height by visit, the weight flagged VSBLFL);
+  - of the demographics: its population (Template 3: intent-to-treat; the build: safety),
+    the total column, the rows, the statistics, the two age groups (the SAP: three), the
+    decimals of the minimum and maximum (Template 3: one), the percents (Template 3: none;
+    the build: one decimal), the p-values (Template 3: three decimals; the build: four);
+  - of the AE summary: the table itself (the SAP's list of tables, 13.1.1, has none) and
+    its row of AEs leading to discontinuation (SAP 11.4: no formal summary of them);
+  - of the table by organ class and term: the events (Template 13: n (%) and total events;
+    the build: subjects), the percents (Template 13: none), the p-values (Template 13:
+    three decimals).
+- Two records are `asked`, class `gold_quirk`: CDISC's example does it and no document of
+  the kit says so (exposure-date imputation, the related causalities).
+- Every judged edge awaits approval (Q4); recording approvals is the edit loop of PLAN 7.6.
 
 ## Handed over by issue #29
 

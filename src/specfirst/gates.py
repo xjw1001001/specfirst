@@ -323,9 +323,13 @@ def _gen3(name: str) -> Callable[[Context], bool]:
 
 
 # real-3a (ADR-005, decision 1): the outputs of the ARS example that are built as
-# grids, each with its cells and the results they show; and the planted defects of
-# the display and of its trace. The rest of real-3 adds the other four outputs here.
-PILOT_GRIDS = {"Out14-3-1-1": (27, 51)}
+# grids, each with its cells, the results they show and the results the example gives
+# no formatted value for (their cells are not compared); and the planted defects of the
+# display and of its trace. Issue #31 adds the demographics and the table by organ class
+# and term (ADR-022): the example embeds one Fisher p-value per test analysis, so most
+# p-values of the latter have no formatted value. The rest of real-3 adds the vital signs.
+PILOT_GRIDS = {"Out14-1-1": (104, 147, 0), "Out14-3-1-1": (27, 51, 0),
+               "Out14-3-2-1": (1275, 1940, 408)}
 REAL3A_DEFECTS = (*REAL2_DEFECTS, "D6-proofs", "D7-display", "D8-trace")
 
 
@@ -340,15 +344,17 @@ def _grids(ctx: Context) -> bool:
     if set(found) != set(PILOT_GRIDS):
         ctx.out(f"grids: the kit builds {sorted(found)}, the gate asks for {sorted(PILOT_GRIDS)}")
         return False
-    for output, (cells, results) in PILOT_GRIDS.items():
+    for output, (cells, results, unformatted) in PILOT_GRIDS.items():
         count = found[output]
-        if (count["cells"], count["results"], count["no_reference"]) != (cells, results, 0) or (
-                count["equal"] + count["classified"] != cells):
+        if (count["cells"], count["results"], count["no_reference"]) != (
+                cells, results, unformatted) or (
+                count["equal"] + count["classified"] + count["uncompared"] != cells):
             ctx.out(f"grids: {output}: {count['cells']} cells show {count['results']} results; "
                     f"{count['equal']} equal the reference, {count['classified']} differ with "
                     f"one class, {count['no_reference']} results have no formatted value in "
                     f"the reference. The gate asks for {cells} cells that show {results} "
-                    "results, each cell equal or with one classified difference")
+                    f"results, {unformatted} of them without a formatted value, and every "
+                    "other cell equal or with one classified difference")
             passed = False
     return passed
 
@@ -607,6 +613,40 @@ def _recompute_plants(ctx: Context) -> bool:
                    env={"SPECFIRST_RECOMPUTE_REUSE": "1"})
 
 
+# Issue #31 (ADR-022): the review page of the pilot, on the outputs its acceptance names (the
+# demographics and AE tables of CDISC's example), and the planted defects of the display, the
+# trace and the page.
+REVIEW_OUTPUTS = ("Out14-1-1", "Out14-3-1-1", "Out14-3-2-1")
+REVIEW_DEFECTS = ("D7-display", "D8-trace", "D13-review")
+
+
+def _review(ctx: Context) -> bool:
+    """The review page of the first build: it loads and runs nothing and draws every kind
+    apart; every printed number of the outputs of the acceptance opens a panel that reaches
+    SDTM and a citation or a house default; the sheet lists every decision; the second build
+    of P1 gives the same page, byte for byte."""
+    from specfirst.viewer import check, command, model, page
+
+    target, review, text = command.write(ctx.root, PILOT, _first_build(ctx))
+    problems = [*review.problems, *check.page_problems(text, review)]
+    lines, found = check.acceptance(review, text, REVIEW_OUTPUTS)
+    for line in lines:
+        ctx.out(line)
+    second = model.load(ctx.root, PILOT, _first_build(ctx).parent / "second")
+    same = page.html(second) == text
+    ctx.out(f"review: {target.relative_to(ctx.root)} has {len(text.encode('utf-8'))} bytes, "
+            f"{len(review.analyses)} panels of analyses, {len(review.cells)} cells with a panel, "
+            f"{len(review.sheet)} lines on the decision sheet; the second build of P1 gives the "
+            f"same page: {same}")
+    for problem in [*problems, *found][:20]:
+        ctx.out(f"  {problem}")
+    return not problems and not found and same
+
+
+def _review_defects(ctx: Context) -> bool:
+    return _pytest(ctx, "tests/defects", "defects.xml", REVIEW_DEFECTS)
+
+
 def _score(name: str) -> Callable[[Context], bool]:
     """A check of the scorer (specfirst.score.gate), by its function name."""
     def run(ctx: Context) -> bool:
@@ -788,6 +828,33 @@ GATES: dict[str, tuple[Check, ...]] = {
         Check("planted break",
               "SPECFIRST_STRICT=1 SPECFIRST_RECOMPUTE_REUSE=1 pytest tests/recompute -s -q",
               _recompute_plants),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    ),
+    # Issue #31 (ADR-022), track real: a calculation-first review page of the pilot. The
+    # demographics and the table by organ class and term are built as grids and held against
+    # the example's formatted values (grids); every cell has a complete trace (trace); the
+    # recomputation of issue #29 feeds the panels (recompute); the page loads and runs nothing,
+    # draws every kind of edge apart, and on the demographics and AE tables every printed
+    # number opens a panel that reaches SDTM and a citation or a house default, and the sheet
+    # lists every decision (review); the decision records hold against the reporting events
+    # (decisions); the checks fail on defects planted for them (planted defects).
+    "issue-31": (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("kit", f"specfirst kit assemble {PILOT}", _kit),
+        Check("P1 determinism", f"specfirst check {PILOT} --twice (its first part)", _p1),
+        Check("trace", f"{_REAL1_CHECK} (its third part)", _trace),
+        Check("grids", f"{_REAL1_CHECK} (its last part), the ARS example", _grids),
+        Check("recompute", f"specfirst recompute {PILOT} --build build/p1/{PILOT}/first",
+              _recompute),
+        Check("review", f"specfirst view {PILOT} --build build/p1/{PILOT}/first", _review),
+        Check("decisions", f"specfirst.machine.build.decision_checks on build/p1/{PILOT}/first",
+              _decisions),
+        Check("planted defects", "SPECFIRST_STRICT=1 pytest tests/defects -s -q",
+              _review_defects),
         Check("cache untouched", "specfirst fetch --verify", _pins),
         Check("ASCII", "python -m specfirst.asciicheck", _ascii),
     ),

@@ -275,6 +275,30 @@ results:
       sources:
         - "The analysis compares placebo with low dose. No subject of these two arms has a treatment-emergent event with this term, so the data-driven grouping has no such group and there is no table to test."
         - "The example lists the result with an empty raw value and without a formatted value."
+
+# formats (issue #31, ADR-022): one list per result set of kit.yaml whose grids are
+# compared with the formatted values of its ARS file. A difference of display only:
+# the reference's raw value is ours, and its formatted value is not that raw value
+# under the pattern of its operation. An entry has
+#   result     the ID of the ARD row
+#   formatted  the reference's formatted value
+#   class      reference_error
+#   proof      not_its_own_pattern: the reference's raw value under the pattern is
+#              our text, and its formatted value is another (specfirst.machine.grid)
+#   sources    what else supports the class, for a reader; not checked
+#
+# Out14-3-2-1: the one Fisher p-value of 1 that the example embeds is formatted "1"
+# under its pattern X.XXXX, where every other p-value of the example has four
+# decimals (real-3a counted it among the 130 differences of display of the example).
+formats:
+  common-safety-displays:
+    - result: ard:An07_09_Soc_Comp_ByTrt_PlacLow/Mth03_CatVar_Comp_FishEx_1_pval/*/=VASCULAR%20DISORDERS
+      formatted: "1"
+      class: reference_error
+      proof: {kind: not_its_own_pattern}
+      sources:
+        - "the operation Mth03_CatVar_Comp_FishEx_1_pval has the resultPattern X.XXXX"
+
 # cells: differences between a grid and its table in the CSR (real-5a, ADR-015;
 # specfirst.machine.csr), one list per output. Cells are compared without
 # their blanks. An entry has

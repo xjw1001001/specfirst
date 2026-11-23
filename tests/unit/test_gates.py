@@ -158,30 +158,39 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
     assert names.index("grids") < names.index("planted defects") < names.index("cache untouched")
     assert set(gates.REAL3A_DEFECTS) == {*gates.REAL2_DEFECTS, "D6-proofs", "D7-display",
                                          "D8-trace"}
-    assert gates.PILOT_GRIDS == {"Out14-3-1-1": (27, 51)}
+    # Issue #31 adds the demographics and the table by organ class and term.
+    assert gates.PILOT_GRIDS == {"Out14-1-1": (104, 147, 0), "Out14-3-1-1": (27, 51, 0),
+                                 "Out14-3-2-1": (1275, 1940, 408)}
 
     # The check of the grids fails on anything but: the outputs the gate names, their
-    # cells and results, and every cell equal or with one classified difference.
+    # cells and results, the results without a formatted value it expects, and every other
+    # cell equal or with one classified difference.
     from specfirst.machine import build
 
-    def count(**changed):
-        return {"set": gates.PILOT_EXAMPLE, "output": "Out14-3-1-1", "cells": 27,
-                "results": 51, "equal": 27, "differing": 0, "classified": 0,
-                "no_reference": 0, "problems": 0, **changed}
+    def count(output="Out14-3-1-1", **changed):
+        cells, results, unformatted = gates.PILOT_GRIDS.get(output, (27, 51, 0))
+        return {"set": gates.PILOT_EXAMPLE, "output": output, "cells": cells,
+                "results": results, "equal": cells - unformatted, "differing": 0,
+                "classified": 0, "no_reference": unformatted, "uncompared": unformatted,
+                "problems": 0, **changed}
+
+    def three(**summary):
+        return [count("Out14-1-1"), count(**summary), count("Out14-3-2-1")]
 
     said: list[str] = []
     ctx = gates.Context(tmp_path, "demo", said.append)
     try:
         for given, passes, expected in (
-            ([count()], True, True),
-            ([count(equal=25, differing=2, classified=2)], True, True),
-            ([count()], False, False),  # the check of the build itself failed
-            ([count(equal=26, differing=1)], True, False),  # a difference with no class
-            ([count(cells=24, results=48, equal=24)], True, False),  # a row is missing
-            ([count(equal=26, no_reference=1)], True, False),
+            (three(), True, True),
+            (three(equal=25, differing=2, classified=2), True, True),
+            (three(), False, False),  # the check of the build itself failed
+            (three(equal=26, differing=1), True, False),  # a difference with no class
+            (three(cells=24, results=48, equal=24), True, False),  # a row is missing
+            (three(equal=26, no_reference=1, uncompared=1), True, False),  # not formatted
             ([], True, False),
-            ([count(), count(output="Out14-1-1")], True, False),  # an output it does not know
-            ([count(), count(set="efficacy-adas", output="Out14-3-01")], True, True),  # real-5a
+            ([*three(), count("Out14-9-9")], True, False),  # an output it does not know
+            ([count("Out14-1-1"), count()], True, False),  # an output it asks for is missing
+            ([*three(), count(set="efficacy-adas", output="Out14-3-01")], True, True),  # 5a
         ):
             monkeypatch.setattr(build, "display_checks",
                                 lambda *args, g=given, p=passes, **kwargs: (p, g))
@@ -189,7 +198,8 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
     finally:
         ctx.close()
     assert any("The gate asks for 27 cells that show 51 results" in line for line in said)
-    assert any("the kit builds [], the gate asks for ['Out14-3-1-1']" in line for line in said)
+    assert any("the kit builds [], the gate asks for ['Out14-1-1', 'Out14-3-1-1', "
+               "'Out14-3-2-1']" in line for line in said)
 
 
 def test_real5a_gate_has_the_checks_of_adr_012(tmp_path, monkeypatch):

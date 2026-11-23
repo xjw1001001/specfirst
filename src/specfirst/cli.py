@@ -7,7 +7,8 @@ mock shells and pages, and the trace of their cells. gen-1a adds gen, and
 gen-2a its actions kit, kits and verify; issue #30 the action separate.
 read-1a adds score. read-2a adds run (the reader harness) and ask (the
 oracle). Issue #29 adds recompute (one standalone recomputation script per
-analysis, ADR-021). The other commands of PLAN.md
+analysis, ADR-021). Issue #31 adds view (the review page of a built kit,
+ADR-022). The other commands of PLAN.md
 section 12 (preview, rebuild) arrive with the work packages that build them.
 """
 
@@ -80,6 +81,14 @@ def build_parser() -> argparse.ArgumentParser:
                              help="the build to recompute; default build/kits/<kit>")
     p_recompute.add_argument("--export", type=Path, metavar="DIR",
                              help="also copy the bundle to DIR/recompute-<kit>")
+
+    p_view = commands.add_parser(
+        "view", help="write the review page of a built kit: the calculation first, a panel "
+                     "per number, the study decision sheet (issue #31)")
+    p_view.add_argument("kit", help="kit ID")
+    p_view.add_argument("--build", type=Path, help="the build; default build/kits/<kit>")
+    p_view.add_argument("--p4", type=Path, metavar="FILE",
+                        help="a P4 matrix (specfirst gen separate) for the classes of decisions")
 
     p_catalog = commands.add_parser("catalog", help="check the decision catalog")
     p_catalog.add_argument("--sources", action="store_true",
@@ -321,6 +330,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         from specfirst.recompute import run as recompute
 
         return recompute.main(root, args.kit, args.build, args.export)
+    if args.command == "view":
+        from specfirst.viewer import command as view
+
+        return view.main(root, args.kit, args.build, args.p4)
     if args.command == "gen":
         from specfirst.gen import command
 

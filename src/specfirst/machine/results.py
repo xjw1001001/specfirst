@@ -319,6 +319,47 @@ def load_exceptions(path: Path) -> dict[str, list[dict]]:
     return {str(name): list(entries) for name, entries in sets.items()}
 
 
+FORMAT_PROOFS = ("not_its_own_pattern",)
+
+
+def load_formats(path: Path) -> dict[str, dict[str, dict]]:
+    """The `formats` section of gold/exceptions.yaml (issue #31): result set -> ARD row ->
+    entry. A difference of display only: the reference's raw value is ours, and its
+    formatted value is not that raw value under the pattern of its operation (proof
+    `not_its_own_pattern`; specfirst.machine.grid.compare_reference holds it). An entry
+    has `result`, `formatted` (the reference's text), `class` and `proof`, and may have
+    `sources`."""
+    with open(path, encoding="ascii") as handle:
+        data = yaml.safe_load(handle) or {}
+    sets = data.get("formats") or {}
+    if not isinstance(sets, dict):
+        raise ResultsError(f"{path.name}: 'formats' must map a result set to its entries")
+    problems, found = [], {}
+    for name, entries in sets.items():
+        found[str(name)] = {}
+        for i, entry in enumerate(entries if isinstance(entries, list) else [None]):
+            where = f"formats of {name}[{i}]"
+            if not isinstance(entry, dict) or not {"result", "formatted", "class", "proof"} <= \
+                    set(entry) <= {"result", "formatted", "class", "proof", "sources"}:
+                problems.append(f"{where}: an entry has result, formatted, class and proof, "
+                                "and may have sources")
+                continue
+            if not str(entry["result"]).startswith("ard:") or entry["result"] in found[str(name)]:
+                problems.append(f"{where}: 'result' must be the ID of an ARD row, once")
+            if not isinstance(entry["formatted"], str):
+                problems.append(f"{where}: 'formatted' must be the reference's text")
+            if entry["class"] not in CLASSES:
+                problems.append(f"{where}: 'class' must be one of {', '.join(CLASSES)}")
+            if not isinstance(entry["proof"], dict) or entry["proof"].get("kind") not in \
+                    FORMAT_PROOFS:
+                problems.append(f"{where}: 'proof' needs a 'kind' out of "
+                                f"{', '.join(FORMAT_PROOFS)}")
+            found[str(name)][str(entry["result"])] = entry
+    if problems:
+        raise ResultsError(f"{path.name}: " + "; ".join(problems))
+    return found
+
+
 Alternative = Callable[[str, str, object], Rows]  # (registry method, option, value) -> our rows
 Group = tuple[str, str | None]  # ("id", group ID), ("value", group value) or ("all", None)
 

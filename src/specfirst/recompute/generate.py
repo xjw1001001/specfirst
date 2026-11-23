@@ -146,9 +146,9 @@ def generate(root: Path, kit_id: str, build: Path, dest: Path, commit: str = "un
         return types_of.get(dataset.upper(), {}).get(column, "absent")
 
     records: list[dict] = []
-    if kit.decisions:
-        records = read_jsonl(build / kit.decisions) if (build / kit.decisions).is_file() \
-            else read_jsonl(root / "kits" / kit_id / kit.decisions)
+    for name in kit.decisions:
+        records += read_jsonl(build / name) if (build / name).is_file() \
+            else read_jsonl(root / "kits" / kit_id / name)
     by_element = decisions_binding(records)
     found = versions(root)
     if dest.exists():

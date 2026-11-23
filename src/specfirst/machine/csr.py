@@ -79,13 +79,14 @@ class CsrError(ValueError):
     """The page cannot be read as a table."""
 
 
-def page_text(pdf: Path, page: int) -> str:
-    """One page of a PDF as text, by poppler's pdftotext with -layout (lesson 3)."""
+def page_text(pdf: Path, page: int | None) -> str:
+    """One page of a PDF as text, or the whole document for page None, by poppler's
+    pdftotext with -layout (lesson 3)."""
     if shutil.which("pdftotext") is None:
         raise CsrError("pdftotext is not installed; it comes with poppler")
-    done = subprocess.run(["pdftotext", "-layout", "-f", str(page), "-l", str(page), str(pdf),
-                           "-"], capture_output=True, text=True, encoding="utf-8",
-                          errors="replace")
+    pages = [] if page is None else ["-f", str(page), "-l", str(page)]
+    done = subprocess.run(["pdftotext", "-layout", *pages, str(pdf), "-"], capture_output=True,
+                          text=True, encoding="utf-8", errors="replace")
     if done.returncode != 0:
         raise CsrError(f"pdftotext exited {done.returncode}: {done.stderr.strip()}")
     return done.stdout
