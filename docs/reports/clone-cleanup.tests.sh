@@ -60,16 +60,26 @@ kill -TERM "$pid"; wait "$pid"; echo "exit $?"
 cp "$log" "$out/T6-term.log"
 tail -2 "$out/T6-term.log"; gone "$(from_log "$out/T6-term.log")"; echo "clones after: $(clones)"
 
-echo; echo "== T7 INT to the whole process group, during the gate step of base-0; clones before: $(clones)"
-setsid bash "$s" base-0 > /dev/null 2>&1 &
-pid=$!
-log=build/gates/base-0/clean-clone.log
-sleep 2; wait_for "$log" '^\$ specfirst gate base-0'; sleep 20
-echo "sending INT to the process group $pid at: $(grep '^\$ ' "$log" | tail -1)"
-kill -INT -- -"$pid"; wait "$pid"; echo "exit $?"
-cp "$log" "$out/T7-group.log"
-tail -3 "$out/T7-group.log"; gone "$(from_log "$out/T7-group.log")"
-ls build/gates/base-0/clone/; echo "clones after: $(clones)"
+# A job started with & in a shell without job control ignores INT from the
+# start, and bash cannot trap a signal ignored on entry. With job control
+# (set -m) the job has its own process group and the usual dispositions, as
+# a command started from a terminal has.
+for sig in INT HUP; do
+  echo; echo "== T7-$sig $sig to the whole process group, during the gate step of base-0; clones before: $(clones)"
+  rm -f build/gates/base-0/clean-clone.log
+  set -m
+  bash "$s" base-0 > /dev/null 2>&1 &
+  pid=$!
+  set +m
+  log=build/gates/base-0/clean-clone.log
+  sleep 2; wait_for "$log" '^\$ specfirst gate base-0'; sleep 20
+  echo "process group of the script: $(ps -o pgid= -p "$pid" | tr -d ' ') (pid $pid)"
+  echo "sending $sig to the process group at: $(grep '^\$ ' "$log" | tail -1)"
+  kill -"$sig" -- -"$pid"; wait "$pid"; echo "exit $?"
+  cp "$log" "$out/T7-$sig.log"
+  tail -3 "$out/T7-$sig.log"; gone "$(from_log "$out/T7-$sig.log")"
+  ls build/gates/base-0/clone/; echo "clones after: $(clones)"
+done
 
 echo; echo "== T8 PASS of gate base-0: SPECFIRST_ROOT set to another worktree (N2), and the caller's output closed after one byte; clones before: $(clones)"
 SPECFIRST_ROOT=/mnt/d/trial_work/specfirst-gen bash "$s" base-0 > >(head -c 1 > /dev/null) 2>&1; echo "exit $?"
