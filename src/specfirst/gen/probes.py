@@ -219,7 +219,8 @@ def holds(condition: dict, values: dict[str, dict], parameters: dict) -> bool:
 def reaches(entry_id: str, first: str, second: str, values: dict[str, dict],
             parameters: dict, table: dict[str, dict] | None = None) -> bool:
     """Whether a difference between two alternatives of a decision can reach the output:
-    no other decision of the vector makes them give the same output on any data.
+    no other decision of the vector makes them give the same output on any data that keep
+    the premise of the row (its note; SDTMIG v3.4 for every row).
 
     `table` is `REACHES`, or the field `reaches` of a line of the log. The
     condition is the same for every pair of alternatives of the entry; `first`

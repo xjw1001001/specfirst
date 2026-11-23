@@ -484,7 +484,8 @@ def planted_one_causality(root: Path, out: Out, kit_dir: Path, number: int) -> b
 
 def unseparated_applicable(matrix: dict) -> list[str]:
     """The decisions of a kit that fail the gate: read by the output, not made equal by
-    another decision on any data, and not separated on the twin."""
+    another decision on any data that keep the premise of its row of `probes.REACHES`, and not
+    separated on the twin."""
     return list(matrix["summary"]["applicable_and_unseparated"])
 
 
@@ -599,7 +600,8 @@ def separation_check(root: Path, out: Out, folder: Path, count: int = COUNT) -> 
             f"the alternatives equal), {len(summary['separated'])} separated; applicable and "
             f"unseparated: {', '.join(bad) or 'none'}")
         out(f"  unseparated, not read: {', '.join(summary['unseparated_not_read']) or 'none'}; "
-            f"unseparated, read, equal under the other decisions on any data: "
+            f"unseparated, read, equal under the other decisions on any data that keep the "
+            f"premise of its row of REACHES: "
             f"{', '.join(summary['unseparated_read']) or 'none'}")
         ok = ok and not bad
     lines, holes = coverage(catalog, folder, count)

@@ -536,3 +536,263 @@ other half ("the planted subjects inside its analysis set"). The dry run
 of arm R is not yet made, so a change of the generator now costs no
 second dry run. After the fixes (or the owner's word on H2 and H3) I
 would read the diff, the new logs and the report again.
+
+## Pass 2
+
+Commit reviewed: `4de3db2` on `track/gen` ("gen-2b: settle findings H1 to
+H7 of the review (generator gen-2b.2)"), the diff `29bc57a..4de3db2` (15
+files, +1586 -58), within the part `34bbc14..4de3db2`. The worktree's
+`src/` and `tests/` are those of `4de3db2`. Pass 1 above is unchanged.
+
+### What I read
+
+The whole diff `29bc57a..4de3db2`: `verify.claims` and its use in
+`verify.mutate`, the reason of the matrix; `gate2.planted_one_causality`,
+the new demand of `gate2.coverage`, the docstring of `separation_check`;
+`probes._partial_exposure`, `probes._visit_missed`, the note of the row of
+`pop.safety.rule` in REACHES; `present._partial_exposure` and
+`present._visit_missed`; the new and changed tests in
+`tests/unit/test_gen_probes.py` (`test_two_values_of_one_alternative_*`,
+`test_a_subject_without_a_randomization_has_no_planned_arm`, the FOLLOW
+case "efficacy, values, start from DM", the five plants of
+`test_a_variant_of_gen_2b_that_is_undone_is_missed`, the F9 plant of the
+subject who misses the visits); ADR-023 (decisions 2, 4, 6, 7, 8, "For
+the owner" item 3), the new paragraph of ADR-007, CLAUDE.md, the changes
+of docs/state/gen.md, lessons 77 to 80, docs/reports/gen-2b.md ("What
+changed", the sweep of 54 kits) and docs/reports/gen-2b.sweep.md (its
+scripts, which reuse my one_kit.py and summarize.py, and the trace of
+`review-g2b-rfx-40`).
+
+### What I ran (rules as in pass 1; job5.sh under the lock)
+
+E5 (job5.sh, on the code of `4de3db2`): kit 6 of the gate seed written
+without R and variant B of pass 1 again (exp_b2.py); 600 drawn kits on the
+efficacy-evaluable set (kits 4 and 9 of 300 new sets, vectors only;
+sampler_stats3.py) sorted into the three combinations that move planted
+subjects between the alternatives; 18 of them and kits 1 to 10 of a new
+seed (`review-g2b-pass2`) written without R, four at a time (one_kit.py);
+the new and changed tests of the probes.
+
+```text
+$ git diff --stat 29bc57a..4de3db2 | tail -1
+ 15 files changed, 1586 insertions(+), 58 deletions(-)
+$ git diff --quiet 4de3db2 -- src tests && echo "src/tests same as 4de3db2"
+src/tests same as 4de3db2
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 bash /root/scratch-review-gen2b/job5.sh
+code: GENERATOR = "gen-2b.2"
+### variant B on kit 6 of the gate seed
+kit 6 of the gate seed written without R: 126 files
+kit gate-kit-006: generator gen-2b.2
+  the kit as written: ae.related.values read=True applicable=True identifiable=separated
+    pair stated_list(values=['POSSIBLE', 'PROBABLE']) | stated_list(values=['REMOTE', 'POSSIBLE', 'PROBABLE']): separated=True claimed=True cells=6
+    pair stated_list(values=['POSSIBLE', 'PROBABLE']) | stated_list(values=['PROBABLE']): separated=True claimed=True cells=5
+    pair stated_list(values=['REMOTE', 'POSSIBLE', 'PROBABLE']) | stated_list(values=['PROBABLE']): separated=True claimed=True cells=6
+  variant B: AEREL = 'PROBABLE' on all 233 AE rows: ae.related.values read=True applicable=True identifiable=unseparated
+    pair stated_list(values=['POSSIBLE', 'PROBABLE']) | stated_list(values=['REMOTE', 'POSSIBLE', 'PROBABLE']): separated=False claimed=True cells=0
+    pair stated_list(values=['POSSIBLE', 'PROBABLE']) | stated_list(values=['PROBABLE']): separated=False claimed=True cells=0
+    pair stated_list(values=['REMOTE', 'POSSIBLE', 'PROBABLE']) | stated_list(values=['PROBABLE']): separated=False claimed=True cells=0
+  applicable_and_unseparated=['ae.related.values']
+  defects (0): []
+  unfit (2): ["ae.related.values: stated_list(values=['POSSIBLE', 'PROBABLE']) and stated_list(values=['REMOTE', 'POSSIBLE', 'PROBABLE']) can differ in the output under these decisions (the log of probes claims it); the two builds on the twin are the same", "ae.related.values: stated_list(values=['POSSIBLE', 'PROBABLE']) and stated_list(values=['PROBABLE']) can differ in the output under these decisions (the log of probes claims it); the two builds on the twin are the same"]
+  the generator would REFUSE this kit
+### sampler
+kits on the efficacy set (numbers 4 and 9 of 300 sets): 600; visit-firstday: 131, values-rfx: 66, values-ex-first: 113
+kits: 28
+(28 lines "drawn (...): written; ...", each with its gold and its "planted for"; the first line of each:)
+drawn (review-g2b-p2-109/kit-9, number 9): written; 15 separated, 17 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['ae.related.values', 'no_alternative']]
+drawn (review-g2b-p2-103/kit-9, number 9): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-103/kit-4, number 4): written; 15 separated, 16 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-100/kit-9, number 9): written; 15 separated, 16 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-111/kit-4, number 4): written; 14 separated, 15 read, 14 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-110/kit-4, number 4): written; 15 separated, 16 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-116/kit-4, number 4): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-116/kit-9, number 9): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-102/kit-9, number 9): written; 15 separated, 17 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['ae.related.values', 'no_alternative']]
+drawn (review-g2b-p2-109/kit-4, number 4): written; 17 separated, 18 read, 17 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-114/kit-9, number 9): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-115/kit-4, number 4): written; 15 separated, 16 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-126/kit-9, number 9): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-137/kit-4, number 4): written; 14 separated, 15 read, 14 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-100/kit-4, number 4): written; 15 separated, 17 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['ae.related.values', 'no_alternative']]
+drawn (review-g2b-p2-101/kit-9, number 9): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-p2-111/kit-9, number 9): written; 15 separated, 17 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['ae.related.values', 'no_alternative']]
+drawn (review-g2b-p2-107/kit-9, number 9): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-pass2/kit-1, number 1): written; 16 separated, 16 read, 16 applicable; applicable+unseparated none; read, not applicable: []
+drawn (review-g2b-pass2/kit-2, number 2): written; 14 separated, 14 read, 14 applicable; applicable+unseparated none; read, not applicable: []
+drawn (review-g2b-pass2/kit-4, number 4): written; 14 separated, 16 read, 14 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['ae.related.values', 'no_alternative']]
+drawn (review-g2b-pass2/kit-3, number 3): written; 15 separated, 17 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['ae.related.values', 'no_alternative']]
+drawn (review-g2b-pass2/kit-5, number 5): written; 14 separated, 16 read, 14 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['pop.safety.grouping', 'unseparated']]
+drawn (review-g2b-pass2/kit-6, number 6): written; 14 separated, 14 read, 14 applicable; applicable+unseparated none; read, not applicable: []
+drawn (review-g2b-pass2/kit-7, number 7): written; 17 separated, 18 read, 17 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated']]
+drawn (review-g2b-pass2/kit-9, number 9): written; 15 separated, 17 read, 15 applicable; applicable+unseparated none; read, not applicable: [['pop.safety.rule', 'unseparated'], ['ae.related.values', 'no_alternative']]
+drawn (review-g2b-pass2/kit-8, number 8): written; 15 separated, 15 read, 15 applicable; applicable+unseparated none; read, not applicable: []
+drawn (review-g2b-pass2/kit-10, number 10): written; 16 separated, 17 read, 16 applicable; applicable+unseparated none; read, not applicable: [['ae.related.values', 'no_alternative']]
+seconds: 307
+### the new and changed unit tests of the probes
+..................................................                       [100%]
+50 passed, 52 deselected in 5.01s
+$ grep -c 'written; ' job5.log; grep -c 'NOT WRITTEN' job5.log; grep -c 'applicable+unseparated none' job5.log
+28
+0
+28
+```
+
+The 18 drawn kits on the efficacy-evaluable set: the first 8 with the
+efficacy rule by a visit and partial dates completed to the first day of
+the month (the subject of `partial_exposure_date` then moves between the
+two efficacy rules opposite to the subject who misses the visits), the
+first 6 by values with the treatment start from DM.RFXSTDTC (the vector of
+H3), the first 4 by values with the start from EX completed to the first
+day of the month; all new seeds, none forced. Of the six H3 kits one
+completes partial dates to the first day of the month
+(`review-g2b-p2-114/kit-9`) and five do not complete them (`-102/kit-9`,
+`-109/kit-4`, `-115/kit-4`, `-126/kit-9`, `-137/kit-4`), as the gold
+lines of job5.log show: both directions of the pair. (Long lines of the
+logs are cut at about 300 characters.)
+
+The gate logs on clean clones of `4de3db2` that were on disk when I
+finished (build/gates/<wp>/clean-clone.log):
+
+```text
+$ grep -n "^gate gen-2b at\|GATE gen-2b\|passed, \|planted defect: every AEREL\|ae.related.values   \|^separation:" build/gates/gen-2b/clean-clone.log
+53:gate gen-2b at commit 4de3db220a171802a472981644c744b3516cff7f (clean)
+134:1434 passed, 37 deselected in 447.38s (0:07:27)
+325:planted defect: every AEREL of the twin of kit 2 set to 'PROBABLE': the stated lists give one table, and the kit is unfit: ae.related.values: stated_list(values=['POSSIBLE', 'PROBABLE']) and stated_list(values=['REMOTE', 'POSSIBLE', 'PROBABLE']) can differ in the output un
+362:ae.related.values         10    9    7    7  one alternative; kits that separate values of its slot: 2,3,4,5,6,8,10
+371:separation: 0 holes in the matrix of 10 kits; every applicable decision is separated on the twin of its kit
+427:GATE gen-2b: PASS
+$ grep -c "P1: .* 0 differ" build/gates/gen-2b/clean-clone.log
+10
+$ grep -n "^gate gen-1a at\|GATE gen-1a\|^CORE on" build/gates/gen-1a/clean-clone.log
+53:gate gen-1a at commit 4de3db220a171802a472981644c744b3516cff7f (clean)
+149:CORE on 20 datasets (10 seeds, visible and twin): no unexplained finding; the pinned source is unchanged
+199:GATE gen-1a: PASS
+```
+
+### The findings of pass 1
+
+H1, settled. `verify.claims` claims a pair whenever its two values differ
+and the condition of REACHES holds, so the stated lists of
+`ae.related.values` are claimed where a row of related events is shown.
+The gate log of gen-2b on `4de3db2`: "ae.related.values 10 9 7 7", read in
+nine kits and applicable in the seven where the scale gives two or more
+lists (in kits 7 and 9 it gives one: `no_alternative`); the planted defect
+`planted_one_causality` (my variant B on gate kit 2) makes the kit unfit;
+the coverage asks for every entry with one alternative to be applicable
+and separated in some kit. E5: my variant B on gate kit 6 is now refused
+("unfit (2)", "REFUSE"). For the other entries `one != two` is the old
+condition: `verify.options` gives one value per other alternative, so two
+values of different alternatives always differ.
+
+H2, settled in the second way of pass 1, under the owner's standing rule
+for domain points: the row stays, and ADR-023 (decision 4, "The premise
+of the row of `pop.safety.rule`", and "For the owner" item 3), ADR-007,
+docs/state/gen.md, the note of the row and the reason of the matrix say
+what it rests on (a subject who is not randomized has no planned arm),
+that it is per recommendation and pending SME review, and that data which
+break the premise (a dosed subject with a planned arm and no disposition
+record RANDOMIZED) separate the two rules; the scorer's section of the
+state file says so. The new test holds the premise on the generator's
+data (`randomized == assigned`, and an ARMNRS for every subject without an
+arm). The record now says what the code does and states the premise
+honestly; the short forms of it overstate in two places (H8). That the
+base session was told, and that the owner still may choose the probe, I
+have from the coordinator's message and from ADR-023, not from the base
+session.
+
+H3, settled. `_partial_exposure` puts the first dose on day 2 or 3 of a
+month where the table is on the efficacy-evaluable set by values, so the
+screening value (every vital sign but HEIGHT is measured at every visit,
+`pgfix.py` line 136; screening is 3 or more days before day 1) lies in the
+month before; the log names the test and `present` checks the value; the
+FOLLOW test asks for the subject inside the set under the completion. The
+subject who misses the visits has a mild event, for the cancellation
+traced in docs/reports/gen-2b.sweep.md (`review-g2b-rfx-40`). Evidence:
+the executor's sweep wrote all 22 kits of my H3 sampler and the 32 others
+(54 of 54); E5 wrote 28 of 28 new kits, among them 6 new H3 vectors and 8
+with the two efficacy rules moving planted subjects both ways, none with
+an applicable decision unseparated. The sampler gives the three groups in
+131, 66 and 113 of 600 kits on that set; I built 18 of them, so a rarer
+cancellation is not excluded by my runs; the generator would refuse such
+a kit, not pass it.
+
+H4, settled. The state file, ADR-023 (the row lists the sampler offers,
+the catalog's other lists refused not passed), ADR-007 and the report say
+what the code does; the remaining wording is H8.
+
+H5, settled. Five plants for the new branches of `present`
+(`test_a_variant_of_gen_2b_that_is_undone_is_missed`: the treatment record
+dropped, the event moved after both windows, a study record given to the
+second subject, a time given to the first dose without one, the value
+before the month dropped) and the F9 plant that drops the event of the
+subject who misses the visits; each changes what its branch checks, and
+where a probe has two subjects it picks one by the log's `by_subject`
+(lesson 80). They passed in
+E5 and in the gate's unit tests (1434 passed).
+
+H6, settled for what exists. docs/reports/gen-2b.sweep.md shows the
+scripts, the commands and the output of the sweep of 54 kits and of the
+trace. The report's gate section is still placeholders; see below.
+
+H7, settled. ADR-023 decision 7 and the docstring of
+`gate2.separation_check` say that the check "kits" carries the failure
+and that the loop of the check "separation" repeats it.
+
+### New findings
+
+#### H8. Does not block: the short forms of the premise of `pop.safety.rule`
+
+1. NO_PROBE, CLAUDE.md, ADR-007, the docstrings of `probes`, `kits` and
+   `gate2` say that a row of REACHES makes the alternatives equal "on any
+   data of the design that follow SDTMIG v3.4". For the row of
+   `pop.safety.rule` that is not what excludes the separating data: as
+   far as I know no rule of SDTMIG v3.4 makes the protocol milestone
+   RANDOMIZED in DS a required record for every randomized subject, so a
+   dosed subject with an arm and no such record need not break SDTMIG; the
+   catalog's fixed rule `randomized_subject` reads that record first.
+   What the row rests on is that the study records RANDOMIZED for every
+   subject with an arm, which is how ADR-023 and the state file put it
+   ("data that break the premise"), and what the new test checks. A short
+   form that names that condition, or points to the note, would say the
+   same as the long one. (A domain point: per recommendation, pending SME
+   review, like the premise itself.)
+2. The note of the row ends "only a table on the safety set reads the
+   rule", and the reason of the matrix now quotes it. A table on the
+   efficacy-evaluable set reads the rule too (the set is a part of the
+   safety set): in gate kits 4, 7 and 9 the matrix says `read` and gives
+   that reason.
+3. Unqualified "on any data" is left in log lines and docstrings:
+   `gate2.py` lines 487 and 602, `kits.py` line 487, `verify.py` line 27,
+   `probes.py` line 222.
+
+No other new finding. In particular: `verify.claims` keeps the old claims
+of every entry with two or more alternatives; the H3 recipe can raise
+only where the test of the efficacy rule has no screening value, which
+the design model does not make; `GENERATOR` moved to `gen-2b.2` with the
+bytes, and P1 holds in the gate log of gen-2b (10 of 10 kits, 0 files
+differ).
+
+### What I could not see
+
+- The report's gate section (`GATE_VERDICT`, `GATES_AND_EVIDENCE`,
+  `DRYRUN_SPEND` are still placeholders) and the copies of the gate logs
+  as docs/reports/gen-2b.<wp>.gate.log.
+- The clean-clone gates gen-2a, gen-3a, read-1a and issue-29 on `4de3db2`:
+  gen-2a was running when I finished; the logs on disk for gen-3a and
+  read-1a are of `29bc57a` and `901be3d`; issue-29 has none. I saw gen-2b
+  and gen-1a on `4de3db2` (PASS).
+- read-2a and the kept dry run of arm R, which the owner makes after
+  gen-2b passes.
+- The message to the base session about H2.
+- My kits were written without R.
+
+### Verdict of pass 2
+
+Verdict: SIGNED (for the code of `4de3db2` and the evidence listed above:
+the clean-clone gates gen-2b and gen-1a on `4de3db2`, the executor's sweep
+of 54 kits and my 28; not for the gates and the report section I could
+not see)
+
+H1 to H7 are settled; H8 does not block. The premise of the row of
+`pop.safety.rule` is per recommendation, pending SME review; the owner can
+still choose the probe.

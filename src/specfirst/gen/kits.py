@@ -484,7 +484,8 @@ def check(root: Path, kit_dir: Path, say: Out = lambda line: None,
             f"{len(summary['separated'])} separated, {summary['applicable']} applicable, "
             f"{len(summary['applicable_and_unseparated'])} applicable and unseparated; not "
             f"read: {', '.join(summary['unseparated_not_read']) or 'none'}; read, and equal "
-            f"under the other decisions on any data: "
+            f"under the other decisions on any data that keep the premise of its row of "
+            f"REACHES: "
             f"{', '.join(summary['unseparated_read']) or 'none'}")
     return problems
 

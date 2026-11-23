@@ -24,8 +24,9 @@ Two things are known of a decision in a kit before anything is mutated:
     read      the output reads an element the decision sets (`gold.reach`:
               decided by the graph and by the compile, not by the data)
     claimed   no other decision of the kit makes the alternatives give the
-              same output on any data (`probes.reaches` on the field
-              `reaches` of the log, which repeats `probes.REACHES`)
+              same output on any data that keep the premise of its row of
+              `probes.REACHES` (`probes.reaches` on the field `reaches` of
+              the log, which repeats `probes.REACHES`)
 
 A decision is applicable in a kit when every pair of its gold value with
 another value of `options` is claimed (another alternative; for an entry
