@@ -322,6 +322,33 @@ def test_a_quantile_between_equal_values_is_the_same_under_every_definition(root
     assert evidence.cell_values("ard:A_N/M_N_n/Arm_A") is None
 
 
+@pytest.mark.parametrize("statistic", ["n", "min", "max"])
+@pytest.mark.parametrize("proof", [{"kind": "between_equal_values"},
+                                   {"kind": "same_under_every", **QUANTILES}])
+def test_a_quantile_proof_asks_that_the_cell_holds_the_references_data(root, known, statistic,
+                                                                       proof):
+    """The review of real-3a, F5: with a cell of ours that is wrong (another population),
+    both proofs said only what our values give. Now the n, the minimum and the maximum of the
+    cell must be reproduced, or the data behind the cell may not be the reference's."""
+    given = toy.tables(adsl=FIVE)
+    rows, evidence = toy.run(root, given=given), toy.evidence(root, given=given)
+    key = "ard:A_AGE/M_CONT_q1/Arm_B" if proof["kind"] == "same_under_every" else \
+        "ard:A_AGE/M_CONT_median/Arm_B"
+    embedded = "61" if proof["kind"] == "same_under_every" else "63.5"
+    entry = {"result": key, "embedded": embedded, "class": "reference_error", "proof": proof}
+
+    def change(found, other=None):
+        found[("A_AGE", key.split("/")[1], ("Arm_B",))]["rawValue"] = embedded
+        if other:
+            found[("A_AGE", f"M_CONT_{other}", ("Arm_B",))]["rawValue"] = "1"
+
+    assert check(root, known, rows, reference(rows, change), [entry], evidence)[2] == []
+    problems = check(root, known, rows, reference(rows, lambda f: change(f, statistic)),
+                     [entry], evidence)[2]
+    assert any(f"ard:A_AGE/M_CONT_{statistic}/Arm_B, of the same cell, is not reproduced: the "
+               "cell's data may differ" in problem for problem in problems), problems
+
+
 def test_a_result_without_a_value_and_without_records(root, known):
     """Review of real-2, case A11: the counts must be those of the cell, one per compared group.
 

@@ -197,6 +197,21 @@ def test_columns_of_a_data_driven_grouping(root):
     with pytest.raises(grid.GridError, match="5 results of the layout are not in the ARD, for "
                                              "example ard:A_AE/M_CAT_n/=Z"):
         grid.build(event, layout.parse(given), rows)
+    # The review of real-3a, F2: arm B has subjects and no treatment-emergent event. Rule
+    # I9 gives it no group in that analysis, so no result: the build stops and says why,
+    # with or without the list of values; no cell shows a 0 without its ARD row.
+    adae = {key: [v for v, arm in zip(values, ["A"] * 4 + ["B"] * 4, strict=True) if arm == "A"]
+            for key, values in toy.ADAE.items()}
+    without_b = toy.run(root, data, given=toy.tables(adae=adae))
+    assert "ard:A_TEAE/M_CAT_n/=B" not in without_b and "ard:A_AE/M_CAT_n/=A" in without_b
+    for columns in ({"grouping": "ARM"}, {"grouping": "ARM", "values": ["A", "B"]}):
+        given["columns"] = columns
+        with pytest.raises(grid.GridError, match=r"ard:A_\w+/M_CAT_n/=B\. The column grouping "
+                                                 "is data-driven"):
+            grid.build(event, layout.parse(given), without_b)
+    # With defined groups the same data give the arm its count of 0 (rule I11).
+    defined = toy.run(root, displays.event_data(), given=toy.tables(adae=adae))
+    assert defined["ard:A_TEAE/M_CAT_n/Arm_B"]["raw_value"] == 0
 
 
 def test_what_is_not_a_grid(root, made):
@@ -380,12 +395,44 @@ def test_planted_layouts_are_seen(event, rows):
     found = judged(lambda d: d["rows"][1].update(analyses=["A_TEAE", "A_AE"]))
     assert found.problems == ["the rows show the analyses in the order A_N, A_TEAE, A_AE; the "
                               "reference lists them as A_N, A_AE, A_TEAE"]
-    # What a reference cannot show: it formats results, not cells. The parts of a cell
-    # in another order, or with other text between them, pass. This is a limit of the
-    # check, stated here so that it is not taken for a proof (lesson 24).
+    # What formatted values cannot show: they format results, not cells. The parts of a
+    # cell in another order, or with other text between them, pass this comparison; the
+    # table shell holds them (tests/unit/test_shells.py; the review of real-3a, F1).
     for template in ("{pct} {n}", "{n}/{pct}"):
         found = judged(lambda d, t=template: d["rows"][1].update(cell=t))
         assert found.problems == [] and found.differing == {} and found.equal == 7
+
+def test_what_a_layout_may_show_in_a_row(root, event, rows):
+    """The review of real-3a, F3: the percent of another row is refused, a denominator is
+    not; an analysis stands in one block; a row of an analysis the reference does not list
+    for the output is seen."""
+    data = displays.layout_data()
+    data["rows"][1]["parts"]["pct"]["analysis"] = "A_TEAE"
+    assert any("which none of its results is computed from" in problem
+               for problem in layout.problems(layout.parse(data), event))
+    data = displays.layout_data()
+    data["rows"][1]["parts"]["N"] = {"analysis": "A_N", "operation": "M_N_n", "pattern": "XX"}
+    data["rows"][1]["cell"] = "{n}/{N} {pct}"
+    assert layout.problems(layout.parse(data), event) == []  # A_AE is computed from A_N
+    data = displays.layout_data()
+    data["rows"].append(copy.deepcopy(data["rows"][1]))
+    data["rows"][2]["analyses"] = ["A_AE"]
+    assert any("an analysis stands in one block" in problem
+               for problem in layout.problems(layout.parse(data), event))
+    # An analysis like A_AE that the list of contents does not put under the output.
+    given = displays.event_data()
+    given["analyses"].append(dict(copy.deepcopy(
+        next(a for a in given["analyses"] if a["id"] == "A_AE")), id="A_AE2",
+        **toy.percent_of("A_AE2", "A_N")))
+    other_event = ars.index(given)
+    other_rows = toy.run(root, given)
+    data = displays.layout_data()
+    data["rows"][1]["analyses"].append("A_AE2")
+    spec = layout.parse(data)
+    found = grid.compare_reference(displays.reference(other_rows, given), spec,
+                                   grid.build(other_event, spec, other_rows), other_rows, {})
+    assert "the grid shows results of A_AE2, which the reference does not list for the " \
+           "output" in found.problems
 
 
 def test_a_result_the_ard_lacks_is_a_problem_not_a_crash(event, spec, made, rows):
@@ -447,6 +494,56 @@ def test_a_page_that_says_something_else_is_seen(made, old, new, message):
     page = render.html(made)
     assert old in page
     problems = render.projection_problems(made, page.replace(old, new, 1))
+    assert any(message in problem for problem in problems), problems
+
+
+def _exchanged_cells(page: str) -> str:
+    first = '<td data-cell="cell:Out_AE/r2/c1">2 ( 50.0)</td>'
+    second = '<td data-cell="cell:Out_AE/r2/c2">2 ( 66.7)</td>'
+    assert first + second in page
+    return page.replace(first + second, second + first)
+
+
+def _exchanged_rows(page: str) -> str:
+    lines = page.split("\n")
+    second = next(n for n, line in enumerate(lines) if 'data-row="r2"' in line)
+    lines[second], lines[second + 1] = lines[second + 1], lines[second]
+    return "\n".join(lines)
+
+
+def _header_in_body(page: str) -> str:
+    lines = page.split("\n")
+    header = next(line for line in lines if 'data-row="r1"' in line)
+    lines.remove(header)
+    lines.insert(lines.index("<tbody>") + 1, header)
+    return "\n".join(lines)
+
+
+@pytest.mark.parametrize(
+    ("plant", "message"),
+    [
+        (_exchanged_cells, "not those of the grid in their places"),
+        (_exchanged_rows, "not those of the grid in their places"),
+        (_header_in_body, "not those of the grid in their places"),
+        (lambda p: p.replace("<title>Out_AE</title>", "<title>Out_AE 86</title>"),
+         "the title of the page is"),
+        (lambda p: p.replace("</body>", "<!-- 2026-11-23 --></body>"), "a comment"),
+        (lambda p: p.replace("<table ", '<table onload="fetch(1)" '), "the attribute 'onload'"),
+        (lambda p: p.replace("</style>", "@import 'x.css';\n</style>"),
+         "the style sheet of the page is not the renderer's"),
+        (lambda p: p.replace("</style>", "td::after { content: ' 1'; }\n</style>"),
+         "the style sheet of the page is not the renderer's"),
+        (lambda p: p.replace('<meta charset="utf-8">',
+                             '<meta charset="utf-8"><meta http-equiv="refresh" content="0">'),
+         "a <meta> other than the character set"),
+    ],
+)
+def test_where_a_text_stands_and_what_a_page_may_not_hold(made, plant, message):
+    """The review of real-3a, F6: each of these passed the check of real-3a."""
+    page = render.html(made)
+    planted = plant(page)
+    assert planted != page
+    problems = render.projection_problems(made, planted)
     assert any(message in problem for problem in problems), problems
 
 

@@ -346,8 +346,18 @@ def fill(planned: Plan, rows: Rows | None) -> dict:
     """The grid of a plan. With `rows` None it is the mock shell."""
     texts, absent = _our_texts(planned, rows)
     if absent:
-        raise GridError(f"{len(absent)} results of the layout are not in the ARD, for example "
-                        f"{absent[0]}")
+        message = (f"{len(absent)} results of the layout are not in the ARD, for example "
+                   f"{absent[0]}")
+        values = {"=" + quote(str(group[1]), safe="") for _, group, _ in planned.columns
+                  if group[0] == "value"}
+        if any(part in values for key in absent for part in key.split("/")):
+            # The review of real-3a, F2: no silent zero and no number without its ARD row.
+            message += (". The column grouping is data-driven: a group without a record of an "
+                        "analysis has no result there (rules I9, I10). List the groups before "
+                        "the engines run (defined groups, as specfirst.gen.gold."
+                        "resolve_groupings does, ADR-007), and the engine gives the group its "
+                        "count of 0 (rule I11)")
+        raise GridError(message)
     made = []
     for number, row in enumerate(planned.rows, start=1):
         record: dict[str, object] = {"id": f"r{number}", "label": row.label}
@@ -419,6 +429,8 @@ class DisplayComparison:
     problems: list[str] = field(default_factory=list)
     formats_used: set[str] = field(default_factory=set)  # entries of `formats` that hold
     uncompared: int = 0  # cells with a result the reference does not format (issue #31)
+    shell_rows: int = 0  # rows of the mock shell held against the table shell (F1 of real-3a)
+    shell_lines: int = 0  # rows of the table shell with cells
 
     def lines(self) -> list[str]:
         said = [f"grid {self.output}: {self.cells} cells show {self.results} results; "
@@ -463,12 +475,21 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
     The grid is also held against the plan: its cells must show the results
     the layout asks for, with the text our display rule gives; every result
     the reference formats for an analysis of the output must be shown by a
-    cell; and the rows must show the analyses in the order in which the
-    reference lists them.
+    cell; no cell shows an analysis the reference does not list for the
+    output (when it embeds results; the review of real-3a, F3); and the rows
+    must show the analyses in the order in which the reference lists them.
 
-    What this cannot see: a reference formats results, not cells. Which
-    results share a cell, in which order, and with what text between them
-    is the layout's, and no formatted value says otherwise.
+    What this cannot see: formatted values are of results, not of cells.
+    Which results share a cell, in which order, and with what text between
+    them is held against the example's table shell where the kit pins one
+    (specfirst.machine.shells, F1), as are the row labels and the sections;
+    a part of a body row that names another analysis than its row's is
+    refused by the layout unless the row's results are computed from it
+    (F3). Held against nothing here: the titles, the footnotes and the
+    indents, which the layout or the ARS display gives. A cell whose result
+    the reference gives no formatted value for is counted as not compared
+    and does not fail this comparison (`uncompared`); a gate that asks for
+    none says so by its counts (the review of real-3a, F9).
     """
     found = DisplayComparison(layout.output)
     try:
@@ -573,8 +594,16 @@ def compare_reference(event: ars.Event, layout: layouts.Layout, grid: dict, rows
         if item.analysis_id in listed and item.formatted is not None and key not in shown:
             found.problems.append(f"{key}: the reference formats this result of the output "
                                   f"({item.formatted!r}), and no cell shows it")
-    # A reference formats results, not cells: it cannot say in which order the parts
-    # of a cell stand. It does say in which order it lists the analyses of the output.
+    if embedded:
+        # The review of real-3a, F3: a row of another output. A reference that embeds results
+        # lists the analyses of each output; a cell shows those analyses only.
+        others = sorted({item.analysis for row in planned.rows for cell in row.cells
+                         for item in cell.shown if item.analysis not in listed})
+        found.problems += [f"the grid shows results of {name}, which the reference does not list "
+                           "for the output" for name in others]
+    # The formatted values cannot say in which order the parts of a cell stand (the table
+    # shell does, specfirst.machine.shells). The list does say in which order the analyses
+    # of the output stand.
     ours_in_order = list(dict.fromkeys(item.analysis for row in planned.rows
                                        for cell in row.cells for item in cell.shown
                                        if item.analysis in listed))

@@ -817,7 +817,55 @@ def add_citations(graph: Graph, kit: Kit, kit_dir: Path, displays: list[Display]
         "references_not_to_kit_documents": dict(sorted(elsewhere.items()))}}
 
 
-def check_cells(folder: Path, grids: dict[str, dict]) -> tuple[list[str], list[str]]:
+def _computed_from(event, key: str) -> set[str]:
+    """The analyses an ARD row is computed from, read again from the ARS file: its own, and
+    the analysis of every result its operation references (the denominator of a percent)."""
+    from urllib.parse import unquote
+
+    name, operation_id = (unquote(part) for part in key[len("ard:"):].split("/")[:2])
+    analysis = event.analyses.get(name, {})
+    operation = event.operations.get(operation_id, ("", {}))[1]
+    relations = {str(item.get("id")) for item in
+                 operation.get("referencedOperationRelationships") or []}
+    return {ars_id(name), *(ars_id(str(item.get("analysisId"))) for item in
+                            analysis.get("referencedAnalysisOperations") or []
+                            if item.get("referencedOperationRelationshipId") in relations)}
+
+
+def _edge_problems(event, subject_key: str, coverage: dict, key: str,
+                   following: dict[tuple[str, str], set[str]],
+                   wanted_reads: dict[tuple[int, str], set[str]]) -> list[str]:
+    """The computes edges of an ARD row and the reads edges of its analyses, each against the
+    ARS file, and the reads of coverage.json against the edges (the review of real-3a, F4)."""
+    from specfirst.machine import ars as ars_module
+
+    trouble = []
+    computes = following.get(("computes", key), set())
+    wanted = _computed_from(event, key)
+    if computes != wanted:
+        trouble.append(f"{key}: its computes edges go to {sorted(computes)}; the ARS file "
+                       f"computes it from {sorted(wanted)}")
+    for analysis in sorted(wanted):
+        if (id(event), analysis) not in wanted_reads:
+            wanted_reads[(id(event), analysis)] = {
+                adam_id(dataset, variable) for _, dataset, variable in
+                ars_module.reads(event, analysis[len("ars:"):], subject_key)}
+        named = wanted_reads[(id(event), analysis)]
+        entry = coverage.get("analyses", {}).get(analysis, {})
+        not_built = set(entry.get("not_built", []))
+        reads = following.get(("reads", analysis), set())
+        if reads | not_built != named:
+            trouble.append(f"{analysis}: its reads edges are {sorted(reads)}; the ARS file names "
+                           f"{sorted(named - not_built)}")
+        recorded = {item["column"] for item in entry.get("reads", [])}
+        if recorded != reads | not_built:
+            trouble.append(f"{analysis}: coverage.json records the reads {sorted(recorded)}, the "
+                           f"edges are {sorted(reads)}")
+    return trouble
+
+
+def check_cells(folder: Path, grids: dict[str, dict],
+                events: dict[str, tuple] | None = None) -> tuple[list[str], list[str]]:
     """Every numeric cell of the grids has a complete path to SDTM columns (P3, section 4.6).
 
     The paths are walked here, from nodes.jsonl and edges.jsonl alone: cell
@@ -826,6 +874,14 @@ def check_cells(folder: Path, grids: dict[str, dict]) -> tuple[list[str], list[s
     edge, every element on it is a node, the cell's `shows` edges are
     exactly its `ard` list, no ADaM column on it has a gap, and it ends at
     SDTM columns. A cell that prints a digit and shows no ARD row fails.
+
+    With `events` (output -> its indexed reporting event and subject key),
+    every edge on the way is also held against the ARS file: the `computes`
+    edges of an ARD row are its own analysis and the analysis of every result
+    its operation references (the denominator of a percent), and the `reads`
+    edges of an analysis are every column the ARS file names for it, as are
+    the reads that coverage.json records (the review of real-3a, F4: one
+    edge among several could be left out unseen).
 
     This cannot see a result the builder used and did not record, or a
     column the engine reads and the ARS file does not name; tests/defects
@@ -843,7 +899,9 @@ def check_cells(folder: Path, grids: dict[str, dict]) -> tuple[list[str], list[s
     reach = _closure(edges)
     with_gap = {entry["column"] for entry in coverage.get("columns", []) if entry["gaps"]}
     recorded = coverage.get("displays", {})
+    wanted_reads: dict[tuple[int, str], set[str]] = {}
     for output, grid in sorted(grids.items()):
+        given = (events or {}).get(output)
         count = Counter()
         results_seen: set[str] = set()
         analyses_seen: set[str] = set()
@@ -874,6 +932,9 @@ def check_cells(folder: Path, grids: dict[str, dict]) -> tuple[list[str], list[s
                         trouble.append(f"{key} has no computes edge")
                     elif "ars:" + key[len("ard:"):].split("/")[0] not in analyses:
                         trouble.append(f"{key} has no computes edge to its own analysis")
+                    if given is not None:
+                        trouble += _edge_problems(given[0], given[1], coverage, key, following,
+                                                  wanted_reads)
                     for analysis in sorted(analyses):
                         columns = following.get(("reads", analysis), set())
                         if analysis not in nodes or not columns:

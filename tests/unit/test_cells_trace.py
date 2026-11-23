@@ -69,6 +69,38 @@ def traced(built, tmp_path, lower=None, made=None):
     return result, graph.check_cells(tmp_path, {displays.OUTPUT: made or value})
 
 
+@pytest.mark.parametrize(("left_out", "message"), [
+    # One reads edge that the analysis of the denominator (A_N) covers.
+    (("reads", "ars:A_TEAE", "adam:ADSL.SAFFL"), "ars:A_TEAE: its reads edges are"),
+    # The computes edge of one percent to the analysis of its denominator.
+    (("computes", "ard:A_TEAE/M_CAT_pct/Arm_B", "ars:A_N"),
+     "ard:A_TEAE/M_CAT_pct/Arm_B: its computes edges go to ['ars:A_TEAE']"),
+])
+def test_every_edge_is_held_against_the_ars_file(built, tmp_path, left_out, message):
+    """The review of real-3a, F4: with the events, a single edge left out is seen; without
+    them, the walk still finds a complete path, as it did."""
+    folder, event, _, made = built
+    result = below()
+    graph.add_displays(result, folder, [display(built)])
+    events = {displays.OUTPUT: (event, "USUBJID")}
+    graph.write_graph(tmp_path, result)
+    assert graph.check_cells(tmp_path, {displays.OUTPUT: made}, events)[1] == []
+    result.edges = [edge for edge in result.edges
+                    if (edge["type"], edge["from"], edge["to"]) != left_out]
+    graph.write_graph(tmp_path, result)
+    assert graph.check_cells(tmp_path, {displays.OUTPUT: made})[1] == []
+    problems = graph.check_cells(tmp_path, {displays.OUTPUT: made}, events)[1]
+    assert any(message in problem for problem in problems), problems
+    # The reads coverage.json records are held against the edges too.
+    result = below()
+    graph.add_displays(result, folder, [display(built)])
+    entry = result.coverage["analyses"]["ars:A_TEAE"]
+    entry["reads"] = entry["reads"][:1]
+    graph.write_graph(tmp_path, result)
+    assert any("ars:A_TEAE: coverage.json records the reads" in problem for problem in
+               graph.check_cells(tmp_path, {displays.OUTPUT: made}, events)[1])
+
+
 def test_cells_reach_sdtm_columns_through_results_analyses_and_adam_columns(root, built,
                                                                            tmp_path):
     result, (lines, problems) = traced(built, tmp_path)

@@ -76,13 +76,18 @@ def test_manifest_problems_are_reported(data, message):
 
 def test_the_pilot_kit_is_pinned_like_the_sources(root):
     kit = kits.load_kit(root, "cdiscpilot01")
-    assert kit.tier == "C" and len(kit.files) == 67
+    assert kit.tier == "C" and len(kit.files) == 68
     manifest_of_sources = sources.load_manifest(sources.manifest_path(root))
     assert kits.pin_problems(kit, manifest_of_sources) == []
-    # 64 files of Pilot 7; the ARS example and the schema of the ARS model from CDISC;
-    # the CSR of Pilot 6, the reference of the efficacy grids (real-5a).
+    # 64 files of Pilot 7; the ARS example, the schema of the ARS model and the example's
+    # table shells from CDISC (the review of real-3a, F1); the CSR of Pilot 6, the
+    # reference of the efficacy grids (real-5a).
     assert sorted(entry.path for entry in kit.files if entry.source == "ars") == [
+        "gold/reference/shells/AE_Summary_Table_Shell.pdf",
         "gold/spec/ars/ars_ldm.schema.json", "gold/spec/ars/common-safety-displays.json"]
+    shells = {display.output: display.shell for spec in kit.results for display in spec.displays
+              if display.shell}
+    assert shells == {"Out14-3-1-1": "gold/reference/shells/AE_Summary_Table_Shell.pdf"}
     assert {entry.source for entry in kit.files} == {"p7", "ars", "p6"}
     assert [entry.path for entry in kit.files if entry.source == "p6"] == [
         "gold/reference/csr/CSR.pdf"]

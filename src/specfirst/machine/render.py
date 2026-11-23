@@ -2,9 +2,13 @@
 
 A renderer never computes a number. It writes the texts of the grid into a
 page, and `projection_problems` reads the page back and holds every text
-against the grid. The page is one file without scripts, without anything
-fetched from elsewhere and without a date, so the same grid gives the same
-bytes (rule R4).
+against the grid, and where it stands: every row of the table header, body
+and footer in its place, with its elements in the order of the columns
+(the review of real-3a, F6). The page is one file without scripts, without
+anything fetched from elsewhere and without a date, so the same grid gives
+the same bytes (rule R4); the check refuses a handler (an attribute `on...`),
+a style sheet that is not the renderer's, a `meta` other than the character
+set, a comment and text outside the body but the title.
 
 Rows of the section `@header` (specfirst.machine.layout.HEADER_SECTION) are
 shown in the table header, under the column labels. The label of the first
@@ -127,7 +131,9 @@ def html(grid: dict) -> str:
 
 
 class _Reader(HTMLParser):
-    """Collects the texts of a page made by `html`, by what each one is."""
+    """Collects the texts of a page made by `html`, by what each one is, and where each
+    stands: the rows of the table header, body and footer in order, each with the elements
+    of its row in order (the review of real-3a, F6)."""
 
     _KINDS = ("data-cell", "data-label", "data-column", "data-title", "data-footnote",
               "data-section")
@@ -140,6 +146,14 @@ class _Reader(HTMLParser):
         self._depth = 0
         self._in_body = False
         self.external: list[str] = []
+        self.unsafe: list[str] = []  # what a page that loads and runs nothing must not hold
+        self.rows: list[tuple[str, tuple]] = []  # (thead, tbody or tfoot; its elements in order)
+        self.spans: list[tuple[str, str]] = []  # the spanners: (colspan, text)
+        self.title = ""
+        self.style = ""
+        self._part = ""
+        self._row: list | None = None
+        self._in = ""  # "title", "style", "spanner" or ""
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         given = dict(attrs)
@@ -148,6 +162,22 @@ class _Reader(HTMLParser):
         if tag in ("script", "link", "img", "iframe", "object", "embed") or "src" in given \
                 or "href" in given:
             self.external.append(tag)
+        self.unsafe += [f"the attribute '{name}' of <{tag}>" for name, _ in attrs
+                        if name.lower().startswith("on") or name.lower() == "style"
+                        and "url(" in str(given[name]).lower()]
+        if tag == "meta" and set(given) != {"charset"}:
+            self.unsafe.append("a <meta> other than the character set")
+        if tag in ("thead", "tbody", "tfoot"):
+            self._part = tag
+        elif tag == "tr":
+            self._row = []
+        elif tag in ("title", "style"):
+            self._in = tag
+        elif tag == "th" and "spanner" in str(given.get("class") or "").split():
+            self.spans.append((str(given.get("colspan")), ""))
+            self._in = "spanner"
+        if self._row is not None:
+            self._row += [(kind, str(given[kind])) for kind in self._KINDS if kind in given]
         for kind in self._KINDS:
             if kind in given:
                 self._open, self._depth = (kind, str(given[kind])), 0
@@ -157,6 +187,13 @@ class _Reader(HTMLParser):
             self._depth += 1
 
     def handle_endtag(self, tag: str) -> None:
+        if tag == "tr" and self._row is not None:
+            self.rows.append((self._part, tuple(self._row)))
+            self._row = None
+        elif tag in ("thead", "tbody", "tfoot"):
+            self._part = ""
+        elif tag in ("title", "style", "th"):
+            self._in = ""
         if self._open:
             if self._depth == 0:
                 self._open = None
@@ -164,10 +201,64 @@ class _Reader(HTMLParser):
                 self._depth -= 1
 
     def handle_data(self, data: str) -> None:
+        if self._in == "title":
+            self.title += data
+        elif self._in == "style":
+            self.style += data
+        elif self._in == "spanner":
+            self.spans[-1] = (self.spans[-1][0], self.spans[-1][1] + data)
         if self._open:
             self.found[self._open] += data
-        elif self._in_body and data.strip():
+        elif self._in_body and data.strip() and self._in != "spanner":
             self.outside.append(data.strip())
+        elif not self._in_body and data.strip() and self._in not in ("title", "style"):
+            self.unsafe.append(f"text outside the body: {data.strip()[:40]!r}")
+
+    def handle_comment(self, data: str) -> None:
+        self.unsafe.append("a comment")
+
+    def handle_decl(self, decl: str) -> None:
+        if decl != "DOCTYPE html":
+            self.unsafe.append(f"the declaration {decl!r}")
+
+    def handle_pi(self, data: str) -> None:
+        self.unsafe.append("a processing instruction")
+
+
+def _layout(grid: dict) -> list[tuple[str, tuple]]:
+    """Where `html` places the elements of the grid: the rows of the table header, body and
+    footer in order, each with the data attributes of its elements in order."""
+    columns = grid["columns"]
+    head = [row for row in grid["rows"] if row.get("section") == HEADER_SECTION]
+    body = [row for row in grid["rows"] if row.get("section") != HEADER_SECTION]
+
+    def row(record: dict) -> tuple:
+        return (("data-label", record["id"]),
+                *(("data-cell", cell["id"]) for cell in record["cells"]))
+
+    placed: list[tuple[str, tuple]] = []
+    if any(column.get("spanner") for column in columns):
+        placed.append(("thead", ()))
+    placed.append(("thead", tuple(("data-column", column["id"]) for column in columns)))
+    placed += [("thead", row(record)) for record in head]
+    headings = 0
+    for kind, item in _sections(body):
+        if kind == "heading":
+            headings += 1
+            placed.append(("tbody", (("data-section", str(headings)),)))
+        elif kind == "separator":
+            placed.append(("tbody", ()))
+        else:
+            placed.append(("tbody", row(item)))
+    placed += [("tfoot", (("data-footnote", str(number)),))
+               for number in range(1, len(grid["footnotes"]) + 1)]
+    return placed
+
+
+def _spanners(grid: dict) -> list[tuple[str, str]]:
+    return [(str(len(list(group))), name or "") for name, group in
+            groupby(grid["columns"], key=lambda column: column.get("spanner"))] \
+        if any(column.get("spanner") for column in grid["columns"]) else []
 
 
 def projection_problems(grid: dict, page: str) -> list[str]:
@@ -193,9 +284,25 @@ def projection_problems(grid: dict, page: str) -> list[str]:
                 if reader.found.get((kind, key)) != text]
     problems += [f"{kind[5:]} {key}: on the page, not in the grid"
                  for kind, key in reader.found if (kind, key) not in wanted]
-    spanners = {column.get("spanner") for column in grid["columns"]} - {None}
-    problems += [f"text on the page that is not of the grid: {text!r}"
-                 for text in reader.outside if text not in spanners]
+    problems += [f"text on the page that is not of the grid: {text!r}" for text in reader.outside]
     problems += [f"the page refers to something outside itself: <{tag}>"
                  for tag in reader.external]
+    # Where each text stands (the review of real-3a, F6): two cells or two rows exchanged
+    # together with their attributes, or the header row in the body, show a value under
+    # another column or label.
+    wanted_places = _layout(grid)
+    if reader.rows != wanted_places:
+        place = next((number for number, (ours, theirs) in enumerate(
+            zip(reader.rows, wanted_places, strict=False), start=1) if ours != theirs),
+            min(len(reader.rows), len(wanted_places)) + 1)
+        problems.append(f"the rows of the page are not those of the grid in their places: the "
+                        f"first that differs is row {place} of the table")
+    if reader.spans != _spanners(grid):
+        problems.append(f"the spanners of the page are {reader.spans}, the grid's "
+                        f"{_spanners(grid)}")
+    if reader.title != grid["output_id"]:
+        problems.append(f"the title of the page is {reader.title!r}, not the output's ID")
+    if reader.style.strip() != _STYLE:
+        problems.append("the style sheet of the page is not the renderer's")
+    problems += [f"the page holds {item}" for item in reader.unsafe]
     return problems

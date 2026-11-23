@@ -98,6 +98,12 @@ block the part names its analysis). Its pattern is a pattern of the
 registry's display.pattern; when the layout gives none, the `resultPattern`
 of the ARS operation is taken, and a part with neither is an error.
 
+A part of an analyses block that names an analysis shows a result the
+row's results are computed from (the denominator of a percent, "{n}/{N}");
+the result of another row is refused. An analysis stands in one block of the
+body of a layout; the count under the column headers may stand in the body
+again (the review of real-3a, F3).
+
 In a header block and an analyses block, an analysis has the column
 grouping as its only grouping, with results by group. In a statistics block
 it may also compare the column grouping (results by group false, as a test
@@ -575,6 +581,12 @@ def problems(layout: Layout, event: ars.Event) -> list[str]:
                 if analysis is None:
                     found.append(f"{at}: the analysis '{name}' is not in the reporting event")
                     continue
+                if (block.kind == "analyses" and name != analysis_id
+                        and analysis_id in event.analyses
+                        and name not in _referenced(event.analyses[analysis_id])):
+                    # The review of real-3a, F3: the percent of one row in another row.
+                    found.append(f"{at}: the row of '{analysis_id}' shows a result of '{name}', "
+                                 "which none of its results is computed from")
                 at += f", analysis '{name}'"
                 if event.operations.get(part.operation, (None,))[0] != analysis.get("methodId"):
                     found.append(f"{at}: '{part.operation}' is not an operation of its method")
@@ -593,7 +605,45 @@ def problems(layout: Layout, event: ars.Event) -> list[str]:
                     methods.pattern_mask(pattern)
                 except methods.MethodError as error:
                     found.append(f"{at}: {error}")
+    found += _repeated_problems(layout)
     return sorted(set(found))
+
+
+def _referenced(analysis: dict) -> set[str]:
+    """The analyses whose results the operations of an analysis are computed from (rule I15)."""
+    return {str(reference.get("analysisId"))
+            for reference in analysis.get("referencedAnalysisOperations") or []}
+
+
+def block_analyses(block: Block) -> set[str]:
+    """The analyses a block stands for: those of its rows, of a header's parts and of its
+    extra cells. A part of a body row that names the analysis of a denominator (a cell
+    "{n}/{N}") is not counted: it shows a result its row is computed from."""
+    found = {name for name, _ in block.analyses}
+    found |= {block.analysis} if block.analysis else set()
+    found |= {block.nested.analysis} if block.nested else set()
+    found |= {part.analysis for part in block.parts if block.kind == "header" and part.analysis}
+    cells = [*block.extra, *(block.nested.extra if block.nested else ()),
+             *(cell for row in block.statistics for cell in row.extra)]
+    found |= {part.analysis for cell in cells for part in cell.parts if part.analysis}
+    return found
+
+
+def _repeated_problems(layout: Layout) -> list[str]:
+    """An analysis stands in one block of the body of a layout (the review of real-3a, F3:
+    the same rows twice would show its results twice, and the comparison would not see it).
+    The count under a column header may be shown again in the body ("n")."""
+    seen: dict[str, int] = {}
+    found = []
+    for number, block in enumerate(layout.blocks):
+        if block.kind == "header":
+            continue
+        for name in sorted(block_analyses(block)):
+            if name in seen and seen[name] != number:
+                found.append(f"rows[{number}]: the analysis '{name}' stands in rows[{seen[name]}] "
+                             "already; an analysis stands in one block")
+            seen.setdefault(name, number)
+    return found
 
 
 def _part_problems(event: ars.Event, analysis: dict, part: Part, at: str) -> list[str]:

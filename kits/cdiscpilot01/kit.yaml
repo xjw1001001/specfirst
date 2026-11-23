@@ -80,12 +80,15 @@ results:
     # file of our own in this folder (ADR-003). The list is the limit of the
     # display checks. real-3a builds the adverse event summary (ADR-005); issue #31
     # the demographics and the table by organ class and term (ADR-022); the rest of
-    # real-3 adds the vital signs.
+    # real-3 adds the vital signs. An output may name the example's table shell, a
+    # pinned PDF its mock shell is held against (specfirst.machine.shells; the review
+    # of real-3a, F1).
     outputs:
       - id: Out14-1-1
         layout: gold/layout/Out14-1-1.yaml
       - id: Out14-3-1-1
         layout: gold/layout/Out14-3-1-1.yaml
+        shell: gold/reference/shells/AE_Summary_Table_Shell.pdf
       - id: Out14-3-2-1
         layout: gold/layout/Out14-3-2-1.yaml
   # real-5a (ADR-012, ADR-015): ADAS-Cog (11), change from baseline to weeks 24, 8
@@ -229,6 +232,10 @@ files:
     source: p6
     from: documents/CSR.pdf
     sha256: 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+  - path: gold/reference/shells/AE_Summary_Table_Shell.pdf
+    source: ars
+    from: "workfiles/examples/ARS v1/AE_Summary_Table_Shell.pdf"
+    sha256: 7c744c2d93c981244aa1414fdff9575d6eea34329a40b5a180de44f473e80a63
   - path: gold/spec/ars/ars_ldm.schema.json
     source: ars
     from: project/jsonschema/ars_ldm.schema.json

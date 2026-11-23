@@ -237,7 +237,10 @@ def _pilot_tests(ctx: Context) -> bool:
 PILOT_EXAMPLE = "common-safety-displays"  # the result set of the ARS example in kit.yaml
 PILOT_EMBEDDED, PILOT_REPRODUCED = 3735, 3711
 REAL2_PILOT_TESTS = (*REAL1_PILOT_TESTS, "A6-engine")
-REAL2_METHOD_TESTS = ("python-vectors", "r-vectors", "exact-arithmetic", "fisher-r")
+# fisher-limit is the only test of statement 6 of test.fisher.exact in R (the review of
+# real-3a, F9): it must be seen to run, not only pass when it is there.
+REAL2_METHOD_TESTS = ("python-vectors", "r-vectors", "exact-arithmetic", "fisher-r",
+                      "fisher-limit")
 REAL2_DEFECTS = ("D1-arms", "D2-set", "D3-quantile", "D4-subset", "D5-engines")
 
 
