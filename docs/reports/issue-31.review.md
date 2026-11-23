@@ -1048,4 +1048,195 @@ This verdict is on the code and the records at `78fb49b`. The verdict on
 the whole package waits for part 2: the report with its placeholders
 filled and the logs of the seven clean-clone gates of `78fb49b`.
 
+Pass 3 verdict (the code and the records at `78fb49b`): SIGNED.
+
+## Final: the fixes of pass 3 (`bfdcadf`), the report and the logs (`121dbe2`)
+
+Reviewed:
+- `bfdcadf`, child of `78fb49b`: src/specfirst/viewer/ (command.py,
+  model.py, page.py), tests/unit/test_viewer.py, ADR-022 and
+  docs/state/real.md;
+- `121dbe2`, child of `bfdcadf`: documents only (12 files: the report, ADR-022's
+  "The owner's answer on P4", docs/state/real.md, this review as
+  committed, and the eight gate logs; `git diff --name-only bfdcadf 121dbe2`
+  lists no file under src/ or tests/).
+
+The worktree was clean at `121dbe2`; this section is the reviewer's only
+change.
+
+### P3-F1 and P3-F2: closed
+
+- **P3-F1.** `read_p4` reads the matrix's `vector`, and
+  `model.p4_of` gives every class drawn the note "the P4 run of the vector
+  house, every other decision at that vector's value". A record at another
+  value gets "the P4 run of the vector house tried another value, <gold>:
+  <class>". The legends of `tested` and `unseparated` say that every other
+  decision stood at the value of the run's vector, which "may not be the
+  kit's". ADR-022 decision 8 says the same, and records the owner's answer
+  (A: show the class and state the condition).
+- **P3-F2.** A `no_alternative` class is checked before the value
+  comparison and drawn "not tested" with the note "... had no other value
+  of it to try".
+- **On the reviewer's build of `121dbe2`, with the coordinator's matrix
+  (R13):**
+  - 14 records are drawn with a class (separated 6, inert 4, unseparated
+    4), and each carries the vector's note;
+  - no class is drawn at another value;
+  - the note counts on the page are those the report prints (264 notes on
+    drawn classes, and 30, 62, 17, 17, 1, 62, 9 for the seven values
+    tried);
+  - a planted `no_alternative` at the record's own value
+    (pop.safety.grouping) is drawn "not tested" with its note,
+    `page_problems` is empty, and "P4: no_alternative" is nowhere on the
+    page;
+  - without `--p4`, the page differs from `78fb49b`'s in the two legend
+    lines only, and every decision is "not tested" with no note.
+
+  The unit test covers both cases, and D13 passes.
+
+### The report docs/reports/issue-31.md
+
+Its numbers are those of the reviewer's runs and of the logs:
+- 1502 cells with a panel, 61 panels, 93 lines on the sheet;
+- 84, 27 and 1178 printed numbers on the three outputs;
+- 90 + 14 cells of Out14-1-1, and 866 + 1 + 408 of Out14-3-2-1;
+- 38 citation edges to 4 spans, 9 of them to the whole document;
+- 49 records: 18 stated, 12 default, 17 conflict, 2 asked, with 102
+  quotes and 0 problems;
+- 2505 citations;
+- 45 of the 49 records in a panel, 7 of them through a column;
+- the page of 3885705 bytes without `--p4` and 3926383 with it;
+- the P4 counts and notes;
+- 69 analyses reproduced.
+
+The prose claims checked:
+- PLAN.md, standard/ and env/ are unchanged: `git diff --stat 0046194
+  121dbe2` lists none of them, and no file under gen/, score/, harness/ or
+  compile/.
+- What gen and score import from the changed modules is unchanged:
+  `grid.ard_id`, `grid.SCHEMA` and `grid.grid_problems` have no changed
+  line, and in graph.py the only changes are the import of `Callable` and
+  the new `add_citations` after `add_displays`.
+- Nothing in gen, score or harness reads `Kit.decisions`.
+- The owner's lists name the 17 conflicts and the 2 asked records of the
+  file.
+- No statement claims std-2's check.
+
+The review's passes are summarized correctly.
+
+### The eight logs
+
+Read from git at `121dbe2`:
+
+| Log | Commit | Checks | Unit tests | Last lines |
+| --- | --- | --- | --- | --- |
+| issue-31.clean-clone.gate.log | `bfdcadf` | 14 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE issue-31: PASS; clean clone gate issue-31: PASS |
+| issue-31.merged.issue-31.gate.log | `78fb49b` | 14 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE issue-31: PASS; clean clone gate issue-31: PASS |
+| issue-31.read-1a.gate.log | `78fb49b` | 14 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE read-1a: PASS; clean clone gate read-1a: PASS |
+| issue-31.issue-29.gate.log | `78fb49b` | 12 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE issue-29: PASS; clean clone gate issue-29: PASS |
+| issue-31.real-2.gate.log | `78fb49b` | 15 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE real-2: PASS; clean clone gate real-2: PASS |
+| issue-31.real-3a.gate.log | `78fb49b` | 16 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE real-3a: PASS; clean clone gate real-3a: PASS |
+| issue-31.real-5a.gate.log | `78fb49b` | 18 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE real-5a: PASS; clean clone gate real-5a: PASS |
+| issue-31.real-5b.gate.log | `78fb49b` | 19 PASS, 0 FAIL | 1400 passed, 37 deselected | GATE real-5b: PASS; clean clone gate real-5b: PASS |
+
+The planted defects passed 100 in each log that runs tests/defects. No log
+has a byte outside ASCII, a user's home folder or a Windows user folder.
+They name the clone folders under /tmp and the repository's mount path,
+as the logs of issue-29 did.
+
+**After `bfdcadf`, only issue-31 needed to run again.** The claim holds,
+though one of its reasons is not exact (P4-F1 below):
+- `bfdcadf` changes only the viewer, its unit test and two documents;
+- `121dbe2` changes documents only;
+- every gate runs the same full unit suite, which passed (1400) in the
+  issue-31 gate on `bfdcadf`;
+- the only other code of the seven gates that reaches the viewer is the
+  command `pytest tests/defects -s -q` with `SPECFIRST_STRICT=1`. That
+  command passed 100 of 100 in the same run, and the other gates check
+  only that their named cases are among those passed.
+
+#### P4-F1 (not blocking) Four more gates reach the viewer through their planted defects
+
+The report says "Of the seven gates, only issue-31 has checks that reach
+the viewer (its checks review and planted defects)". The planted-defect
+checks of real-2, real-3a, real-5a and real-5b also run
+`pytest tests/defects` whole (gates.py `_pytest`, with the folder and no
+`-k`), D13-review included. Their logs of `78fb49b` show "--- D13-review"
+and "100 passed". As said above, the conclusion holds.
+
+What would fix it: say in the report that these four gates also run D13
+through their planted defects, and that the issue-31 gate's run of the
+same command on `bfdcadf` covers them. This needs no run again.
+
+### What was run (final)
+
+#### R13 The code of `121dbe2` (that of `bfdcadf`)
+
+The clone /tmp/review31 checked out at `121dbe2`, its build folder
+removed. Then, under one hold of `flock /run/lock/specfirst-heavy.lock
+taskset -c 0-3`:
+
+    $ python -m specfirst kit assemble cdiscpilot01; build; recompute      (exit 0 each)
+    cdiscpilot01: 69 analyses: reproduced 69
+    $ python -m specfirst view cdiscpilot01
+    view cdiscpilot01: .../viewer/index.html (3885705 bytes), 61 analyses, 1502 cells with a panel, 93 lines on the sheet; 0 problems
+    $ python -m specfirst view cdiscpilot01 --p4 matrix.json      (the coordinator's matrix, as in pass 3)
+    view cdiscpilot01: .../viewer/index.html (3926383 bytes), 61 analyses, 1502 cells with a panel, 93 lines on the sheet; 0 problems
+
+    inspection:
+    vector of the runs: ['house']
+    p4 page same as html(): True bytes 3926383
+    p4 page_problems: []
+    p4 acceptance problems: []
+    records drawn with a class: 14 {'inert': 4, 'unseparated': 4, 'separated': 6}
+    each names the vector: True
+    a class at another value: []
+    sheet P4: {'not tested': 79, 'inert': 4, 'unseparated': 4, 'separated': 6}
+         30 the P4 run of the vector house tried another value, dm_actarm: separated
+         62 the P4 run of the vector house tried another value, first_ex_with_dose: unseparated
+         17 the P4 run of the vector house tried another value, first_of_month_not_before_first_dose: unseparated
+         17 the P4 run of the vector house tried another value, last_dose_plus_days(days=30): unseparated
+          1 the P4 run of the vector house tried another value, last_ex_end_date: unseparated
+         62 the P4 run of the vector house tried another value, not_completed: unseparated
+          9 the P4 run of the vector house tried another value, standard_rows: separated
+        264 the P4 run of the vector house, every other decision at that vector&#x27;s value
+    no_alternative planted: drawn not tested | note: the P4 run of the vector house had no other value of it
+      to try | page_problems: [] | 'P4: no_alternative' on the page: False
+    no-p4 page against 78fb49b's: 6828 and 6828 lines; 4 lines differ   (the legends of unseparated and tested)
+    no-p4: every decision not tested, no note: True
+    citations on the no-p4 page: 2505
+
+    $ python -m pytest -q --basetemp=<outside /tmp> tests/unit/test_viewer.py tests/unit/test_kit.py \
+        tests/unit/test_gates.py tests/unit/test_safety_records.py tests/unit/test_citations.py \
+        tests/unit/test_harness_pilot.py
+    90 passed in 8.64s
+    $ SPECFIRST_STRICT=1 python -m pytest -q -s tests/defects -k D13
+    1 passed, 99 deselected in 71.42s (0:01:11)
+    $ ruff check src tests
+    All checks passed!
+    (the clone after the runs: git status --short prints nothing)
+
+#### R14 The documents and the logs
+
+`git show 121dbe2:<file>` for the report, ADR-022, docs/state/real.md, this
+file and the eight logs:
+- ASCII and paths: no byte outside ASCII in any of them, and no user's
+  home folder or Windows user folder;
+- per log: the commit line, the PASS and FAIL lines, the pytest summaries
+  and the last lines (the table above);
+- `git diff --stat 0046194 121dbe2` against PLAN.md, standard/, env/,
+  gen/, score/, harness/ and compile/: nothing;
+- `git diff 0046194 121dbe2` of grid.py and graph.py: no changed line in
+  `ard_id`, `SCHEMA`, `grid_problems`, `build_graph` or `write_graph`.
+
+### Verdict on the package
+
+All findings that blocked are closed (pass 1, F1), and so is every other
+finding of passes 1 to 3. The one finding of this part, P4-F1, is a
+sentence of the report and does not block. The code and the records at
+`bfdcadf` hold, and so do the documents and logs at `121dbe2`. The gates
+ran on clean clones and passed. Left for the owner, as the report and the
+state file say: the 17 conflicts and the 2 asked records of
+safety.jsonl, and a P4 run on the kit's own values.
+
 Verdict: SIGNED

@@ -375,9 +375,14 @@ The commits:
 - `78fb49b`, main 0046194 merged in (`b23dafb`) and the P4 part: all seven.
 - `bfdcadf`, the two findings of the review's pass 3: issue-31 again. That
   commit changes only src/specfirst/viewer/, its unit test, ADR-022 and the
-  state file. Of the seven gates, only issue-31 has checks that reach the
-  viewer (its checks review and planted defects); it also runs the whole
-  unit suite, as every gate does.
+  state file. Its checks reach the viewer in three places:
+  - issue-31's check review;
+  - the whole unit suite, which every gate runs;
+  - `pytest tests/defects` with D13-review, which the planted-defects check
+    of issue-31, real-2, real-3a, real-5a and real-5b runs whole (the
+    review's part 2, P4-F1).
+  The gate issue-31 on `bfdcadf` runs all three (1400 unit tests, 100
+  planted defects passed), so none of the other gates needed to run again.
 - The commits after `bfdcadf` change documents only (this report, ADR-022's
   record of the owner's answer on P4, the review, the logs).
 
@@ -455,7 +460,15 @@ A fresh-context reviewer (rule R7) signs docs/reports/issue-31.review.md.
   - Both were fixed in `bfdcadf`. P3-F1's question, whether to draw the
     house vector's classes at all, went to the owner, who chose A: show
     them and state the condition.
-- **Part 2, of this report and its eight logs:** see the review file.
+- **Final, of `121dbe2` (this report and its eight logs): SIGNED.**
+  - P3-F1 and P3-F2 are closed. Every number checked matches the runs and
+    the logs.
+  - P4-F1 (not blocking): the reason given for running only issue-31 again
+    missed that four more gates run tests/defects whole. That sentence is
+    reworded in the section "The gates on clean clones"; nothing had to
+    run again.
+  - Left for the owner: the 17 conflicts and 2 asked records, and a P4 run
+    on the kit's own values.
 
 ## What is not done
 

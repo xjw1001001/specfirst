@@ -100,7 +100,8 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   catalog-2c, merged in). Evidence: docs/reports/issue-31.md,
   issue-31.clean-clone.gate.log, issue-31.merged.issue-31.gate.log and
   issue-31.<gate>.gate.log. Review: docs/reports/issue-31.review.md (pass 1
-  NOT SIGNED, its blocking F1 fixed; passes 2 and 3 SIGNED). For the owner:
+  NOT SIGNED, its blocking F1 fixed; passes 2 and 3 SIGNED; final SIGNED
+  of `121dbe2`). For the owner:
   17 conflicts and 2 asked records (section "Handed over by issue #31").
   Decisions: docs/decisions/ADR-022.md, and the amendment of issue #31 at
   the end of ADR-003.md.
