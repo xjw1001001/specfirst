@@ -1,48 +1,86 @@
-== commit: 86d356b clone-cleanup: the clean-clone gate deletes its clone when it ends
+== commit: 67674a9 clone-cleanup: T7 of the tests sends the signal to a job with its own process group
 == T0 syntax
 bash -n: ok
 shellcheck: not installed
 
-== T1 a name that is not a plain folder name
+== T1 names that are not plain folder names, and a folder that cannot be used
 not a work package name: ../x
 exit 2
 not a work package name: .hidden
 exit 2
+not a work package name: -h
+exit 2
+cannot use the folder /no/such/folder
+exit 2
 
-== T2 FAIL (a commit that does not exist); clones before: 0
+== T2 FAIL at the checkout (a commit that does not exist), with a stale clone/ from an earlier run; clones before: 0
 exit 128
+$ git -C /tmp/specfirst-clean-J8oFFE/specfirst checkout --quiet --detach no-such-commit
 fatal: git checkout: --detach does not take a path argument 'no-such-commit'
-clean clone gate clone-test-fail: FAIL ('git -C /tmp/specfirst-clean-hKDGig/specfirst checkout --quiet --detach no-such-commit' exited 128; clone: /tmp/specfirst-clean-hKDGig/specfirst)
-clone deleted: /tmp/specfirst-clean-hKDGig
-folder gone: /tmp/specfirst-clean-hKDGig
+clean clone gate clone-test-fail: FAIL ('git -C /tmp/specfirst-clean-J8oFFE/specfirst checkout --quiet --detach no-such-commit' exited 128; clone: /tmp/specfirst-clean-J8oFFE/specfirst)
+clone deleted: /tmp/specfirst-clean-J8oFFE
+folder gone: /tmp/specfirst-clean-J8oFFE
+stale clone/ removed
 clones after: 0
 
 == T3 FAIL with SPECFIRST_KEEP_CLONE=1; clones before: 0
 exit 128
-clean clone gate clone-test-keep: FAIL ('git -C /tmp/specfirst-clean-W6sEnk/specfirst checkout --quiet --detach no-such-commit' exited 128; clone: /tmp/specfirst-clean-W6sEnk/specfirst)
-clone kept (SPECFIRST_KEEP_CLONE=1): /tmp/specfirst-clean-W6sEnk
-folder kept: /tmp/specfirst-clean-W6sEnk
+clean clone gate clone-test-keep: FAIL ('git -C /tmp/specfirst-clean-4l0E75/specfirst checkout --quiet --detach no-such-commit' exited 128; clone: /tmp/specfirst-clean-4l0E75/specfirst)
+clone kept (SPECFIRST_KEEP_CLONE=1): /tmp/specfirst-clean-4l0E75
+folder kept: /tmp/specfirst-clean-4l0E75
 removed by this test
 clones after: 0
 
-== T4 TERM while a step runs; clones before: 0
-sending TERM to the script at: $ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-5tV65z/specfirst
+== T4 a relative TMPDIR, FAIL at the checkout
+exit 128
+clone:      /root/scratch/reltmp/specfirst-clean-Bhw6i3/specfirst
+clone deleted: /root/scratch/reltmp/specfirst-clean-Bhw6i3
+left in /root/scratch/reltmp: 0
+
+== T5 mktemp fails (TMPDIR=/proc)
+exit 2
+mktemp: failed to create directory via template '/proc/specfirst-clean-XXXXXX': No such file or directory
+
+== T6 TERM to the script alone, during git clone; clones before: 0
+sending TERM to the script (pid) at: $ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-6H78YG/specfirst
 exit 143
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-5tV65z/specfirst
-clone deleted: /tmp/specfirst-clean-5tV65z
-folder gone: /tmp/specfirst-clean-5tV65z
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-6H78YG/specfirst
+clone deleted: /tmp/specfirst-clean-6H78YG
+folder gone: /tmp/specfirst-clean-6H78YG
 clones after: 0
 
-== T5 PASS: gate base-0, with SPECFIRST_ROOT set to another worktree (N2); clones before: 0
+== T7-INT INT to the whole process group, during the gate step of base-0; clones before: 0
+process group of the script: 789 (pid 789)
+sending INT to the process group at: $ specfirst gate base-0 --clean
+exit 130
+KeyboardInterrupt
+copied: the clone's build/gates/base-0/ to build/gates/base-0/clone/ here
+clone deleted: /tmp/specfirst-clean-QfpwWR
+folder gone: /tmp/specfirst-clean-QfpwWR
+gate.log
+clones after: 0
+
+== T7-HUP HUP to the whole process group, during the gate step of base-0; clones before: 0
+process group of the script: 3654 (pid 3654)
+sending HUP to the process group at: $ specfirst gate base-0 --clean
+exit 129
+Hangup
+copied: the clone's build/gates/base-0/ to build/gates/base-0/clone/ here
+clone deleted: /tmp/specfirst-clean-hXvgt8
+folder gone: /tmp/specfirst-clean-hXvgt8
+gate.log
+clones after: 0
+
+== T8 PASS of gate base-0: SPECFIRST_ROOT set to another worktree (N2), and the caller's output closed after one byte; clones before: 0
 exit 0
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     86d356b733ec28894ea259a078eb1bc44d301ae0
-clean clone gate base-0: PASS (clone: /tmp/specfirst-clean-Nfvc9c/specfirst)
+commit:     67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0
+clean clone gate base-0: PASS (clone: /tmp/specfirst-clean-dMZDEj/specfirst)
 The log is in build/gates/base-0/ here; the clone is deleted now unless
 SPECFIRST_KEEP_CLONE=1 (docs/lessons.md, lesson 73).
 copied: the clone's build/gates/base-0/ to build/gates/base-0/clone/ here
-clone deleted: /tmp/specfirst-clean-Nfvc9c
-folder gone: /tmp/specfirst-clean-Nfvc9c
+clone deleted: /tmp/specfirst-clean-dMZDEj
+folder gone: /tmp/specfirst-clean-dMZDEj
 evidence.xml
 gate.log
 clones after: 0

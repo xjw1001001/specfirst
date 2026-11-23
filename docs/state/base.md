@@ -15,6 +15,10 @@ Result: repository, environment, pins, shared formats (PLAN.md section 13.2).
   `4b12c86`; the runs of this change check it with `SPECFIRST_ROOT` set to
   another worktree. Evidence: docs/reports/clone-cleanup.md. Review:
   docs/reports/clone-cleanup.review.md.
+- For the gen track: docs/state/gen.md (the note on lesson 39, about line
+  492) still says that a clean clone lasts a minute after the last command.
+  Since clone-cleanup the script deletes it and keeps build/gates/<wp>/ in
+  build/gates/<wp>/clone/.
 
 ## Open
 

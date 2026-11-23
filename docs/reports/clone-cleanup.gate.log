@@ -1,24 +1,24 @@
 clean clone gate base-0
 repository: /mnt/d/trial_work/specfirst/.git
-commit:     86d356b733ec28894ea259a078eb1bc44d301ae0
-clone:      /tmp/specfirst-clean-Nfvc9c/specfirst
-environment and cache: /tmp/specfirst-clean-Nfvc9c/env
+commit:     67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0
+clone:      /tmp/specfirst-clean-dMZDEj/specfirst
+environment and cache: /tmp/specfirst-clean-dMZDEj/env
 
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-Nfvc9c/specfirst
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-dMZDEj/specfirst
 
-$ git -C /tmp/specfirst-clean-Nfvc9c/specfirst checkout --quiet --detach 86d356b733ec28894ea259a078eb1bc44d301ae0
+$ git -C /tmp/specfirst-clean-dMZDEj/specfirst checkout --quiet --detach 67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0
 
-$ git -C /tmp/specfirst-clean-Nfvc9c/specfirst log -1 --format=%H %s
-86d356b733ec28894ea259a078eb1bc44d301ae0 clone-cleanup: the clean-clone gate deletes its clone when it ends
+$ git -C /tmp/specfirst-clean-dMZDEj/specfirst log -1 --format=%H %s
+67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0 clone-cleanup: T7 of the tests sends the signal to a job with its own process group
 
 $ bash env/install.sh
-python environment: /tmp/specfirst-clean-Nfvc9c/env/venv-specfirst-2625413533
-R library: /tmp/specfirst-clean-Nfvc9c/env/r-lib
+python environment: /tmp/specfirst-clean-dMZDEj/env/venv-specfirst-2435017088
+R library: /tmp/specfirst-clean-dMZDEj/env/r-lib
 R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
-R library matches the lock: 99 packages in /tmp/specfirst-clean-Nfvc9c/env/r-lib
-CDISC CORE v1.0.0: /tmp/specfirst-clean-Nfvc9c/env/core/f3282a0d870b-d90ef34c553d
+R library matches the lock: 99 packages in /tmp/specfirst-clean-dMZDEj/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-dMZDEj/env/core/f3282a0d870b-d90ef34c553d
 source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
-python     3.12.3  (/tmp/specfirst-clean-Nfvc9c/env/venv-specfirst-2625413533/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-dMZDEj/env/venv-specfirst-2435017088/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -30,7 +30,7 @@ lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
 
 $ specfirst fetch
-cache: /tmp/specfirst-clean-Nfvc9c/env/cache
+cache: /tmp/specfirst-clean-dMZDEj/env/cache
 ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -50,10 +50,10 @@ ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae
 fetch: every pin verified
 
 $ specfirst gate base-0 --clean
-gate base-0 at commit 86d356b733ec28894ea259a078eb1bc44d301ae0 (clean)
+gate base-0 at commit 67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0 (clean)
 
 == [1/7] environment: specfirst doctor
-python     3.12.3  (/tmp/specfirst-clean-Nfvc9c/env/venv-specfirst-2625413533/bin/python)
+python     3.12.3  (/tmp/specfirst-clean-dMZDEj/env/venv-specfirst-2435017088/bin/python)
 python lock: 23 packages pinned, 0 differ
 R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
 R lock: 99 packages pinned, 0 differ
@@ -63,10 +63,10 @@ CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
 system lock: 32 packages recorded, 0 differ
 lock script: env/lock.sh writes 4 lock files, 0 problems
 doctor: ok
--- PASS environment (0.3 s)
+-- PASS environment (0.4 s)
 
 == [2/7] pins: specfirst fetch --verify
-cache: /tmp/specfirst-clean-Nfvc9c/env/cache
+cache: /tmp/specfirst-clean-dMZDEj/env/cache
 ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
 ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
 ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
@@ -84,7 +84,7 @@ ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60
 ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
 ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
 fetch: every pin verified
--- PASS pins (0.8 s)
+-- PASS pins (0.7 s)
 
 == [3/7] lint: ruff check .
 All checks passed!
@@ -111,8 +111,8 @@ All checks passed!
 ........................................................................ [ 92%]
 ........................................................................ [ 97%]
 ................................                                         [100%]
-1400 passed, 37 deselected in 466.30s (0:07:46)
--- PASS unit tests (467.0 s)
+1400 passed, 37 deselected in 464.14s (0:07:44)
+-- PASS unit tests (464.8 s)
 
 == [5/7] evidence tests: SPECFIRST_STRICT=1 pytest tests/evidence -m evidence -s -q
 
@@ -239,13 +239,13 @@ shift=worst_case baseline=last_predose equal 51 of 51  p-values 0.392 and 0.381 
 3 x 3 reading (low, normal, high): equal 59 of 59
 3 x 2 reading (normal, abnormal):  equal 10 of 59
 .
-8 passed in 211.97s (0:03:31)
--- PASS evidence tests (212.1 s)
+8 passed in 211.57s (0:03:31)
+-- PASS evidence tests (211.7 s)
 
 == [6/7] R packages: Rscript --vanilla env/check_r.R $(cat env/r-packages.txt)
 planted defect: the check fails for specfirst.no.such.package (exit 1)
 R version 4.6.2 (2026-10-29)
-library paths: /tmp/specfirst-clean-Nfvc9c/env/r-lib : /usr/lib/R/library
+library paths: /tmp/specfirst-clean-dMZDEj/env/r-lib : /usr/lib/R/library
 cards      0.9.0
 cardx      0.3.4
 siera      0.5.6
@@ -257,20 +257,20 @@ R loads 7 of 7 packages
 -- PASS R packages (1.0 s)
 
 == [7/7] ASCII: python -m specfirst.asciicheck
-ASCII check: 934 files checked, 0 with non-ASCII bytes
+ASCII check: 938 files checked, 0 with non-ASCII bytes
 -- PASS ASCII (0.0 s)
 
-PASS  environment          0.3 s
-PASS  pins                 0.8 s
+PASS  environment          0.4 s
+PASS  pins                 0.7 s
 PASS  lint                 0.0 s
-PASS  unit tests         467.0 s
-PASS  evidence tests     212.1 s
+PASS  unit tests         464.8 s
+PASS  evidence tests     211.7 s
 PASS  R packages           1.0 s
 PASS  ASCII                0.0 s
 GATE base-0: PASS
 
-clean clone gate base-0: PASS (clone: /tmp/specfirst-clean-Nfvc9c/specfirst)
+clean clone gate base-0: PASS (clone: /tmp/specfirst-clean-dMZDEj/specfirst)
 The log is in build/gates/base-0/ here; the clone is deleted now unless
 SPECFIRST_KEEP_CLONE=1 (docs/lessons.md, lesson 73).
 copied: the clone's build/gates/base-0/ to build/gates/base-0/clone/ here
-clone deleted: /tmp/specfirst-clean-Nfvc9c
+clone deleted: /tmp/specfirst-clean-dMZDEj

@@ -1,0 +1,111 @@
+clean clone gate base-0
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0
+clone:      /tmp/specfirst-clean-QfpwWR/specfirst
+environment and cache: /tmp/specfirst-clean-QfpwWR/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-QfpwWR/specfirst
+
+$ git -C /tmp/specfirst-clean-QfpwWR/specfirst checkout --quiet --detach 67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0
+
+$ git -C /tmp/specfirst-clean-QfpwWR/specfirst log -1 --format=%H %s
+67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0 clone-cleanup: T7 of the tests sends the signal to a job with its own process group
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-QfpwWR/env/venv-specfirst-2422951490
+R library: /tmp/specfirst-clean-QfpwWR/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-QfpwWR/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-QfpwWR/env/core/f3282a0d870b-d90ef34c553d
+source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
+python     3.12.3  (/tmp/specfirst-clean-QfpwWR/env/venv-specfirst-2422951490/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-QfpwWR/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate base-0 --clean
+gate base-0 at commit 67674a94ca8c41be07bd3d23ab1d6ce20f83a4e0 (clean)
+
+== [1/7] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-QfpwWR/env/venv-specfirst-2422951490/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+-- PASS environment (0.3 s)
+
+== [2/7] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-QfpwWR/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (1.2 s)
+
+== [3/7] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/7] unit tests: pytest -m "not evidence" -q
+Traceback (most recent call last):
+  File "/tmp/specfirst-clean-QfpwWR/env/venv-specfirst-2422951490/bin/specfirst", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/tmp/specfirst-clean-QfpwWR/specfirst/src/specfirst/cli.py", line 308, in main
+    return gates.run_gate(root, args.wp, require_clean=args.clean)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/specfirst-clean-QfpwWR/specfirst/src/specfirst/gates.py", line 1078, in run_gate
+    passed = bool(check.run(ctx))
+                  ^^^^^^^^^^^^^^
+  File "/tmp/specfirst-clean-QfpwWR/specfirst/src/specfirst/gates.py", line 108, in _unit_tests
+    return ctx.command([sys.executable, "-m", "pytest", "-m", "not evidence", "-q"]) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/specfirst-clean-QfpwWR/specfirst/src/specfirst/gates.py", line 61, in command
+    for line in process.stdout:
+KeyboardInterrupt
+copied: the clone's build/gates/base-0/ to build/gates/base-0/clone/ here
+clone deleted: /tmp/specfirst-clean-QfpwWR
