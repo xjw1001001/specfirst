@@ -11,10 +11,13 @@
       twin/truth/subjects.jsonl     latent truth of the twin
 
 The folder names are those of the kit format (PLAN.md section 8); gen-2
-adds the decisions, the gold results and kit.yaml. Everything is a pure
-function of the generator version, the design and the seed. The manifest
-holds the SHA-256 of the seed, never the seed (section 6.7). JSON, JSONL
-and Parquet go through the canonical writers of the machine
+adds the decision records, the gold results and kit.yaml. Everything is a
+pure function of the generator version, the design, the decision vector and
+the seed (section 6.4: the decisions come first, stage S1, and the probes
+are planted for them, stage S3; gen-2b). A kit gives its vector; a study of
+its own draws one from its seed (`own_values`). The manifest names the
+vector and holds the SHA-256 of the seed, never the seed (section 6.7).
+JSON, JSONL and Parquet go through the canonical writers of the machine
 (`specfirst.machine.canonical`).
 """
 
@@ -27,7 +30,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from specfirst.compile import catalog as catalogs
-from specfirst.gen import GENERATOR, datasetjson, define, probes, sdtm, subjects
+from specfirst.gen import GENERATOR, datasetjson, decisions, define, probes, sdtm, subjects
 from specfirst.gen import design as designs
 from specfirst.gen.rng import Stream, seed_sha256
 from specfirst.machine import canonical
@@ -55,19 +58,36 @@ def system(catalog: str) -> dict:
     return {"name": "specfirst generator", "version": f"{GENERATOR} catalog {catalog}"}
 
 
+def own_values(catalog: catalogs.Catalog, design: dict, seed: str,
+               root: Path | None = None) -> dict[str, dict]:
+    """The decision vector of a study of its own (no kit gives it one): drawn from the seed
+    within the default house standard of the checkout `root` (None: this package's), as
+    a kit of that study without a scenario draws its vector."""
+    from specfirst.compile import house as houses
+
+    house = houses.load(houses.default_dir(root))
+    return decisions.sample(catalog, house, design, probes.Parameters.of(design).as_record(),
+                            Stream(seed, "decisions", designs.study_id(design), 0))
+
+
 def simulate(design: dict, catalog: catalogs.Catalog, seed: str, which: str,
-             visible_share: float = VISIBLE_SHARE) -> tuple[list[subjects.Subject], list[dict]]:
-    """The subjects of one dataset and the log of the probes planted in it."""
+             visible_share: float = VISIBLE_SHARE, values: dict[str, dict] | None = None,
+             ) -> tuple[list[subjects.Subject], list[dict]]:
+    """The subjects of one dataset and the log of the probes planted in it, for the
+    decision vector `values` (stage S3 after S1); without one, the vector of a study of
+    its own (`own_values`)."""
     if which not in PLACES:
         raise StudyError(f"a study has the datasets {sorted(PLACES)}, not '{which}'")
+    if values is None:
+        values = own_values(catalog, design, seed)
     rng = Stream(seed, "study", designs.study_id(design), which)
     ctx = subjects.Context.of(design)
     share = 1.0 if which == "twin" else visible_share
     picked = probes.chosen(catalog, design, rng.child("probes"), share)
     people = subjects.base_subjects(ctx, rng.child("base"), probes.spared_arm(design, picked))
-    planted = probes.plant(ctx, catalog, people, rng.child("probes"), picked)
+    planted = probes.plant(ctx, catalog, people, rng.child("probes"), picked, values)
     subjects.assign_identifiers(design, people)
-    return people, probes.log(design, catalog, which, planted, people)
+    return people, probes.log(design, catalog, which, planted, people, values)
 
 
 def _arrow(domain: sdtm.Domain, rows: list[dict], note: dict) -> pa.Table:
@@ -133,8 +153,11 @@ def file_hashes(folder: Path) -> dict[str, str]:
 
 def generate(root: Path, design: dict, seed: str, out: Path,
              domains: tuple[str, ...] = sdtm.SLICE_DOMAINS,
-             visible_share: float = VISIBLE_SHARE) -> dict:
-    """Write one study folder and return its manifest."""
+             visible_share: float = VISIBLE_SHARE,
+             values: dict[str, dict] | None = None) -> dict:
+    """Write one study folder and return its manifest. The probes are planted for the
+    decision vector `values` (a kit's); without one, for the vector of a study of its own
+    (`own_values`). The manifest names the vector."""
     catalog = catalogs.load(catalogs.default_dir(root))
     label = catalog_label(catalog)
     if design.get("catalog") != label:
@@ -143,6 +166,8 @@ def generate(root: Path, design: dict, seed: str, out: Path,
     found = designs.problems(design)
     if found:
         raise StudyError("; ".join(found))
+    if values is None:
+        values = own_values(catalog, design, seed, root)
     out.mkdir(parents=True, exist_ok=True)
     (out / "gold").mkdir(exist_ok=True)
     header = (f"# design.yaml of the study {designs.study_id(design)}: generated by specfirst "
@@ -152,7 +177,7 @@ def generate(root: Path, design: dict, seed: str, out: Path,
     log: list[dict] = []
     counts = {}
     for which, place in PLACES.items():
-        people, planted = simulate(design, catalog, seed, which, visible_share)
+        people, planted = simulate(design, catalog, seed, which, visible_share, values)
         tables = sdtm.build(design, people, domains)
         write_dataset(out / place, design, tables, label, data_stamp(people))
         truth = out / ("gold" if which == "visible" else "twin") / "truth" / "subjects.jsonl"
@@ -171,6 +196,7 @@ def generate(root: Path, design: dict, seed: str, out: Path,
         "sdtmig": sdtm.SDTMIG_VERSION,
         "domains": [name for name in sdtm.ORDER if name in domains],
         "visible_share": visible_share,
+        "decisions": {key: values[key] for key in sorted(values)},
         "counts": counts,
         "files": file_hashes(out),
     }

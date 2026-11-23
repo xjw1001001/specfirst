@@ -29,12 +29,18 @@ Everything is a pure function of the generator version, the catalog, the
 house standard, the seed and the split. No file holds a seed, a clock or a
 path of the machine it was made on.
 
+The decisions come first (section 6.4, stage S1 before S3; gen-2b,
+docs/decisions/ADR-023.md): the decision vector of a kit is drawn from its
+design and seed, and the data are generated for it, the probes planted to
+separate its decisions (`study.generate` with the vector).
+
 `generate` writes a kit only when it has the properties P2 to P4 and its two
-result engines agree. A decision vector whose kit leaves a pair of
-alternatives that the log of probes claims unseparated on the twin is drawn
-again, up to `MAX_ATTEMPTS` times; the manifest says how often. A kit that
-cannot be written leaves no folder. `generate_checked` builds the kit a
-second time in a process of its own and compares every hash (P1).
+result engines agree. P4 includes: every decision that the output reads is
+separated on the twin, unless another decision of the kit makes its
+alternatives give the same output on any data (`probes.REACHES`). A kit in
+which one is not separated is not written; no other vector is drawn for it.
+A kit that cannot be written leaves no folder. `generate_checked` builds the
+kit a second time in a process of its own and compares every hash (P1).
 
 Documents (stage S6, specfirst.gen.documents). The tier of the documents of
 kit n of a set is `documents.TIER_PLAN`; a kit of its own draws full or
@@ -88,7 +94,6 @@ Out = Callable[[str], None]
 FORMAT = 1
 MANIFEST = "kit.yaml"
 SLICE = "ae-summary-first"
-MAX_ATTEMPTS = 12
 APART_ZONE = "Pacific/Kiritimati"
 MAX_DESIGNS = 50
 # The split of the kits of a set, by their number: four train, three dev, three test.
@@ -133,6 +138,27 @@ def sample_design(seed: str, label: str, split: str, scenario: dict) -> tuple[di
     raise KitError(f"no design for the scenario after {MAX_DESIGNS} draws")
 
 
+def draw_values(catalog: catalogs.Catalog, house: houses.House, design: dict, seed: str,
+                split: str, given: dict[str, str]) -> dict[str, dict]:
+    """Stage S1: the decision vector of a kit, drawn from its design and seed before any
+    data exist; `given` fixes the decisions of its scenario."""
+    return decisions.sample(catalog, house, design, probes.Parameters.of(design).as_record(),
+                            Stream(seed, "decisions", designs.study_id(design), 0),
+                            split, given=given)
+
+
+def unfollowed(values: dict[str, dict]) -> dict[str, dict]:
+    """Planted defect (gate gen-2b, rule R5): the vector that the probes of gen-2a were built
+    for whatever a kit decided. The count probes then hold for the safety set grouped by
+    actual treatment from DM.ACTARM at one decimal, and a planted subject may stop before
+    the visits that the kit's analysis set asks for."""
+    changed = {**values, "tfl.population": {"rule": "safety"},
+               "pop.safety.grouping": {"rule": "actual"},
+               "trt.actual.source": {"rule": "dm_actarm"}}
+    changed["tfl.percent.format"] = {**values["tfl.percent.format"], "decimals": 1}
+    return changed
+
+
 def _reference_file(kit_dir: Path, which: str, tables: reference.Tables,
                     values: dict[str, dict], arms: list[dict]) -> Path:
     found = reference.table(tables, values, [
@@ -140,20 +166,6 @@ def _reference_file(kit_dir: Path, which: str, tables: reference.Tables,
     path = kit_dir / gold.PLACES[which][1] / REFERENCE / f"{decisions.OUTPUT_UNIT}.json"
     write_json(path, reference.as_record(found))
     return path
-
-
-def _clear_gold(kit_dir: Path) -> None:
-    """Remove what an attempt wrote, and keep what the generator of the data wrote."""
-    for relative in ("gold/spec", "gold/docs", "inputs/docs", documents.ORACLE,
-                     documents.SUMMARY, gold.DECISIONS, IDENTIFIABILITY, "twin/gold",
-                     "work", *(f"gold/{name}" for name in (
-                         gold.RESOLVED, "data", gold.ARS_OUT, gold.ARD, gold.GRID, gold.PAGES,
-                         gold.GRAPH, REFERENCE))):
-        target = kit_dir / relative
-        if target.is_dir():
-            shutil.rmtree(target)
-        elif target.exists():
-            target.unlink()
 
 
 def all_files(kit_dir: Path) -> dict[str, str]:
@@ -281,32 +293,23 @@ def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: O
     scenario_number = scenario_of(seed, number)
     scenario = decisions.SCENARIOS[scenario_number]
     design, designs_drawn = sample_design(seed, label, split, scenario)
-    generated = study.generate(root, design, seed, out)
+    # Stage S1: the decision vector, from the design alone. Then the data, made for it.
+    values = draw_values(catalog, house, design, seed, split, scenario["values"])
+    generated = study.generate(root, design, seed, out, values=values)
     gold.copy_house(house, out)
     log = study.read_probes(out)
-    parameters = probes.Parameters.of(design).as_record()
-    rejected: list[dict] = []
-    for attempt in range(MAX_ATTEMPTS):
-        _clear_gold(out)
-        values = decisions.sample(catalog, house, design, parameters,
-                                  Stream(seed, "decisions", designs.study_id(design), attempt),
-                                  split, given=scenario["values"])
-        properties, defects, unfit = _attempt(
-            root, catalog, house, out, design, values, log, with_r, tier,
-            Stream(seed, "documents", designs.study_id(design), attempt))
-        if defects:
-            shown = "; ".join(defects[:6])
-            raise KitError(f"study {designs.study_id(design)}, decision vector {attempt}: "
-                           f"{len(defects)} defects: {shown}")
-        if not unfit:
-            break
-        rejected.append({"attempt": attempt, "reasons": unfit})
-        say(f"study {designs.study_id(design)}: decision vector {attempt} drawn again: "
-            + "; ".join(unfit))
-    else:
-        raise KitError(f"study {designs.study_id(design)}: no decision vector of "
-                       f"{MAX_ATTEMPTS} separates every pair of alternatives that the log "
-                       "of probes claims: " + "; ".join(rejected[-1]["reasons"]))
+    properties, defects, unfit = _attempt(
+        root, catalog, house, out, design, values, log, with_r, tier,
+        Stream(seed, "documents", designs.study_id(design), 0))
+    if defects:
+        raise KitError(f"study {designs.study_id(design)}: {len(defects)} defects: "
+                       + "; ".join(defects[:6]))
+    if unfit:
+        named = sorted({line.split(":")[0] for line in unfit})
+        raise KitError(f"study {designs.study_id(design)}: the twin does not separate "
+                       f"{len(unfit)} pairs of alternatives that the output reads and that "
+                       "no other decision makes equal: " + "; ".join(unfit[:6])
+                       + f" (decisions: {', '.join(named)})")
     shutil.rmtree(out / "work", ignore_errors=True)
     import pyarrow
 
@@ -337,8 +340,7 @@ def _generate(root: Path, seed: str, out: Path, split: str, with_r: bool, say: O
         "outputs": [{"unit": decisions.OUTPUT_UNIT,
                      "id": "Out_AESUM"}],
         "decisions": {"file": gold.DECISIONS,
-                      "scenario": scenario_number + 1, "given": scenario["values"],
-                      "vectors_drawn_before": rejected},
+                      "scenario": scenario_number + 1, "given": scenario["values"]},
         "documents": written,
         "probes": probe_lists(log),
         "properties": properties,
@@ -480,8 +482,9 @@ def check(root: Path, kit_dir: Path, say: Out = lambda line: None,
         say(f"  twin: P4 {summary['builds']} builds of {summary['decisions']} decisions: "
             f"{len(summary['separated'])} separated, {summary['applicable']} applicable, "
             f"{len(summary['applicable_and_unseparated'])} applicable and unseparated; not "
-            f"read: {', '.join(summary['unseparated_not_read']) or 'none'}; read without a "
-            f"probe: {', '.join(summary['unseparated_read']) or 'none'}")
+            f"read: {', '.join(summary['unseparated_not_read']) or 'none'}; read, and equal "
+            f"under the other decisions on any data: "
+            f"{', '.join(summary['unseparated_read']) or 'none'}")
     return problems
 
 
@@ -581,6 +584,15 @@ def main() -> int:
     job = json.loads(sys.stdin.read())
     if job.get("planted") == "clock":
         study.data_stamp = _planted_clock
+    elif job.get("planted") == "unfollowed":
+        # Probes that do not follow the decisions of the kit (gen-2a's generator).
+        original_generate = study.generate
+
+        def generate_unfollowed(*args: object, values: dict | None = None,
+                                **options: object) -> dict:
+            return original_generate(*args, values=unfollowed(values), **options)
+
+        study.generate = generate_unfollowed
     elif job.get("planted") == "folder":
         # A manifest that names the folder it was built in.
         original = yaml.safe_dump

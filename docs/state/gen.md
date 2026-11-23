@@ -56,7 +56,8 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
 ```text
 kit.yaml                    id, tier A, archetype, slice, split, generator, catalog, house,
                             pins, the properties, the SHA-256 of every file
-study.json                  the manifest of the data (gen-1a)
+study.json                  the manifest of the data (gen-1a); `decisions`: the vector the
+                            probes were planted for (gen-2b)
 inputs/data/sdtm/           visible SDTM: <domain>.parquet, <domain>.json, define.xml
 inputs/house/               the house standard, as in standard/houses/open-default@1
 inputs/docs/                protocol.md and sap.md in natural form (gen-3a, below)
@@ -123,28 +124,28 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
 ## What a scorer must know (read-1a)
 
 - `gold/identifiability.json` is the matrix of the twin. Per decision:
-  `read` (the output reads an element the decision sets), `applicable` (the
-  log of probes claims a probe for every pair of the gold value with
-  another alternative), `identifiable` (`separated`, `unseparated`, or
-  `no_alternative`), `reason`, and `pairs` with `gold`, `claimed`,
-  `separated` and the number of changed `cells`. The decision records
-  repeat `identifiable`.
+  `read` (the output reads an element the decision sets), `applicable`
+  (read, and no other decision of the kit makes its alternatives give the
+  same output on any data: `probes.REACHES` holds for every pair of the
+  gold value with another alternative), `identifiable` (`separated`,
+  `unseparated`, or `no_alternative`), `reason`, and `pairs` with `gold`,
+  `claimed`, `separated` and the number of changed `cells`. The decision
+  records repeat `identifiable`.
 - A decision that is `unseparated` on the twin cannot be scored by the
-  table: compare decision values and report it apart (section 9.3). This
-  holds also for a decision that the table reads: a kit of this generator
-  can state a decision, have a table that reads it, and still give the
-  same table as under the house default (kit 9 of the gate set states
-  rounding half to even; every cell of its twin has the same text under
-  the default). The owner approved that for the slice on 2026-11-17
-  (ADR-007, "The owner's answer on decision 6"). A table that equals the
-  gold table is therefore no evidence for an `unseparated` decision, and a
-  table that differs is not caused by one. Three kinds occur. Not read: the output does not read it under the decisions
-  of the kit (`pop.randomized.rule` in a kit on the safety set;
-  `date.studyday.origin` in every kit of this slice). Read without a probe:
-  `tfl.rounding.rule` outside the safety set grouped by actual treatment
-  from DM, and the decisions that act through one planted event in a kit on
-  the efficacy-evaluable set. Equal by another decision:
-  `pop.safety.grouping` when actual treatment is the same as planned.
+  table: compare decision values and report it apart (section 9.3). From
+  the generator `gen-2b.1` (ADR-023) two kinds occur, and no other. Not
+  read: the output does not read it under the decisions of the kit
+  (`pop.randomized.rule` in a kit on the safety set; `date.studyday.origin`
+  in every kit of this slice). Read, and equal by another decision on any
+  data: `pop.safety.rule` in a table by planned treatment (the subject
+  dosed without being randomized has no planned treatment),
+  `pop.safety.grouping` when actual treatment is the same as planned; the
+  matrix gives the reason `verify.NO_PROBE`. A decision that the output
+  reads and that data could separate is separated in every kit: a kit in
+  which one is not is not written, and the gates gen-2a and gen-2b fail on
+  it. (Kits of `gen-2a.*` and `catalog-2c.*` could leave such a decision
+  unseparated, the rounding rule outside the safety set by actual treatment
+  among them: ADR-007, "The owner's answer on decision 6".)
 - The matrix changes one decision at a time, from the gold vector. Two
   wrong decisions can cancel in the table, and so can two planted subjects
   in one arm; a kit is written only when every claimed pair is separated,
@@ -242,7 +243,7 @@ subagents of a Claude Code session; the CLI on this machine is not logged
 in (ADR-009, decision 1).
 
 - Change `GENERATOR` with any change that gives other bytes. Kits are
-  generated again, never patched. It is `catalog-2c.2` now (catalog-2c).
+  generated again, never patched. It is `gen-2b.1` now (gen-2b; ADR-023).
 - `specfirst gate` refuses to run while `SPECFIRST_REWRITES` is set, and
   `specfirst gen natural requests|propose` refuses dev, test and sealed
   kits (but those of the gate seed) while the store lies inside a
@@ -398,16 +399,18 @@ runs for another seed (docs/reports/gen-3a.review.md, pass 2):
   or a rule passes both checks; the verifier should also read back the slot
   values before rewrites that move further from the standard form.
 
-- The data of a kit are a function of the design and the seed (gen-1a);
-  the decisions are sampled to fit them. A probe that holds for one
-  analysis set (the calibrated counts) cannot follow the decisions. The
-  gate `gen-2a` therefore reads "applicable" as "claimed by the log of
-  probes" (ADR-007, decision 6). The owner approved that reading for the
-  slice only; the rework is the last point under "Next". Until it is
-  done, look at the matrices of a set before the set is used: how many
-  kits leave a decision unseparated that the table reads differs by seed
-  (2 of 10 in the set of the gate; 2 and 4 of 10 in two sets of the
-  reviewer, one case stated in the document of a dev kit).
+- The sampler refuses no combination for the probes (ADR-023, decision 6;
+  the owner lifted gen-2a's three limits on 2026-11-23). Three recipes
+  plant data of a shape of their own for them: a first dose without a
+  time (emergence by the time of the first dose, a partial start completed
+  to a day); a treatment and a study disposition record for the subject
+  without an exposure end date (the treatment record as the end-of-study
+  record); a second such subject with no study-level disposition record
+  (the study participation record; per recommendation, pending SME review).
+- The count probe adds subjects of the placebo arm until the counted
+  column has a size with a rounding half (a multiple of 8, 16 or 32 at 0, 1
+  or 2 decimals): up to 31 more subjects than the arm planned (ADR-023,
+  decision 3).
 - The scenarios of a set (`decisions.SCENARIOS`) are what makes every
   decision read and claimed in some kit of ten. A set of other size keeps
   the rotation.
@@ -424,9 +427,11 @@ For the std track:
   last disposition event is the study participation record, so
   `disposition_event` and `disposition_event_by_subcategory` pick the same
   record unless the subcategory is that of the treatment record. And with
-  that subcategory nearly no subject has an end-of-study date. A kit can
-  separate the decision only from `disposition_event` towards the treatment
-  record; the value "STUDY PARTICIPATION" is never separated.
+  that subcategory nearly no subject has an end-of-study date. Since gen-2b
+  the table separates the decision through the subject without an exposure
+  end date, whose disposition records follow the kit's value (ADR-023,
+  decision 6): a treatment and a study record; or, for the value "STUDY
+  PARTICIPATION", a second subject with a treatment record only.
 - `tfl.population` has the alternative `efficacy` in every design; in a
   design without that set it cannot be built. The catalog has no
   applicability per alternative.
@@ -462,22 +467,9 @@ For the real track:
   other three table families; more than one rewrite per statement, and a
   phrasing family held out for an exam (section 6.7); rewrites that move
   further from the standard form (ADR-009, "For the owner").
-- Owed before the gate of the full gen-2 is run (the owner's answer of
-  2026-11-17 on finding G1 of the gen-2a review; ADR-007): the probes
-  follow the decisions of the kit. The decisions are sampled first and
-  the probes are planted after them (section 6.4, S1 before S3): the
-  calibrated counts for the analysis set and the grouping of the kit's
-  own table, the planted subjects inside its analysis set.
-  `probes.REACHES` keeps only the conditions under which another decision
-  of the kit makes the alternatives equal on any data; the conditions
-  `_ANALYZED` and that of `tfl.rounding.rule` go. The gate fails on a kit
-  in which a decision that the output reads, and that data could
-  separate, is not separated on the twin. This changes `study.generate`
-  (the data of a kit then depend on its decisions) and the order in
-  `kits._attempt`, so the gate of gen-1a runs again, with CORE, and
-  `GENERATOR` changes. The kit folder and the loading API above need not
-  change. Not started; when it is done, and as which part, is the owner's
-  to plan.
+- The rework owed before the gate of the full gen-2 (the owner's answer of
+  2026-11-17 on finding G1 of the gen-2a review) is done: part gen-2b,
+  ADR-023 (see "Passed").
 
 How to run things:
 
@@ -487,10 +479,14 @@ How to run things:
   takes about 20 minutes, nearly all of it CORE. Wrap every gate, test
   suite or generator run in `flock /run/lock/specfirst-heavy.lock
   <command>` (lesson 32).
-- One kit takes about half a minute per decision vector; a vector is drawn
-  again when its kit does not separate what the log claims.
-- A clean clone is under `/tmp`, which WSL clears a minute after the last
-  command: copy what must last in the same command (lesson 39).
+- One kit takes about a minute and a half without R. A kit that does not
+  separate a decision the output reads is not written (no second vector).
+- `scripts/clean_clone_gate.sh <wp>` runs a gate on a clone under `/tmp`;
+  when it ends it copies the clone's `build/gates/<wp>/` into the
+  checkout's `build/gates/<wp>/clone/` and deletes the clone (lesson 73;
+  `SPECFIRST_KEEP_CLONE=1` keeps it). Lesson 39 counted on WSL clearing
+  `/tmp`; it does not while sessions run commands, so nothing outside the
+  copied folder lasts.
 
 ## Handed over by base-0
 

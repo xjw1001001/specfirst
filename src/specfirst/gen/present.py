@@ -164,21 +164,36 @@ def _spans_days(record: dict, data: Data, design: dict) -> list[str]:
 
 
 def _no_end_date(record: dict, data: Data, design: dict) -> list[str]:
+    """Every subject has no exposure end date and a serious event later than the window
+    after the disposition record the log names (gen-2b: the study record; or the treatment
+    record, with a study record late enough that the event lies inside the window after
+    it; or the treatment record of a subject without a study-level record)."""
+    names = design["collection"]["disposition"]["subcategories"]
+    window = datetime.timedelta(days=record["detail"]["window_days"])
+
     def check(subject: str) -> str | None:
         rows = data.exposure(subject)
         if not rows or any(r["EXENDTC"] for r in rows):
             return "an exposure record has an end date, or there is no record"
         if not data.dosed(subject):
             return "no exposure record with a dose and a complete start date"
-        end = data.end_of_study(subject)
-        if end is None:
-            return "no disposition event with a date"
-        limit = end + datetime.timedelta(days=record["detail"]["window_days"])
-        late = [r for d, r in data.event_starts(subject) if d > limit]
+        own = (record.get("by_subject") or {}).get(subject) or {
+            "records": ["study"], "event_after": "study"}
+        events = {r["DSSCAT"]: _date(r["DSSTDTC"]) for r in data.rows("DS", subject)
+                  if r["DSCAT"] == "DISPOSITION EVENT"}
+        wanted = {names[kind] for kind in own["records"]}
+        if set(events) != wanted or any(date is None for date in events.values()):
+            return (f"disposition events with the subcategories {sorted(events)}, not "
+                    f"{sorted(wanted)}")
+        end = events[names[own["event_after"]]]
+        late = [(d, r) for d, r in data.event_starts(subject) if d > end + window]
         if not late:
             return "no event later than the window after the disposition date"
-        if not any(r["AESER"] == "Y" for r in late):
+        if not any(r["AESER"] == "Y" for _, r in late):
             return "the event after the window is not serious"
+        if own["event_after"] == "treatment" and "study" in own["records"] and not any(
+                d <= events[names["study"]] + window for d, _ in late):
+            return "the event lies after the window that follows the study record as well"
         return None
     return _each(record, check)
 
@@ -325,6 +340,12 @@ def _partial_ae_in_month(record: dict, data: Data, design: dict) -> list[str]:
         dose = data.dm[subject]["RFXSTDTC"] or ""
         if len(dose) < 10 or int(dose[8:10]) <= 1:
             return "the first dose is on the first day of the month, or has no complete date"
+        # The subject logged without a time of the first dose (gen-2b): none in DM or EX.
+        own = (record.get("by_subject") or {}).get(subject) or {}
+        if "dose_time" in own and own["dose_time"] is None and (
+                len(dose) != 10 or any(len(r["EXSTDTC"] or "") > 10
+                                       for r in data.exposure(subject)[:1])):
+            return "the first dose has a time, and the log says it has none"
         rows = [r for r in data.rows("AE", subject)
                 if r["AESTDTC"] and len(r["AESTDTC"]) == 7 and r["AESTDTC"] == dose[:7]]
         if not rows:
@@ -446,28 +467,29 @@ def _zero_count(record: dict, data: Data, design: dict) -> list[str]:
     return [f"{len(fatal)} subjects of the arm {arm} have a fatal event"] if fatal else []
 
 
-def arm_counts(data: Data, arm: str) -> tuple[int, int, int]:
-    """Treated subjects of an arm; with an event from the first dose day on; with a serious one."""
-    people = _treated(data, arm)
-    having = serious = 0
-    for subject in people:
-        dose = data.first_dose(subject)
-        rows = [r for r in data.rows("AE", subject)
-                if (d := _date(r["AESTDTC"])) and dose and d >= dose]
-        having += bool(rows)
-        serious += any(r["AESER"] == "Y" for r in rows)
-    return len(people), having, serious
-
-
 def _rounding_half(record: dict, data: Data, design: dict) -> list[str]:
+    """The column of the arm under the decisions the counts were set for (the log names
+    them), by the hand calculation: its size and its counts are the logged ones, and the
+    counts lie at a rounding half at the logged number of decimals."""
     detail = record["detail"]
-    total, having, serious = arm_counts(data, detail["arm"])
+    try:
+        column = probes.spared_column(data.tables, detail["decisions"], detail["arm"])
+    except (RuntimeError, ValueError) as error:   # reference.CannotCalculate is a ValueError
+        return [f"the column cannot be calculated: {error}"]
+    found = (len(column.members), len(column.with_any_event), len(column.with_serious_event))
     logged = (detail["subjects"], detail["with_any_event"], detail["with_serious_event"])
-    if (total, having, serious) != logged:
-        return [f"arm {detail['arm']}: the data give {total}, {having} and {serious} subjects, "
-                f"the log says {logged[0]}, {logged[1]} and {logged[2]}"]
-    return [f"arm {detail['arm']}: {count} of {total} subjects is not at a rounding half"
-            for count in (having, serious) if not probes.is_rounding_half(count, total)]
+    if column.label != detail["column"] or found != logged:
+        return [f"column {column.label!r}: the data give {found[0]}, {found[1]} and {found[2]} "
+                f"subjects, the log says {detail['column']!r} with {logged[0]}, {logged[1]} "
+                f"and {logged[2]}"]
+    added = set(record["subjects"])
+    if len(added) != detail["subjects_added"] or not added <= set(column.members):
+        return [f"column {column.label!r}: the log names {len(added)} added subjects, of which "
+                f"{len(added - set(column.members))} are not in the column; it counts "
+                f"{detail['subjects_added']}"]
+    return [f"column {column.label!r}: {count} of {found[0]} subjects is not at a rounding half "
+            f"at {detail['decimals']} decimals" for count in found[1:]
+            if not probes.is_rounding_half(count, found[0], detail["decimals"])]
 
 
 def _out_of_dose_order(record: dict, data: Data, design: dict) -> list[str]:
@@ -521,6 +543,39 @@ def find(record: dict, tables: Tables, design: dict) -> list[str]:
         return finder(record, Data(tables), design)
     except (KeyError, TypeError, IndexError) as error:
         return [f"the data cannot be read for this probe: {type(error).__name__}: {error}"]
+
+
+def planted_for(log: list[dict]) -> str:
+    """What the twin's probes were made for (gen-2b): the table's analysis set, grouping,
+    decimals and window, the calibrated column, and the recipes that follow them."""
+    twin = {record["probe"]: record for record in log if record["data"] == "twin"}
+    counts = twin["statistic_at_rounding_half"]["detail"]
+    values = counts["decisions"]
+    window = values["ae.teae.end"]
+    parts = [f"table on the {counts['population']} set, by {counts['grouping']} treatment",
+             f"{counts['decimals']} decimals",
+             "window " + (f"{window['days']} days" if window["rule"] == "last_dose_plus_days"
+                          else "none"),
+             f"column {counts['column']!r} of {counts['subjects']} subjects "
+             f"({counts['subjects_added']} added), {counts['with_any_event']} with an event, "
+             f"{counts['with_serious_event']} with a serious one"]
+    if "no_exposure_end_date" in twin:
+        record = twin["no_exposure_end_date"]
+        own = list((record.get("by_subject") or {}).values())
+        parts.append("the subject without an exposure end date "
+                     + ("completes its treatment" if record["detail"]["completes_treatment"]
+                        else "stops early")
+                     + (", with a treatment and a study disposition record"
+                        if own and own[0]["records"] == ["treatment", "study"] else "")
+                     + (", and a second one without a study-level disposition record"
+                        if len(own) > 1 else ""))
+    if len((twin.get("partial_ae_start_in_month_of_first_dose") or {}).get("subjects", [])) > 1:
+        parts.append("a partial event in the month of a first dose without a time")
+    if "ae_with_each_causality_value" in twin:
+        parts.append("causality events "
+                     + ("serious" if twin["ae_with_each_causality_value"]["detail"]["serious"]
+                        else "not serious"))
+    return "; ".join(parts)
 
 
 def coverage(catalog: catalogs.Catalog, design: dict, records: list[dict], tables: Tables,
