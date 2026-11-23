@@ -392,7 +392,9 @@ for 3,580 of them):
   `specfirst gen separate cdiscpilot01 --out FILE` (the house vector over catalog@2 /
   open-default@2; about 22 minutes on four processors; report only, no gate runs it). A
   class holds at the value it was found at (the matrix's `value`): a record with another
-  value is "not tested", and its panel and sheet line name what the run tried. On the pilot:
+  value is "not tested", and its panel and sheet line name what the run tried. A class drawn
+  names the run's vector (every other decision at the house's value, not the kit's), and
+  `no_alternative` is drawn "not tested" (review pass 3, P3-F1 and P3-F2). On the pilot:
   21 records have a decision of the matrix, 14 at its value. A P4 run on the kit's own
   values needs a vector of the kit's records in gen/separate.py (not done; gen's file).
 

@@ -19,9 +19,10 @@ What a panel says, and where it comes from:
   document by script), the alternatives of its catalog entry it does not
   take, the mark `house default` (its value is the house's default for its
   unit) or `study customized`, and its P4 class or `not tested`. A class of
-  the matrix is the class of the value it was found at (the matrix's gold):
-  a record with another value is `not tested`, with the value the run tried
-  and its class named;
+  the matrix is the class of the value it was found at (the matrix's gold),
+  with every other decision at the value of the matrix's vector: a record
+  with another value is `not tested`, with the value the run tried and its
+  class named, and a class drawn names the vector;
 - the ADaM columns: the `reads` edges of the analysis with their roles
   (coverage.json), each column with the records that bind it, its label, the
   study spec's own comment (the Define-XML comment of the resolved
@@ -80,16 +81,22 @@ class P4Run:
     klass: str  # separated, unseparated, inert, separated_at_dataset_only, no_alternative
     value: str  # canonical JSON of the value the class was found at (the matrix's gold)
     gold: str  # that value as the matrix names it, e.g. last_dose_plus_days(days=30)
+    vector: str = ""  # the matrix's vector: every other decision stood at its value (house)
 
 
 def p4_of(run: P4Run | None, value: str) -> tuple[str, str]:
-    """The P4 class a record is drawn with, and a note: the run's class when the record has
-    the value the run decided it at; `not tested` otherwise, naming what the run tried."""
+    """The P4 class a record is drawn with, and a note. The run's class when the record has
+    the value the run decided it at, noting that every other decision stood at the run's
+    vector (which may not be the kit's); `not tested` otherwise, naming what the run tried;
+    `not tested` too when the run had no other value to try (`no_alternative`)."""
     if run is None:
         return NOT_TESTED, ""
+    who = f"the P4 run of the vector {run.vector}" if run.vector else "the P4 run"
+    if run.klass == "no_alternative":
+        return NOT_TESTED, f"{who} had no other value of it to try"
     if run.value == value:
-        return run.klass, ""
-    return NOT_TESTED, f"the P4 run tried another value, {run.gold}: {run.klass}"
+        return run.klass, f"{who}, every other decision at that vector's value"
+    return NOT_TESTED, f"{who} tried another value, {run.gold}: {run.klass}"
 
 
 @dataclass

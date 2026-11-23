@@ -5,8 +5,8 @@ shows. It reads the recomputation of issue #29 when there is one
 (build/recompute/<kit>), and the classes of a P4 matrix when one is given
 (`--p4`, a file of `specfirst gen separate`: its `decisions`, each with
 `id`, `unit`, `class` and the value the class was found at, `value` and
-`gold`; a record with another value is not tested). It prints what the page
-checks find and the
+`gold`, and the matrix's `vector`; a record with another value is not
+tested). It prints what the page checks find and the
 acceptance lines of issue #31 on every output of the kit.
 """
 
@@ -29,8 +29,9 @@ def read_p4(path: Path | None) -> dict[tuple[str, str], model.P4Run] | None:
     if path is None:
         return None
     matrix = json.loads(path.read_text(encoding="ascii"))
+    vector = str(matrix.get("vector") or "")
     return {(str(item["id"]), str(item["unit"])): model.P4Run(
-                str(item["class"]), model.canonical(item["value"]), str(item["gold"]))
+                str(item["class"]), model.canonical(item["value"]), str(item["gold"]), vector)
             for item in matrix.get("decisions") or []}
 
 

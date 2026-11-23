@@ -56,9 +56,11 @@ LEGEND = (
     ("judged", "judged: a citation; a script checks only that its quote stands in the "
                "document; a person must approve that it supports the decision"),
     ("unseparated", "not proven by the data: P4 finds another value of the decision that "
-                    "gives the same results"),
+                    "gives the same results, every other decision at the value of the run's "
+                    "vector (the note names it; it may not be the kit's)"),
     ("tested", "tested by P4: a run of the decision's other values on the data gives its "
-               "class (separated, inert, or separated at dataset level only)"),
+               "class (separated, inert, or separated at dataset level only), every other "
+               "decision at the value of the run's vector (the note names it)"),
     ("not-tested", "not tested: no P4 run reaches the decision at the value it has"),
 )
 
@@ -91,12 +93,13 @@ def _citation(item: model.Citation) -> str:
 
 
 def _p4(text: str, note: str = "") -> str:
+    # The note: the vector of the run a class comes from, or, not tested, what a run tried.
+    said = f" ({escape(note)})" if note else ""
     if text == model.UNSEPARATED:
-        return _kind("unseparated", "not proven by the data: unseparated")
+        return _kind("unseparated", "not proven by the data: unseparated") + said
     if text == model.NOT_TESTED:
-        # Not tested at this value: the note names the value a P4 run tried, and its class.
-        return _kind("not-tested") + (f" ({escape(note)})" if note else "")
-    return _kind("tested", f"P4: {text}")
+        return _kind("not-tested") + said
+    return _kind("tested", f"P4: {text}") + said
 
 
 def _decision(view: model.DecisionView, via: str = "") -> str:

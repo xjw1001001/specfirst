@@ -172,32 +172,43 @@ def test_a_class_of_a_p4_run_is_drawn_tested_and_never_static():
 
 
 def test_a_class_of_a_p4_run_holds_only_at_the_value_it_was_found_at(tmp_path):
-    # The matrix of `specfirst gen separate` decides a class at its gold value; a record
-    # with another value is not tested, and says what the run tried.
+    # The matrix of `specfirst gen separate` decides a class at its gold value, every other
+    # decision at the value of its vector: a class drawn names the vector, and a record
+    # with another value is not tested and says what the run tried (pass 3, P3-F1).
     matrix = tmp_path / "matrix.json"
-    matrix.write_text('{"decisions": [{"id": "ae.teae.end", "unit": "mod-ae-emergence", '
-                      '"class": "unseparated", "value": {"rule": "last_dose_plus_days", '
-                      '"days": 30}, "gold": "last_dose_plus_days(days=30)"}]}',
-                      encoding="ascii")
+    matrix.write_text('{"vector": "house", "decisions": [{"id": "ae.teae.end", '
+                      '"unit": "mod-ae-emergence", "class": "unseparated", "value": '
+                      '{"rule": "last_dose_plus_days", "days": 30}, '
+                      '"gold": "last_dose_plus_days(days=30)"}]}', encoding="ascii")
     from specfirst.viewer import command
 
     run = command.read_p4(matrix)[("ae.teae.end", "mod-ae-emergence")]
     assert run == model.P4Run("unseparated", '{"days": 30, "rule": "last_dose_plus_days"}',
-                              "last_dose_plus_days(days=30)")
+                              "last_dose_plus_days(days=30)", "house")
     assert model.p4_of(None, run.value) == (model.NOT_TESTED, "")
     assert model.p4_of(run, model.canonical({"rule": "last_dose_plus_days", "days": 30})) \
-        == ("unseparated", "")
-    assert model.p4_of(run, model.canonical({"rule": "no_end"})) == (
-        model.NOT_TESTED, "the P4 run tried another value, last_dose_plus_days(days=30): "
-        "unseparated")
-    # The page draws it not tested, with the note, in its panel and on the sheet.
+        == ("unseparated", "the P4 run of the vector house, every other decision at that "
+            "vector's value")
+    other = ("the P4 run of the vector house tried another value, "
+             "last_dose_plus_days(days=30): unseparated")
+    assert model.p4_of(run, model.canonical({"rule": "no_end"})) == (model.NOT_TESTED, other)
+    # A run with no other value to try tests nothing (pass 3, P3-F2).
+    nothing = model.P4Run("no_alternative", run.value, run.gold, "house")
+    assert model.p4_of(nothing, run.value) == (
+        model.NOT_TESTED, "the P4 run of the vector house had no other value of it to try")
+    # The page draws the note after the kind, in the panel and on the sheet.
     made = review()
-    note = "the P4 run tried another value, last_dose_plus_days(days=30): unseparated"
-    made.decisions["demo.sex (mod-demographics)"].p4_note = note
-    made.sheet[0].p4_note = note
+    made.decisions["demo.sex (mod-demographics)"].p4_note = other
+    made.sheet[0].p4_note = other
     text = page.html(made)
     assert check.page_problems(text, made) == []
-    assert text.count(f'<span class="kind not-tested">not-tested</span> ({note})') == 2
+    assert text.count(f'<span class="kind not-tested">not-tested</span> ({other})') == 2
+    made.decisions["demo.sex (mod-demographics)"].p4 = model.UNSEPARATED
+    made.sheet[0].p4 = model.UNSEPARATED
+    text = page.html(made)
+    assert check.page_problems(text, made) == []
+    assert text.count('<span class="kind unseparated">not proven by the data: unseparated'
+                      f"</span> ({other})") == 2
 
 
 def test_a_cell_without_a_panel_a_broken_path_and_a_decision_off_the_sheet_are_seen():
