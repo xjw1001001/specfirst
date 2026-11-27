@@ -157,10 +157,22 @@ def planted_page(text: str, old: str, new: str) -> str:
      "the page has a <svg>"),
     ('<a class="number"', '<a style="background-image: image-set(\'x.png\' 1x)" '
      'class="number"', "the page holds 'image-set('"),
-    # Pass 2 of the review of real-3, G1: a CSS escape spells a forbidden word.
+    # Pass 2 of the review of real-3, G1: a CSS escape spells a forbidden word. A style
+    # attribute is not one page.py writes (pass 3, H1), whatever its quotes or character
+    # references.
     ('<a class="number"', '<a style="background-image: \\75 rl(x.png)" class="number"',
-     "holds a backslash"),
+     "the attribute 'style' of <a>"),
     ("</body>", "<style>@\\69mport 'x.css';</style></body>", "holds a backslash"),
+    ('<a class="number"', "<a style='background-image: \\75 rl(x.png)' class=\"number\"",
+     "the attribute 'style' of <a>"),
+    ('<a class="number"', '<a style=background-image:\\75rl(x.png) class="number"',
+     "the attribute 'style' of <a>"),
+    ('<a class="number"', '<a style="background-image: &#117;rl(x.png)" class="number"',
+     "the attribute 'style' of <a>"),
+    ('<a class="number"', '<a style="background-image: &#92;75 rl(x.png)" class="number"',
+     "the attribute 'style' of <a>"),
+    ("</body>", "<template><p>x</p></template></body>", "the element <template>"),
+    ('<a class="number"', '<a hidden class="number"', "the attribute 'hidden' of <a>"),
 ])
 def test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen(old, new, message):
     made = review()

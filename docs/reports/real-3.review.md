@@ -1148,3 +1148,249 @@ the fixes changed is broken in what the reviewer ran; G1 to G4 do not
 block.
 
 Verdict: SIGNED
+
+## Pass 3
+
+Date: 2026-11-27. Reviewed: `a2512e6`
+(`a2512e64cec7a8b5208e6fc22d0a07152f16a375`, the head of `track/real` and
+of `origin/track/real`), the delta `900978e..a2512e6`: `d1b9c6f` (G1 to G4
+of pass 2, and the file of pass 2, committed as the reviewer wrote it),
+`d81d36f` (SME-26 and SME-33 cited; six lines of docs/state/real.md
+mended; a lesson), `f4ebb00` (the merge of `main` `5ef3c87`, gen-2b, into
+the work) and `a2512e6` (eleven gate logs on clean clones of `f4ebb00`,
+the finished report, the state file; documents only). Same reviewer, same
+rules: the gate under the shared lock, nothing installed, nothing
+committed, nothing written into the fetch cache, no network, no model call.
+
+Since the merge, the lessons the passes above cite as 74 to 79 are lessons
+82 to 87 (gen-2b took 74 to 81); the text above is left as written.
+
+Read: the delta as a diff (the code of `d1b9c6f`, the documents of all
+four), the report in full, the "Passed" entry and the changed sections of
+docs/state/real.md, ADR-003 points 7, 13 and 15, the merge commit against
+both its parents, and SME-26 and SME-33 of `docs/state/sme-review.md` on
+`origin/track/base` (`18cfdee`).
+
+### What was run (pass 3)
+
+| # | What | Result |
+| --- | --- | --- |
+| T1 | `specfirst gate real-3 --clean` on a clone of `a2512e6` | `GATE real-3: PASS`, exit 0, 19 of 19 |
+| T2 | the merge `f4ebb00` against its parents and their merge base `34bbc14`, path by path | nothing of either side dropped |
+| T3 | the eleven committed logs of `f4ebb00` | each a clean clone of `f4ebb00`, every check PASS |
+| T4 | the report's quotes and numbers against the logs | every quoted line in its log, in order; the numbers as the logs give them |
+| T5 | the plants of passes 1 and 2 again, and 9 new ones against the allow-lists | the pass-2 plants refused; 5 new ones pass (H1) |
+| T6 | scans of the files real-3 and the merge change | no control character, no byte outside ASCII, no credential, no Windows user path |
+
+#### T1 The gate on `a2512e6`
+
+```text
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git <scratch>/clone3
+$ git -C <scratch>/clone3 checkout --quiet --detach a2512e6
+$ cd <scratch>/clone3 && export PYTHONPATH=$PWD/src SPECFIRST_ROOT=$PWD PYTHONDONTWRITEBYTECODE=1
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -u -m specfirst gate real-3 --clean
+gate real-3 at commit a2512e64cec7a8b5208e6fc22d0a07152f16a375 (clean)
+1521 passed, 38 deselected in 461.32s (0:07:41)
+P1 determinism: 72 of 72 files have the same SHA-256 in both builds
+trace of the grids: 5 outputs; numeric cells with a complete path: Out14-1-1 84, Out14-3-1-1 27, Out14-3-2-1 1178, Out14-3-3-1a 1263, Out14-3-3-1b 1263
+grids: 10 outputs, pass
+review: build/p1/cdiscpilot01/first/viewer/index.html has 5597053 bytes, 63 panels of analyses, 4028 cells with a panel; it loads and runs nothing: True; the second build of P1 gives the same page: True
+101 passed in 133.68s (0:02:13)
+ASCII check: 977 files checked, 0 with non-ASCII bytes
+GATE real-3: PASS
+PASS lines: 19, FAIL lines: 0
+the 72 P1 hash lines equal those of docs/reports/real-3.merged.real-3.gate.log
+recount exit 0: 2 grids with 0 problems
+walk exit 0: five grids: numeric 3815 complete 3815
+```
+
+It ran from 07:30:20 to 07:41:55. The last three lines are the reviewer's
+scripts of R3 and R5 on the build of T1. The 72 hash lines of P1 are also
+those of the reviewer's run of pass 2 on `900978e`: the merge with gen-2b,
+G1 to G4 and the documents changed nothing that a build of the pilot
+writes. 977 files are those of `a2512e6` (966 of `f4ebb00` and the 11 logs).
+
+#### T2 The merge
+
+`f4ebb00` has the parents `d81d36f` (the work) and `5ef3c87` (`main`);
+their merge base is `34bbc14`. The reviewer compared every path of the
+four trees (Windows git, `git ls-tree -r`):
+
+```text
+both changed: docs/lessons.md (merge own)
+both changed: src/specfirst/gates.py (merge own)
+unexpected: docs/state/real.md merge=present expected=present
+f4ebb00 against main: 36 files; equal to the real side's list: yes
+gates.py: the real side's change, line for line, on top of main
+gates.py: main's change, line for line, on top of the real side
+main's lessons unchanged in the merge
+```
+
+Every other path is as the side that changed it has it, and the paths
+`main` deleted (read-2a's old kept run `R-task-6e527ae6baab`) are gone;
+the new kept run `R-task-087cf121e580` is there. docs/state/real.md is
+the work's file with the one sentence the merge message names (gen-2b's
+remake of the kept dry run was made without the fix of F7). In
+docs/lessons.md, `main`'s rows 1 to 81 are unchanged, and rows 82 to 87 are
+the work's rows 74 to 79 with their numbers and one cross-reference ("lesson
+77" to "lesson 85") changed and nothing else. No file of `src/` or
+`tests/` cites the old numbers. So the merge drops nothing of `main` and
+nothing of real-3.
+
+#### T3 The eleven logs
+
+```text
+gen-2b    commit f4ebb00 head f4ebb009cfe7 | GATE gen-2b: PASS | 1521 passed, 38 deselected in 465.02s (0:07:45) | PASS 13 FAIL 0 | 435 lines
+gen-3a    commit f4ebb00 head f4ebb009cfe7 | GATE gen-3a: PASS | 1521 passed, 38 deselected in 462.93s (0:07:42) | PASS 15 FAIL 0 | 304 lines
+issue-29  commit f4ebb00 head f4ebb009cfe7 | GATE issue-29: PASS | 1521 passed, 38 deselected in 462.86s (0:07:42) | PASS 12 FAIL 0 | 383 lines
+issue-31  commit f4ebb00 head f4ebb009cfe7 | GATE issue-31: PASS | 1521 passed, 38 deselected in 460.25s (0:07:40) | PASS 14 FAIL 0 | 696 lines
+read-1a   commit f4ebb00 head f4ebb009cfe7 | GATE read-1a: PASS | 1521 passed, 38 deselected in 463.33s (0:07:43) | PASS 14 FAIL 0 | 713 lines
+read-2a   commit f4ebb00 head f4ebb009cfe7 | GATE read-2a: PASS | 1521 passed, 38 deselected in 458.85s (0:07:38) | PASS 19 FAIL 0 | 524 lines
+real-2    commit f4ebb00 head f4ebb009cfe7 | GATE real-2: PASS | 1521 passed, 38 deselected in 466.28s (0:07:46) | PASS 15 FAIL 0 | 710 lines
+real-3    commit f4ebb00 head f4ebb009cfe7 | GATE real-3: PASS | 1521 passed, 38 deselected in 455.34s (0:07:35) | PASS 19 FAIL 0 | 889 lines
+real-3a   commit f4ebb00 head f4ebb009cfe7 | GATE real-3a: PASS | 1521 passed, 38 deselected in 466.10s (0:07:46) | PASS 16 FAIL 0 | 790 lines
+real-5a   commit f4ebb00 head f4ebb009cfe7 | GATE real-5a: PASS | 1521 passed, 38 deselected in 461.77s (0:07:41) | PASS 18 FAIL 0 | 879 lines
+real-5b   commit f4ebb00 head f4ebb009cfe7 | GATE real-5b: PASS | 1521 passed, 38 deselected in 461.59s (0:07:41) | PASS 19 FAIL 0 | 813 lines
+each: the number of PASS lines is the number of checks of its first "== [1/N]" line; "(clean)" once; a fresh install; 13 sources fetched; the last line "clone deleted: /tmp/specfirst-clean-..."
+each: a clone folder of its own; "ASCII check: 966 files checked, 0 with non-ASCII bytes"
+P1 hash lines: real-3a, real-2, real-5a, real-5b, issue-31 and issue-29 have the same 72 as the log of real-3; read-1a, read-2a, gen-2b and gen-3a print none
+```
+
+The reviewer did not run the clean-clone script itself (it needs the
+network). The logs are those of the code of `a2512e6`: T1 gives the 72
+hash lines of the log of real-3, and the gates of `a2512e6` differ from
+those of `f4ebb00` in no file of code. read-2a's log finds the kept run
+`R-task-087cf121e580` "the same on every bound part (ADR-017)" as its task
+built now, and registry.json still has the text of F7 ("( 9.5)").
+
+#### T4 The report against the logs
+
+```text
+block at line 243 (102 lines) against real-3.merged.real-3.gate.log: 83 found in order, 0 not found
+grid, coverage, edges, nodes in the P1 lines of the b71c200 and the f4ebb00 logs: 5e0dc4af97af66a7, 8183aecc041ac10d, 2112a17bd291b75f, c30a7c7f62c9005d, the same in both
+```
+
+The table of "The other gates" (checks, unit tests, last lines, the number
+of lines of each log) is what T3 prints. The loop's exit codes and seconds
+("820 s" and so on) are lines of a script that is not committed; the
+reviewer could not check them, nor the CI run (no network): its "966
+files" is the count of `f4ebb00`'s tree, and its 1,499 passed and 22
+skipped make the 1,521 of the gates. The choice of gates holds (question
+(d) of the brief): `gates.GATES` has 18 gates; the 11 run cover every one
+that builds the pilot or a generated kit with the code real-3 changes; of
+the 7 not run, real-1's checks are those of real-2 by name and its pilot
+tests a part of real-2's, gen-2a's checks are gen-2b's (`_gen2_checks`),
+and std-1, catalog-2a, catalog-2b and gen-1a import nothing real-3 changes
+(`specfirst.compile` imports `machine.lineage`; `gen.gate` and `gen.study`
+import `machine.canonical` and `specfirst.compile`; neither module is
+changed); base-0 checks the environment.
+
+#### T5 Plants against the new checks
+
+```text
+page Out14-3-3-1a.html: 114248 characters
+  render.projection_problems, unchanged: 0 problems
+  render.projection_problems, the pass-2 plant: the table inside <template>: 1 problems; the page holds the element <template>, which the renderer does not write
+  render.projection_problems, the pass-2 plant: the table inside <details>: 1 problems; the page holds the element <details>, which the renderer does not write
+  render.projection_problems, the pass-2 plant: a cell's text in <font color>: 2 problems; the page holds the element <font>, which the renderer does not write
+  render.projection_problems, the pass-2 plant: colspan=2 on a cell: 1 problems; the page holds a <td> that spans columns
+  render.projection_problems, the pass-2 plant: rowspan=2 on a cell: 1 problems; the page holds the attribute 'rowspan' of <td>, which the renderer does not write
+  render.projection_problems, colspan=2 on a cell that also has the class spanner: 0 problems
+  render.projection_problems, colspan=2 on a cell that also has a data-section attribute: 1 problems; the rows of the page are not those of the grid in their places: the first that differs is row 6 of the table
+viewer page: 5597053 bytes; backslashes 0; '//' 0; 'http' 0; '&#' 2576; style attributes 0
+  viewer.check.page_problems, unchanged: 0 problems
+  viewer.check.page_problems, the pass-2 plant: an escaped url( in the style element: 1 problems; a style of the page holds a backslash (a CSS escape)
+  viewer.check.page_problems, the pass-2 plant: an escaped @import: 1 problems; a style of the page holds a backslash (a CSS escape)
+  viewer.check.page_problems, a style attribute in single quotes with an escaped url(: 0 problems
+  viewer.check.page_problems, a style attribute without quotes with an escaped url(: 0 problems
+  viewer.check.page_problems, a style attribute with url( written as a character reference (&#117;rl(): 0 problems
+  viewer.check.page_problems, a style attribute with a backslash written as a character reference (&#92;75 rl(): 0 problems
+a minimum proven to lie on a half, class data_difference: 1 problems; reason: a value at a half in floating error proves a rule_choice only
+a minimum proven to lie on a half, class rule_choice: 1 problems; reason: the reference's raw value 35.33 is not on a half at 0 decimals
+```
+
+The layout plants of R6, S4 and S5 give what they gave in pass 2: every
+one refused but the labels of `within` and the two labels of G2, which the
+report now names as held against nothing. A browser decodes `&#117;` in an
+attribute before CSS reads it, so the fourth and fifth viewer plants spell
+`url(`; the check looks at the text before that decoding.
+
+#### T6 Scans
+
+```text
+files that 34bbc14..a2512e6 changes, but the logs: bytes other than printable ASCII and line feed: none
+docs/lessons.md: rows with an odd number of backticks: 87 (its literal "`n", as the lesson means)
+the six mended lines of docs/state/real.md: the three older than real-3 are the text of 34bbc14; the three of real-3 read `not_its_own_pattern` again
+added lines of 5ef3c87..a2512e6 with a Windows user path, a user name, AppData, a GitHub or API token, an e-mail address: 0
+```
+
+In the whole tree the only "AppData" paths are in older reviews and in
+gen-2b's kept runs (from `main`), written there as `<home>/AppData/...`.
+The paths in the eleven logs are `/tmp/specfirst-clean-...`,
+`/mnt/d/trial_work/specfirst/.git` and `/root/.local/share/specfirst`, as in
+earlier logs; `"apiKeySource": "none"` in a kept run of `main` holds no key.
+
+### The points of pass 2
+
+- G1: the plants of pass 2 are refused (T5): the grid page is held by an
+  allow-list of elements and attributes, a `colspan` stands only on a
+  spanner, a section and a footnote, `rowspan` is refused; the review page
+  refuses a backslash in a style. Other ways remain (H1).
+- G2: named in the report as held against nothing.
+- G3: closed. D14's plant has the class `rule_choice` and fails on its
+  numbers (T5; line 830 of the log of real-3 shows it fail, its reason cut
+  at 140 characters).
+- G4: closed. `results.load_formats` and docs/state/real.md say
+  `rule_choice`; SME-26 (the medians) and SME-33 (the 119) are in the list
+  on `origin/track/base` with the facts of pass 1 and are cited by number.
+  The list reaches `main` with the base track's next merge.
+
+### New findings (pass 3)
+
+#### H1 (not blocking) The page checks still pass a spanning cell and a style written another way
+
+`render.projection_problems` allows `colspan` on any element whose class
+is `spanner`, so a body cell `<td class="spanner" colspan="2">` passes (T5)
+and moves the row's other values under other columns. The review page's
+check looks for a backslash only in a style element and in a style
+attribute in double quotes, and for `url(` only in the text as written: a
+style attribute in single quotes or without quotes with `\75 rl(`, or one
+that writes `url(` or the backslash as a character reference (`&#117;rl(`,
+`&#92;`), passes. The gate statement holds by the page: it has no style
+attribute, no backslash, no "//" and no "http" (T5), and P1 compares it.
+The report says of G1 that "with escapes gone, `url(`, `@import` and
+`image-set(` are refused as text"; that holds for a style element only.
+Fix: the review page as the grid page, by an allow-list (no style
+attribute at all, since the writer writes none, and the style element the
+writer's own); a `colspan` only on a `th` of the spanner row, held against
+the grid's spanners.
+
+#### H2 (not blocking) Three texts
+
+- docs/reports/real-3.md, the table of pass 2, row G1: "the review page
+  passed CSS escapes (`= rl(`)". A backslash and "75" became "=" (the
+  octal escape of a string, the kind of slip of lesson 87); it should read
+  `\75 rl(`.
+- docs/state/real.md, "Handed over by real-3": "`render.projection_problems`
+  reads a page back as a table and refuses handlers, foreign styles,
+  refreshes, comments and text outside the body". Since `d1b9c6f` it allows
+  only the elements and attributes the renderer writes; and ADR-003 has no
+  sentence on that change (point 15 describes the check of `900978e`).
+- The "Passed" entry of docs/state/real.md says "pass 3 of `f4ebb00`" with
+  no verdict; it needs this pass's.
+
+### Not checked (pass 3)
+
+- The clean-clone runs themselves (the network), the loop's seconds, and
+  the CI run; the owner's answers and the SME status.
+- The gates other than real-3 by a run of the reviewer's; their logs were
+  read (T3).
+- The pages in a browser.
+
+Pass 3 covers `a2512e6` and the merge `f4ebb00` in it. The merge drops
+nothing of either side; the eleven logs are clean clones of `f4ebb00` and
+pass; the reviewer's own gate on `a2512e6` passes with the same 72 hashes;
+the report's quotes and numbers are those of the logs. H1 and H2 do not
+block.
+
+Verdict: SIGNED

@@ -165,6 +165,7 @@ class _Reader(HTMLParser):
         self.unsafe: list[str] = []  # what a page that loads and runs nothing must not hold
         self.rows: list[tuple[str, tuple]] = []  # (thead, tbody or tfoot; its elements in order)
         self.spans: list[tuple[str, str]] = []  # the spanners: (colspan, text)
+        self.wide: list[str] = []  # the colspan of each section heading and footnote
         self.title = ""
         self.style = ""
         self._part = ""
@@ -190,11 +191,19 @@ class _Reader(HTMLParser):
                         for name, _ in attrs if name not in _ATTRIBUTES
                         and not name.startswith("data-") and not name.startswith("on")
                         and name != "hidden"]
-        # Only a spanner, a section heading and a footnote span columns.
-        spans = "spanner" in str(given.get("class") or "").split() or (
-            "data-section" in given or "data-footnote" in given)
-        if "colspan" in given and not spans:
-            self.unsafe.append(f"a <{tag}> that spans columns")
+        # Only a spanner of the header, a section heading of the body and a footnote of the
+        # footer span columns, each where the renderer writes it (the review of real-3, pass
+        # 3, H1: a body cell of the class spanner passed); a section and a footnote span the
+        # whole table, which `projection_problems` holds.
+        classes = str(given.get("class") or "").split()
+        if "colspan" in given:
+            if tag == "th" and "spanner" in classes and self._part == "thead":
+                pass
+            elif (tag == "th" and "data-section" in given and self._part == "tbody") or (
+                    tag == "td" and "data-footnote" in given and self._part == "tfoot"):
+                self.wide.append(str(given["colspan"]))
+            else:
+                self.unsafe.append(f"a <{tag}> that spans columns")
         if tag in ("thead", "tbody", "tfoot"):
             self._part = tag
         elif tag == "tr":
@@ -328,6 +337,9 @@ def projection_problems(grid: dict, page: str) -> list[str]:
     if reader.spans != _spanners(grid):
         problems.append(f"the spanners of the page are {reader.spans}, the grid's "
                         f"{_spanners(grid)}")
+    width = str(len(grid["columns"]) + 1)
+    problems += [f"a section heading or a footnote spans {span} columns, not the {width} of "
+                 "the table" for span in reader.wide if span != width]
     if reader.title != grid["output_id"]:
         problems.append(f"the title of the page is {reader.title!r}, not the output's ID")
     if reader.style.strip() != _STYLE:

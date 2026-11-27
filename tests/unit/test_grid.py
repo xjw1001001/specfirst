@@ -651,6 +651,13 @@ def _header_in_body(page: str) -> str:
         (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c1">',
                              '<td rowspan="2" data-cell="cell:Out_AE/r2/c1">'),
          "the attribute 'rowspan' of <td>"),
+        # Pass 3, H1: a body cell of the class spanner spanned columns and passed.
+        (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c1">',
+                             '<td class="spanner" colspan="2" data-cell="cell:Out_AE/r2/c1">'),
+         "a <td> that spans columns"),
+        (lambda p: p.replace('<td data-cell="cell:Out_AE/r2/c1">',
+                             '<th class="spanner" colspan="2" data-cell="cell:Out_AE/r2/c1">'),
+         "a <th> that spans columns"),
     ],
 )
 def test_where_a_text_stands_and_what_a_page_may_not_hold(made, plant, message):
@@ -676,6 +683,12 @@ def test_a_page_with_spanners_and_sections(made):
     wrong = page.replace('data-section="1">Events</th>', 'data-section="1">Other</th>')
     assert any("section 1: the page has 'Other'" in problem
                for problem in render.projection_problems(value, wrong))
+    # A section heading spans the whole table, as the renderer writes it (pass 3, H1).
+    width = len(value["columns"]) + 1
+    narrow = page.replace(f'colspan="{width}" data-section="1"', 'colspan="2" data-section="1"')
+    assert narrow != page
+    assert any(f"spans 2 columns, not the {width} of the table" in problem
+               for problem in render.projection_problems(value, narrow))
     # A row after the section has none: a separator, and no heading, stands before it.
     extra = copy.deepcopy(value["rows"][1])
     extra.pop("section")

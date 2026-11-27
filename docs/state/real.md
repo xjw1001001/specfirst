@@ -122,9 +122,10 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   real-3.clean-clone.gate.log, real-3.first-commit.gate.log and
   real-3.merged.<gate>.gate.log. Review: docs/reports/real-3.review.md
   (pass 1 NOT SIGNED, its blocking F1 fixed; pass 2 SIGNED of `900978e`;
-  pass 3 of `f4ebb00`). Decisions: docs/decisions/ADR-003.md, the amendment of
-  real-3; the owner's answer on the four medians at a half: A, keep gold's
-  display rule and record the four (2026-11-23). Per recommendation,
+  pass 3 SIGNED of `a2512e6`, its H1 and H2 carried out). Decisions:
+  docs/decisions/ADR-003.md, the amendment of real-3; the owner's answer
+  on the four medians at a half: A, keep gold's display rule and record the
+  four (2026-11-23). Per recommendation,
   pending SME review: SME-26 (the medians) and SME-33 (the 119 minima and
   maxima). Lessons 82 to 87.
 
@@ -380,8 +381,13 @@ Other open points:
   the minimum and the maximum of the cell are reproduced. `formats` has a
   second proof kind, `half_in_floating_error` (class `rule_choice`: our value
   rounded to 12 significant digits first gives the reference's text).
-- `render.projection_problems` reads a page back as a table and refuses
-  handlers, foreign styles, refreshes, comments and text outside the body.
+- `render.projection_problems` reads a page back as a table and allows
+  only the elements and attributes the renderer writes; `colspan` only on a
+  spanner of the header, a section heading and a footnote (each the whole
+  table wide). `viewer.check.page_problems` allows only the elements and
+  attributes page.py writes (`ELEMENTS`, `ATTRIBUTES`): no style attribute,
+  no backslash in the style sheet. A new element or attribute of either
+  writer goes into its list (ADR-003, point 16).
 - The gate real-3 (`gates.GATES["real-3"]`): the checks of real-3a with
   "trace of the grids", "recompute", "review" and "decisions", and D13 and
   D14. `gates.PILOT_GRIDS` holds the five outputs (an output added there

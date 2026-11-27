@@ -2,7 +2,8 @@
 
 `page_problems`: the page loads nothing and runs nothing (no script, no
 handler, no frame, no image, no style that imports, no link outside the
-page, no refresh); every link is to an anchor of the page, and every anchor
+page, no refresh), and holds only the elements and attributes page.py
+writes (`ELEMENTS`, `ATTRIBUTES`); every link is to an anchor of the page, and every anchor
 is there once; every citation is drawn judged and says, in its own words,
 that it awaits approval or who approved it, and is never drawn executed or
 static; every decision is drawn with the P4 class the review gives it.
@@ -43,6 +44,14 @@ FORBIDDEN_TEXT = ("@import", "url(", "image-set(", "javascript:", "http-equiv")
 LINK_ATTRIBUTES = ("href", "src", "action", "srcset", "data", "background", "poster",
                    "xlink:href", "formaction", "lowsrc", "dynsrc", "ping")
 APPROVAL = re.compile(r"awaiting approval|approved by \S")
+# The elements and attributes page.py writes, and no other (the review of real-3, pass 3,
+# H1: a style attribute in single quotes, without quotes or with character references
+# spelled url( where the check of styles did not look). A deny-list names what is known
+# to fetch; this names what the page is.
+ELEMENTS = frozenset(("html", "head", "meta", "title", "style", "body", "h1", "h2", "h3", "p",
+                      "br", "b", "code", "pre", "span", "div", "section", "details", "summary",
+                      "ul", "ol", "li", "a", "table", "thead", "tbody", "tr", "th", "td"))
+ATTRIBUTES = frozenset(("lang", "charset", "class", "id", "href", "data-key"))
 
 
 class _Page(HTMLParser):
@@ -56,6 +65,9 @@ class _Page(HTMLParser):
         self.citations: list[tuple[list[str], str]] = []
         self.decisions: list[tuple[str, list[str]]] = []  # (key, classes of its kinds)
         self.texts: list[str] = []
+        self.styles: list[str] = []  # the text of each <style>
+        self.others: list[str] = []  # elements and attributes page.py does not write
+        self._in_style = False
         # The open <li> and <tr> elements: (role, key, kinds, words); role citation,
         # decision or "".
         self._open: list[tuple[str, str, list[str], list[str]]] = []
@@ -66,6 +78,13 @@ class _Page(HTMLParser):
     def handle_starttag(self, tag, attrs):
         self.tags[tag] += 1
         values = dict(attrs)
+        if tag not in ELEMENTS:
+            self.others.append(f"the element <{tag}>")
+        self.others += [f"the attribute '{name}' of <{tag}>" for name, _ in attrs
+                        if name not in ATTRIBUTES and not name.lower().startswith("on")]
+        if tag == "style":
+            self._in_style = True
+            self.styles.append("")
         self.handlers += [name for name, _ in attrs if name.lower().startswith("on")]
         self.hrefs += [str(value) for name, value in attrs if name.lower() in LINK_ATTRIBUTES]
         if "id" in values:
@@ -81,6 +100,8 @@ class _Page(HTMLParser):
                 nearest[2].extend(c for c in classes if c != "kind")
 
     def handle_endtag(self, tag):
+        if tag == "style":
+            self._in_style = False
         if tag not in ("li", "tr") or not self._open:
             return
         role, key, kinds, words = self._open.pop()
@@ -90,6 +111,8 @@ class _Page(HTMLParser):
             self.decisions.append((key, kinds))
 
     def handle_data(self, data):
+        if self._in_style:
+            self.styles[-1] += data
         self.texts.append(data)
         nearest = self._nearest()
         if nearest is not None and nearest[0] == "citation":
@@ -106,11 +129,12 @@ def page_problems(text: str, review: model.Review | None = None) -> list[str]:
     found += [f"the page has the handler '{name}'" for name in sorted(set(parser.handlers))]
     lowered = text.lower()
     found += [f"the page holds '{word}'" for word in FORBIDDEN_TEXT if word in lowered]
+    found += [f"the page has {other}, which the viewer does not write"
+              for other in sorted(set(parser.others))]
     # A CSS escape spells a forbidden word in a style ("\75 rl(", "@\69mport"; the review of
-    # real-3, pass 2, G1): no style of the page may hold a backslash.
-    styles = re.findall(r"<style[^>]*>(.*?)</style>", text, re.S | re.I) + re.findall(
-        r"style\s*=\s*\"([^\"]*)\"", text, re.I)
-    if any("\\" in style for style in styles):
+    # real-3, pass 2, G1): no style sheet of the page may hold a backslash. A style
+    # attribute is refused above, whatever its quotes or character references.
+    if any("\\" in style for style in parser.styles):
         found.append("a style of the page holds a backslash (a CSS escape)")
     if re.search(r"<meta[^>]*refresh", lowered):
         found.append("the page refreshes itself")
