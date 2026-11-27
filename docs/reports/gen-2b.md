@@ -20,7 +20,8 @@ cache) of the USD 2.2 the owner approved.
 For the owner, none blocking (ADR-023, "For the owner"): the added subjects
 of the placebo arm (up to 31 at two decimals); exclusion (c) and the premise
 of the row of `pop.safety.rule` (H2), both per recommendation, pending SME
-review; the two texts of H8 in the bytes of every kit, which wait for the
+review (SME-32 and SME-34 in docs/state/sme-review.md, from the base
+track); the two texts of H8 in the bytes of every kit, which wait for the
 next GENERATOR.
 
 ## What changed
@@ -58,7 +59,7 @@ next GENERATOR.
   dose, whose first dose has no time; a treatment and a study disposition
   record for the subject without an exposure end date; a second such
   subject without a study-level disposition record (per recommendation,
-  pending SME review).
+  pending SME review: SME-32).
 - The gates gen-2a and gen-2b (one list of checks, `gates._gen2_checks`)
   plant the failure: `gate2.planted_unfit_build` (the generator refuses kit
   9 built with the probes of gen-2a) and `gate2.planted_unfollowed` (the
@@ -78,8 +79,8 @@ next GENERATOR.
     applicable and separated.
   - H2: the row of `pop.safety.rule` in `REACHES` stays, with its premise
     written down (a subject who is not randomized has no planned arm,
-    SDTMIG v3.4 DM; per recommendation, pending SME review: ADR-023,
-    decision 4); the reason of the matrix quotes the note of the row;
+    SDTMIG v3.4 DM; per recommendation, pending SME review, SME-34:
+    ADR-023, decision 4); the reason of the matrix quotes the note of the row;
     `test_a_subject_without_a_randomization_has_no_planned_arm`.
   - H3: the subject with a partial first exposure date gets a value of the
     test before the month of its first dose where the efficacy-evaluable
