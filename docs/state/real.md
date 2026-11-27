@@ -131,6 +131,9 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   four (2026-11-23). Per recommendation,
   pending SME review: SME-26 (the medians) and SME-33 (the 119 minima and
   maxima). Lessons 82 to 87.
+  Merged to `main` as `78deab1` (2026-11-27); CI on `main` after the
+  merge: run 46009405164 on `78deab1`, success (ASCII 979 files, lint,
+  1507 passed, 22 skipped for want of R, 38 deselected).
 
 ## Open
 
