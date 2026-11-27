@@ -59,7 +59,8 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   a read decision that data could separate is not written, and the gate
   gen-2b fails on one (three plants). The owner lifted the three
   exclusions of gen-2a (2026-11-23); (c) per recommendation, pending SME
-  review. Generator `gen-2b.2`. Gates on clean clones of `4de3db2`:
+  review (SME-32 in docs/state/sme-review.md, from the base track); the
+  premise of the row of `pop.safety.rule` likewise (SME-34). Generator `gen-2b.2`. Gates on clean clones of `4de3db2`:
   gen-2b 13 of 13, gen-1a 8 of 8 (CORE on 20 datasets, no unexplained
   finding), gen-2a 13 of 13, gen-3a 15 of 15, read-1a 14 of 14, issue-29
   12 of 12; gen-2b again on `95ac45a`; read-2a on `77c33a4`, with the kept
@@ -174,8 +175,8 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
   disposition record RANDOMIZED, so the premise is that the study records
   one for every subject with an arm, as every generated study does; the
   short form "on any data that follow SDTMIG v3.4" means that. Per
-  recommendation, pending SME review (ADR-023, finding H2 of the gen-2b
-  review). The reason in the matrix quotes the note of the row, which says
+  recommendation, pending SME review (SME-34; ADR-023, finding H2 of the
+  gen-2b review). The reason in the matrix quotes the note of the row, which says
   "only a table on the safety set reads the rule": a table on the
   efficacy-evaluable set reads it too (that set is a part of the safety
   set). Both texts stand in the bytes of every kit; they change with the
@@ -451,7 +452,8 @@ runs for another seed (docs/reports/gen-3a.review.md, pass 2):
   to a day); a treatment and a study disposition record for the subject
   without an exposure end date (the treatment record as the end-of-study
   record); a second such subject with no study-level disposition record
-  (the study participation record; per recommendation, pending SME review).
+  (the study participation record; per recommendation, pending SME review,
+  SME-32).
 - The count probe adds subjects of the placebo arm until the counted
   column has a size with a rounding half (a multiple of 8, 16 or 32 at 0, 1
   or 2 decimals): up to 31 more subjects than the arm planned (ADR-023,
@@ -465,7 +467,7 @@ runs for another seed (docs/reports/gen-3a.review.md, pass 2):
   bytes of every kit (the log of probes, the matrix), so they wait for a
   change that makes new kits anyway.
 - The row of `pop.safety.rule` rests on that premise, per recommendation,
-  pending SME review (ADR-023, decision 4). The other way: plant a dosed
+  pending SME review (SME-34; ADR-023, decision 4). The other way: plant a dosed
   subject with a planned arm and no record RANDOMIZED and claim the rule
   wherever the table reads the safety set (beyond the recipe of the
   frozen `catalog@2`).
