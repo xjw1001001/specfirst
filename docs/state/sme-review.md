@@ -17,8 +17,8 @@ under the rule tells the base session the record or the decision, and the
 base session adds it here. The list has not had a review: each point names
 its source, so check the source before acting on a point.
 
-32 points: track real 26 (SME-01 to SME-26), read 1 (SME-27), gen 3
-(SME-28, SME-29 and SME-32), std 2 (SME-30 and SME-31).
+34 points: track real 27 (SME-01 to SME-26, SME-33), read 1 (SME-27),
+gen 4 (SME-28, SME-29, SME-32 and SME-34), std 2 (SME-30 and SME-31).
 
 Each point gives the question, where it is decided, the options, the
 recommended option with its public source, the current state, and whether
@@ -493,18 +493,55 @@ The records are in kits/cdiscpilot01/gold/decisions/efficacy.jsonl.
 
 #### SME-26 A value that is a half only up to floating error
 
-- Question: Four medians of the vital signs are a half only up to floating
-  error (0.05 computed as 0.04999...). The display rule shows " 0.0";
-  CDISC's example shows " 0.1". Should a value this close to a half round
-  as a half?
-- Where: ADR-003, "Left for the rest of real-3"; docs/state/real.md,
-  "Next" (what the rest of real-3 will meet).
-- Options: A, round the value as computed (" 0.0"; the registry today).
-  B, treat it as a half (" 0.1", as the example).
-- Recommended: none in the docs. No source in the docs.
-- Current state: A; no recommendation to follow. No built output meets it
-  yet: the two outputs of the vital signs are not built.
+- Question: Four medians of the change of temperature are a half only up
+  to floating error. Each is one record's change of 0.05, such as AVAL
+  36.94 - BASE 36.89, which binary floating point holds as
+  0.04999999999999716 (three of the cells have an odd n, the fourth two
+  equal middle records). The reference ADVS holds the same value in the
+  same 56 records as ours. The display rule shows " 0.0"; CDISC's example
+  shows " 0.1". Should a value this close to a half round as a half, and
+  what class has the difference?
+- Where: real-3, record real-3/vs-medians-at-half: 4 entries of `formats`
+  in kits/cdiscpilot01/gold/exceptions.yaml; ADR-003, amendment of real-3,
+  point 13; docs/reports/real-3.md.
+- Options: A, round the value as computed (" 0.0"; the registry today) and
+  record the 4 cells as exceptions. B, treat it as a half (" 0.1", as the
+  example); that changes `display.pattern` and needs a new dry run of
+  read-2a (a model call).
+- Recommended: A, with the class `rule_choice` and the new proof
+  `half_in_floating_error`; the owner picked the recommended A on
+  2026-11-23, and the class is per recommendation, pending SME review.
+  Source: PLAN.md 4.8 (`rule_choice`: the reference follows another
+  alternative of a decision); the data are the same, and the example's
+  rounding absorbs the floating error, most likely SAS's ROUND fuzz (not
+  verified).
+- Current state: follows the recommendation (real-3, not in main yet).
 - Numbers: 4 medians of the vital signs tables, one digit each.
+
+#### SME-33 The decimals of the minima and maxima of temperature
+
+- Question: CDISC's example shows 119 minima and maxima of temperature (59
+  minima, 60 maxima, in An08_01 and An08_02) with the decimals of the data
+  ("35.33"), though its own shells give "Min, Max" the pattern "XX, XX".
+  The grid follows the pattern. Is the example's text an error of the
+  reference?
+- Where: real-3, record real-3/vs-minmax-decimals: 119 entries of
+  `formats` in kits/cdiscpilot01/gold/exceptions.yaml, proof
+  `not_its_own_pattern`; docs/reports/real-3.md.
+- Options: A, the shell's pattern, and the 119 are `reference_error`
+  (taken). B, a pattern with the decimals of the data (`XX.XX` for the
+  values, `X.XX` for the changes): it prints "35.33" in 63 cells of each
+  grid and still leaves 10 of the 126 different, where the example drops
+  trailing zeros.
+- Recommended: A, per recommendation, pending SME review (real-3). Source:
+  the example's own shells ("XX, XX"), as issue #31 did for the one Fisher
+  p-value of 1. The SAP's Templates 21 and 22, "for example only", show the
+  minimum and maximum of blood pressure and heart rate without decimals and
+  do not list temperature. The demographics go the other way, because
+  their SAP template shows decimals (SME-12).
+- Current state: follows the recommendation (real-3, not in main yet).
+- Numbers: none change in a value; 63 cells of each of the two vital signs
+  grids print without the data's decimals.
 
 ## Track read
 
@@ -584,6 +621,29 @@ The records are in kits/cdiscpilot01/gold/decisions/efficacy.jsonl.
 - Current state: follows the recommendation.
 - Numbers: in generated kits only. It is what makes the value "STUDY
   PARTICIPATION" of the end-of-study record separable.
+
+#### SME-34 A planned arm without a randomization record
+
+- Question: In a randomized design, can a dosed subject have a planned arm
+  but no randomization record? If so, data can separate the decision
+  `pop.safety.rule`, and its row of `REACHES` (kind (a), never separable)
+  is wrong.
+- Where: gen-2b, review finding H2 (docs/reports/gen-2b.review.md); ADR-023,
+  decision 4; docs/reports/gen-2b.md; the test
+  `test_a_subject_without_a_randomization_has_no_planned_arm`.
+- Options: A, no: the row stays, with its premise written ("equal on any
+  data in which a subject without a randomization has no planned arm"), and
+  a test checks that generated data keep it (taken). B, yes: plant such a
+  subject and claim the rule wherever a table reads the safety set; this
+  goes beyond the recipe of the frozen catalog@2.
+- Recommended: A, per recommendation, pending SME review (2026-11-23).
+  Source: SDTMIG v3.4 DM, a subject not assigned has ARMCD and ARM null
+  and ARMNRS "NOT ASSIGNED"; in a randomized design assignment is
+  randomization. The catalog's recipe for `dosed_but_not_randomized` also
+  reads "DM.ARMCD is NOTASSGN" (see SME-28).
+- Current state: follows the recommendation (gen-2b, not in main yet).
+- Numbers: in generated kits only; `pop.safety.rule` stays unseparated in
+  gold.
 
 ## Track std
 
