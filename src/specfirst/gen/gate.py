@@ -59,13 +59,63 @@ def scratch_dir() -> Path:
     return Path(tempfile.mkdtemp(prefix="specfirst-gen1a-"))
 
 
+def values_for(root: Path, catalog: catalogs.Catalog, design: dict, seed: str) -> dict:
+    """The decision vector the probes of the study of a seed are planted for (gen-2b: the
+    decisions come first). Seed n of the gate takes the decisions of scenario n of a set
+    of kits (`decisions.SCENARIOS`) where its design can carry them, so that the recipes
+    meet other analysis sets, groupings and windows than the house defaults; the other
+    decisions are drawn as for a study of its own."""
+    from specfirst.compile import house as houses
+    from specfirst.gen import decisions
+    from specfirst.gen.rng import Stream
+
+    house = houses.load(houses.default_dir(root))
+    given: dict[str, str] = {}
+    index = SEEDS.index(seed) if seed in SEEDS else None
+    if index is not None:
+        scenario = decisions.SCENARIOS[index % len(decisions.SCENARIOS)]
+        if decisions.scenario_fits(scenario, design):
+            given = scenario["values"]
+    parameters = probes.Parameters.of(design).as_record()
+    values = decisions.sample(catalog, house, design, parameters,
+                              Stream(seed, "decisions", designs.study_id(design), 0),
+                              given=given)
+    for entry_id, value in (OWN_DATA.get(index) or {}).items():
+        values[entry_id] = value(parameters) if callable(value) else dict(value)
+    return values
+
+
+def _record(kind: str) -> Callable[[dict], dict]:
+    return lambda parameters: {"rule": "disposition_event_by_subcategory",
+                               "subcategory": parameters[f"{kind}_subcategory"]}
+
+
+def _window(parameters: dict) -> dict:
+    return {"rule": "last_dose_plus_days", "days": parameters["window_days"]}
+
+
+# Seeds (by their place in SEEDS) whose study takes decisions that a recipe follows with
+# data of a shape of its own (gen-2b, ADR-023, decision 6), so that CDISC CORE sees them:
+# a first dose without a time; a treatment disposition record beside the study record; a
+# subject without a study-level disposition record.
+OWN_DATA: dict[int, dict] = {
+    0: {"ae.teae.start": {"rule": "at_or_after_first_dose_time"},
+        "ae.start.imputation": {"rule": "first_of_month"}},
+    2: {"disp.status.record": _record("treatment"), "ae.teae.end": _window,
+        "trt.end.source": {"rule": "ds_date_when_ex_missing"}},
+    6: {"disp.status.record": _record("study"), "ae.teae.end": _window,
+        "trt.end.source": {"rule": "ds_date_when_ex_missing"}},
+}
+
+
 def generate_all(root: Path, folder: Path, seeds: tuple[str, ...] = SEEDS) -> dict[str, dict]:
     """One study per seed in `folder/<seed>`; returns the manifests."""
     catalog = catalogs.load(catalogs.default_dir(root))
     manifests = {}
     for seed in seeds:
         design = pgfix.sample(seed, study.catalog_label(catalog))
-        manifests[seed] = study.generate(root, design, seed, folder / seed)
+        manifests[seed] = study.generate(root, design, seed, folder / seed,
+                                         values=values_for(root, catalog, design, seed))
     return manifests
 
 
@@ -147,11 +197,12 @@ def determinism_check(root: Path, out: Out, folder: Path,
     # Planted defect: a build that stamps its files with another time than the
     # study date, as a writer that reads the clock would.
     design = pgfix.sample(seeds[0], label)
-    study.generate(root, design, seeds[0], planted_in / "honest")
+    values = values_for(root, catalog, design, seeds[0])
+    study.generate(root, design, seeds[0], planted_in / "honest", values=values)
     stamp = study.data_stamp
     study.data_stamp = lambda people: "2001-01-01T00:00:01"
     try:
-        study.generate(root, design, seeds[0], planted_in / "clocked")
+        study.generate(root, design, seeds[0], planted_in / "clocked", values=values)
     finally:
         study.data_stamp = stamp
     honest = build_hashes(planted_in / "honest")
@@ -739,17 +790,18 @@ def planted_probe_defects(out: Out, catalog: catalogs.Catalog, design: dict, log
     counts = copy.deepcopy(tables)
     record = next(r for r in log if r["data"] == "twin"
                   and r["probe"] == "statistic_at_rounding_half")
-    arm = record["detail"]["arm"]
-    victim = next(row for row in counts["AE"] if row["AESER"] == "Y" and any(
-        dm["USUBJID"] == row["USUBJID"] and dm["ACTARMCD"] == arm for dm in counts["DM"]))
+    # A subject of the calibrated column (the decisions of the log, the hand calculation)
+    # with a serious treatment-emergent event loses the seriousness of every event.
+    column = probes.spared_column(counts, record["detail"]["decisions"], record["detail"]["arm"])
+    victim = column.with_serious_event[0]
     for row in counts["AE"]:
-        if row["USUBJID"] == victim["USUBJID"]:
+        if row["USUBJID"] == victim:
             row["AESER"] = "N"
     _, _, problems = present.coverage(catalog, design, log, counts)
     if not any("tfl.rounding.rule" in problem for problem in problems):
         out("the check did not see counts that are no longer at a rounding half")
         return False
-    out(f"planted defect: one serious event less in the calibrated arm: {problems[0][:150]}")
+    out(f"planted defect: one serious event less in the calibrated column: {problems[0][:150]}")
     return True
 
 
@@ -783,6 +835,7 @@ def probes_check(root: Path, out: Out, folder: Path, seeds: tuple[str, ...] = SE
             f"{pairs} pairs of alternatives; twin: {checked} of {len(needed)} probes logged and "
             f"found in the data; visible: {len(visible)} probes logged and found; "
             f"{len(problems)} problems")
+        out(f"  planted for: {present.planted_for(log)}")
         for problem in problems[:15]:
             out(f"  {problem}")
         ok = ok and not problems

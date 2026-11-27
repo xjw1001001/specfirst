@@ -1,9 +1,20 @@
-"""The checks of the gate gen-2a (PLAN.md section 13.5, docs/decisions/ADR-005.md).
+"""The checks of the gates gen-2a and gen-2b (PLAN.md section 13.5, ADR-005, ADR-023).
 
 The gate of gen-2, limited to the one output of the slice:
 
     10 kits pass P1 to P4. Every applicable decision is separated on the
     twin. The engines agree.
+
+"Applicable" is read as the owner answered finding G1 of the gen-2a review
+(2026-11-17; docs/decisions/ADR-007.md and ADR-023.md): a decision that the
+output reads is applicable unless another decision of the kit makes its
+alternatives give the same output on any data of the design that follow
+SDTMIG v3.4 (`probes.REACHES`). The probes of a kit follow its decisions, so
+the twin must separate every such decision; the gate fails on a kit in which
+one is not (check "kits"), and that failure is planted
+(`planted_unfit_build`; and on a twin, `planted_unfollowed`,
+`planted_one_causality`). gen-2b is the part that made it so; the gate
+gen-2a runs the same checks.
 
 The ten kits are the kits 1 to 10 of the set of the development seed
 `SEED`. Each is written twice, by two processes of their own that differ in
@@ -31,7 +42,7 @@ from pathlib import Path
 
 from specfirst.compile import catalog as catalogs
 from specfirst.compile import house as houses
-from specfirst.gen import decisions, documents, gold, kits, probes, study, verify
+from specfirst.gen import decisions, documents, gold, kits, present, probes, sdtm, study, verify
 from specfirst.gen import design as designs
 from specfirst.machine import results
 from specfirst.machine.canonical import read_jsonl, write_json, write_jsonl
@@ -46,6 +57,10 @@ COUNT = 10
 # of the table (the safety set by actual treatment), so the log of probes claims a probe
 # for every decision that a planted defect touches.
 PLANTED = 10
+# The kit whose twin is made again with probes that do not follow its decisions: its
+# scenario puts the table on the efficacy-evaluable set with an emergence window, the
+# two cases of finding G1 of the gen-2a review.
+UNFOLLOWED = 9
 # The machine is shared: no more than this many builds at once (docs/lessons.md, lesson 32).
 MAX_WORKERS = 4
 
@@ -117,6 +132,29 @@ def planted_p1(root: Path, out: Out, folder: Path, seed: str) -> bool:
             return False
         out(f"planted defect: {what}: {len(differ)} files differ, for example {differ[-1]}")
     return True
+
+
+def planted_unfit_build(root: Path, out: Out, folder: Path, seed: str,
+                        number: int = UNFOLLOWED) -> bool:
+    """The generator must refuse to write a kit whose probes do not follow its decisions
+    (gen-2b): a build of kit `number` by a process of its own, with the probes planted as
+    gen-2a planted them (`kits.unfollowed`), ends without a kit and names the decisions
+    that the output reads and the twin does not separate."""
+    target = folder / "planted" / "unfollowed"
+    try:
+        kits.generate_apart(root, kits.kit_seed(seed, number), target, kits.split_of(number),
+                            number=number, planted="unfollowed", hash_seed="3")
+    except kits.KitError as error:
+        text = str(error)
+        if "tfl.rounding.rule" in text and "the two builds on the twin are the same" in text \
+                and not target.exists():
+            out(f"planted defect: kit {number} built with the probes of gen-2a, which do not "
+                f"follow its decisions: not written: ...{text[-320:]}")
+            return True
+        out(f"the planted build failed for another reason: {text[:400]}")
+        return False
+    out(f"the generator wrote kit {number} with probes that do not follow its decisions")
+    return False
 
 
 def planted_p2(out: Out, kit_dir: Path) -> bool:
@@ -240,6 +278,8 @@ def kits_check(root: Path, out: Out, folder: Path, seed: str = SEED,
     if not (planted_p1(root, out, folder, seed) and planted_p2(out, planted)
             and planted_p3(root, out, planted, catalog)):
         return False
+    if count >= UNFOLLOWED and not planted_unfit_build(root, out, folder, seed):
+        return False
     ok = True
     ids = []
     for number in numbers:
@@ -248,13 +288,10 @@ def kits_check(root: Path, out: Out, folder: Path, seed: str = SEED,
         ids.append(manifest["id"])
         differ = kits.hash_differences(kits.kit_hashes(kit_dir),
                                        kits.kit_hashes(kit_folder(folder, number, "second")))
-        drawn = manifest["decisions"]["vectors_drawn_before"]
         out(f"kit {number}: study {manifest['study']['id']}, {manifest['study']['arms']} arms, "
             f"split {manifest['split']}, scenario {manifest['decisions']['scenario']} "
-            f"{manifest['decisions']['given'] or '(all drawn)'}; decision vectors drawn "
-            f"before this one: {len(drawn)}")
-        for item in drawn:
-            out(f"  vector {item['attempt']} was drawn again: {'; '.join(item['reasons'])[:300]}")
+            f"{manifest['decisions']['given'] or '(all drawn)'}")
+        out(f"  probes planted for: {present.planted_for(study.read_probes(kit_dir))}")
         out(f"  P1: {len(manifest['files']) + 1} files of two builds by two processes, the "
             f"manifest included: {len(differ)} differ")
         problems = [f"P1: {problem}" for problem in differ]
@@ -341,6 +378,125 @@ def planted_separation(root: Path, out: Out, kit_dir: Path) -> bool:
     return True
 
 
+def planted_unfollowed(root: Path, out: Out, kit_dir: Path, seed: str, number: int) -> bool:
+    """A twin whose probes do not follow the decisions of its kit must fail the kit (rule
+    R5; finding G1 of the gen-2a review; gen-2b).
+
+    The twin of kit `number` is made again with the probes planted as the generator of
+    gen-2a planted them whatever a kit decided (`kits.unfollowed`): the counts at a
+    rounding half for the safety set grouped by actual treatment from DM.ACTARM, the
+    subject without an exposure end date stopping early. In a kit whose table is on the
+    efficacy-evaluable set, with an emergence window, the rounding rule and the source of
+    the treatment end date are then read by the output, data could separate them, and the
+    twin does not: the mutation must call the kit unfit, and the matrix must list them as
+    applicable and unseparated, which fails the check of every kit.
+    """
+    catalog = catalogs.load(catalogs.default_dir(root))
+    house = houses.load(houses.default_dir(root))
+    design = designs.load(kit_dir / "gold" / "design.yaml")
+    records = kits.read_decisions(kit_dir)
+    values = decisions.as_values(records)
+    with open(kit_dir / gold.PLACES["twin"][1] / gold.GRAPH / "coverage.json",
+              encoding="ascii") as handle:
+        reached = json.load(handle)["decisions"]
+    people, log = study.simulate(design, catalog, kits.kit_seed(seed, number), "twin",
+                                 values=kits.unfollowed(values))
+    copy_of = Path(tempfile.mkdtemp(prefix="specfirst-gen2b-unfollowed-"))
+    scratch = Path(tempfile.mkdtemp(prefix="specfirst-gen2b-unfollowed-work-"))
+    try:
+        place = gold.PLACES["twin"][0]
+        study.write_dataset(copy_of / place, design, sdtm.build(design, people),
+                            study.catalog_label(catalog), study.data_stamp(people))
+        matrix, defects, unfit = verify.mutate(root, catalog, house, copy_of, "twin", design,
+                                               records, reached, log,
+                                               study.read_tables(copy_of, "twin"), scratch)
+    finally:
+        shutil.rmtree(copy_of, ignore_errors=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+    expected = {"tfl.rounding.rule", "trt.end.source"}
+    bad = set(unseparated_applicable(matrix))
+    named = {line.split(":")[0] for line in unfit}
+    if not expected <= bad or not expected <= named or defects:
+        out(f"the mutation did not call a twin unfit whose probes ignore the decisions of kit "
+            f"{number}: applicable and unseparated {sorted(bad)}, unfit {sorted(named)}, "
+            f"defects {defects[:2]}")
+        return False
+    honest = _matrices_of([kit_dir])[0]["summary"]
+    if set(honest["applicable_and_unseparated"]) & expected or not expected <= set(
+            honest["separated"]):
+        out(f"kit {number} does not separate {sorted(expected)} itself: nothing was planted")
+        return False
+    out(f"planted defect: the twin of kit {number} (table on the "
+        f"{values['tfl.population']['rule']} set, window "
+        f"{values['ae.teae.end'].get('days', 'none')}) made with the probes of gen-2a, which "
+        f"do not follow its decisions: {len(unfit)} pairs that the output reads and data could "
+        f"separate are not separated, so the kit is unfit; applicable and unseparated: "
+        f"{', '.join(sorted(bad))}. The kit as written separates them.")
+    return True
+
+
+def planted_one_causality(root: Path, out: Out, kit_dir: Path, number: int) -> bool:
+    """A twin on which the stated lists of related causality values give one table must fail
+    the kit (rule R5; finding H1 of the gen-2b review).
+
+    `ae.related.values` has one alternative and is changed between the values of its slot;
+    such a pair is claimed like any other. Every AEREL of the twin of kit `number` is set to
+    the last value of the scale, which every stated list holds: the lists then give the same
+    table, and the mutation must call the kit unfit for that decision.
+    """
+    catalog = catalogs.load(catalogs.default_dir(root))
+    house = houses.load(houses.default_dir(root))
+    design = designs.load(kit_dir / "gold" / "design.yaml")
+    records = kits.read_decisions(kit_dir)
+    log = study.read_probes(kit_dir)
+    with open(kit_dir / gold.PLACES["twin"][1] / gold.GRAPH / "coverage.json",
+              encoding="ascii") as handle:
+        reached = json.load(handle)["decisions"]
+    last = list(design["collection"]["adverseEvents"]["causality"])[-1]
+    copy_of = Path(tempfile.mkdtemp(prefix="specfirst-gen2b-causality-"))
+    scratch = Path(tempfile.mkdtemp(prefix="specfirst-gen2b-causality-work-"))
+    try:
+        place = gold.PLACES["twin"][0]
+        shutil.copytree(kit_dir / place, copy_of / place)
+        shutil.copytree(kit_dir / gold.HOUSE, copy_of / gold.HOUSE)
+        tables = study.read_tables(copy_of, "twin")
+        tables["AE"] = [{**row, "AEREL": last} for row in tables["AE"]]
+        stamp = datasetjson_stamp(copy_of / place / "dm.json")
+        study.write_dataset(copy_of / place, design, tables, study.catalog_label(catalog), stamp)
+        matrix, defects, unfit = verify.mutate(root, catalog, house, copy_of, "twin", design,
+                                               records, reached, log,
+                                               study.read_tables(copy_of, "twin"), scratch)
+    finally:
+        shutil.rmtree(copy_of, ignore_errors=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+    entry = "ae.related.values"
+    if entry not in unseparated_applicable(matrix) or not any(
+            line.startswith(f"{entry}:") for line in unfit) or defects:
+        out(f"the mutation did not call a twin unfit whose causality values cannot tell the "
+            f"stated lists apart (kit {number}): applicable and unseparated "
+            f"{unseparated_applicable(matrix)}, unfit {unfit[:2]}, defects {defects[:2]}")
+        return False
+    out(f"planted defect: every AEREL of the twin of kit {number} set to {last!r}: the stated "
+        f"lists give one table, and the kit is unfit: "
+        f"{next(line for line in unfit if line.startswith(entry))[:150]}")
+    return True
+
+
+def unseparated_applicable(matrix: dict) -> list[str]:
+    """The decisions of a kit that fail the gate: read by the output, not made equal by
+    another decision on any data that keep the premise of its row of `probes.REACHES`, and not
+    separated on the twin."""
+    return list(matrix["summary"]["applicable_and_unseparated"])
+
+
+def _matrices_of(folders: list[Path]) -> list[dict]:
+    found = []
+    for folder in folders:
+        with open(folder / kits.IDENTIFIABILITY, encoding="ascii") as handle:
+            found.append(json.load(handle))
+    return found
+
+
 def datasetjson_stamp(path: Path) -> str:
     with open(path, encoding="ascii") as handle:
         return str(json.load(handle)["datasetJSONCreationDateTime"])
@@ -398,8 +554,8 @@ def coverage(catalog: catalogs.Catalog, folder: Path, count: int) -> tuple[list[
             continue
         if not separated:
             holes.append(f"{entry_id}: separated in no kit")
-        if wanted and not any(i["applicable"] and i["identifiable"] == "separated"
-                              for i in items.values()):
+        if not any(i["applicable"] and i["identifiable"] == "separated"
+                   for i in items.values()):
             holes.append(f"{entry_id}: in no kit does the log of probes claim a probe for "
                          "it and the twin separate it")
         holes += [f"{entry_id}: {a} and {b} are separated in no kit"
@@ -411,22 +567,41 @@ def coverage(catalog: catalogs.Catalog, folder: Path, count: int) -> tuple[list[
 
 def separation_check(root: Path, out: Out, folder: Path, count: int = COUNT) -> bool:
     """Every applicable decision of the slice is separated on the twin, in every kit; and
-    over the ten kits the matrix has no hole."""
+    over the ten kits the matrix has no hole.
+
+    The generator writes no kit in which an applicable decision is unseparated
+    (`kits._generate`), so the loop over the written kits repeats what the check "kits"
+    decided: the gate fails on such a kit in that check (planted by `planted_unfit_build`;
+    `kits.check` mutates every written kit again). The plants of this check show that the
+    mutation names such decisions on a twin (`planted_unfollowed`,
+    `planted_one_causality`; finding H7 of the gen-2b review)."""
     catalog = catalogs.load(catalogs.default_dir(root))
     planted = kit_folder(folder, min(PLANTED, count))
     if not (planted_separation(root, out, planted) and planted_matrix(root, out, planted)):
         return False
+    if count >= UNFOLLOWED and not planted_unfollowed(
+            root, out, kit_folder(folder, UNFOLLOWED), SEED, UNFOLLOWED):
+        return False
     matrices = _matrices(folder, count)
+    related = [number for number, matrix in matrices.items() for item in matrix["decisions"]
+               if item["id"] == "ae.related.values" and item["applicable"]]
+    if not related:
+        out("no kit in which ae.related.values is applicable: the planted defect of its "
+            "stated lists cannot be made")
+        return False
+    if not planted_one_causality(root, out, kit_folder(folder, related[0]), related[0]):
+        return False
     ok = True
     for number, matrix in matrices.items():
         summary = matrix["summary"]
-        bad = summary["applicable_and_unseparated"]
+        bad = unseparated_applicable(matrix)
         out(f"kit {number}: {summary['decisions']} decisions, {summary['read']} read by the "
-            f"output, {summary['applicable']} applicable (the log claims a probe for every "
-            f"pair), {len(summary['separated'])} separated; applicable and unseparated: "
-            f"{', '.join(bad) or 'none'}")
+            f"output, {summary['applicable']} applicable (read, and no other decision makes "
+            f"the alternatives equal), {len(summary['separated'])} separated; applicable and "
+            f"unseparated: {', '.join(bad) or 'none'}")
         out(f"  unseparated, not read: {', '.join(summary['unseparated_not_read']) or 'none'}; "
-            f"unseparated, read, no probe claimed: "
+            f"unseparated, read, equal under the other decisions on any data that keep the "
+            f"premise of its row of REACHES: "
             f"{', '.join(summary['unseparated_read']) or 'none'}")
         ok = ok and not bad
     lines, holes = coverage(catalog, folder, count)

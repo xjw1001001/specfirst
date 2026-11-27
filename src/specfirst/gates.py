@@ -675,6 +675,29 @@ def _harness(name: str) -> Callable[[Context], bool]:
 
 _REAL1_CHECK = f"specfirst check {PILOT} --build build/p1/{PILOT}/first"
 
+
+def _gen2_checks() -> tuple[Check, ...]:
+    """The checks of the gates gen-2a and gen-2b (specfirst.gen.gate2)."""
+    return (
+        Check("environment", "specfirst doctor", _environment),
+        Check("pins", "specfirst fetch --verify", _pins),
+        Check("lint", "ruff check .", _lint),
+        Check("registry", "specfirst methods", _registry),
+        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
+        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q", _method_vectors),
+        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
+        Check("kits", "specfirst.gen.gate2.kits_pass: 10 kits, each written twice; P1 to P4",
+              _gen2("kits_pass")),
+        Check("separation", "specfirst.gen.gate2.separation: every applicable decision, and "
+              "the matrix of the 10 kits", _gen2("separation")),
+        Check("engines", "specfirst.gen.gate2.engines: the Python and the R engine on every "
+              "result", _gen2("engines")),
+        Check("splits", "specfirst.gen.gate2.splits: the splits of section 6.7", _gen2("splits")),
+        Check("cache untouched", "specfirst fetch --verify", _pins),
+        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
+    )
+
+
 GATES: dict[str, tuple[Check, ...]] = {
     "base-0": (
         Check("environment", "specfirst doctor", _environment),
@@ -910,25 +933,13 @@ GATES: dict[str, tuple[Check, ...]] = {
     # slice: 10 kits pass P1 to P4, every applicable decision is separated on the twin,
     # the engines agree. gen-2a added a rounding rule to the method registry and two
     # words to the column lineage of the machine: the registry, the method vectors and
-    # the tests of the pilot kit are checked with it.
-    "gen-2a": (
-        Check("environment", "specfirst doctor", _environment),
-        Check("pins", "specfirst fetch --verify", _pins),
-        Check("lint", "ruff check .", _lint),
-        Check("registry", "specfirst methods", _registry),
-        Check("unit tests", 'pytest -m "not evidence" -q', _unit_tests),
-        Check("method vectors", "SPECFIRST_STRICT=1 pytest tests/methods -s -q", _method_vectors),
-        Check("pilot tests", "SPECFIRST_STRICT=1 pytest tests/pilot -s -q", _pilot_tests_2),
-        Check("kits", "specfirst.gen.gate2.kits_pass: 10 kits, each written twice; P1 to P4",
-              _gen2("kits_pass")),
-        Check("separation", "specfirst.gen.gate2.separation: every applicable decision, and "
-              "the matrix of the 10 kits", _gen2("separation")),
-        Check("engines", "specfirst.gen.gate2.engines: the Python and the R engine on every "
-              "result", _gen2("engines")),
-        Check("splits", "specfirst.gen.gate2.splits: the splits of section 6.7", _gen2("splits")),
-        Check("cache untouched", "specfirst fetch --verify", _pins),
-        Check("ASCII", "python -m specfirst.asciicheck", _ascii),
-    ),
+    # the tests of the pilot kit are checked with it. Since gen-2b (ADR-023) "applicable"
+    # is read as the owner answered finding G1 of its review, and the gate fails on a
+    # kit in which a decision that the output reads, and that data could separate, is
+    # not separated on the twin (planted). gen-2b, the part that made it so, has the
+    # same checks.
+    "gen-2a": _gen2_checks(),
+    "gen-2b": _gen2_checks(),
     # ADR-005, part read-1a (PLAN.md section 13.6, read-1 for the slice): the planted
     # defects of section 9.5 that apply to the slice are each detected and attributed
     # to the right layer; the parser control scores 100%. First on a hand-made study

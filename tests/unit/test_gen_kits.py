@@ -84,6 +84,10 @@ def test_the_gate_has_the_checks_of_the_plan():
     assert names.index("kits") < names.index("separation") < names.index("engines") \
         < names.index("splits")
     assert gate2.COUNT == 10 and gate2.MAX_WORKERS <= 4
+    # gen-2b, the part that made the probes follow the decisions, has the same checks.
+    assert [check.name for check in gates.GATES["gen-2b"]] == names
+    assert gate2.UNFOLLOWED <= gate2.COUNT and decisions.SCENARIOS[gate2.UNFOLLOWED - 1][
+        "values"]["tfl.population"] == "efficacy"
 
 
 def test_a_kit_holds_what_the_manifest_says(root, kit):
@@ -234,6 +238,47 @@ def test_a_kit_that_cannot_be_written_leaves_nothing(root, tmp_path, monkeypatch
         kits.generate(root, kits.kit_seed(SEED, NUMBER), tmp_path / "failed", with_r=False,
                       number=NUMBER)
     assert not (tmp_path / "failed").exists()
+
+
+def test_a_kit_that_leaves_a_read_decision_unseparated_is_not_written(root, tmp_path,
+                                                                       monkeypatch):
+    """gen-2b: a decision that the output reads, that data could separate and that the twin
+    does not separate makes the kit fail; no other vector is drawn for it, and the data
+    were made for the one vector that was drawn."""
+    calls: list[dict] = []
+
+    def attempt(root_, catalog_, house_, out, design, values, log, *rest):
+        calls.append(values)
+        planted_for = next(line for line in log if line["probe"] == "statistic_at_rounding_half")
+        assert planted_for["detail"]["decisions"] == values
+        manifest = study.read_manifest(out)
+        assert manifest["decisions"] == values
+        return {}, [], ["tfl.rounding.rule: half_away_from_zero and half_even can differ in "
+                        "the output under these decisions (the log of probes claims it); the "
+                        "two builds on the twin are the same"]
+
+    monkeypatch.setattr(kits, "_attempt", attempt)
+    with pytest.raises(kits.KitError, match=r"does not separate 1 pairs .*decisions: "
+                                            r"tfl\.rounding\.rule"):
+        kits.generate(root, kits.kit_seed(SEED, NUMBER), tmp_path / "unfit", with_r=False,
+                      number=NUMBER)
+    assert len(calls) == 1 and not (tmp_path / "unfit").exists()
+
+
+def test_the_probes_of_gen_2a_held_for_the_house_columns_only():
+    """The planted defect of the gate gen-2b: the vector the probes of gen-2a were built for,
+    whatever the kit decided."""
+    values = {"tfl.population": {"rule": "efficacy"}, "pop.safety.grouping": {"rule": "planned"},
+              "trt.actual.source": {"rule": "first_ex_treatment"},
+              "tfl.percent.format": {"rule": "one_decimal_always", "decimals": 2},
+              "ae.teae.end": {"rule": "last_dose_plus_days", "days": 30}}
+    changed = kits.unfollowed(values)
+    assert changed["tfl.population"] == {"rule": "safety"}
+    assert changed["pop.safety.grouping"] == {"rule": "actual"}
+    assert changed["trt.actual.source"] == {"rule": "dm_actarm"}
+    assert changed["tfl.percent.format"] == {"rule": "one_decimal_always", "decimals": 1}
+    assert changed["ae.teae.end"] == values["ae.teae.end"]
+    assert values["tfl.population"] == {"rule": "efficacy"}     # the kit's own is unchanged
 
 
 def test_a_changed_kit_fails_its_check(root, kit, tmp_path):

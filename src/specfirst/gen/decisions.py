@@ -25,12 +25,19 @@ adverse event summary). What the vector holds beyond the units:
 The decisions of mod-bds-visits are left out: no output of the slice reads
 ADVS, and a kit of the slice does not build it (`specfirst.gen.gold`).
 
-Sampling uses the field `reaches` of the log of probes: under which other
-decisions the difference between two alternatives reaches the output. A
-vector is sampled so that the decisions it makes can be told apart on the
-twin: the constraints of `fits` are the interplays that `reaches` names.
-Whether they are in fact told apart is decided by building (stage S7,
-`specfirst.gen.verify`); a vector that fails there is sampled again.
+The vector is drawn first, from the design alone (stage S1); the data and
+their probes are then made for it (stage S3, `specfirst.gen.probes`; gen-2b,
+docs/decisions/ADR-023.md). Whether every decision that the output reads is
+told apart on the twin is decided by building (stage S7,
+`specfirst.gen.verify`); a kit in which one is not is not written, and no
+other vector is drawn for it.
+
+The sampler refuses no combination of alternatives for the sake of the
+probes: the three that gen-2a refused (emergence by the time of the first
+dose with a partial start completed to a day; the treatment record as the
+end-of-study record; the study participation record where the table reads
+the end-of-study date) have recipes that follow them (ADR-023, decision 6;
+the owner's choice of 2026-11-23).
 
 Splits (section 6.7): an exam holds out factors, not only seeds. `HELD_OUT`
 names a design variation and a combination of alternatives that no train,
@@ -224,43 +231,6 @@ def defaults(catalog: catalogs.Catalog, house: houses.House, design: dict) -> Va
     return found
 
 
-def fits(values: Values, parameters: dict) -> list[str]:
-    """Why a vector cannot tell its own decisions apart on the twin, as far as the log says.
-
-    Each line is an interplay of `probes.REACHES`: a decision of the vector
-    that the output reads, with an alternative that gives the same output
-    under the other decisions of the vector.
-    """
-    problems = []
-    rows = probes.shown_rows(values.get("tfl.ae.summary.rows"))
-    if "ANY" not in rows:
-        problems.append("the table does not show the row ANY: the decisions that act through "
-                        "one planted event change nothing")
-    if "FATAL" not in rows:
-        problems.append("the table does not show the row FATAL: no count of zero separates "
-                        "tfl.percent.format")
-    start = values["ae.start.imputation"]["rule"]
-    if values["ae.teae.start"]["rule"] == "at_or_after_first_dose_time" and \
-            start != "not_completed":
-        problems.append("ae.start.imputation: with emergence by the time of the first dose the "
-                        "two completions to a day give the same table")
-    record = values["disp.status.record"]
-    end = values["ae.teae.end"]["rule"]
-    read = end == "last_dose_plus_days" and values["trt.end.source"]["rule"] \
-        == "ds_date_when_ex_missing"
-    if record.get("subcategory") == parameters["treatment_subcategory"]:
-        # Only the planted subject has a treatment record. With it as the end-of-study
-        # record no other subject has an end-of-study date: the disposition date never
-        # stands in for a missing exposure end date.
-        problems.append("disp.status.record: with the treatment record as the end-of-study "
-                        "record nearly no subject has an end-of-study date, and the decisions "
-                        "that read that date cannot be told apart")
-    elif read and record.get("subcategory") == parameters["study_subcategory"]:
-        problems.append("disp.status.record: the study participation record is the last "
-                        "disposition event of every subject")
-    return problems
-
-
 def sample(catalog: catalogs.Catalog, house: houses.House, design: dict, parameters: dict,
            rng: Stream, split: str = "train", stated_share: float = STATED_SHARE,
            given: dict[str, str] | None = None) -> Values:
@@ -268,8 +238,8 @@ def sample(catalog: catalogs.Catalog, house: houses.House, design: dict, paramet
 
     Every decision is the house default, or with the chance `stated_share`
     another alternative; `given` (entry -> alternative) fixes the decisions
-    of a scenario. A vector that `fits` refuses, or that an exam holds out,
-    is drawn again, from the same stream.
+    of a scenario. A vector that an exam holds out is drawn again, from the
+    same stream.
     """
     given = given or {}
     if split not in SPLITS:
@@ -305,12 +275,10 @@ def sample(catalog: catalogs.Catalog, house: houses.House, design: dict, paramet
         total = values.get("tfl.columns.total")
         if total and total["rule"] == "active_arms":
             total["control"] = placebo_label(design, values)
-        if fits(values, parameters):
-            continue
         if split != "sealed" and held_out_combination(values):
             continue
         return values
-    raise DecisionError("no decision vector fits the data after 200 draws")
+    raise DecisionError("no decision vector that an exam does not hold out after 200 draws")
 
 
 def vector(catalog: catalogs.Catalog, house: houses.House, design: dict,

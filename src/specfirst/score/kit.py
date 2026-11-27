@@ -78,7 +78,7 @@ from pathlib import Path
 
 from specfirst.compile import house as houses
 from specfirst.compile.catalog import Catalog
-from specfirst.gen import decisions, probes, verify
+from specfirst.gen import decisions, verify
 from specfirst.gen import design as designs
 from specfirst.gen import documents as gendocs
 from specfirst.gen import gold as kitgold
@@ -138,6 +138,12 @@ def load(folder: Path) -> Kit:
                              f"for example {drift[0]}")
         records = genkits.read_decisions(folder)
         design = designs.load(folder / "gold" / "design.yaml")
+        # The values the probes of the twin were planted for, as the matrix of the kit
+        # reads them (specfirst.gen.verify.mutate): the window is the kit's own.
+        parameters = next((line["parameters"] for line in read_jsonl(
+            folder / "gold" / "probes.jsonl") if line["data"] == "twin"), None)
+        if parameters is None:
+            raise ValueError("gold/probes.jsonl has no probe of the twin")
         with open(folder / genkits.IDENTIFIABILITY, encoding="ascii") as handle:
             matrix = json.load(handle)
         documents = Documents({
@@ -164,9 +170,8 @@ def load(folder: Path) -> Kit:
         raise KitError(f"{folder}: not a kit of the slice: {error!r}") from error
     if not all(data[which].sdtm and grids[which] for which in DATASETS):
         raise KitError(f"{folder}: a dataset of the kit has no SDTM or no gold grid")
-    return Kit(folder, manifest, design, records, matrix,
-               probes.Parameters.of(design).as_record(), documents, data, grids, ard, adam,
-               oracle)
+    return Kit(folder, manifest, design, records, matrix, parameters, documents, data, grids,
+               ard, adam, oracle)
 
 
 def machine_of(root: Path, kit: Kit | None = None) -> Machine:
