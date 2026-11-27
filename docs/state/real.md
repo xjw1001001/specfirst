@@ -118,9 +118,11 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   complete path to SDTM columns; P1 72 of 72 files; the review page shows
   the five and loads and runs nothing. read-2a, real-3a, issue-31, real-2,
   real-5a, real-5b, issue-29, read-1a, gen-2b and gen-3a exited 0 on clean
-  clones of `f4ebb00` (2026-11-27). Evidence: docs/reports/real-3.md,
-  real-3.clean-clone.gate.log, real-3.first-commit.gate.log and
-  real-3.merged.<gate>.gate.log. Review: docs/reports/real-3.review.md
+  clones of `f4ebb00` (2026-11-27); real-3 and issue-31 again on clean
+  clones of `b3c26e4`, the review's H1 and H2 (the same 72 files of P1).
+  Evidence: docs/reports/real-3.md, real-3.clean-clone.gate.log,
+  real-3.first-commit.gate.log, real-3.merged.<gate>.gate.log and
+  real-3.h1.<gate>.gate.log. Review: docs/reports/real-3.review.md
   (pass 1 NOT SIGNED, its blocking F1 fixed; pass 2 SIGNED of `900978e`;
   pass 3 SIGNED of `a2512e6`, its H1 and H2 carried out). Decisions:
   docs/decisions/ADR-003.md, the amendment of real-3; the owner's answer

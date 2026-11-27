@@ -4,7 +4,7 @@ Date: 2026-11-23 to 2026-11-27. Branch: `track/real`. Work package real-3 of PLA
 section 13.3, on top of real-3a (the adverse event summary) and issue #31
 (the demographics, the table by organ class and term, the review page).
 Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
-15).
+16).
 
 ## Verdict
 
@@ -16,8 +16,9 @@ Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
   new proof `half_in_floating_error`, class `rule_choice`: the owner's
   answer A). Both classifications are per recommendation, pending SME
   review.
-- The gate real-3 passes on a clean clone of `f4ebb00`, the merge of main
-  (with gen-2b) into the work, 19 of 19 checks.
+- The gate real-3 passes on clean clones of `f4ebb00`, the merge of main
+  (with gen-2b) into the work, and of `b3c26e4`, the review's last fixes,
+  19 of 19 checks.
   Every numeric cell of the five grids, 3,815 in all, has a complete path
   to SDTM columns. Two builds give the same 72 files. The review page shows
   the five outputs, loads and runs nothing, and opens a panel for each of
@@ -37,8 +38,10 @@ Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
   the four medians as first given to the owner were wrong); its six
   findings are carried out (section "Review"). Pass 2, of `900978e`:
   SIGNED; its four points G1 to G4, none blocking, are carried out.
-  Pass 3 reviews the gated merge `f4ebb00`, its gate logs and this
-  report (docs/reports/real-3.review.md).
+  Pass 3, of `a2512e6`: SIGNED; its two points H1 and H2, none
+  blocking, are carried out in `b3c26e4`, on which the gates real-3 and
+  issue-31 pass again. Pass 4 reviews `b3c26e4`
+  (docs/reports/real-3.review.md).
 
 ## What real-3 asks for, and where it stands
 
@@ -423,8 +426,32 @@ Why these gates:
   `machine.canonical`, which real-3 does not change). Every gate runs the
   whole unit suite, so each of those modules' unit tests ran eleven times.
 
-The commits after `f4ebb00` change documents only (this report, the logs,
-ADR-003's point 7, the state file and the review).
+`b3c26e4` carries out the points H1 and H2 of the review's pass 3. It
+changes, besides documents, only `render.projection_problems` and
+`viewer.check.page_problems` and their unit tests. `projection_problems`
+is called only by `build.display_problems`, the check "grids" of the pilot
+kit; `page_problems` only by the checks "review" of the gates real-3 and
+issue-31 and by `specfirst view`; the generator calls `render.html`, which
+is unchanged. The gate real-3 runs every one of these on the pilot: the
+whole unit suite, "grids" on its 10 outputs, "review", and the planted
+defects whole (D7, D13, D14). issue-31 has its own check "review". Both
+ran again on clean clones of `b3c26e4`, as above:
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 scripts/clean_clone_gate.sh <gate> /mnt/d/trial_work/specfirst/.git b3c26e4
+real-3: exit 0; 19 PASS, 0 FAIL; clean clone gate real-3: PASS (810 s)
+issue-31: exit 0; 14 PASS, 0 FAIL; clean clone gate issue-31: PASS (760 s)
+```
+
+| Gate | Checks | Unit tests | Last lines | Log |
+| --- | --- | --- | --- | --- |
+| real-3 | 19 PASS, 0 FAIL | 1,529 passed, 38 deselected | `GATE real-3: PASS`, `clean clone gate real-3: PASS` | docs/reports/real-3.h1.real-3.gate.log (889 lines) |
+| issue-31 | 14 PASS, 0 FAIL | 1,529 passed, 38 deselected | `GATE issue-31: PASS`, `clean clone gate issue-31: PASS` | docs/reports/real-3.h1.issue-31.gate.log (696 lines) |
+
+The 72 files of P1 have the same SHA-256 on `b3c26e4` as on `f4ebb00`:
+the fix changes what the checks refuse, not what a build writes. The
+commits after `b3c26e4` change documents only (this report and the
+review).
 
 ## One cell, end to end
 
@@ -571,7 +598,7 @@ The example's formatted values of the two results are "- 3.3" and
    rows now stand in the section "Number of subjects with at least one
    event", indented, as the example's shell shows them; the count's mask in
    the mock shell is the shell's `XX`. No cell text changes.
-5. **ADR-003, amendment of real-3 (points 1 to 15)** stands unless the
+5. **ADR-003, amendment of real-3 (points 1 to 16)** stands unless the
    owner objects, as the earlier amendments do.
 
 ## Review
@@ -600,7 +627,7 @@ and `d81d36f`:
 
 | # | Point | Done |
 | --- | --- | --- |
-| G1 | The grid page's check passed a table inside `<template>`, `<details>`, `<noscript>` or a closed `<dialog>`, white `<font>` text, and `colspan` or `rowspan` on a cell; the review page passed CSS escapes (`= rl(`) in a style | The grid page's check allows only the elements and attributes the renderer writes (`render._ELEMENTS`, `render._ATTRIBUTES`); `colspan` only on a spanner, a section and a footnote; `rowspan` refused. The review page refuses a backslash in any style; with escapes gone, `url(`, `@import` and `image-set(` are refused as text. tests/unit/test_grid.py and test_viewer.py plant each |
+| G1 | The grid page's check passed a table inside `<template>`, `<details>`, `<noscript>` or a closed `<dialog>`, white `<font>` text, and `colspan` or `rowspan` on a cell; the review page passed CSS escapes (`\75 rl(`) in a style | The grid page's check allows only the elements and attributes the renderer writes (`render._ELEMENTS`, `render._ATTRIBUTES`); `colspan` only on a spanner, a section and a footnote; `rowspan` refused. The review page refuses a backslash in any style; with escapes gone, `url(`, `@import` and `image-set(` are refused as text. tests/unit/test_grid.py and test_viewer.py plant each |
 | G2 | A label the layout gives a group that is wrong but no other group's name ("Week 3" for Week 2) passes | Named as a limit (section "Not covered"); the layouts of the vital signs give no label |
 | G3 | D14's plant "a minimum proven to lie on a half" failed on its class, not on its numbers | The plant carries the class `rule_choice` and fails on its numbers ("35.33 is not on a half at 0 decimals") |
 | G4 | Two texts still said `data_difference`; the two points pending SME review were not in docs/state/sme-review.md | Corrected; the base session listed them as SME-26 (the medians) and SME-33 (the minima and maxima), cited in the exceptions file, ADR-003, this report and docs/state/real.md |
@@ -610,17 +637,37 @@ merge with main, which brought gen-2b's lessons 74 to 81, made them 82 to
 87 (docs/lessons.md); `d81d36f` also mends six lines of
 docs/state/real.md that a PowerShell string had broken (lesson 87).
 
-Pass 3, of `f4ebb00` and of the commit with this report and the gate
-logs: docs/reports/real-3.review.md.
+Pass 3, of `a2512e6` (the merge `f4ebb00`, its 11 gate logs and this
+report), by the same reviewer: SIGNED. It ran the gate real-3 with
+`--clean` on its own clone of `a2512e6` (19 of 19; its 72 P1 hashes equal
+those of the merged log and of its pass-2 run on `900978e`), recounted the
+two grids of the vital signs (0 problems) and walked the five grids again
+(3,815 of 3,815 numeric cells reach SDTM). It compared every path of the
+four trees of the merge (nothing of main or of real-3 dropped) and held
+the quote, the counts and the hashes of this report against the 11 logs.
+Two points, none blocking, carried out in `b3c26e4`:
+
+| # | Point | Done |
+| --- | --- | --- |
+| H1 | The grid page's check passed a body cell `<td class="spanner" colspan="2">`, which moves the row's values under other columns; the review page's check passed `url(` in a style attribute in single quotes (`\75 rl(`), without quotes (`\75rl(`) or as character references (`&#117;rl(`, `&#92;`) | `colspan` stands only on a spanner `<th>` of the header, a section `<th>` of the body and a footnote `<td>` of the footer, and a section heading and a footnote span the whole table. The review page's check allows only the elements and attributes page.py writes (`viewer.check.ELEMENTS`, `ATTRIBUTES`), so no style attribute passes, whatever its quotes. ADR-003, point 16. Nine new plants in test_grid.py and test_viewer.py: the code of `a2512e6` passes eight of them and reports the ninth, a spanner `<th>` in the body, as a wrong spanner |
+| H2 | The G1 row of this report showed "`= rl(`" (a string slip like lesson 87); the state file described the old deny-list; ADR-003 had no sentence on the allow-lists; the "Passed" entry had no verdict of pass 3 | Corrected |
+
+Pass 4, of `b3c26e4` and of the commit with this report:
+docs/reports/real-3.review.md.
 
 ## GitHub and CI
 
 `track/real` is pushed to the owner's repository (public since ADR-013).
 CI (`.github/workflows/ci.yml`: the ASCII check, lint, the unit tests, on
 GitHub's runner, which has no R and no fetch cache) ran on every pushed
-head of the branch. On `f4ebb00`, the commit the gates ran on:
+head of the branch. On `b3c26e4` and `f4ebb00`, the commits the gates ran
+on:
 
 ```text
+run 46003259611 on track/real at b3c26e4: completed, success
+ASCII check: 977 files checked, 0 with non-ASCII bytes
+All checks passed!
+1507 passed, 22 skipped, 38 deselected in 482.00s (0:08:01)
 run 45977706741 on track/real at f4ebb00: completed, success
 ASCII check: 966 files checked, 0 with non-ASCII bytes
 All checks passed!
@@ -628,7 +675,8 @@ All checks passed!
 ```
 
 The 22 skipped tests need R; in the gates, where R is installed, the same
-selection gives 1521 passed and none skipped. The earlier runs of real-3:
+selection gives 1529 and 1521 passed and none skipped. The earlier runs of
+real-3:
 
 ```text
 run 45213010792 on track/real at 70dc552: completed, success
@@ -636,6 +684,7 @@ run 45227081991 on track/real at b71c200: completed, success
 run 45229781240 on track/real at 10805f6: completed, success
 run 45243943991 on track/real at 900978e: completed, success
 run 45248161001 on track/real at d1b9c6f: completed, success
+run 45998928764 on track/real at a2512e6: completed, success
 ```
 
 The runs on the commit that holds this report and on `main` after the
