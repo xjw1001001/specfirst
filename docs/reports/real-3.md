@@ -40,8 +40,8 @@ Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
   SIGNED; its four points G1 to G4, none blocking, are carried out.
   Pass 3, of `a2512e6`: SIGNED; its two points H1 and H2, none
   blocking, are carried out in `b3c26e4`, on which the gates real-3 and
-  issue-31 pass again. Pass 4 reviews `b3c26e4`
-  (docs/reports/real-3.review.md).
+  issue-31 pass again. Pass 4, of `32abcfe` (with `b3c26e4`): SIGNED,
+  with two small corrections of the text, made.
 
 ## What real-3 asks for, and where it stands
 
@@ -429,8 +429,10 @@ Why these gates:
 `b3c26e4` carries out the points H1 and H2 of the review's pass 3. It
 changes, besides documents, only `render.projection_problems` and
 `viewer.check.page_problems` and their unit tests. `projection_problems`
-is called only by `build.display_problems`, the check "grids" of the pilot
-kit; `page_problems` only by the checks "review" of the gates real-3 and
+is called only by `build.display_problems`, through `build.display_checks`:
+the check "grids" of the pilot kit, and the checks of real-3a, real-5a and
+real-5b that read the same pages of a build with the same 72 files;
+`page_problems` only by the checks "review" of the gates real-3 and
 issue-31 and by `specfirst view`; the generator calls `render.html`, which
 is unchanged. The gate real-3 runs every one of these on the pilot: the
 whole unit suite, "grids" on its 10 outputs, "review", and the planted
@@ -450,8 +452,8 @@ issue-31: exit 0; 14 PASS, 0 FAIL; clean clone gate issue-31: PASS (760 s)
 
 The 72 files of P1 have the same SHA-256 on `b3c26e4` as on `f4ebb00`:
 the fix changes what the checks refuse, not what a build writes. The
-commits after `b3c26e4` change documents only (this report and the
-review).
+commits after `b3c26e4` change documents only (this report, the two logs
+above, the state file and the review).
 
 ## One cell, end to end
 
@@ -652,8 +654,19 @@ Two points, none blocking, carried out in `b3c26e4`:
 | H1 | The grid page's check passed a body cell `<td class="spanner" colspan="2">`, which moves the row's values under other columns; the review page's check passed `url(` in a style attribute in single quotes (`\75 rl(`), without quotes (`\75rl(`) or as character references (`&#117;rl(`, `&#92;`) | `colspan` stands only on a spanner `<th>` of the header, a section `<th>` of the body and a footnote `<td>` of the footer, and a section heading and a footnote span the whole table. The review page's check allows only the elements and attributes page.py writes (`viewer.check.ELEMENTS`, `ATTRIBUTES`), so no style attribute passes, whatever its quotes. ADR-003, point 16. Nine new plants in test_grid.py and test_viewer.py: the code of `a2512e6` passes eight of them and reports the ninth, a spanner `<th>` in the body, as a wrong spanner |
 | H2 | The G1 row of this report showed "`= rl(`" (a string slip like lesson 87); the state file described the old deny-list; ADR-003 had no sentence on the allow-lists; the "Passed" entry had no verdict of pass 3 | Corrected |
 
-Pass 4, of `b3c26e4` and of the commit with this report:
-docs/reports/real-3.review.md.
+Pass 4, of `32abcfe` (the fix `b3c26e4` and its gate logs), by the same
+reviewer: SIGNED. It ran the gate real-3 with `--clean` on its own clone of
+`32abcfe` (19 of 19; its 72 P1 lines equal those of the logs of `b3c26e4`
+and `f4ebb00`), ran the new tests on the code of `a2512e6` (10 failed, as
+above), and planted 18 defects of its own in the two pages (spans of the
+wrong width or in the wrong part, a style attribute written five more
+ways, a second style sheet, an `href` by character references,
+`<details open>`): all refused; the pilot's pages and the made-up pages of
+the unit tests pass. Two small corrections of the text, made in the next
+commit: I1, `projection_problems` is reached through `display_checks`,
+which the checks of real-3a, real-5a and real-5b also run (the conclusion
+holds: they read the same pages); I2, the documents after `b3c26e4` include
+the two logs and the state file.
 
 ## GitHub and CI
 

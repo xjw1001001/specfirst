@@ -1394,3 +1394,190 @@ the report's quotes and numbers are those of the logs. H1 and H2 do not
 block.
 
 Verdict: SIGNED
+
+## Pass 4
+
+Date: 2026-11-27. Reviewed: `32abcfe`
+(`32abcfeeb285fe6baea4f6ff8a24294645ced793`, the head of `track/real` and
+of `origin/track/real`), the delta `a2512e6..32abcfe` (10 files, 1,995
+insertions, 33 deletions): `b3c26e4`
+(`b3c26e49506a0cd22d9551c02007d5e4f0eac321`: the file of pass 3, committed
+as the reviewer wrote it; H1 in `render.py`, `viewer/check.py` and their
+unit tests; H2 in ADR-003 point 16 and docs/state/real.md) and `32abcfe`
+(the logs of the gates real-3 and issue-31 on clean clones of `b3c26e4`,
+the report, the state file; documents only). Same reviewer, same rules.
+
+### What was run (pass 4)
+
+| # | What | Result |
+| --- | --- | --- |
+| U1 | `specfirst gate real-3 --clean` on a clone of `32abcfe` | `GATE real-3: PASS`, exit 0, 19 of 19; the 72 P1 lines of the committed log of `b3c26e4` |
+| U2 | the new unit tests of `b3c26e4` on the code of `a2512e6`, and on their own code | 10 failed, 131 passed; 141 passed |
+| U3 | the plants of passes 2 and 3 and 18 new ones against the pages of U1 | every plant refused; the controls 0 |
+| U4 | the elements and attributes the two writers write, against the allow-lists | the same sets |
+| U5 | the two committed logs, the report and the state file | as the logs; two small inexact sentences (I1, I2) |
+
+#### U1 The gate on `32abcfe`
+
+```text
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git <scratch>/clone4
+$ git -C <scratch>/clone4 checkout --quiet --detach 32abcfe
+$ cd <scratch>/clone4 && export PYTHONPATH=$PWD/src SPECFIRST_ROOT=$PWD PYTHONDONTWRITEBYTECODE=1
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 python -u -m specfirst gate real-3 --clean
+gate real-3 at commit 32abcfeeb285fe6baea4f6ff8a24294645ced793 (clean)
+1529 passed, 38 deselected in 473.68s (0:07:53)
+P1 determinism: 72 of 72 files have the same SHA-256 in both builds
+trace of the grids: 5 outputs; numeric cells with a complete path: Out14-1-1 84, Out14-3-1-1 27, Out14-3-2-1 1178, Out14-3-3-1a 1263, Out14-3-3-1b 1263
+grids: 10 outputs, pass
+review: build/p1/cdiscpilot01/first/viewer/index.html has 5597053 bytes, 63 panels of analyses, 4028 cells with a panel; it loads and runs nothing: True; the second build of P1 gives the same page: True
+101 passed in 135.27s (0:02:15)
+ASCII check: 979 files checked, 0 with non-ASCII bytes
+GATE real-3: PASS
+PASS lines: 19, FAIL lines: 0
+the 72 P1 hash lines equal those of docs/reports/real-3.h1.real-3.gate.log
+```
+
+It ran from 08:28:17 to 08:39:49. The 72 hash lines are also those of
+pass 3's run and of the eleven logs of `f4ebb00`: the fix changes what the
+checks refuse, not what a build writes. 979 files are the 977 of
+`a2512e6` and the two new logs.
+
+#### U2 The new tests on the old code
+
+The two test files of `b3c26e4` copied into the reviewer's clone of
+`a2512e6` (and put back after), then run there and in the clone of
+`32abcfe`, under the lock:
+
+```text
+== the tests of b3c26e4 on the code of a2512e6
+FAILED tests/unit/test_grid.py::test_where_a_text_stands_and_what_a_page_may_not_hold[<lambda>-a <td> that spans columns1]
+FAILED tests/unit/test_grid.py::test_where_a_text_stands_and_what_a_page_may_not_hold[<lambda>-a <th> that spans columns]
+FAILED tests/unit/test_grid.py::test_a_page_with_spanners_and_sections - asse...
+FAILED tests/unit/test_viewer.py::test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen[<a class="number"-<a style="background-image: \\75 rl(x.png)" class="number"-the attribute 'style' of <a>]
+FAILED tests/unit/test_viewer.py::test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen[<a class="number"-<a style='background-image: \\75 rl(x.png)' class="number"-the attribute 'style' of <a>]
+FAILED tests/unit/test_viewer.py::test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen[<a class="number"-<a style=background-image:\\75rl(x.png) class="number"-the attribute 'style' of <a>]
+FAILED tests/unit/test_viewer.py::test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen[<a class="number"-<a style="background-image: &#117;rl(x.png)" class="number"-the attribute 'style' of <a>
+FAILED tests/unit/test_viewer.py::test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen[<a class="number"-<a style="background-image: &#92;75 rl(x.png)" class="number"-the attribute 'style' of <
+FAILED tests/unit/test_viewer.py::test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen[</body>-<template><p>x</p></template></body>-the element <template>]
+FAILED tests/unit/test_viewer.py::test_a_page_that_loads_runs_or_draws_a_kind_wrongly_is_seen[<a class="number"-<a hidden class="number"-the attribute 'hidden' of <a>]
+10 failed, 131 passed in 1.15s
+== the tests of b3c26e4 on the code of 32abcfe
+141 passed in 1.01s
+```
+
+The ten are the commit's count: eight new plants the old checks miss, the
+changed message of the double-quoted style, and the spanner `<th>` in the
+body, which the old check reports otherwise (as a wrong spanner).
+
+#### U3 Plants against the fix
+
+```text
+widths: Out14-3-1-1 4, Out14-3-3-1a 7
+  render.projection_problems, Out14-3-1-1, control: unchanged: 0 problems
+  render.projection_problems, Out14-3-3-1a, control: unchanged: 0 problems
+  render.projection_problems, Out14-3-1-1, the pass-3 plant: a body cell <td class="spanner" colspan="2">: 1 problems; the page holds a <td> that spans columns
+  render.projection_problems, Out14-3-1-1, a body cell <th class="spanner" colspan="2">: 2 problems; the spanners of the page are [('2', '65 ( 75.6)77 ( 91.7)76 ( 90.5)\nRelated TEAE')], the grid's []
+  render.projection_problems, Out14-3-1-1, a body cell with data-footnote and colspan (outside tfoot): 2 problems; the rows of the page are not those of the grid in their places: the first that differs is row 4 of the table
+  render.projection_problems, Out14-3-1-1, a body cell with colspan="1": 1 problems; the page holds a <td> that spans columns
+  render.projection_problems, Out14-3-1-1, the section heading two columns wide: 1 problems; a section heading or a footnote spans 2 columns, not the 4 of the table
+  render.projection_problems, Out14-3-1-1, the section heading 99 columns wide: 1 problems; a section heading or a footnote spans 99 columns, not the 4 of the table
+  render.projection_problems, Out14-3-1-1, a footnote two columns wide: 1 problems; a section heading or a footnote spans 2 columns, not the 4 of the table
+  render.projection_problems, Out14-3-3-1a, a spanner three columns wide: 1 problems; the spanners of the page are [('3', 'Placebo'), ('2', 'Xanomeline Low Dose'), ('2', 'Xanomeline High Dose')], [...]
+  render.projection_problems, Out14-3-3-1a, an empty body row with a cell the table wide: 2 problems; the rows of the page are not those of the grid in their places: the first that differs is row 4 of the table
+  viewer.check.page_problems, unchanged: 0 problems
+  viewer.check.page_problems, pass 3: a style attribute in single quotes with an escaped url(: 1 problems; the page has the attribute 'style' of <a>, which the viewer does not write
+  viewer.check.page_problems, pass 3: a style attribute without quotes with an escaped url(: 1 problems; the page has the attribute 'style' of <a>, which the viewer does not write
+  viewer.check.page_problems, pass 3: url( as a character reference in a style attribute: 1 problems; the page has the attribute 'style' of <a>, which the viewer does not write
+  viewer.check.page_problems, pass 3: a backslash as a character reference in a style attribute: 1 problems; the page has the attribute 'style' of <a>, which the viewer does not write
+  viewer.check.page_problems, a style attribute in upper case (STYLE=...): 1 problems; the page has the attribute 'style' of <a>, which the viewer does not write
+  viewer.check.page_problems, a second <style> with a CSS escape written as \000075: 1 problems; a style of the page holds a backslash (a CSS escape)
+  viewer.check.page_problems, a link whose href is a character-referenced URL (&#104;ttps:): 1 problems; the link 'https://example.org/' leaves the page
+  viewer.check.page_problems, <details open> (an attribute page.py does not write): 1 problems; the page has the attribute 'open' of <details>, which the viewer does not write
+```
+
+The scripts of R7, S6 and T5 again on the pages of U1: every plant of
+passes 1 to 3 is refused; only the controls give 0 problems.
+
+#### U4 What the writers write
+
+```text
+viewer page: 5597053 bytes; elements 29 ['a', 'b', 'body', 'br', 'code', 'details', 'div', 'h1', 'h2', 'h3', 'head', 'html', 'li', 'meta', 'ol', 'p', 'pre', 'section', 'span', 'style', 'summary', 'table', 'tbody', 'td', 'th', 'thead', 'title', 'tr', 'ul']; attributes ['charset', 'class', 'data-key', 'href', 'id', 'lang']
+   the same as viewer.check.ELEMENTS: True; ATTRIBUTES: True
+```
+
+The source agrees: `viewer/page.py` writes the tags of these 29 elements
+and the attributes `charset`, `class`, `data-key`, `href`, `id` and
+`lang`, and no tag or attribute name is built from data (every
+interpolated text goes through `escape`). `render.html`, `_row` and
+`_stub` write `html`, `head`, `meta`, `title`, `style`, `body`, `table`,
+`caption`, `div`, `thead`, `tbody`, `tfoot`, `tr`, `th` and `td`, the
+attributes `lang`, `charset`, `class`, `scope`, `colspan`, `style` (only
+`padding-left: N.Nem`, which `_INDENT` allows) and `data-*`, and a
+`colspan` only on a header spanner, a section heading and a footnote, the
+last two `len(columns) + 1` wide: all within `_ELEMENTS`, `_ATTRIBUTES`
+and the new colspan rule. So the allow-lists refuse nothing either writer
+writes; on the pilot the gate's checks "grids" (10 outputs, both pages
+each) and "review" pass, and on the made-up pages of the unit tests the
+141 tests of U2 pass.
+
+#### U5 The logs, the report, the state
+
+```text
+issue-31 | commit:     b3c26e4 | b3c26e49506a | GATE issue-31: PASS | PASS 14 FAIL 0 | checks 14 | (clean) 1 | fetched 13 | 1529 passed, 38 deselected in 467.25s (0:07:47) | 696 lines
+real-3 | commit:     b3c26e4 | b3c26e49506a | GATE real-3: PASS | PASS 19 FAIL 0 | checks 19 | (clean) 1 | fetched 13 | 1529 passed, 38 deselected in 465.86s (0:07:45) | 889 lines
+each: the last line "clone deleted: /tmp/specfirst-clean-..."; "ASCII check: 977 files checked, 0 with non-ASCII bytes"
+real-3: P1 lines identical to the f4ebb00 log
+issue-31: P1 lines identical to the f4ebb00 real-3 log
+```
+
+The report's table of the two runs (checks, 1,529 passed, last lines, 889
+and 696 lines) and its sentence on the 72 files are what the logs say. Its
+G1 row now reads `\75 rl(`; ADR-003 point 16 and docs/state/real.md
+describe the allow-lists as the code has them; the "Passed" entry has the
+verdict of pass 3; the report says "points 1 to 16". The two loop lines
+(810 s, 760 s) and the CI run 46003259611 were not checked (no network);
+its 977 files and 1,507 passed with 22 skipped agree with the gate's 977
+and 1,529. The added lines hold no credential, token or Windows user path
+(the word AppData in them is the prose of pass 3).
+
+The choice of gates holds. `render.projection_problems` is reached only
+through `build.display_problems` and `build.display_checks`;
+`page_problems` only through the "review" checks of real-3 and issue-31 and
+`specfirst view`. On `b3c26e4` the gate real-3 runs `display_checks` over
+all 10 outputs of the pilot, its "review", the whole unit suite and the
+planted defects whole; issue-31 runs its own "review" on the same page. The
+other gates that call `display_checks` (real-3a "grids", real-5a and
+real-5b "efficacy", real-5b's E22 hint) call it on a build with the same 72
+files, so they would read the same pages.
+
+### The points of pass 3
+
+- H1: closed. The spanning body cell and the four ways to write a style
+  are refused (U3), by allow-lists that hold exactly what the writers
+  write (U4); the new tests fail on the old code and pass on the new (U2).
+- H2: closed. The G1 row, the state file, ADR-003 (point 16) and the
+  "Passed" entry say what they should.
+
+### Small points (pass 4, not blocking)
+
+- I1: the report says "`projection_problems` is called only by
+  `build.display_problems`, the check "grids" of the pilot kit".
+  `display_problems` is reached through `display_checks`, which the checks
+  "efficacy" of real-5a and real-5b, real-5b's E22 hint and `specfirst
+  check` also call. The conclusion stands (U5); the sentence names one
+  caller of four.
+- I2: "The commits after `b3c26e4` change documents only (this report and
+  the review)": `32abcfe` also adds the two logs and changes the state file,
+  and the review changes in the commit after it.
+
+### Not checked (pass 4)
+
+- The clean-clone runs and the loop's seconds (the network), the CI runs.
+- The gates other than real-3 by a run of the reviewer's; the log of
+  issue-31 was read (U5).
+
+Pass 4 covers `32abcfe` and `b3c26e4` in it. H1 and H2 are closed, the
+fix breaks nothing the writers write, the reviewer's gate passes with the
+same 72 hashes, and the logs and texts agree; I1 and I2 do not block.
+
+Verdict: SIGNED

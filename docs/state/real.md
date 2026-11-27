@@ -124,7 +124,8 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   real-3.first-commit.gate.log, real-3.merged.<gate>.gate.log and
   real-3.h1.<gate>.gate.log. Review: docs/reports/real-3.review.md
   (pass 1 NOT SIGNED, its blocking F1 fixed; pass 2 SIGNED of `900978e`;
-  pass 3 SIGNED of `a2512e6`, its H1 and H2 carried out). Decisions:
+  pass 3 SIGNED of `a2512e6`, its H1 and H2 carried out; pass 4 SIGNED of
+  `32abcfe`). Decisions:
   docs/decisions/ADR-003.md, the amendment of real-3; the owner's answer
   on the four medians at a half: A, keep gold's display rule and record the
   four (2026-11-23). Per recommendation,
