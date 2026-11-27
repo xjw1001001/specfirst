@@ -46,6 +46,29 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   docs/reports/issue-30.md. Review: docs/reports/issue-30.review.md
   (signed, six findings, none blocking). Generated kits do not change.
   See "P4 on a reference study".
+- gen-2b (2026-11-27), gates passed, review signed, merged into `main`:
+  the probes follow the decisions of a kit (the rework that the owner's
+  answer of 2026-11-17 on finding G1 of the gen-2a review booked; ADR-023,
+  the executor's choices; PLAN.md and the schemas unchanged; ADR-007
+  points to it). The decision vector is drawn first and the data are
+  generated for it; the calibrated counts follow the kit's analysis set
+  and grouping; the planted subjects stand in its analysis set;
+  `probes.REACHES` keeps only conditions under which another decision
+  makes two alternatives equal on any data of the design that follow
+  SDTMIG v3.4 and the premise its row names; a kit that leaves unseparated
+  a read decision that data could separate is not written, and the gate
+  gen-2b fails on one (three plants). The owner lifted the three
+  exclusions of gen-2a (2026-11-23); (c) per recommendation, pending SME
+  review (SME-32 in docs/state/sme-review.md, from the base track); the
+  premise of the row of `pop.safety.rule` likewise (SME-34). Generator `gen-2b.2`. Gates on clean clones of `4de3db2`:
+  gen-2b 13 of 13, gen-1a 8 of 8 (CORE on 20 datasets, no unexplained
+  finding), gen-2a 13 of 13, gen-3a 15 of 15, read-1a 14 of 14, issue-29
+  12 of 12; gen-2b again on `95ac45a`; read-2a on `77c33a4`, with the kept
+  dry run of arm R made again (`R-task-087cf121e580`, kit 4 of the gate
+  seed, USD 0.7395). Report: docs/reports/gen-2b.md. Review:
+  docs/reports/gen-2b.review.md (pass 1 not signed, pass 2 signed; H8 not
+  blocking: two texts in the bytes of every kit wait for the next
+  GENERATOR, see "Open").
 
 ## A kit: what the folder holds
 
@@ -56,7 +79,8 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
 ```text
 kit.yaml                    id, tier A, archetype, slice, split, generator, catalog, house,
                             pins, the properties, the SHA-256 of every file
-study.json                  the manifest of the data (gen-1a)
+study.json                  the manifest of the data (gen-1a); `decisions`: the vector the
+                            probes were planted for (gen-2b)
 inputs/data/sdtm/           visible SDTM: <domain>.parquet, <domain>.json, define.xml
 inputs/house/               the house standard, as in standard/houses/open-default@1
 inputs/docs/                protocol.md and sap.md in natural form (gen-3a, below)
@@ -123,28 +147,46 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
 ## What a scorer must know (read-1a)
 
 - `gold/identifiability.json` is the matrix of the twin. Per decision:
-  `read` (the output reads an element the decision sets), `applicable` (the
-  log of probes claims a probe for every pair of the gold value with
-  another alternative), `identifiable` (`separated`, `unseparated`, or
-  `no_alternative`), `reason`, and `pairs` with `gold`, `claimed`,
-  `separated` and the number of changed `cells`. The decision records
-  repeat `identifiable`.
+  `read` (the output reads an element the decision sets), `applicable`
+  (read, and no other decision of the kit makes its alternatives give the
+  same output on any data of the design that follow SDTMIG v3.4:
+  `probes.REACHES` holds for every pair of the gold value with another
+  value of the matrix; for `ae.related.values`, which has one alternative,
+  with another stated list, from `gen-2b.2`), `identifiable` (`separated`,
+  `unseparated`, or `no_alternative`), `reason`, and `pairs` with `gold`,
+  `claimed`, `separated` and the number of changed `cells`. The decision
+  records repeat `identifiable`.
 - A decision that is `unseparated` on the twin cannot be scored by the
-  table: compare decision values and report it apart (section 9.3). This
-  holds also for a decision that the table reads: a kit of this generator
-  can state a decision, have a table that reads it, and still give the
-  same table as under the house default (kit 9 of the gate set states
-  rounding half to even; every cell of its twin has the same text under
-  the default). The owner approved that for the slice on 2026-11-17
-  (ADR-007, "The owner's answer on decision 6"). A table that equals the
-  gold table is therefore no evidence for an `unseparated` decision, and a
-  table that differs is not caused by one. Three kinds occur. Not read: the output does not read it under the decisions
-  of the kit (`pop.randomized.rule` in a kit on the safety set;
-  `date.studyday.origin` in every kit of this slice). Read without a probe:
-  `tfl.rounding.rule` outside the safety set grouped by actual treatment
-  from DM, and the decisions that act through one planted event in a kit on
-  the efficacy-evaluable set. Equal by another decision:
-  `pop.safety.grouping` when actual treatment is the same as planned.
+  table: compare decision values and report it apart (section 9.3). From
+  the generator `gen-2b.2` (ADR-023) two kinds occur, and no other. Not
+  read: the output does not read it under the decisions of the kit
+  (`pop.randomized.rule` in a kit on the safety set; `date.studyday.origin`
+  in every kit of this slice). Read, and equal by another decision on any
+  data of the design that follow SDTMIG v3.4: `pop.safety.rule` in a table
+  by planned treatment, `pop.safety.grouping` when actual treatment is the
+  same as planned; the matrix gives the reason `verify.NO_PROBE` with the
+  note of the row of `probes.REACHES`. The row of `pop.safety.rule` rests on
+  a premise: a subject who is not randomized has no planned arm (DM.ARMCD
+  empty, ARMNRS NOT ASSIGNED: in a randomized design the arm is assigned at
+  randomization, SDTMIG v3.4 DM). Data that break it (a dosed subject with
+  a planned arm and no disposition record RANDOMIZED) separate the two
+  rules in a table by planned treatment; the generator writes no such
+  subject (a unit test checks it). SDTMIG itself does not ask for a
+  disposition record RANDOMIZED, so the premise is that the study records
+  one for every subject with an arm, as every generated study does; the
+  short form "on any data that follow SDTMIG v3.4" means that. Per
+  recommendation, pending SME review (SME-34; ADR-023, finding H2 of the
+  gen-2b review). The reason in the matrix quotes the note of the row, which says
+  "only a table on the safety set reads the rule": a table on the
+  efficacy-evaluable set reads it too (that set is a part of the safety
+  set). Both texts stand in the bytes of every kit; they change with the
+  next `GENERATOR` (finding H8 of the gen-2b review). A decision that the output
+  reads and that data could separate is separated in every kit: a kit in
+  which one is not is not written, and the gates gen-2a and gen-2b fail on
+  it. (Kits of `gen-2a.*` and `catalog-2c.*` could leave such a decision
+  unseparated, the rounding rule outside the safety set by actual treatment
+  among them: ADR-007, "The owner's answer on decision 6"; kits of
+  `gen-2b.1` could leave `ae.related.values` unseparated.)
 - The matrix changes one decision at a time, from the gold vector. Two
   wrong decisions can cancel in the table, and so can two planted subjects
   in one arm; a kit is written only when every claimed pair is separated,
@@ -152,11 +194,16 @@ shown.grids["Out_AESUM"], shown.rows, shown.plans  # grid, ARD (Python), ADaM ta
 - Slot values. A slot of an alternative is mutated to one value only, the
   one the probes are built around (`decisions.variants`). A wrong value of
   a slot of the gold alternative is not in the matrix, except for
-  `ae.related.values`, which has one alternative. The review of gen-1a
-  counted how often two values of a slot give the same table (F23).
-- `disp.status.record` is never "the record with the subcategory STUDY
-  TREATMENT" in a gold vector, and "STUDY PARTICIPATION" only where the
-  output does not read the decision: see "For the std track".
+  `ae.related.values`, which has one alternative: its pairs are claimed
+  where the table shows a row of related events (from `gen-2b.2`). The
+  review of gen-1a counted how often two values of a slot give the same
+  table (F23).
+- `disp.status.record`: from `gen-2b.1` a gold vector may name the record
+  with the subcategory STUDY TREATMENT or STUDY PARTICIPATION where the
+  output reads the decision (the owner lifted gen-2a's limits, ADR-023
+  decision 6). Kits of `gen-2a.*` never named the first, and the second
+  only where the output did not read the decision: see "For the std
+  track".
 - The visible data carry a part of the probes. There is no matrix for
   them; `verify.mutate(..., "visible", ...)` computes one.
 - The order of the treatment columns needs the arms of the protocol
@@ -242,7 +289,7 @@ subagents of a Claude Code session; the CLI on this machine is not logged
 in (ADR-009, decision 1).
 
 - Change `GENERATOR` with any change that gives other bytes. Kits are
-  generated again, never patched. It is `catalog-2c.2` now (catalog-2c).
+  generated again, never patched. It is `gen-2b.2` now (gen-2b; ADR-023).
 - `specfirst gate` refuses to run while `SPECFIRST_REWRITES` is set, and
   `specfirst gen natural requests|propose` refuses dev, test and sealed
   kits (but those of the gate seed) while the store lies inside a
@@ -398,16 +445,32 @@ runs for another seed (docs/reports/gen-3a.review.md, pass 2):
   or a rule passes both checks; the verifier should also read back the slot
   values before rewrites that move further from the standard form.
 
-- The data of a kit are a function of the design and the seed (gen-1a);
-  the decisions are sampled to fit them. A probe that holds for one
-  analysis set (the calibrated counts) cannot follow the decisions. The
-  gate `gen-2a` therefore reads "applicable" as "claimed by the log of
-  probes" (ADR-007, decision 6). The owner approved that reading for the
-  slice only; the rework is the last point under "Next". Until it is
-  done, look at the matrices of a set before the set is used: how many
-  kits leave a decision unseparated that the table reads differs by seed
-  (2 of 10 in the set of the gate; 2 and 4 of 10 in two sets of the
-  reviewer, one case stated in the document of a dev kit).
+- The sampler refuses no combination for the probes (ADR-023, decision 6;
+  the owner lifted gen-2a's three limits on 2026-11-23). Three recipes
+  plant data of a shape of their own for them: a first dose without a
+  time (emergence by the time of the first dose, a partial start completed
+  to a day); a treatment and a study disposition record for the subject
+  without an exposure end date (the treatment record as the end-of-study
+  record); a second such subject with no study-level disposition record
+  (the study participation record; per recommendation, pending SME review,
+  SME-32).
+- The count probe adds subjects of the placebo arm until the counted
+  column has a size with a rounding half (a multiple of 8, 16 or 32 at 0, 1
+  or 2 decimals): up to 31 more subjects than the arm planned (ADR-023,
+  decision 3).
+- With the next `GENERATOR` (finding H8 of the gen-2b review, not
+  blocking): the note of the row of `pop.safety.rule` in `probes.REACHES`
+  says "only a table on the safety set reads the rule" (the efficacy-
+  evaluable set reads it too), and `verify.NO_PROBE` says "on any data of
+  this design that follow SDTMIG v3.4" where the premise is that the study
+  records a randomization for every subject with an arm. Both stand in the
+  bytes of every kit (the log of probes, the matrix), so they wait for a
+  change that makes new kits anyway.
+- The row of `pop.safety.rule` rests on that premise, per recommendation,
+  pending SME review (SME-34; ADR-023, decision 4). The other way: plant a dosed
+  subject with a planned arm and no record RANDOMIZED and claim the rule
+  wherever the table reads the safety set (beyond the recipe of the
+  frozen `catalog@2`).
 - The scenarios of a set (`decisions.SCENARIOS`) are what makes every
   decision read and claimed in some kit of ten. A set of other size keeps
   the rotation.
@@ -424,9 +487,11 @@ For the std track:
   last disposition event is the study participation record, so
   `disposition_event` and `disposition_event_by_subcategory` pick the same
   record unless the subcategory is that of the treatment record. And with
-  that subcategory nearly no subject has an end-of-study date. A kit can
-  separate the decision only from `disposition_event` towards the treatment
-  record; the value "STUDY PARTICIPATION" is never separated.
+  that subcategory nearly no subject has an end-of-study date. Since gen-2b
+  the table separates the decision through the subject without an exposure
+  end date, whose disposition records follow the kit's value (ADR-023,
+  decision 6): a treatment and a study record; or, for the value "STUDY
+  PARTICIPATION", a second subject with a treatment record only.
 - `tfl.population` has the alternative `efficacy` in every design; in a
   design without that set it cannot be built. The catalog has no
   applicability per alternative.
@@ -462,22 +527,9 @@ For the real track:
   other three table families; more than one rewrite per statement, and a
   phrasing family held out for an exam (section 6.7); rewrites that move
   further from the standard form (ADR-009, "For the owner").
-- Owed before the gate of the full gen-2 is run (the owner's answer of
-  2026-11-17 on finding G1 of the gen-2a review; ADR-007): the probes
-  follow the decisions of the kit. The decisions are sampled first and
-  the probes are planted after them (section 6.4, S1 before S3): the
-  calibrated counts for the analysis set and the grouping of the kit's
-  own table, the planted subjects inside its analysis set.
-  `probes.REACHES` keeps only the conditions under which another decision
-  of the kit makes the alternatives equal on any data; the conditions
-  `_ANALYZED` and that of `tfl.rounding.rule` go. The gate fails on a kit
-  in which a decision that the output reads, and that data could
-  separate, is not separated on the twin. This changes `study.generate`
-  (the data of a kit then depend on its decisions) and the order in
-  `kits._attempt`, so the gate of gen-1a runs again, with CORE, and
-  `GENERATOR` changes. The kit folder and the loading API above need not
-  change. Not started; when it is done, and as which part, is the owner's
-  to plan.
+- The rework owed before the gate of the full gen-2 (the owner's answer of
+  2026-11-17 on finding G1 of the gen-2a review) is done: part gen-2b,
+  ADR-023 (see "Passed").
 
 How to run things:
 
@@ -487,10 +539,14 @@ How to run things:
   takes about 20 minutes, nearly all of it CORE. Wrap every gate, test
   suite or generator run in `flock /run/lock/specfirst-heavy.lock
   <command>` (lesson 32).
-- One kit takes about half a minute per decision vector; a vector is drawn
-  again when its kit does not separate what the log claims.
-- A clean clone is under `/tmp`, which WSL clears a minute after the last
-  command: copy what must last in the same command (lesson 39).
+- One kit takes about a minute and a half without R. A kit that does not
+  separate a decision the output reads is not written (no second vector).
+- `scripts/clean_clone_gate.sh <wp>` runs a gate on a clone under `/tmp`;
+  when it ends it copies the clone's `build/gates/<wp>/` into the
+  checkout's `build/gates/<wp>/clone/` and deletes the clone (lesson 73;
+  `SPECFIRST_KEEP_CLONE=1` keeps it). Lesson 39 counted on WSL clearing
+  `/tmp`; it does not while sessions run commands, so nothing outside the
+  copied folder lasts.
 
 ## Handed over by base-0
 

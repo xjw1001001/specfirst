@@ -1,0 +1,315 @@
+gate issue-29 at commit 4de3db220a171802a472981644c744b3516cff7f (clean)
+
+== [1/12] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-eO8VdR/env/venv-specfirst-4094304870/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+-- PASS environment (0.3 s)
+
+== [2/12] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-eO8VdR/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (1.9 s)
+
+== [3/12] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/12] unit tests: pytest -m "not evidence" -q
+........................................................................ [  5%]
+........................................................................ [ 10%]
+........................................................................ [ 15%]
+........................................................................ [ 20%]
+........................................................................ [ 25%]
+........................................................................ [ 30%]
+........................................................................ [ 35%]
+........................................................................ [ 40%]
+........................................................................ [ 45%]
+........................................................................ [ 50%]
+........................................................................ [ 55%]
+........................................................................ [ 60%]
+........................................................................ [ 65%]
+........................................................................ [ 70%]
+........................................................................ [ 75%]
+........................................................................ [ 80%]
+........................................................................ [ 85%]
+........................................................................ [ 90%]
+........................................................................ [ 95%]
+..................................................................       [100%]
+1434 passed, 37 deselected in 448.36s (0:07:28)
+-- PASS unit tests (449.0 s)
+
+== [5/12] kit: specfirst kit assemble cdiscpilot01
+study data in git (E20): 950 maintained files checked, 0 problems
+kit cdiscpilot01: 67 files match their pinned SHA-256 (26 inputs, 41 gold) in /tmp/specfirst-clean-eO8VdR/specfirst/build/kits/cdiscpilot01
+-- PASS kit (0.1 s)
+
+== [6/12] P1 determinism: specfirst check cdiscpilot01 --twice (its first part)
+build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 5054 nodes, 10352 edges, 64 files in /tmp/specfirst-clean-eO8VdR/specfirst/build/p1/cdiscpilot01/first)
+build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 5054 nodes, 10352 edges, 64 files in /tmp/specfirst-clean-eO8VdR/specfirst/build/p1/cdiscpilot01/second)
+same      76c528ce523c6a13 76c528ce523c6a13 gold/ard/common-safety-displays.jsonl
+same      de20ea90cae0946d de20ea90cae0946d gold/ard/common-safety-displays.r.jsonl
+same      141d770b91a8e526 141d770b91a8e526 gold/ard/efficacy-adas.jsonl
+same      3aebe15842f649ae 3aebe15842f649ae gold/ard/efficacy-adas.r.jsonl
+same      dab855805eb11ddd dab855805eb11ddd gold/ard/efficacy-cibic.jsonl
+same      b27aedfac66ba10d b27aedfac66ba10d gold/ard/efficacy-cibic.r.jsonl
+same      a3d51da218b6839e a3d51da218b6839e gold/ars/common-safety-displays.json
+same      e0115ad0594db5d6 e0115ad0594db5d6 gold/ars/efficacy-adas.json
+same      b75667957d1af10d b75667957d1af10d gold/ars/efficacy-cibic.json
+same      98966f855b1f9a06 98966f855b1f9a06 gold/data/adam/adae.parquet
+same      87ea384e00bacdc3 87ea384e00bacdc3 gold/data/adam/adlbc.parquet
+same      d95331eea03d86b3 d95331eea03d86b3 gold/data/adam/adlbh.parquet
+same      182a39372904c356 182a39372904c356 gold/data/adam/adlbhy.parquet
+same      e16dc811e47eacc1 e16dc811e47eacc1 gold/data/adam/adqsadas.parquet
+same      d28be025f2926112 d28be025f2926112 gold/data/adam/adqscibc.parquet
+same      7c409eb6df376433 7c409eb6df376433 gold/data/adam/adqsnpix.parquet
+same      cc7e238ce918a8a7 cc7e238ce918a8a7 gold/data/adam/adsl.parquet
+same      9fc9404e60736ea5 9fc9404e60736ea5 gold/data/adam/adtte.parquet
+same      270cada0a4a60291 270cada0a4a60291 gold/data/adam/advs.parquet
+same      54ad78238aa343c2 54ad78238aa343c2 gold/graph/coverage.json
+same      7a49650cb398e3d4 7a49650cb398e3d4 gold/graph/edges.jsonl
+same      f4ccc6ed2af21fbc f4ccc6ed2af21fbc gold/graph/nodes.jsonl
+same      c41fec5b0e9045c6 c41fec5b0e9045c6 gold/grid/Out14-1-1.json
+same      01033a518df0ab68 01033a518df0ab68 gold/grid/Out14-1-1.shell.json
+same      a99694cc51ca6dda a99694cc51ca6dda gold/grid/Out14-3-01.json
+same      9d43bc35566aedb6 9d43bc35566aedb6 gold/grid/Out14-3-01.shell.json
+same      ea81056a2f7a09a7 ea81056a2f7a09a7 gold/grid/Out14-3-03.json
+same      8d05d76d044b0d4b 8d05d76d044b0d4b gold/grid/Out14-3-03.shell.json
+same      63d19de426b82af6 63d19de426b82af6 gold/grid/Out14-3-05.json
+same      9505fb8d303187c3 9505fb8d303187c3 gold/grid/Out14-3-05.shell.json
+same      978c9e2977e3f5fc 978c9e2977e3f5fc gold/grid/Out14-3-1-1.json
+same      2ac2586e11fbb636 2ac2586e11fbb636 gold/grid/Out14-3-1-1.shell.json
+same      dd0359dabee17cd7 dd0359dabee17cd7 gold/grid/Out14-3-11.json
+same      7dc6971bc500481c 7dc6971bc500481c gold/grid/Out14-3-11.shell.json
+same      9499b533a7db9e45 9499b533a7db9e45 gold/grid/Out14-3-13.json
+same      bd3ab54d2deda6f9 bd3ab54d2deda6f9 gold/grid/Out14-3-13.shell.json
+same      20899fefd93792dd 20899fefd93792dd gold/grid/Out14-3-2-1.json
+same      efd66903d6a14ed4 efd66903d6a14ed4 gold/grid/Out14-3-2-1.shell.json
+same      02234436394c2e76 02234436394c2e76 gold/out/Out14-1-1.html
+same      30947ad5f22a00d9 30947ad5f22a00d9 gold/out/Out14-1-1.shell.html
+same      566ee6659870e8c1 566ee6659870e8c1 gold/out/Out14-3-01.html
+same      75d30952a6da0847 75d30952a6da0847 gold/out/Out14-3-01.shell.html
+same      25d6b4b3f963f46d 25d6b4b3f963f46d gold/out/Out14-3-03.html
+same      35114b087567f9d9 35114b087567f9d9 gold/out/Out14-3-03.shell.html
+same      7bbddf23e9c7e6bd 7bbddf23e9c7e6bd gold/out/Out14-3-05.html
+same      c4fb4c09ec253ad4 c4fb4c09ec253ad4 gold/out/Out14-3-05.shell.html
+same      e9db6ca3f5d7ce63 e9db6ca3f5d7ce63 gold/out/Out14-3-1-1.html
+same      41c207f1d512d596 41c207f1d512d596 gold/out/Out14-3-1-1.shell.html
+same      ef8fdf32d2d0cb7b ef8fdf32d2d0cb7b gold/out/Out14-3-11.html
+same      87669b13fc6a7051 87669b13fc6a7051 gold/out/Out14-3-11.shell.html
+same      047d07911ec08c11 047d07911ec08c11 gold/out/Out14-3-13.html
+same      5f5a8dddaa43277e 5f5a8dddaa43277e gold/out/Out14-3-13.shell.html
+same      89faca5f04ce14f2 89faca5f04ce14f2 gold/out/Out14-3-2-1.html
+same      be4c2c59c844fde9 be4c2c59c844fde9 gold/out/Out14-3-2-1.shell.html
+same      c219f3b1fce3ce3b c219f3b1fce3ce3b gold/resolved/adae.json
+same      0801da1da1f9b09e 0801da1da1f9b09e gold/resolved/adlbc.json
+same      c08b51b5d9edaf0a c08b51b5d9edaf0a gold/resolved/adlbh.json
+same      149e79b32a48012c 149e79b32a48012c gold/resolved/adlbhy.json
+same      c984b124c68bef94 c984b124c68bef94 gold/resolved/adqsadas.json
+same      ddcd7b62b6020aa6 ddcd7b62b6020aa6 gold/resolved/adqscibc.json
+same      5e29d4624ac55f52 5e29d4624ac55f52 gold/resolved/adqsnpix.json
+same      5b4ccf4019ca253e 5b4ccf4019ca253e gold/resolved/adsl.json
+same      2faaa1493e74c8c1 2faaa1493e74c8c1 gold/resolved/adtte.json
+same      b3c5b4f08f26ae5a b3c5b4f08f26ae5a gold/resolved/advs.json
+P1 determinism: 64 of 64 files have the same SHA-256 in both builds
+-- PASS P1 determinism (39.0 s)
+
+== [7/12] recompute: specfirst recompute cdiscpilot01 --build build/p1/cdiscpilot01/first
+recompute cdiscpilot01: 69 scripts of 69 analyses written to /tmp/specfirst-clean-eO8VdR/specfirst/build/recompute/cdiscpilot01/bundle
+reproduced   common-safety-displays/An01_05_SAF_Summ_ByTrt: 3 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_01_Age_Summ_ByTrt: 24 rows, largest relative difference 1.1e-16
+reproduced   common-safety-displays/An03_01_Age_Comp_ByTrt: 1 rows, largest relative difference 3.7e-15
+reproduced   common-safety-displays/An03_02_AgeGrp_Summ_ByTrt: 12 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_02_AgeGrp_Comp_ByTrt: 1 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_03_Sex_Summ_ByTrt: 12 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_03_Sex_Comp_ByTrt: 1 rows, largest relative difference 2.0e-16
+reproduced   common-safety-displays/An03_04_Ethnic_Summ_ByTrt: 12 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_04_Ethnic_Comp_ByTrt: 1 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_05_Race_Summ_ByTrt: 54 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_05_Race_Comp_ByTrt: 1 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An03_06_Height_Summ_ByTrt: 24 rows, largest relative difference 1.7e-16
+reproduced   common-safety-displays/An03_06_Height_Comp_ByTrt: 1 rows, largest relative difference 2.1e-14
+reproduced   common-safety-displays/An07_01_TEAE_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_01_TEAE_Comp_ByTrt_PlacLow: 1 rows, largest relative difference 2.0e-13
+reproduced   common-safety-displays/An07_01_TEAE_Comp_ByTrt_PlacHigh: 1 rows, largest relative difference 1.9e-13
+reproduced   common-safety-displays/An07_02_RelTEAE_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_03_SerTEAE_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_04_RelSerTEAE_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_05_TEAELd2Dth_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_06_RelTEAELd2Dth_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_07_TEAELd2DoseMod_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_08_TEAELd2TrtDsc_Summ_ByTrt: 6 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_09_Soc_Summ_ByTrt: 138 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_09_Soc_Comp_ByTrt_PlacLow: 22 rows, largest relative difference 1.9e-13
+reproduced   common-safety-displays/An07_09_Soc_Comp_ByTrt_PlacHigh: 22 rows, largest relative difference 2.4e-13
+reproduced   common-safety-displays/An07_10_SocPt_Summ_ByTrt: 1380 rows, largest relative difference 0.0e+00
+reproduced   common-safety-displays/An07_10_SocPt_Comp_ByTrt_PlacLow: 180 rows, largest relative difference 2.0e-13
+reproduced   common-safety-displays/An07_10_SocPt_Comp_ByTrt_PlacHigh: 187 rows, largest relative difference 2.0e-13
+reproduced   common-safety-displays/An08_01_Obs_Summ_ByTrt: 1056 rows, largest relative difference 2.4e-16
+reproduced   common-safety-displays/An08_02_ChgBl_Summ_ByTrt: 1056 rows, largest relative difference 2.0e-16
+reproduced   efficacy-adas/An_EFF_N: 3 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W24_Base: 18 rows, largest relative difference 1.5e-16
+reproduced   efficacy-adas/An_ADAS_W24_Aval: 18 rows, largest relative difference 2.7e-16
+reproduced   efficacy-adas/An_ADAS_W24_Chg: 18 rows, largest relative difference 1.5e-16
+reproduced   efficacy-adas/An_ADAS_W24_Dose: 2 rows, largest relative difference 8.3e-15
+reproduced   efficacy-adas/An_ADAS_W24_PwPbo: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W24_PwLow: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W24_LSM: 12 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W08_Base: 18 rows, largest relative difference 1.5e-16
+reproduced   efficacy-adas/An_ADAS_W08_Aval: 18 rows, largest relative difference 2.7e-16
+reproduced   efficacy-adas/An_ADAS_W08_Chg: 18 rows, largest relative difference 1.8e-16
+reproduced   efficacy-adas/An_ADAS_W08_Dose: 2 rows, largest relative difference 1.2e-14
+reproduced   efficacy-adas/An_ADAS_W08_PwPbo: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W08_PwLow: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W08_LSM: 12 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W16_Base: 18 rows, largest relative difference 1.5e-16
+reproduced   efficacy-adas/An_ADAS_W16_Aval: 18 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W16_Chg: 18 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W16_Dose: 2 rows, largest relative difference 1.2e-14
+reproduced   efficacy-adas/An_ADAS_W16_PwPbo: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W16_PwLow: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_W16_LSM: 12 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_MMRM_LSM: 12 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_MMRM_PwPbo: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_MMRM_PwLow: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_MMRM_LSM_Avg: 12 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_MMRM_PwPbo_Avg: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-adas/An_ADAS_MMRM_PwLow_Avg: 10 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_EFF_N: 3 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_W08_N: 3 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_W08_Cat: 42 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_W08_Cmh: 1 rows, largest relative difference 1.6e-15
+reproduced   efficacy-cibic/An_CIBIC_W16_N: 3 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_W16_Cat: 42 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_W16_Cmh: 1 rows, largest relative difference 1.1e-15
+reproduced   efficacy-cibic/An_CIBIC_W24_N: 3 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_W24_Cat: 42 rows, largest relative difference 0.0e+00
+reproduced   efficacy-cibic/An_CIBIC_W24_Cmh: 1 rows, largest relative difference 1.8e-15
+cdiscpilot01: 69 analyses: reproduced 69
+E24 CSR 14-2.01 (demographics): not built as a CSR table (real-4); covered in part: its rows of age, age group, sex, race and height are recomputed by the demographics analyses of CDISC's example (Out14-1-1), on the safety population and race by another grouping; its ITT population and its rows of MMSE, duration of disease, education, weight and BMI are not
+E25 CSR 14-5.01 (adverse events by organ class and term): not built as a CSR table (real-4); its content is recomputed by the analyses of CDISC's example Out14-3-2-1, on ADAE (AESOC, equal to AEBODSYS on every record)
+E26 CSR 14-6.06 (Hy's law shifts, CMH): not built: no ARS analysis in the kit (real-5); its method, test.cmh, is recomputed for CSR 14-3.13
+static check: 69 of 69 scripts pass it (imports, calls, reads, texts and numbers; ADR-021, decision 5)
+-- PASS recompute (9.2 s)
+
+== [8/12] independence: the static check of every script, the generator's imports, the sealed runs
+static check: 69 of 69 scripts (42 Python, 27 R) import, name and call only what the allow-lists hold, call their reader only in the one form of a read of a dataset of their plan, and state only the ARS's numbers
+generator: src/specfirst/recompute imports 0 modules of the engine; its standalone files (seal.py, bundle/) import nothing of specfirst
+sealed runs: 69 of 69 scripts ran in a fresh folder outside the checkout, on copies of the reference ADaM, the Python ones through seal.py, whose audit hook refuses specfirst, yamaa and every open of a file in the checkout or the build
+-- PASS independence (0.0 s)
+
+== [9/12] export: the bundle generated again; its run_all.sh in a fresh folder
+export: the bundle generated again has the same bytes: True
+export: sh run_all.sh in a fresh copy of the bundle exited 0 in 27 s; its last line: E26 CSR 14-6.06 (Hy's law shifts, CMH): not built: no ARS analysis in the kit (real-5); its method, test.cmh, is recomputed for CSR 14-3.13
+export: 69 of 69 outputs of the reviewer's run have the bytes of the sealed run's
+export: the reviewer's report equals the sealed run's: True
+-- PASS export (26.7 s)
+
+== [10/12] planted break: SPECFIRST_STRICT=1 SPECFIRST_RECOMPUTE_REUSE=1 pytest tests/recompute -s -q
+E26 CSR 14-6.06 (Hy's law shifts, CMH): not built: no ARS analysis in the kit (real-5); its method, test.cmh, is recomputed for CSR 14-3.13
+.
+planted: the ANCOVA LS means with equal weights where the analysis states proportional: 36 ARD rows change, 0 of them shown by a cell of a built grid; the scripts: 3 analyses differ: efficacy-adas/An_ADAS_W08_LSM, efficacy-adas/An_ADAS_W16_LSM, efficacy-adas/An_ADAS_W24_LSM
+.
+planted: quartiles by R type 7 in both engines: 106 ARD rows change, the engines disagree on 0; the scripts: 4 analyses differ: common-safety-displays/An03_01_Age_Summ_ByTrt, common-safety-displays/An03_06_Height_Summ_ByTrt, common-safety-displays/An08_01_Obs_Summ_ByTrt, common-safety-displays/An08_02_ChgBl_Summ_ByTrt
+.
+planted: CMH general association in both engines: 3 ARD rows change, the engines disagree on 0; the scripts: 3 analyses differ: efficacy-cibic/An_CIBIC_W08_Cmh, efficacy-cibic/An_CIBIC_W16_Cmh, efficacy-cibic/An_CIBIC_W24_Cmh
+.planted in An03_01_Age_Summ_ByTrt: an import of the engine: ["line 11: the import `import specfirst`, which is not one of the templates'"]
+planted in An03_01_Age_Summ_ByTrt: the ARD read: ['line 18: a read other than `adam / "<dataset>.parquet"` of a dataset of the plan']
+planted in An03_01_Age_Summ_ByTrt: the built ADaM by a path: ['line 18: a read other than `adam / "<dataset>.parquet"` of a dataset of the plan']
+planted in An03_01_Age_Summ_ByTrt: a number of the ARD: ['line 61: the number 1.4885404260186454, which the ARS does not state for the analysis']
+planted in An03_01_Age_Summ_ByTrt: a number of the ARD in a text: ["line 61: the number '1.4885404260186454' in a text, which the ARS does not state for the analysis"]
+planted in An03_01_Age_Summ_ByTrt: the built ADaM by parent folders: ['line 18: a read other than `adam / "<dataset>.parquet"` of a dataset of the plan']
+planted in An03_01_Age_Summ_ByTrt: the root of the data folder: ['line 18: the attribute anchor']
+planted in An03_01_Age_Summ_ByTrt: exec by __builtins__: ['line 18: the name __builtins__']
+planted in An03_01_Age_Summ_ByTrt: a separator from chr: ['line 18: the name chr']
+planted in An03_01_Age_Summ_ByTrt: memmap: ['line 18: the attribute memmap']
+planted in An03_01_Age_Summ_ByTrt: pandas.eval: ['line 18: the attribute eval']
+planted in An03_01_Age_Summ_ByTrt: the ARD's name in two parts: ['line 18: the data folder used otherwise than in a read of a dataset of the plan']
+planted in An03_01_Age_Summ_ByTrt: N1, the arguments rewritten before the binding: ['line 18: sys used otherwise than as `sys.argv[1]` or `sys.argv[2]`, read']
+planted in An03_01_Age_Summ_ByTrt: N2, Path bound again: ['line 17: the name Path of the template bound again']
+planted in An03_01_Age_Summ_ByTrt: N2c, Path imported under another name and defined: ["line 12: the import `from pathlib import Path as Q`, which is not one of the templates'"]
+planted in An03_01_Age_Summ_ByTrt: a write elsewhere: ['line 71: a write other than `.to_csv(out, index=False)`']
+planted in An03_01_Age_Summ_ByTrt: M3, sys bound by a capture of match to a function with an argv: ['line 22: a Match statement or clause']
+planted in An_ADAS_W24_LSM: a source of the engine: ["a path in the text 'r/specfirstr/R/models.R'"]
+planted in An_ADAS_W24_LSM: a library: ['the call library']
+planted in An_ADAS_W24_LSM: a number of the ARD: ['the number 1.4885404260186454, which the ARS does not state for the analysis']
+planted in An_ADAS_W24_LSM: source handed to sapply as a string: ['the function of sapply is not written in place: `function(...)`']
+planted in An_ADAS_W24_LSM: a call of a string: ['the call of the string "source"']
+planted in An_ADAS_W24_LSM: a number of the ARD in a text: ["the number '1.4885404260186454' in a text, which the ARS does not state for the analysis"]
+planted in An_ADAS_W24_LSM: the ARD from the root: ['a file other than `file.path(adam, "<dataset>.csv")` of a dataset of the plan']
+planted in An_ADAS_W24_LSM: a reader as a value: ['the function utils::read.csv used as a value']
+planted in An_ADAS_W24_LSM: RN1, a function name built for sapply: ['the function of sapply is not written in place: `function(...)`']
+planted in An_ADAS_W24_LSM: RN2, a function name held for sapply: ['the function of sapply is not written in place: `function(...)`']
+planted in An_ADAS_W24_LSM: RN3, a reader name built for sapply: ['the function of sapply is not written in place: `function(...)`']
+planted in An_ADAS_W24_LSM: a write elsewhere: ['a write other than that of the output, `write.csv(rows, args[2], ...)`']
+planted in An03_01_Age_Summ_ByTrt: the sealed run, an import of the engine: ImportError: refused by the sealed run: specfirst
+planted in An03_01_Age_Summ_ByTrt: the sealed run, an import past the hook of meta_path: ImportError: refused by the sealed run: specfirst.machine.methods
+planted in An03_01_Age_Summ_ByTrt: the sealed run, an open of the ARD: PermissionError: refused by the sealed run: an open of /tmp/specfirst-clean-eO8VdR/specfirst/build/p1/cdiscpilot01/first/gold/ard/common-safety-displays.jsonl
+not held by the sealed run: a read by pyarrow's own code, and R; there only the static check's form of a read stands, as far as a check of the form holds (ADR-021, decision 5)
+.
+planted in the scripts' outputs: common-safety-displays/An03_01_Age_Summ_ByTrt, common-safety-displays/An03_06_Height_Summ_ByTrt, efficacy-adas/An_ADAS_W24_LSM, efficacy-adas/An_ADAS_W24_PwPbo, efficacy-adas/An_EFF_N, efficacy-cibic/An_CIBIC_EFF_N differ
+.
+6 passed in 15.08s
+-- PASS planted break (15.3 s)
+
+== [11/12] cache untouched: specfirst fetch --verify
+cache: /tmp/specfirst-clean-eO8VdR/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS cache untouched (0.1 s)
+
+== [12/12] ASCII: python -m specfirst.asciicheck
+ASCII check: 950 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.3 s
+PASS  pins                 1.9 s
+PASS  lint                 0.0 s
+PASS  unit tests         449.0 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      39.0 s
+PASS  recompute            9.2 s
+PASS  independence         0.0 s
+PASS  export              26.7 s
+PASS  planted break       15.3 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE issue-29: PASS

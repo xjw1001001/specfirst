@@ -1,0 +1,61 @@
+{
+ "rules": [
+  "Write one paragraph per statement, one to three sentences, in the plain voice of a clinical study protocol or statistical analysis plan, in the future or present tense.",
+  "Keep every number, unit, visit name, variable name (such as DM.ARMCD), quoted value and the name of the table exactly as the statement writes it, and in the same order as in the statement. Quotation marks may be dropped; the words inside them may not change.",
+  "Say the same rule and nothing else: add no rule, no example, no number, no value and no reason. Do not mention the standard form, a catalog or a template.",
+  "Reword freely: change the sentence structure and the ordinary words; the meaning must stay exactly the same.",
+  "One line of plain ASCII text: no line breaks, no Markdown, no brackets around numbers, no curly quotes, no dashes other than the ASCII hyphen."
+ ],
+ "paragraphs": [
+  {
+   "key": "11ee259f001c2bc5",
+   "document": "sap",
+   "statement": "The rows of the adverse event summary table are, in this order, ANY, SERIOUS, SERIOUS_RELATED, DOSE_MODIFIED, FATAL.",
+   "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related)."
+  },
+  {
+   "key": "5bbee3ec5e7ab09f",
+   "document": "sap",
+   "statement": "The end-of-study record is the disposition event record of the subject with the subcategory \"STUDY TREATMENT\".",
+   "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT and DSSCAT equal to the named subcategory. Of several such records the last by DSSEQ is taken."
+  },
+  {
+   "key": "d2f9a256648e4202",
+   "document": "sap",
+   "statement": "Treatment emergence ends 7 days after the treatment end date, that day included.",
+   "meaning": "An event that starts later than that many days after the treatment end date is not treatment-emergent; one that starts on the last day of the window still is."
+  },
+  {
+   "key": "d9de48b6b30d2725",
+   "document": "protocol",
+   "statement": "The efficacy-evaluable set holds every subject of the safety set who attended the visit \"WEEK 2\".",
+   "meaning": "A subject attended a visit when the subject visits domain (SV) has a record of it."
+  },
+  {
+   "key": "fc84969c89c84bf4",
+   "document": "sap",
+   "statement": "An adverse event is treatment-emergent when it starts at or after the date and time of the first dose.",
+   "meaning": "A start or a first dose collected without a time counts from 00:00 of its day."
+  }
+ ],
+ "filler_rules": [
+  "Write one neutral paragraph of two to four sentences for the heading given, in the voice of a clinical study protocol or statistical analysis plan.",
+  "It must state no analysis rule at all: nothing about analysis sets or populations, treatment dates or groups, study days, disposition, adverse events, causality, imputation of dates, baseline values, age or race groups, body mass index, which tables are produced, table columns, rows, percentages, rounding or decimals.",
+  "No numbers, no dates, no names of variables or datasets. One line of plain ASCII text."
+ ],
+ "filler": [],
+ "answer": {
+  "paragraphs": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ],
+  "filler": [
+   {
+    "key": "<key>",
+    "text": "<paragraph>"
+   }
+  ]
+ }
+}

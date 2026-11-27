@@ -1,0 +1,145 @@
+{
+ "rules": [
+  "For each item, read the paragraph alone and pick the one alternative whose rule the paragraph states for the question, by its id. Values in angle brackets may be any value. If the paragraph states none of them, or more than one, answer '(none)'.",
+  "For each filler item, list the questions (by their text) whose answer the paragraph states, or an empty list.",
+  "Judge from the text only; do not read any other file."
+ ],
+ "items": [
+  {
+   "item": "r3dcbb4ace52e",
+   "paragraph": "The period of treatment emergence ends 7 days after the treatment end date, and that last day is included.",
+   "question": "When does treatment emergence end?",
+   "alternatives": [
+    {
+     "id": "no_end",
+     "rule": "Treatment emergence has no end date.",
+     "meaning": "Every event that starts on or after the start of treatment emergence is treatment-emergent, however long after the treatment end date (the on-study reading of the FDA guide)."
+    },
+    {
+     "id": "last_dose_plus_days",
+     "rule": "Treatment emergence ends <days> days after the treatment end date, that day included.",
+     "meaning": "An event that starts later than that many days after the treatment end date is not treatment-emergent; one that starts on the last day of the window still is."
+    }
+   ]
+  },
+  {
+   "item": "r7af6d0ca4746",
+   "paragraph": "The efficacy-evaluable set consists of every subject in the safety set who attended the visit WEEK 2.",
+   "question": "Who is efficacy-evaluable?",
+   "alternatives": [
+    {
+     "id": "baseline_and_postbaseline",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set with a baseline value and at least one post-baseline value of the vital sign <test>.",
+     "meaning": "A baseline value is a non-missing result dated on or before the treatment start date; a post-baseline value is one dated after it."
+    },
+    {
+     "id": "attended_visit",
+     "rule": "The efficacy-evaluable set holds every subject of the safety set who attended the visit <visit>.",
+     "meaning": "A subject attended a visit when the subject visits domain (SV) has a record of it."
+    }
+   ]
+  },
+  {
+   "item": "rb78a2db87d36",
+   "paragraph": "For each subject, the end-of-study record is the disposition event record with the subcategory STUDY TREATMENT.",
+   "question": "Which record gives the end-of-study status?",
+   "alternatives": [
+    {
+     "id": "disposition_event",
+     "rule": "The end-of-study record is the disposition event record of the subject.",
+     "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT. Of several such records the last by DSSEQ is taken."
+    },
+    {
+     "id": "disposition_event_by_subcategory",
+     "rule": "The end-of-study record is the disposition event record of the subject with the subcategory <subcategory>.",
+     "meaning": "The DS record with DSCAT equal to DISPOSITION EVENT and DSSCAT equal to the named subcategory. Of several such records the last by DSSEQ is taken."
+    }
+   ]
+  },
+  {
+   "item": "rc0a3d0088916",
+   "paragraph": "An adverse event is considered treatment-emergent if it starts at or after the date and time of the first dose.",
+   "question": "When does treatment emergence begin?",
+   "alternatives": [
+    {
+     "id": "on_or_after_first_dose_date",
+     "rule": "An adverse event is treatment-emergent when it starts on or after the treatment start date.",
+     "meaning": "Dates are compared; times are ignored."
+    },
+    {
+     "id": "at_or_after_first_dose_time",
+     "rule": "An adverse event is treatment-emergent when it starts at or after the date and time of the first dose.",
+     "meaning": "A start or a first dose collected without a time counts from 00:00 of its day."
+    },
+    {
+     "id": "by_time_when_collected",
+     "rule": "An adverse event is treatment-emergent when it starts on or after the first dose, comparing date and time where both were collected and dates otherwise.",
+     "meaning": "On the first dose date, an event is not treatment-emergent only when both its start time and the time of the first dose were collected and it starts before the dose; an event on that date without a collected time is treatment-emergent."
+    }
+   ]
+  },
+  {
+   "item": "re348d89e7421",
+   "paragraph": "The adverse event summary table will list its rows in the following order: ANY, SERIOUS, SERIOUS_RELATED, DOSE_MODIFIED, FATAL.",
+   "question": "Which rows does the adverse event summary table have?",
+   "alternatives": [
+    {
+     "id": "standard_rows",
+     "rule": "The rows of the adverse event summary table are any event, related events, serious events, serious related events, fatal events, and events leading to discontinuation of study treatment.",
+     "meaning": "The rows and their order are those of the ARS example \"Common Safety Displays\", output Out14-3-1-1, without its rows of related fatal events and of events leading to dose modification."
+    },
+    {
+     "id": "stated_rows",
+     "rule": "The rows of the adverse event summary table are, in this order, <rows>.",
+     "meaning": "Each row is named by its code: ANY, RELATED, SERIOUS, SERIOUS_RELATED (serious and related), DISCONTINUATION, DOSE_MODIFIED (leading to a dose reduction or an interruption), FATAL or FATAL_RELATED (fatal and related)."
+    }
+   ]
+  }
+ ],
+ "filler": [],
+ "filler_questions": [
+  "Are race categories regrouped?",
+  "How are displayed numbers rounded? (for the adverse event summary table)",
+  "How are partial adverse event start dates completed?",
+  "How are partial exposure dates completed?",
+  "How are percentages displayed? (for the adverse event summary table)",
+  "How is baseline body mass index obtained?",
+  "In which order are the treatment columns? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event summary table)",
+  "Is the output part of the planned outputs of the study? (for the adverse event table by system organ class and preferred term)",
+  "Is the output part of the planned outputs of the study? (for the demographics table)",
+  "Is the output part of the planned outputs of the study? (for the vital signs table by visit)",
+  "Is there a total column? (for the adverse event summary table)",
+  "What is the treatment end date?",
+  "What is the treatment start date?",
+  "When does treatment emergence begin?",
+  "When does treatment emergence end?",
+  "Where does actual treatment come from?",
+  "Where does planned treatment come from?",
+  "Which age groups are used?",
+  "Which analysis set does the output use? (for the adverse event summary table)",
+  "Which causality values count as related to study treatment?",
+  "Which date is study day 1?",
+  "Which record gives baseline weight and height?",
+  "Which record gives the end-of-study status?",
+  "Which rows does the adverse event summary table have?",
+  "Which treatment groups the safety analyses?",
+  "Who is efficacy-evaluable?",
+  "Who is in the randomized set?",
+  "Who is in the safety set?"
+ ],
+ "answer": {
+  "items": [
+   {
+    "item": "<id>",
+    "pick": "<alternative id or none>"
+   }
+  ],
+  "filler": [
+   {
+    "item": "<id>",
+    "states": []
+   }
+  ]
+ }
+}

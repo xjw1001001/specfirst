@@ -236,7 +236,8 @@ real-3, has each fix):
   run of arm R (ADR-017): the gate read-2a then fails until the dry run is
   made again, a model call the owner approves. It waits for the next remake
   of the kept dry run; whichever work makes that remake applies the fix
-  first. The exact fix: in standard/methods/display.pattern.yaml, statement
+  first. The remake of gen-2b (R-task-087cf121e580, 2026-11-27) was made
+  without it, so it still waits. The exact fix: in standard/methods/display.pattern.yaml, statement
   3 (lines 23 and 24), the example
   `9.52 under "( XX.X)" is "(  9.5)".` becomes
   `9.52 under "(XX.X)" is "( 9.5)".` (the padding is still shown, and the

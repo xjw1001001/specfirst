@@ -1,0 +1,7 @@
+{"paragraphs": [
+{"key": "11ee259f001c2bc5", "text": "The adverse event summary table will list its rows in the following order: ANY, SERIOUS, SERIOUS_RELATED, DOSE_MODIFIED, FATAL."},
+{"key": "5bbee3ec5e7ab09f", "text": "For each subject, the end-of-study record is the disposition event record with the subcategory STUDY TREATMENT."},
+{"key": "d2f9a256648e4202", "text": "The period of treatment emergence ends 7 days after the treatment end date, and that last day is included."},
+{"key": "d9de48b6b30d2725", "text": "The efficacy-evaluable set consists of every subject in the safety set who attended the visit WEEK 2."},
+{"key": "fc84969c89c84bf4", "text": "An adverse event is considered treatment-emergent if it starts at or after the date and time of the first dose."}
+], "filler": []}

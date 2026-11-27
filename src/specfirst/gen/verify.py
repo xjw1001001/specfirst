@@ -17,24 +17,31 @@ kit, by functions that return what is wrong:
                           alternative is compiled and built on the twin, and
                           the grids are compared pair by pair.
 
-What "applicable" means for P4. Two things are known of a decision in a kit
-before anything is mutated:
+What "applicable" means for P4 (gen-2b; the owner's answer of 2026-11-17 on
+finding G1 of the gen-2a review, docs/decisions/ADR-007.md and ADR-023.md).
+Two things are known of a decision in a kit before anything is mutated:
 
     read      the output reads an element the decision sets (`gold.reach`:
               decided by the graph and by the compile, not by the data)
-    claimed   the log of probes says that the twin carries a probe that makes
-              the pair of alternatives differ in the output under the other
-              decisions of this kit (`probes.reaches` on the field `reaches`)
+    claimed   no other decision of the kit makes the alternatives give the
+              same output on any data that keep the premise of its row of
+              `probes.REACHES` (`probes.reaches` on the field `reaches` of
+              the log, which repeats `probes.REACHES`)
 
 A decision is applicable in a kit when every pair of its gold value with
-another alternative is claimed. Every applicable decision must be
-separated: a kit in which a claimed pair gives the same output is not
-written (`unfit`). A decision that is not read must change nothing; if it
-does, the reach is wrong, and that is a defect. A decision that is read and
-not claimed is built all the same and recorded as it comes out: separated,
-or `unseparated` with the reason that the twin has no probe for it under
-these decisions (the calibrated counts of a rounding half hold for one
-analysis set and one grouping).
+another value of `options` is claimed (another alternative; for an entry
+with one alternative, another value of its slots): data could separate it,
+and the probes of the kit are planted for its decisions so that the twin
+does. Every
+applicable decision must be separated: a kit in which a claimed pair gives
+the same output is not written (`unfit`), and the gate fails on it. A
+decision that is not read must change nothing; if it does, the reach is
+wrong, and that is a defect; so is a claim for a decision that is not read.
+A decision that is read and not claimed is built all the same and recorded
+as it comes out: `unseparated` with the reason that another decision of the
+kit makes its alternatives equal (the table groups by planned treatment, so
+the source of actual treatment does not count; it has no emergence window,
+so the treatment end date does not count).
 
 The reference is also held against every mutated build: a variant of the
 decisions is one more decision vector, and the machine and the hand
@@ -57,8 +64,9 @@ Out = Callable[[str], None]
 NOT_READ = "the output does not read what the decision sets"
 # The state of a decision that has nothing to be changed to: neither separated nor not.
 NO_ALTERNATIVE = "no_alternative"
-NO_PROBE = ("the output reads it, but under these decisions the twin carries no probe "
-            "that the log of probes claims for it")
+NO_PROBE = ("the output reads it, but under the other decisions of the kit its alternatives "
+            "give the same output on any data of this design that follow SDTMIG v3.4 "
+            "(probes.REACHES)")
 
 
 # ---- P2 --------------------------------------------------------------------------------
@@ -239,6 +247,16 @@ def label(value: dict, among: list[dict]) -> str:
     return f"{value['rule']}({slots})"
 
 
+def claims(entry_id: str, one: dict, two: dict, values: dict[str, dict], parameters: dict,
+           reach_tables: dict[str, dict]) -> bool:
+    """Whether the log of probes claims that two values of a decision can differ in the
+    output: the values differ (two alternatives, or two values of the slots of an entry with
+    one alternative: finding H1 of the gen-2b review), and the condition of `REACHES` that
+    the log repeats holds for the decision vector."""
+    return one != two and entry_id in reach_tables and probes.reaches(
+        entry_id, one["rule"], two["rule"], values, parameters, reach_tables)
+
+
 def mutate(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: Path,
            which: str, design: dict, records: list[dict], reached: dict[str, dict],
            log: list[dict], tables: reference.Tables, scratch: Path,
@@ -255,7 +273,8 @@ def mutate(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: 
       changes the output;
     - what makes the kit unfit: a pair of the gold value with another
       alternative that the log of probes claims and that gives the same
-      output. Such a kit does not separate a decision that applies to it.
+      output. Such a kit does not separate a decision that the output reads
+      and that data could separate; it is not written, and the gate fails.
 
     `reach_tables` replaces the field `reaches` of the log (for a planted
     claim).
@@ -300,16 +319,15 @@ def mutate(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: 
         for first, second in combinations(range(len(choices)), 2):
             separated = views[first] != views[second]
             one, two = choices[first], choices[second]
-            claimed = one["rule"] != two["rule"] and entry.id in reach_tables and probes.reaches(
-                entry.id, one["rule"], two["rule"], values, parameters, reach_tables)
+            claimed = claims(entry.id, one, two, values, parameters, reach_tables)
             pairs.append({"first": label(one, choices), "second": label(two, choices),
                           "gold": first == 0, "separated": separated,
                           "cells": changed_cells(views[first], views[second]),
                           "claimed": bool(claimed)})
             if first == 0 and claimed and not separated:
-                unfit.append(f"{entry.id}: the log of probes claims that {pairs[-1]['first']} "
-                             f"and {pairs[-1]['second']} differ in the output under these "
-                             "decisions; the two builds are the same")
+                unfit.append(f"{entry.id}: {pairs[-1]['first']} and {pairs[-1]['second']} "
+                             "can differ in the output under these decisions (the log of "
+                             "probes claims it); the two builds on the twin are the same")
             if first == 0 and claimed and not read:
                 defects.append(f"{entry.id}: the log of probes claims a difference in the "
                                "output, and the output does not read what the decision sets")
@@ -328,7 +346,9 @@ def mutate(root: Path, catalog: catalogs.Catalog, house: houses.House, kit_dir: 
         else:
             same = ", ".join(pair["second"] for pair in of_gold if not pair["separated"])
             state = "unseparated"
-            reason = f"{NO_PROBE}: the same output under {same}"
+            note = (reach_tables.get(entry.id) or {}).get("note")
+            reason = f"{NO_PROBE}" + (f"; {note}" if note else "") + \
+                f": the same output under {same}"
         matrix.append({"id": entry.id, "unit": unit, "read": read, "applicable": claimed_all,
                        "identifiable": state, "reason": reason,
                        "gold": label(choices[0], choices), "pairs": pairs})

@@ -20,12 +20,16 @@
     natural.py    the natural form: the store of model text, slot and read-back checks
     gate3.py      the checks of the gate gen-3a
 
-Everything here is a pure function of the generator version, the design and
-the seed (rule R4): no clock, no unseeded randomness, sorted outputs.
+Everything here is a pure function of the generator version, the design, the
+decision vector and the seed (rule R4; the vector itself is drawn from the
+design and the seed, before the data): no clock, no unseeded randomness,
+sorted outputs.
 """
 
 # The version of the generator. Change it whenever the same design and seed
-# would give other bytes; every generated file names it. catalog-2c.2: the slice on
-# catalog@2 and open-default@2 (ADR-020, decision 8 as amended), after pass 1 of its
-# review (catalog-2c.1 before it).
-GENERATOR = "catalog-2c.2"
+# would give other bytes; every generated file names it. gen-2b.1: the decisions of a
+# kit come first and its probes are planted for them (ADR-023); catalog-2c.2 before it.
+# gen-2b.2: the findings H1 to H3 of the review of gen-2b (slot pairs claimed, a baseline
+# value before the month of a partial first dose, an event of the subject who misses the
+# visits).
+GENERATOR = "gen-2b.2"

@@ -74,7 +74,6 @@ def test_a_sampled_vector_fits_the_data_and_is_a_function_of_its_stream(catalog,
     for number in range(150):
         values = decisions.sample(catalog, house, design, parameters, Stream("s", number))
         assert values == decisions.sample(catalog, house, design, parameters, Stream("s", number))
-        assert decisions.fits(values, parameters) == []
         assert not decisions.held_out_combination(values)
         assert values["tfl.output.include"] == {"rule": "included"}
         assert set(values) == {e.id for e in decisions.entries(catalog, design)}
@@ -90,46 +89,29 @@ def test_a_sampled_vector_fits_the_data_and_is_a_function_of_its_stream(catalog,
     for entry in decisions.entries(catalog, design):
         if entry.id != "tfl.output.include":
             assert seen[entry.id] == {a.id for a in entry.alternatives}, entry.id
-    assert not any(decisions.sample(catalog, house, design, parameters, Stream("s", number))[
-        "disp.status.record"].get("subcategory") == "STUDY TREATMENT" for number in range(150))
+    # gen-2b (ADR-023, decision 6; the owner's choice of 2026-11-23): no combination is
+    # refused for the probes; the three that gen-2a refused are drawn.
+    drawn = [decisions.sample(catalog, house, design, parameters, Stream("s", number),
+                              stated_share=0.9) for number in range(150)]
+    assert any(v["disp.status.record"].get("subcategory") == parameters["treatment_subcategory"]
+               for v in drawn)
+    assert any(v["disp.status.record"].get("subcategory") == parameters["study_subcategory"]
+               and v["ae.teae.end"]["rule"] == "last_dose_plus_days"
+               and v["trt.end.source"]["rule"] == "ds_date_when_ex_missing" for v in drawn)
+    assert any(v["ae.teae.start"]["rule"] == "at_or_after_first_dose_time"
+               and v["ae.start.imputation"]["rule"] != "not_completed" for v in drawn)
 
 
-def test_fits_names_the_interplays_of_the_log(catalog, house):
+def test_every_row_list_shows_what_the_probes_of_one_event_need(catalog):
+    """The probes of one planted event and of the count of zero are counted by the rows ANY
+    and FATAL; every row list a study can state shows both, so no vector is refused for
+    them (gen-2b)."""
     design = _design(catalog)
     parameters = probes.Parameters.of(design).as_record()
-    base = {**decisions.defaults(catalog, house, design),
-            "ae.related.values": {"rule": "stated_list", "values": ["RELATED"]},
-            "pop.efficacy.rule": {"rule": "attended_visit", "visit": parameters["visits"][0]}}
-    assert decisions.fits(base, parameters) == []
-
-    def problems(**changed):
-        values = {**base, **{name.replace("__", "."): v for name, v in changed.items()}}
-        return decisions.fits(values, parameters)
-
-    assert "the row ANY" in problems(
-        tfl__ae__summary__rows={"rule": "stated_rows", "rows": ["SERIOUS", "FATAL"]})[0]
-    assert "the row FATAL" in problems(
-        tfl__ae__summary__rows={"rule": "stated_rows", "rows": ["ANY"]})[0]
-    by_time = {"rule": "at_or_after_first_dose_time"}
-    assert problems(ae__teae__start=by_time)[0].startswith("ae.start.imputation")
-    assert problems(ae__teae__start=by_time,
-                    ae__start__imputation={"rule": "not_completed"}) == []
-    study_record = {"rule": "disposition_event_by_subcategory",
-                    "subcategory": parameters["study_subcategory"]}
-    treatment = {**study_record, "subcategory": parameters["treatment_subcategory"]}
-    # catalog@2: only the disposition date that stands in for a missing exposure end
-    # date reads the end-of-study record (no end of emergence at the end of the study).
-    window = {"rule": "last_dose_plus_days", "days": parameters["window_days"]}
-    by_ds = {"rule": "ds_date_when_ex_missing"}
-    assert problems(disp__status__record=study_record) == []       # not read: any value
-    assert problems(disp__status__record=study_record, ae__teae__end=window,
-                    trt__end__source=by_ds)[0].startswith("disp.status.record")
-    # The treatment record as the end-of-study record is never the decision of a kit: it
-    # is what the other alternative is changed to.
-    for changed in ({}, {"ae__teae__end": {"rule": "no_end"}},
-                    {"ae__teae__end": window, "trt__end__source": by_ds}):
-        found = problems(disp__status__record=treatment, **changed)
-        assert len(found) == 1 and "nearly no subject has an end-of-study date" in found[0]
+    for rows in decisions.slot_values("tfl.ae.summary.rows", "stated_rows", design,
+                                      parameters)["rows"]:
+        assert {"ANY", "FATAL"} <= set(rows)
+    assert not hasattr(decisions, "fits")
 
 
 def test_the_records_of_a_kit_fit_the_schema_and_read_back(root, catalog, house, tmp_path):
