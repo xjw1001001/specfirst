@@ -158,9 +158,12 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
     assert names.index("grids") < names.index("planted defects") < names.index("cache untouched")
     assert set(gates.REAL3A_DEFECTS) == {*gates.REAL2_DEFECTS, "D6-proofs", "D7-display",
                                          "D8-trace"}
-    # Issue #31 adds the demographics and the table by organ class and term.
+    # Issue #31 adds the demographics and the table by organ class and term; real-3 the
+    # vital signs.
     assert gates.PILOT_GRIDS == {"Out14-1-1": (104, 147, 0), "Out14-3-1-1": (27, 51, 0),
-                                 "Out14-3-2-1": (1275, 1940, 408)}
+                                 "Out14-3-2-1": (1275, 1940, 408),
+                                 "Out14-3-3-1a": (1590, 2019, 0),
+                                 "Out14-3-3-1b": (1515, 2019, 0)}
 
     # The check of the grids fails on anything but: the outputs the gate names, their
     # cells and results, the results without a formatted value it expects, and every other
@@ -175,7 +178,8 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
                 "problems": 0, **changed}
 
     def three(**summary):
-        return [count("Out14-1-1"), count(**summary), count("Out14-3-2-1")]
+        return [count("Out14-1-1"), count(**summary), count("Out14-3-2-1"),
+                count("Out14-3-3-1a"), count("Out14-3-3-1b")]
 
     said: list[str] = []
     ctx = gates.Context(tmp_path, "demo", said.append)
@@ -199,7 +203,59 @@ def test_real3a_gate_has_the_checks_of_adr_005(root, tmp_path, monkeypatch):
         ctx.close()
     assert any("The gate asks for 27 cells that show 51 results" in line for line in said)
     assert any("the kit builds [], the gate asks for ['Out14-1-1', 'Out14-3-1-1', "
-               "'Out14-3-2-1']" in line for line in said)
+               "'Out14-3-2-1', 'Out14-3-3-1a', 'Out14-3-3-1b']" in line for line in said)
+    assert "fisher-limit" in gates.REAL2_METHOD_TESTS  # the review of real-3a, F9
+
+
+def test_real3_gate_has_the_checks_of_plan_13_3(tmp_path, monkeypatch):
+    """PLAN.md 13.3, real-3: the five grids, every numeric cell traced, P1, the viewer."""
+    checks = gates.GATES["real-3"]
+    names = [check.name for check in checks]
+    assert names[0] == "environment" and names[-1] == "ASCII"
+    before = {check.name: check.run for check in gates.GATES["real-3a"]}
+    after = {check.name: check.run for check in checks}
+    assert set(after) == {*before, "trace of the grids", "recompute", "review",
+                          "decisions"} - {"trace"}
+    assert all(after[name] is run for name, run in before.items()
+               if name not in ("trace", "planted defects"))
+    assert after["recompute"] is gates._recompute  # the page reads the recomputation
+    assert names.index("P1 determinism") < names.index("trace of the grids") < names.index(
+        "grids") < names.index("recompute") < names.index("review") < names.index(
+        "planted defects")
+    assert set(gates.REAL3_DEFECTS) == {*gates.REAL3A_DEFECTS, "D13-review", "D14-vital-signs"}
+    assert gates.REAL3_REVIEW_OUTPUTS == tuple(gates.PILOT_GRIDS)
+
+    # The trace of the grids fails unless every one of the five is walked, with its cells,
+    # and every cell with results is complete.
+    from specfirst.machine import build
+
+    def line(output, cells, numeric, complete, with_results):
+        return (f"grid {output}: {cells} cells, {numeric} print a number; {complete} of the "
+                f"{with_results} cells with results have a complete path to SDTM columns")
+
+    def lines(**changed):
+        found = {output: (cells, cells, cells, cells)
+                 for output, (cells, _, _) in gates.PILOT_GRIDS.items()}
+        found.update(changed)
+        return [line(output, *counts) for output, counts in found.items()]
+
+    said: list[str] = []
+    ctx = gates.Context(tmp_path, "demo", said.append)
+    try:
+        for given, passes, expected in (
+            (lines(), True, True),
+            (lines(), False, False),
+            (lines(**{"Out14-3-3-1a": (1590, 1263, 1262, 1263)}), True, False),
+            (lines(**{"Out14-3-3-1b": (1515, 0, 0, 0)}), True, False),
+            (lines(**{"Out14-1-1": (100, 100, 100, 100)}), True, False),
+            (lines()[:4], True, False),
+        ):
+            monkeypatch.setattr(build, "trace", lambda root, kit, folder, out, g=given, p=passes:
+                                [out(text) for text in g] and p)
+            assert gates._trace_grids(ctx) is expected, given
+    finally:
+        ctx.close()
+    assert any("Out14-3-3-1b was not walked" in text for text in said)
 
 
 def test_real5a_gate_has_the_checks_of_adr_012(tmp_path, monkeypatch):

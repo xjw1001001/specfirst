@@ -46,6 +46,12 @@ module checks it against the built results:
                            result, and the named counts are 0: one count of
                            the cell's own groups per group the test compares
 
+`same_under_every` and `between_equal_values` say what our values give; they
+also ask that the n, the minimum and the maximum of the same cell are
+embedded and reproduced, so that our cell holds the reference's data (review
+of real-3a, F5: with a wrong population of ours, 36 wrong quartiles and
+medians were accepted as errors of the reference).
+
 A proof must say something about the reference, so three kinds are narrow
 (review of real-2, finding F2). `same_under_every` and `no_alternative`
 hold only for an option that changes some result of the same operation: a
@@ -319,16 +325,18 @@ def load_exceptions(path: Path) -> dict[str, list[dict]]:
     return {str(name): list(entries) for name, entries in sets.items()}
 
 
-FORMAT_PROOFS = ("not_its_own_pattern",)
+FORMAT_PROOFS = ("not_its_own_pattern", "half_in_floating_error")
 
 
 def load_formats(path: Path) -> dict[str, dict[str, dict]]:
     """The `formats` section of gold/exceptions.yaml (issue #31): result set -> ARD row ->
     entry. A difference of display only: the reference's raw value is ours, and its
     formatted value is not that raw value under the pattern of its operation (proof
-    `not_its_own_pattern`; specfirst.machine.grid.compare_reference holds it). An entry
-    has `result`, `formatted` (the reference's text), `class` and `proof`, and may have
-    `sources`."""
+    `not_its_own_pattern`; specfirst.machine.grid.compare_reference holds it); or the
+    reference's raw value lies on a half at the decimals of the pattern and ours is that
+    value up to floating error, on the other side of the half (proof
+    `half_in_floating_error`, class `rule_choice`; real-3). An entry has `result`,
+    `formatted` (the reference's text), `class` and `proof`, and may have `sources`."""
     with open(path, encoding="ascii") as handle:
         data = yaml.safe_load(handle) or {}
     sets = data.get("formats") or {}
@@ -485,6 +493,32 @@ def _equal_values_problem(key: str, ours: object, evidence: Evidence) -> str | N
     return None
 
 
+# The statistics of summary.continuous that pin down the data of a cell: how many values,
+# and the two ends (the review of real-3a, F5).
+ANCHORS = ("n", "min", "max")
+
+
+def _anchor_problem(key: str, item, comparison: Comparison, evidence: Evidence) -> str | None:
+    """Why the data of a cell may not be the reference's: its n, minimum and maximum are not
+    all embedded and reproduced. A proof that only asks what our values give says nothing
+    when our own cell is wrong (a wrong population, review of real-3a, F5)."""
+    found: dict[str, str] = {}
+    for other, there in comparison.reference.items():
+        if other == key or there.analysis_id != item.analysis_id or there.cell != item.cell:
+            continue
+        values = evidence.cell_values(other)
+        if values is not None and values[0] in ANCHORS:
+            found[values[0]] = other
+    missing = [name for name in ANCHORS if name not in found]
+    if missing:
+        return (f"the reference has no {', '.join(missing)} of the same cell: nothing shows that "
+                "our cell holds the reference's values")
+    open_ = [found[name] for name in ANCHORS if found[name] in comparison.open]
+    if open_:
+        return f"{open_[0]}, of the same cell, is not reproduced: the cell's data may differ"
+    return None
+
+
 def _proof_problem(entry: dict, rows: Rows, comparison: Comparison, registry: Registry,
                    evidence: Evidence) -> str | None:
     """Why the proof of an entry does not hold; None when it does."""
@@ -544,6 +578,8 @@ def _proof_problem(entry: dict, rows: Rows, comparison: Comparison, registry: Re
                 return f"with {option} = {value} our value is {other}, not {ours}"
             if equal(printed, other, item.decimals):
                 return f"with {option} = {value} our value is the embedded {printed}"
+        if kind == "same_under_every":
+            return _anchor_problem(key, item, comparison, evidence)
         if kind == "no_alternative":
             # The other statistics of the cell agree, so the data are the same.
             others = [other for other, there in comparison.reference.items()
@@ -558,7 +594,8 @@ def _proof_problem(entry: dict, rows: Rows, comparison: Comparison, registry: Re
     if kind == "between_equal_values":
         if entry["class"] != "reference_error":
             return "values that fix a quantile under every definition prove a reference_error only"
-        return _equal_values_problem(key, ours, evidence)
+        return _equal_values_problem(key, ours, evidence) or _anchor_problem(
+            key, item, comparison, evidence)
     # no_records
     if printed != "":
         return f"the reference embeds the value {printed}"

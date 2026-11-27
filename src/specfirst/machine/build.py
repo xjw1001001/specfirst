@@ -39,6 +39,7 @@ from specfirst.machine import (
     rengine,
     results,
     runner,
+    shells,
 )
 from specfirst.machine import layout as layouts
 from specfirst.machine import registry as registries
@@ -452,6 +453,7 @@ def display_problems(root: Path, event: ars.Event, layout: layouts.Layout, made:
                      shell: object, pages: dict[str, str], rows: results.Rows,
                      other_rows: results.Rows, classes: dict[str, str],
                      formats: dict[str, dict] | None = None,
+                     table_shell: list[shells.Line] | None = None,
                      ) -> tuple[grid.DisplayComparison, list[str]]:
     """What is wrong with the built display of one output: `display_checks` has the list.
 
@@ -459,7 +461,9 @@ def display_problems(root: Path, event: ars.Event, layout: layouts.Layout, made:
     under ".shell". `rows` are the gold ARD, `other_rows` those of the second
     engine. `classes` gives the class of every result whose difference from
     the reference is explained; `formats` the entries of the exceptions file
-    for a difference of display only (issue #31).
+    for a difference of display only (issue #31); `table_shell` the lines of
+    the table shell the kit pins for the output (specfirst.machine.shells, the
+    review of real-3a, F1), which the mock shell is held against.
     """
     problems = [f"grid: {p}" for p in grid.grid_problems(made, root)]
     problems += [f"shell: {p}" for p in grid.grid_problems(shell, root)]
@@ -477,6 +481,10 @@ def display_problems(root: Path, event: ars.Event, layout: layouts.Layout, made:
         problems.append(str(error))
     problems += [f"{cell['id']}: the mock shell shows a number: {cell['text']!r}"
                  for row in shell["rows"] for cell in row["cells"] if grid.numeric(cell)]
+    if table_shell is not None:
+        held = shells.compare(shell, table_shell)
+        compared.shell_rows, compared.shell_lines = held.rows, held.lines
+        problems += [f"against the table shell: {p}" for p in held.problems]
     for kind, value in (("", made), (".shell", shell)):
         problems += [f"page {layout.output}{kind}.html: {p}"
                      for p in render.projection_problems(value, pages[kind])]
@@ -571,9 +579,14 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                 shell = _read_json(folder / GRID / f"{display.output}.shell.json")
                 pages = {kind: (folder / PAGES / f"{display.output}{kind}.html").read_text(
                     encoding="utf-8") for kind in ("", ".shell")}
+                table_shell = shells.read(folder / display.shell) if display.shell else None
                 compared, problems = display_problems(
                     root, inputs.event, layout, made, shell, pages, rows["Python"], rows["R"],
-                    classes, own_formats)
+                    classes, own_formats, table_shell)
+                if table_shell is not None:
+                    out(f"grid {display.output}: its mock shell against the table shell "
+                        f"{Path(display.shell).name}: {compared.shell_rows} rows held, "
+                        f"{compared.shell_lines} rows of the shell with cells")
                 used |= compared.formats_used
                 if display.reference is not None:
                     # The reference is a CSR table: the event embeds no formatted value.
@@ -615,6 +628,7 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                     "classified": sum(compared.classified.values()),
                     "no_reference": len(compared.no_reference),
                     "uncompared": compared.uncompared, "problems": len(problems),
+                    "shell_rows": compared.shell_rows if table_shell is not None else None,
                 })
             # An entry for a difference of display that no cell shows is no difference.
             for key in sorted(set(own_formats) - used):
@@ -622,7 +636,8 @@ def display_checks(root: Path, kit_id: str, folder: Path | None = None,
                     "of a built grid of the result set differs by it")
                 passed = False
     except (ars.ArsError, ard.EngineError, results.ResultsError, registries.RegistryError,
-            layouts.LayoutError, csr.CsrError, grid.GridError, OSError, ValueError) as error:
+            layouts.LayoutError, csr.CsrError, grid.GridError, shells.ShellError, OSError,
+            ValueError) as error:
         out(f"grids: {error}")
         passed = False
     out(f"grids: {len(counts)} outputs, {'pass' if passed else 'FAIL'}")
@@ -842,7 +857,15 @@ def trace(root: Path, kit_id: str, folder: Path | None = None, out: Out = print)
     grids = {display.output: _read_json(folder / GRID / f"{display.output}.json")
              for spec in kit.results for display in spec.displays}
     if grids:
-        lines, behind = graph.check_cells(folder / GRAPH, grids)
+        # Every computes and reads edge of a cell's path is held against the ARS file too
+        # (the review of real-3a, F4).
+        events = {}
+        for spec in kit.results:
+            if spec.displays:
+                event = ars.index(_read_json(folder / spec.ars))
+                events.update({display.output: (event, spec.subject_key)
+                               for display in spec.displays})
+        lines, behind = graph.check_cells(folder / GRAPH, grids, events)
         for line in lines:
             out(line)
         problems += behind

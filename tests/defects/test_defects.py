@@ -38,6 +38,16 @@ the kit's exceptions, `results.agreement` for rule R11).
                  the panels, no SDTM column named in the panels, a broken path
                  to SDTM in the graph files, an entry of `formats` that is no
                  difference, and one under a misspelt result set (ADR-022)
+    D14-vital-signs  the two grids of the vital signs (real-3): in their
+                 layouts, the observed value and the change exchanged between
+                 their columns, the change shown at baseline, the minimum and
+                 the maximum under another pattern, the median above the mean,
+                 a visit left out, two parts of a cell or two statistics
+                 exchanged, the changes above the observed values, labels of
+                 two parameters exchanged; in the exceptions, the proofs of
+                 the medians at a half; the rounding rule half_even; judged by
+                 the formatted values, the table shells, the layout and the
+                 counts of the gate
 
 Every case first shows that the unchanged inputs pass. A defect that the
 pilot data cannot show is reported as such, not counted as caught: on these
@@ -450,6 +460,73 @@ def d6_proofs(pilot: Pilot, tmp_path) -> list[str]:
             problems.append(f"{name}: the proof passes, or more than this entry fails")
         elif message not in unexplained[0]:
             problems.append(f"{name}: fails for another reason: {unexplained[0]}")
+    return problems + wrong_population(pilot)
+
+
+# D6, the review of real-3a (F5): a defect of ours, not of the reference.
+WRONG_POPULATION = "An08_01_Obs_Summ_ByTrt"
+
+
+def wrong_population(pilot: Pilot) -> list[str]:
+    """One analysis of ours reads its population from EFFFL; the reference is unchanged.
+    No quartile or median that differs then may be proven an error of the reference: the n,
+    the minimum and the maximum of its cell are not reproduced. Without that question the two
+    proofs accept some (the review counted 36), which shows the plant reaches the check."""
+    from unittest import mock
+
+    data = pilot.data()
+    chosen = next(s for s in data["analysisSets"] if s["id"] == SAFETY)
+    planted = dict(copy.deepcopy(chosen), id="AnalysisSet_Planted_EFF")
+    planted["condition"]["variable"] = "EFFFL"
+    data["analysisSets"].append(planted)
+    next(a for a in data["analyses"] if a["id"] == WRONG_POPULATION)["analysisSetId"] = \
+        planted["id"]
+    event = ars.index(data)
+    rows = pilot.python(data)
+    tables = ard.load_tables(pilot.folder / build.ADAM, ars.columns(event, pilot.spec.subject_key))
+    made: dict[tuple, results.Rows] = {}
+
+    def build_with(method_id: str, option: str, value: object) -> results.Rows:
+        if (method_id, option, value) not in made:
+            binding = copy.deepcopy(pilot.spec.binding)
+            binding.setdefault("options", {}).setdefault(method_id, {})[option] = value
+            made[(method_id, option, value)] = results.by_id(ard.run(
+                event, pilot.registry, ars.bind(event, pilot.registry, binding), tables,
+                pilot.spec.subject_key))
+        return made[(method_id, option, value)]
+
+    engine = ard.Engine(event, pilot.registry, ars.bind(event, pilot.registry, pilot.spec.binding),
+                        tables, pilot.spec.subject_key)
+    evidence = results.Evidence(build_with, engine.cell_values, engine.compared_groups)
+    comparison = results.compare_reference(pilot.reference, rows)
+    quantiles = sorted(key for key in comparison.open if key.startswith(f"ard:{WRONG_POPULATION}/")
+                       and key.split("/")[1].rsplit("_", 1)[-1] in ("Median", "Q1", "Q3"))
+    proofs = ({"kind": "between_equal_values"},
+              {"kind": "same_under_every", "method": "summary.continuous",
+               "option": "quantile_definition"})
+    accepted, before = Counter(), Counter()
+    for key in quantiles:
+        for proof in proofs:
+            entry = {"result": key, "embedded": comparison.open[key][0],
+                     "class": "reference_error", "proof": proof}
+            explained, _ = results.judge_entries(comparison, [entry], rows, pilot.registry,
+                                                 evidence)
+            accepted[proof["kind"]] += key in explained
+            with mock.patch.object(results, "_anchor_problem", lambda *args: None):
+                explained, _ = results.judge_entries(comparison, [entry], rows, pilot.registry,
+                                                     evidence)
+            before[proof["kind"]] += key in explained
+    print(f"{WRONG_POPULATION} with its population read from EFFFL: {len(comparison.open)} "
+          f"differences, {len(quantiles)} of them quartiles and medians of the analysis; "
+          f"proven errors of the reference: {dict(accepted)}; without the question of the n, "
+          f"the minimum and the maximum: {dict(before)}")
+    problems = []
+    if sum(accepted.values()):
+        problems.append(f"a wrong population of ours is proven an error of the reference: "
+                        f"{dict(accepted)}")
+    if not sum(before.values()):
+        problems.append("no proof accepts these differences even without the question of the "
+                        "n, the minimum and the maximum: the plant does not reach the check")
     return problems
 
 
@@ -481,11 +558,16 @@ def d7_display(pilot: Pilot, tmp_path) -> list[str]:
     Planted in the layout (another pattern, a row or the header left out,
     rows in another order), in the results (the arms exchanged in one
     analysis, a percent of another denominator) and in the grid file (a
-    text, an ARD row). Each must fail. What the example cannot show is
-    printed, not counted as caught: it formats results, not cells, so the
-    order of the parts of a cell is the layout's alone; and no result of
-    this output lies on a half, so the rounding rule cannot be told apart.
+    text, an ARD row). Each must fail. The example's ARS file formats
+    results, not cells; its table shell, which the kit pins, shows the cells:
+    the order of the parts of a cell, the text between them, the mask of the
+    count and the header are held against it (the review of real-3a, F1),
+    and a part that shows the percent of another row is refused by the
+    layout (F3). No result of this output lies on a half, so the rounding
+    rule cannot be told apart: that is printed, not counted as caught.
     """
+    from specfirst.machine import shells
+
     shown, spec, made, classes = _display(pilot)
     event, rows = pilot.reference, pilot.gold
     found = grid.compare_reference(event, spec, made, rows, classes)
@@ -495,15 +577,29 @@ def d7_display(pilot: Pilot, tmp_path) -> list[str]:
         problems.append("the grid of the build is not what the layout and the ARD give")
     if (found.cells, found.results, found.equal) != (27, 51, 27) or found.no_reference:
         problems.append(f"expected 27 cells that show 51 results, all equal: {found.lines()[0]}")
+    if shown.shell is None:
+        return [*problems, f"kit.yaml names no table shell for {shown.output}"]
+    table_shell = shells.read(pilot.folder / shown.shell)
+    held = shells.compare(grid.shell(event, spec), table_shell)
+    print(f"the mock shell against {Path(shown.shell).name}: {held.rows} rows held, "
+          f"{held.lines} rows of the shell with cells, {len(held.problems)} problems")
+    problems += [f"the unchanged mock shell does not pass: {p}" for p in held.problems[:3]]
     with open(pilot.folder / shown.layout, encoding="ascii") as handle:
         given = yaml.safe_load(handle)
 
     def with_layout(change) -> grid.DisplayComparison:
+        """The planted layout: the comparison with the formatted values, and its mock shell
+        against the table shell. A layout that the builder refuses is a problem too."""
         data = copy.deepcopy(given)
         change(data)
         other = layouts.parse(data)
-        return grid.compare_reference(event, other, grid.build(event, other, rows), rows,
-                                      classes)
+        try:
+            found = grid.compare_reference(event, other, grid.build(event, other, rows), rows,
+                                           classes)
+            found.problems += shells.compare(grid.shell(event, other), table_shell).problems
+        except grid.GridError as error:
+            found = grid.DisplayComparison(other.output, problems=[f"refused: {error}"])
+        return found
 
     def exchanged_rows(data: dict) -> None:
         listed = data["rows"][1]["analyses"]
@@ -525,6 +621,19 @@ def d7_display(pilot: Pilot, tmp_path) -> list[str]:
         "the last row left out": lambda d: d["rows"][1]["analyses"].pop(),
         "the header left out": lambda d: d["rows"].pop(0),
         "the first two rows in the other order": exchanged_rows,
+        # What the formatted values cannot show, and the table shell does (F1).
+        "the percent before the count": lambda d: d["rows"][1].update(cell="{pct} {n}"),
+        "another text between the count and the percent":
+            lambda d: d["rows"][1].update(cell="{n}/{pct}"),
+        "the header as N={N}": lambda d: d["rows"][0].update(cell="N={N}"),
+        "the count under the mask XXX (the same texts, another shell)":
+            lambda d: d["rows"][1]["parts"]["n"].update(pattern="XXX"),
+        "another label of a row": lambda d: d["rows"][1]["analyses"].__setitem__(
+            0, {"id": d["rows"][1]["analyses"][0], "label": "Any TEAE"}),
+        "the rows without the line above them": lambda d: d["rows"][1].pop("section"),
+        # A part that shows the percent of another row (F3): refused by the layout.
+        "the percent of the second row in the first": lambda d: d["rows"][1]["parts"][
+            "pct"].update(analysis=d["rows"][1]["analyses"][1]),
     }
     for name, change in in_layout.items():
         other = with_layout(change)
@@ -582,13 +691,6 @@ def d7_display(pilot: Pilot, tmp_path) -> list[str]:
         if not said:
             problems.append(f"grid file, {name}: passes")
     # What these 51 results cannot show.
-    for name, change in {"the percent before the count": lambda d: d["rows"][1].update(
-            cell="{pct} {n}")}.items():
-        other = with_layout(change)
-        print(f"not separable by this reference: {name}: {len(other.problems)} problems (it "
-              "formats results, not cells)")
-        if other.problems:
-            problems.append(f"{name} is seen after all: count it among the planted defects")
     planned = grid.plan(event, spec, rows)
     on_a_half = [item.ard for row in planned.rows for cell in row.cells for item in cell.shown
                  if _on_a_half(rows[item.ard]["raw_value"], item.pattern)]
@@ -665,6 +767,12 @@ def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
     Then every column they do read is emptied: a result must change, or the
     change would prove nothing. (A roll alone would not do for that: a count
     by arm is the same when the arms are rolled over the subjects.)
+
+    The results computed from the analysis alone (its counts) are held
+    against its own `reads` edges alone: every column it has no edge to is
+    emptied and rolled, even one the analysis of its denominator reads. So a
+    single edge of the analysis that the other analysis covers is tested too
+    (the review of real-3a, F4).
     """
     import numpy as np
 
@@ -673,6 +781,7 @@ def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
                              ars.columns(event, pilot.spec.subject_key))
     reads: dict[str, set[str]] = {}
     from_results: dict[str, set[str]] = {}
+    computes_of: dict[str, set[str]] = {}
     for edge in edges:
         if edge["type"] == "reads":
             reads.setdefault(edge["from"], set()).add(edge["to"])
@@ -681,6 +790,7 @@ def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
             # efficacy tables of real-5a) are held against the R engine by D10.
             own = graph.ars_id(pilot.gold[edge["from"]]["analysis_id"])
             from_results.setdefault(own, set()).add(edge["to"])
+            computes_of.setdefault(edge["from"], set()).add(edge["to"])
 
     def empty(values):
         if values.dtype == object:
@@ -690,7 +800,7 @@ def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
         return np.full(len(values), np.nan)
 
     problems = []
-    changed_columns = 0
+    changed_columns = separate = 0
     for analysis in sorted(from_results):
         needed = from_results[analysis] | {analysis}
         columns = set().union(*(reads.get(name, set()) for name in needed))
@@ -731,9 +841,21 @@ def reads_problems(pilot: Pilot, edges: list[dict]) -> list[str]:
         if not differing:
             problems.append(f"{analysis}: emptying the {count} columns it reads changes none of "
                             "its results: the change proves nothing")
+        alone = {key: row for key, row in gold.items() if computes_of.get(key) == {analysis}}
+        if not alone or from_results[analysis] == {analysis}:
+            continue  # nothing of it is computed with another analysis: tested above
+        separate += 1
+        for name, change in (("emptied", empty), ("rolled", lambda v: np.roll(v, 1))):
+            differing, count = moved(change, read=False, columns=reads.get(analysis, set()),
+                                     gold=alone)
+            if differing:
+                problems.append(f"{analysis}: with the {count} columns it has no reads edge to "
+                                f"{name}, {len(differing)} of its {len(alone)} results computed "
+                                f"from it alone change, for example {differing[0]}")
     print(f"reads: {len(from_results)} analyses; for each, the columns without a reads edge "
           f"emptied and rolled ({changed_columns} changes of a column in all), then the columns "
-          f"it reads emptied; {len(problems)} problems")
+          f"it reads emptied; for {separate} of them the results computed from it alone, "
+          f"against its own reads edges alone; {len(problems)} problems")
     return problems
 
 
@@ -746,7 +868,11 @@ def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
                                         .read_text(encoding="utf-8"))
              for spec in kits.load_kit(pilot.root, KIT).results for display in spec.displays}
     assert grids[shown.output] == made
-    lines, problems = graph.check_cells(pilot.folder / build.GRAPH, grids)
+    # The edges of the example's grids are also held against the ARS file (F4 of the
+    # review of real-3a).
+    events = {display.output: (pilot.reference, pilot.spec.subject_key)
+              for display in pilot.spec.displays}
+    lines, problems = graph.check_cells(pilot.folder / build.GRAPH, grids, events)
     for line in lines:
         print(line)
     problems = [f"the unchanged graph does not pass: {p}" for p in problems[:3]]
@@ -756,11 +882,16 @@ def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
     # still agree with each other; only the engine and the builder can tell.
     subset = ("ars:" + OVERVIEW, "adam:ADAE.TRTEMFL")
     without_read = [e for e in edges if (e["from"], e["to"]) != subset]
+    # One edge that the analysis of the denominator covers (F4): the analysis set.
+    population = ("ars:" + OVERVIEW, "adam:ADSL.SAFFL")
+    without_set = [e for e in edges if (e["from"], e["to"]) != population]
     cell = f"cell:{shown.output}/r2/c1"
     without_show = [e for e in edges if not (e["type"] == "shows" and e["from"] == cell)]
     planted = {
         f"the reads edge from {OVERVIEW} to ADAE.TRTEMFL left out":
             (lambda: reads_problems(pilot, without_read), len(edges) - len(without_read)),
+        f"the reads edge from {OVERVIEW} to ADSL.SAFFL left out":
+            (lambda: reads_problems(pilot, without_set), len(edges) - len(without_set)),
         f"the shows edges of {cell} left out":
             (lambda: shows_problems(pilot, without_show), len(edges) - len(without_show)),
     }
@@ -770,21 +901,41 @@ def d8_trace(pilot: Pilot, tmp_path) -> list[str]:
               + (f", for example: {found[0][:150]}" if found else ""))
         if not found or not removed:
             problems.append(f"{name}: not seen")
-    # Planted in the files: gaps the static check itself must see, on the real graph.
+    # Planted in the files: gaps the static check itself must see, on the real graph. The
+    # last three are single edges and a record that another one covers (F4).
     copied = tmp_path / "graph"
-    for name, keep in {
-        "a result node left out": lambda r: r.get("id") != made["rows"][1]["cells"][0]["ard"][0],
-        "every computes edge left out": lambda r: r.get("type") != "computes",
-        "every reads edge left out": lambda r: r.get("type") != "reads",
-    }.items():
+    percent = next(key for key in made["rows"][1]["cells"][0]["ard"] if key.split("/")[1]
+                   .endswith("_pct"))
+    with open(pilot.folder / build.GRAPH / "coverage.json", encoding="ascii") as handle:
+        coverage = json.load(handle)
+    one_read = copy.deepcopy(coverage)
+    entry = one_read["analyses"]["ars:" + OVERVIEW]
+    entry["reads"] = entry["reads"][:1]
+    for name, keep, cover in (
+        ("a result node left out",
+         lambda r: r.get("id") != made["rows"][1]["cells"][0]["ard"][0], coverage),
+        ("every computes edge left out", lambda r: r.get("type") != "computes", coverage),
+        ("every reads edge left out", lambda r: r.get("type") != "reads", coverage),
+        (f"the reads edge from {OVERVIEW} to ADSL.SAFFL left out",
+         lambda r: (r.get("from"), r.get("to")) != population, coverage),
+        ("the computes edge of one percent to the analysis of its denominator left out",
+         lambda r: not (r.get("type") == "computes" and r.get("from") == percent
+                        and r.get("to") != "ars:" + OVERVIEW), coverage),
+        (f"coverage.json: {OVERVIEW} reads one column only", lambda r: True, one_read),
+    ):
         shutil.copytree(pilot.folder / build.GRAPH, copied, dirs_exist_ok=True)
+        removed = 0
         for file in ("nodes.jsonl", "edges.jsonl"):
-            records = [r for r in (nodes if file == "nodes.jsonl" else edges) if keep(r)]
+            given = nodes if file == "nodes.jsonl" else edges
+            records = [r for r in given if keep(r)]
+            removed += len(given) - len(records)
             (copied / file).write_text("".join(json.dumps(r) + "\n" for r in records), "ascii")
-        _, found = graph.check_cells(copied, grids)
+        (copied / "coverage.json").write_text(json.dumps(cover), "ascii")
+        _, found = graph.check_cells(copied, grids, events)
         found = [problem for problem in found if shown.output in problem]
-        print(f"planted in the files, {name}: {len(found)} problems of {shown.output}")
-        if not found:
+        print(f"planted in the files, {name} ({removed} records): {len(found)} problems of "
+              f"{shown.output}" + (f", for example: {found[0][:150]}" if found else ""))
+        if not found or (cover is coverage and not removed):
             problems.append(f"{name}: the check of the files passes")
     return problems
 
@@ -1595,11 +1746,217 @@ def d13_review(pilot: Pilot, tmp_path) -> list[str]:
     return problems
 
 
+# ---- real-3: the vital signs (the block kind by_groups, the columns per group) -----------
+
+VITAL_SIGNS = ("Out14-3-3-1a", "Out14-3-3-1b")
+
+
+def d14_vital_signs(pilot: Pilot, tmp_path) -> list[str]:
+    """The two grids of the vital signs, held as the gate holds them: every cell against the
+    example's formatted values (with the kit's differences of display), the mock shell
+    against the example's table shell, and the counts of the gate (no result without a
+    formatted value). Planted in the layouts, each must fail: the observed value and the
+    change exchanged between their columns, the change shown at baseline, the minimum and
+    the maximum under XX.X, the median above the mean, a visit left out; and (the review
+    of real-3, F2) Q1 and Q3 exchanged in their cell, the minimum and the maximum
+    exchanged, the mean in the row of the median, the n and the minimum exchanged between
+    their rows, the changes above the observed values, two parameters exchanged by their
+    labels. Planted in the kit's entries: a minimum proven to lie on a half, a median at a
+    half of another class or without its entry. The rounding rule half_even must change
+    the grid (results lie on a half). What the shell cannot show is printed, not counted:
+    the heading of the change rows of the vertical layout stands against a placeholder
+    ("< Visit n Change from Baseline >")."""
+    from specfirst.machine import shells
+
+    kit = kits.load_kit(pilot.root, KIT)
+    formats = results.load_formats(pilot.folder / kit.exceptions).get(pilot.spec.id, {})
+    _, _, _, classes = _display(pilot)
+    event, rows = pilot.reference, pilot.gold
+    problems: list[str] = []
+
+    def judged(output: str, change=None) -> list[str]:
+        """What the gate would say of the output's grid with a changed layout."""
+        shown = next(d for d in pilot.spec.displays if d.output == output)
+        with open(pilot.folder / shown.layout, encoding="ascii") as handle:
+            data = yaml.safe_load(handle)
+        if change:
+            change(data)
+        spec = layouts.parse(data)
+        try:
+            made = grid.build(event, spec, rows)
+            found = grid.compare_reference(event, spec, made, rows, classes, formats)
+            said = list(found.problems)
+            said += shells.compare(grid.shell(event, spec),
+                                   shells.read(pilot.folder / shown.shell)).problems
+        except grid.GridError as error:
+            return [f"refused: {error}"]
+        if found.no_reference:
+            said.append(f"{len(found.no_reference)} results without a formatted value; the gate "
+                        "asks for none")
+        if (found.cells, found.results) != _gate_counts(output):
+            said.append(f"{found.cells} cells show {found.results} results; the gate asks for "
+                        f"{_gate_counts(output)}")
+        return said
+
+    for output in VITAL_SIGNS:
+        said = judged(output)
+        print(f"{output}, unchanged: {len(said)} problems")
+        problems += [f"{output}, unchanged: {p}" for p in said[:3]]
+
+    def by_groups(data: dict) -> dict:
+        return next(block for block in data["rows"] if block["kind"] == "by_groups")
+
+    def exchanged(data: dict) -> None:
+        shown = by_groups(data)["analyses"]
+        shown[0]["column"], shown[1]["column"] = shown[1]["column"], shown[0]["column"]
+
+    def statistic(name: str, **changed):
+        def change(data: dict) -> None:
+            for row in by_groups(data)["rows"]:
+                if row["label"] == name:
+                    for part in row["parts"].values():
+                        part.update(changed)
+        return change
+
+    def median_first(data: dict) -> None:
+        listed = by_groups(data)["rows"]
+        listed[1], listed[2] = listed[2], listed[1]
+
+    def without_week_2(data: dict) -> None:
+        for item in by_groups(data)["analyses"]:
+            item["skip"] = [*item.get("skip", []), "AnlsGrouping_09_Visit_02"]
+
+    def swapped(name: str, first: str, second: str):
+        """The operations of two parts of a statistic row exchanged (F2 of the review of
+        real-3: the two parts have one mask)."""
+        def change(data: dict) -> None:
+            for row in by_groups(data)["rows"]:
+                if row["label"] == name:
+                    parts = row["parts"]
+                    parts[first]["operation"], parts[second]["operation"] = (
+                        parts[second]["operation"], parts[first]["operation"])
+        return change
+
+    def across_rows(data: dict) -> None:
+        """The n in the row "Min, Max" and the minimum in the row "n"."""
+        rows = {row["label"]: row for row in by_groups(data)["rows"]}
+        rows["n"]["parts"]["n"]["operation"], rows["Min, Max"]["parts"]["min"]["operation"] = (
+            rows["Min, Max"]["parts"]["min"]["operation"], rows["n"]["parts"]["n"]["operation"])
+
+    def mean_as_median(data: dict) -> None:
+        rows = {row["label"]: row for row in by_groups(data)["rows"]}
+        rows["Median"]["parts"]["median"]["operation"] = \
+            rows["Mean (SD)"]["parts"]["mean"]["operation"]
+
+    def changes_first(data: dict) -> None:
+        shown = by_groups(data)["analyses"]
+        shown.reverse()
+
+    def parameters_exchanged(data: dict) -> None:
+        by_groups(data)["labels"] = {
+            "AnlsGrouping_08_Param_1": "Diastolic Blood Pressure (mmHg)",
+            "AnlsGrouping_08_Param_2": "Systolic Blood Pressure (mmHg)"}
+
+    planted = {
+        ("Out14-3-3-1a", "the observed value and the change exchanged between their columns"):
+            exchanged,
+        ("Out14-3-3-1a", "Q1 and Q3 exchanged in their cell"): swapped("Q1, Q3", "q1", "q3"),
+        ("Out14-3-3-1b", "the minimum and the maximum exchanged in their cell"):
+            swapped("Min, Max", "min", "max"),
+        ("Out14-3-3-1a", "the mean in the row of the median"): mean_as_median,
+        ("Out14-3-3-1b", "the n and the minimum exchanged between their rows"): across_rows,
+        ("Out14-3-3-1b", "the rows of the changes above those of the observed values"):
+            changes_first,
+        ("Out14-3-3-1a", "the sections of two parameters exchanged by labels"):
+            parameters_exchanged,
+        ("Out14-3-3-1a", "the change shown at baseline"):
+            lambda d: by_groups(d)["analyses"][1].pop("skip"),
+        ("Out14-3-3-1b", "the change shown at baseline"):
+            lambda d: by_groups(d)["analyses"][1].pop("skip"),
+        ("Out14-3-3-1a", "the minimum and the maximum under XX.X"):
+            statistic("Min, Max", pattern="XX.X"),
+        ("Out14-3-3-1b", "the minimum and the maximum under XX.X"):
+            statistic("Min, Max", pattern="XX.X"),
+        ("Out14-3-3-1a", "the median above the mean"): median_first,
+        ("Out14-3-3-1b", "the median above the mean"): median_first,
+        ("Out14-3-3-1a", "Week 2 left out"): without_week_2,
+        ("Out14-3-3-1b", "Week 2 left out"): without_week_2,
+    }
+    for (output, name), change in planted.items():
+        said = judged(output, change)
+        print(f"{output}, {name}: {len(said)} problems"
+              + (f", for example: {said[0][:140]}" if said else ""))
+        if not said:
+            problems.append(f"{output}, {name}: passes")
+    # The differences of display, planted in the kit's entries: a minimum proven to lie on a
+    # half; a median at a half classed as an error of the reference; a median whose entry
+    # is left out.
+    given = dict(formats)
+    minimum = next(key for key, entry in formats.items()
+                   if "_7_Min/" in key and entry["proof"]["kind"] == "not_its_own_pattern")
+    median = next(key for key, entry in formats.items()
+                  if entry["proof"]["kind"] == "half_in_floating_error")
+    for name, changed in {
+        "a minimum proven to lie on a half": {
+            # The class the proof asks for, so that only its numbers can refuse it (the
+            # review of real-3, pass 2, G3).
+            **given, minimum: dict(given[minimum], proof={"kind": "half_in_floating_error"},
+                                   **{"class": "rule_choice"})},
+        "a median at a half classed reference_error": {
+            **given, median: dict(given[median], **{"class": "reference_error"})},
+        "a median at a half without its entry": {
+            key: entry for key, entry in given.items() if key != median},
+    }.items():
+        formats = changed
+        said = judged("Out14-3-3-1a")
+        print(f"Out14-3-3-1a, {name}: {len(said)} problems"
+              + (f", for example: {said[0][:140]}" if said else ""))
+        if not said:
+            problems.append(f"Out14-3-3-1a, {name}: passes")
+    formats = given
+    # The rounding rule (F6 of the review of real-3): results of the vital signs that lie
+    # exactly on a half at their displayed decimals tell half away from zero from half to
+    # even; the grid built with the other rule must differ from the example.
+    from unittest import mock
+
+    shown_spec = layouts.read(pilot.folder / next(
+        d for d in pilot.spec.displays if d.output == "Out14-3-3-1a").layout)
+    on_a_half = sorted({item.ard for row in grid.plan(event, shown_spec, rows).rows
+                        for cell in row.cells for item in cell.shown
+                        if _on_a_half(rows[item.ard]["raw_value"], item.pattern)})
+    real = methods.pattern_text
+
+    def half_even(value, pattern, mock=False, rounding="half_away_from_zero",
+                  zero_sign="dropped"):
+        return real(value, pattern, mock, "half_even", zero_sign)
+
+    with mock.patch.object(methods, "pattern_text", half_even):
+        said = judged("Out14-3-3-1a")
+    print(f"Out14-3-3-1a: results that lie exactly on a half at their displayed decimals: "
+          f"{len(on_a_half)}; with the rounding rule half_even: {len(said)} problems"
+          + (f", for example: {said[0][:140]}" if said else ""))
+    if not on_a_half or not said:
+        problems.append("Out14-3-3-1a, the rounding rule half_even: passes")
+    said = judged("Out14-3-3-1b", lambda d: by_groups(d)["analyses"][1].update(
+        heading="{group}"))
+    print(f"not separable by the shell: Out14-3-3-1b, the change rows under the visit alone: "
+          f"{len(said)} problems (the shell has a placeholder there)")
+    return problems
+
+
+def _gate_counts(output: str) -> tuple[int, int]:
+    from specfirst import gates
+
+    cells, results_shown, _ = gates.PILOT_GRIDS[output]
+    return cells, results_shown
+
+
 CASES = {"D1-arms": d1_arms, "D2-set": d2_set, "D3-quantile": d3_quantile,
          "D4-subset": d4_subset, "D5-engines": d5_engines, "D6-proofs": d6_proofs,
          "D7-display": d7_display, "D8-trace": d8_trace, "D9-efficacy": d9_efficacy,
          "D10-trace-model": d10_trace_model, "D11-efficacy-5b": d11_efficacy_5b,
-         "D12-cmh-engines": d12_cmh_engines, "D13-review": d13_review}
+         "D12-cmh-engines": d12_cmh_engines, "D13-review": d13_review,
+         "D14-vital-signs": d14_vital_signs}
 
 
 @pytest.mark.parametrize("case", list(CASES), ids=list(CASES))

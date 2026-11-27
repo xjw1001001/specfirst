@@ -210,6 +210,24 @@ def test_numbers_and_dates_as_group_values():
     assert [ard._number_text(v) for v in (8.0, 1.5, 0.1, -3.0)] == ["8", "1.5", "0.1", "-3"]
 
 
+@pytest.mark.parametrize("value", [math.inf, -math.inf])
+def test_a_number_that_is_not_finite_is_no_group_value(root, value):
+    """The last sentence of rule I9 in the Python engine too (the review of real-3a, F8):
+    the R engine refused it, the Python engine wrote the row `.../=inf`."""
+    with pytest.raises(ard.EngineError, match="not finite"):
+        ard._number_text(value)
+    # A number column that only a data-driven grouping reads.
+    adsl = dict(toy.ADSL, SCORE=[1.0, value, 2.0, 2.0, 1.0, 1.0, 2.0, 1.0])
+    data = toy.event_data()
+    data["analysisGroupings"].append(
+        {"id": "BYSCORE", "name": "Score", "groupingDataset": "ADSL",
+         "groupingVariable": "SCORE", "dataDriven": True})
+    data["analyses"].append(toy.analysis("A_BYSCORE", "M_N", "ADSL", "USUBJID",
+                                         [("BYSCORE", True)]))
+    with pytest.raises(ard.EngineError, match="ADSL.SCORE: the number .* is not finite"):
+        toy.run(root, data, given=toy.tables(adsl=adsl))
+
+
 @pytest.mark.parametrize(
     ("change", "message"),
     [

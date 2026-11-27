@@ -75,6 +75,9 @@ class Display:
     # The CSR table its cells are compared with; None: the formatted values the
     # reporting event embeds are the reference (real-3a).
     reference: CsrTable | None = None
+    # The table shell its mock shell is held against: a pinned PDF of the kit
+    # (specfirst.machine.shells; the review of real-3a, F1). None: no shell.
+    shell: str | None = None
 
 
 @dataclass(frozen=True)
@@ -298,11 +301,16 @@ def parse_kit(data: object) -> Kit:
             problems.append(f"{where}: unknown key {', '.join(unknown)}")
         displays: list[Display] = []
         for item in entry.get("outputs") or []:
-            if not isinstance(item, dict) or set(item) - {"reference"} != {"id", "layout"} or \
-                    not isinstance(item["id"], str) or not item["id"]:
+            if not isinstance(item, dict) or set(item) - {"reference", "shell"} != {
+                    "id", "layout"} or not isinstance(item["id"], str) or not item["id"]:
                 problems.append(f"{where}: an output needs exactly its 'id' and its 'layout', "
-                                "and may name its 'reference'")
+                                "and may name its 'reference' and its 'shell'")
                 continue
+            shell = item.get("shell")
+            if shell is not None and (shell not in seen or not str(shell).endswith(".pdf")):
+                problems.append(f"{where}, output '{item['id']}': its shell must be a listed "
+                                "file, a PDF")
+                shell = None
             if not own(item["layout"]) or item["layout"] in (exceptions, *decisions):
                 problems.append(f"{where}, output '{item['id']}': the layout must be a file of "
                                 f"our own under gold/, outside {', '.join(PINNED_AREAS)}")
@@ -320,7 +328,7 @@ def parse_kit(data: object) -> Kit:
                                     "'csr' (a listed file), its 'page' and its 'table'")
                 else:
                     csr_table = CsrTable(given["csr"], given["page"], given["table"])
-            displays.append(Display(item["id"], item["layout"], csr_table))
+            displays.append(Display(item["id"], item["layout"], csr_table, shell))
         set_id = text(entry, "id", where)
         ars_file = text(entry, "ars", where)
         schema = entry.get("schema")

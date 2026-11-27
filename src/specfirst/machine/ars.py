@@ -373,12 +373,20 @@ def display_sections(event: Event, output_id: str) -> dict[str, list[str]]:
     """The texts of the first display of an output, by section type, in their order.
 
     A subsection is written in the display, or names a subsection of the
-    event's global display sections. A name that is not defined gives no text.
+    event's global display sections or one that another display of the event
+    writes (the vertical vital signs of CDISC's example take their titles so;
+    the review of real-3, F4). A name that is not defined gives no text.
     """
     output = outputs(event).get(output_id) or {}
-    shared = {sub.get("id"): sub.get("text")
-              for section in event.data.get("globalDisplaySections") or []
-              for sub in section.get("subSections") or []}
+    shared = {entry["subSection"].get("id"): entry["subSection"].get("text")
+              for other in outputs(event).values()
+              for item in other.get("displays") or []
+              for section in (item.get("display") or {}).get("displaySections") or []
+              for entry in section.get("orderedSubSections") or []
+              if isinstance(entry.get("subSection"), dict)}
+    shared.update({sub.get("id"): sub.get("text")
+                   for section in event.data.get("globalDisplaySections") or []
+                   for sub in section.get("subSections") or []})
     displays = sorted(output.get("displays") or [], key=lambda item: item.get("order", 0))
     sections = (displays[0].get("display") or {}).get("displaySections") if displays else None
     found: dict[str, list[str]] = {}

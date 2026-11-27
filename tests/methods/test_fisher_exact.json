@@ -15,7 +15,7 @@
     {"name": "2 x 4", "statements": [4, 6], "input": {"table": [[1, 2, 3, 4], [4, 3, 2, 1]]}, "expected": {"p_value": 0.45874558877654853}},
     {"name": "4 x 2: the same table turned", "statements": [4], "input": {"table": [[1, 4], [2, 3], [3, 2], [4, 1]]}, "expected": {"p_value": 0.45874558877654853}},
     {"name": "4 x 3", "statements": [4, 6], "input": {"table": [[2, 1, 0], [1, 2, 1], [0, 1, 2], [1, 0, 3]]}, "expected": {"p_value": 0.44101612673041246}},
-    {"name": "2 x 3 with one table a relative 2.7e-07 more probable: it does not count", "statements": [5, 8], "input": {"table": [[0, 6, 20], [8, 27, 40]]}, "expected": {"p_value": 0.06040878692449231}, "source": "review of real-2, finding F3; the expected value is the sum in exact fractions (oracle.py)"},
-    {"name": "2 x 3 with one table a relative 3.2e-07 more probable: it does not count", "statements": [5, 8], "input": {"table": [[4, 8, 30], [0, 6, 56]]}, "expected": {"p_value": 0.009798846806875698}, "source": "review of real-2, finding F3; the expected value is the sum in exact fractions (oracle.py)"}
+    {"name": "2 x 3 with one table a relative 2.7e-07 more probable: it does not count", "statements": [5, 8], "input": {"table": [[0, 6, 20], [8, 27, 40]]}, "expected": {"p_value": 0.06040878692449789}, "source": "review of real-2, finding F3; the expected value is the sum in exact fractions (oracle.py)"},
+    {"name": "2 x 3 with one table a relative 3.2e-07 more probable: it does not count", "statements": [5, 8], "input": {"table": [[4, 8, 30], [0, 6, 56]]}, "expected": {"p_value": 0.00979884680687777}, "source": "review of real-2, finding F3; the expected value is the sum in exact fractions (oracle.py)"}
   ]
 }

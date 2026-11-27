@@ -7,7 +7,16 @@
 # count and its percent share a cell. What the ARS file holds is taken from
 # it: the titles and footnotes of the display, the header of the row labels,
 # the label of every analysis, the names of the treatment groups and the
-# result pattern of every operation ("(N=XX)", "XXX", "( XX.X)").
+# result pattern of every operation ("(N=XX)", "( XX.X)").
+#
+# The example's table shell (AE_Summary_Table_Shell.pdf, which kit.yaml pins and
+# the mock shell is held against; the review of real-3a, F1) puts the eight rows
+# under the line "Number of subjects with at least one event", the name of the
+# item of the example's list of contents above the eight analyses: here the
+# section of the rows, indented under it. The shell shows the count under the
+# mask XX where the operation's resultPattern has XXX; a mask without a decimal
+# point is not padded (display.pattern, statement 4), so both give the same text
+# for every count, and the layout follows the shell.
 layout: 0
 output: Out14-3-1-1
 columns:
@@ -18,9 +27,11 @@ rows:
     parts:
       N: {analysis: An01_05_SAF_Summ_ByTrt, operation: Mth01_CatVar_Count_ByGrp_1_n}
   - kind: analyses
+    section: Number of subjects with at least one event
+    indent: 1
     cell: "{n} {pct}"
     parts:
-      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n}
+      n: {operation: Mth01_CatVar_Summ_ByGrp_1_n, pattern: "XX"}
       pct: {operation: Mth01_CatVar_Summ_ByGrp_2_pct}
     analyses:
       - An07_01_TEAE_Summ_ByTrt

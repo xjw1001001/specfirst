@@ -105,6 +105,32 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   17 conflicts and 2 asked records (section "Handed over by issue #31").
   Decisions: docs/decisions/ADR-022.md, and the amendment of issue #31 at
   the end of ADR-003.md.
+- real-3 Grid, trace, viewer (PLAN.md 13.3; 2026-11-23 to 2026-11-27): the
+  five outputs of CDISC's ARS example are grids, the two of the vital signs
+  added here (block kind `by_groups`, `columns.within`; ADR-003, amendment
+  of real-3, points 10 to 15). The findings F1 to F9 of the review of
+  real-3a are the first commit, `70dc552`, with the gate real-3a passing on
+  a clone of it (16 of 16); F7 is left open (it needs a new dry run of
+  read-2a). Gates: `scripts/clean_clone_gate.sh real-3` exited 0 on a clean
+  clone of `b71c200` and again on a clean clone of `f4ebb00`, which is that
+  work with the review's findings and `main` (gen-2b) merged in, 19 of 19
+  checks: every one of the 3,815 numeric cells of the five grids has a
+  complete path to SDTM columns; P1 72 of 72 files; the review page shows
+  the five and loads and runs nothing. read-2a, real-3a, issue-31, real-2,
+  real-5a, real-5b, issue-29, read-1a, gen-2b and gen-3a exited 0 on clean
+  clones of `f4ebb00` (2026-11-27); real-3 and issue-31 again on clean
+  clones of `b3c26e4`, the review's H1 and H2 (the same 72 files of P1).
+  Evidence: docs/reports/real-3.md, real-3.clean-clone.gate.log,
+  real-3.first-commit.gate.log, real-3.merged.<gate>.gate.log and
+  real-3.h1.<gate>.gate.log. Review: docs/reports/real-3.review.md
+  (pass 1 NOT SIGNED, its blocking F1 fixed; pass 2 SIGNED of `900978e`;
+  pass 3 SIGNED of `a2512e6`, its H1 and H2 carried out; pass 4 SIGNED of
+  `32abcfe`). Decisions:
+  docs/decisions/ADR-003.md, the amendment of real-3; the owner's answer
+  on the four medians at a half: A, keep gold's display rule and record the
+  four (2026-11-23). Per recommendation,
+  pending SME review: SME-26 (the medians) and SME-33 (the 119 minima and
+  maxima). Lessons 82 to 87.
 
 ## Open
 
@@ -177,11 +203,11 @@ in full):
   mock shell next to the grid in `gold/grid/` (decision 7).
 - The comparison of grid text is per result, with the formatted values of
   the example's ARS file. The expected text of a cell is built with the
-  layout's own template, so the order of the parts of a cell is held
-  against nothing yet (decision 5). The example's table shell shows the
-  cells, and it is in the pinned repository; ADR-003 first said it was not
-  (finding F1 of the review, corrected in the documents). The grid differs
-  from that shell by one line of the row axis; see F1 below.
+  layout's own template (decision 5). Since real-3 the mock shell is held
+  against the example's table shell where kit.yaml pins one (the AE summary
+  and the two vital signs), which holds the order of the parts of a cell
+  and the text between them, and the AE summary has the shell's line of the
+  row axis as its section (ADR-003, amendment of real-3, point 1).
 - The report of real-3a quotes the whole grid of this output as text: its
   titles, row labels, footnotes and the 27 cell texts, which are our
   results and equal the example's formatted values. The review lists this
@@ -227,60 +253,52 @@ What the fixes of F2 to F12 left as it was:
   rule R11 stops the build; nothing is silent.
 - F1, F8 (the choice itself) and F9 (the classes) are the owner's.
 
-What the review of real-3a leaves open (docs/reports/real-3a.review.md has
-each in full; none blocks). Each changes code or a built file, so they are
-the first commit of the rest of real-3, with a gate run of its own, as F2
-to F12 of real-2 were for real-3a:
+What the review of real-3a left open, after real-3 (ADR-003, amendment of
+real-3, has each fix):
 
-- F1: the example's table shell
-  (`workfiles/examples/ARS v1/AE_Summary_Table_Shell.pdf` in the pinned ARS
-  repository) is not pinned in kit.yaml, and nothing holds the mock shell
-  against it. Against the grid it has: one more line of the row axis
-  ("Number of subjects with at least one event", above the eight rows,
-  which are indented under it; the ARS list of contents has the same text
-  and `ars.listed_analyses` drops it); the count under the mask `XX`,
-  where the mock shell follows the operation's `XXX`; "Table 14.3.1.1"
-  where the ARS file and the grid have "Table 14.3.1.<x>.<y>"; the note on
-  the abbreviation without its final point. Once the mock shell is held
-  against the shell's text, the planted layouts that pass today (the
-  percent before the count, another text between the parts, another
-  header) must fail. D7, `tests/defects/README.md` and two comments of
-  `grid.py` still give the old reason for their passing.
-- F2: with a data-driven column grouping, an arm that has subjects and no
-  record of an analysis stops the build (`GridError`: rule I9 gives it no
-  group, so the ARD has no row). Defined groups give "0 (  0.0)" on the
-  same data. What such a cell shows needs a decision, a statement and a
-  planted defect.
-- F3: `grid.compare_reference` passes a body cell with a part that names
-  another analysis than that of its row (the percent of one row in
-  another), and another title, footnote, section or indent. Outside the
-  gate, `specfirst check` passes a row of another output and an analysis
-  that stands in two blocks; the gate stops these by its counts only.
-- F4: neither `graph.check_cells` nor D8 sees a single `reads` edge to a
-  column that the analysis of the denominator also reads (24 of the 52
-  `reads` edges by the construction of the test; the review ran one
-  analysis), or the `computes` edge of one percent to that analysis. The
-  roles in coverage.json are held against nothing.
-- F5: `between_equal_values` and `same_under_every` do not ask whether our
-  own cell is right: with a wrong population planted, 36 wrong quartiles
-  and medians of ours were accepted as errors of the reference. The
-  committed entry is sound. Fix: ask that the n, the minimum and the
-  maximum of the cell are reproduced; plant the population in D6.
-- F6: `render.projection_problems` does not see where a text stands (two
-  cells or rows exchanged, the header row in the body), nor an `onload`
-  handler, a style that imports, a `meta` refresh, a comment or text in
-  `title`. It matters for the viewer, whose gate asks for no network.
 - F7: `registry.load` joins the words of a statement with one blank, so
   registry.json has "( 9.5)" where statement 3 of `display.pattern` has two
-  blanks.
-- F8: Python's `ard._number_text` writes a group value that is not finite
-  (`=inf`), against the last sentence of rule I9; the hand-over to R then
-  ends in a `ValueError` that the build does not catch.
-- F9, the parts in code and tests: the two new Fisher vectors call their
-  expected value the sum in exact fractions, and it is the value of the
-  Python implementation (within 2.1e-13 of it); `fisher-limit` is not among
-  the tests the gate requires to have run; `specfirst check` passes a cell
-  whose result has no formatted value in the reference (the gate does not).
+  blanks. Any fix changes the entry's bytes, which bind read-2a's kept dry
+  run of arm R (ADR-017): the gate read-2a then fails until the dry run is
+  made again, a model call the owner approves. It waits for the next remake
+  of the kept dry run; whichever work makes that remake applies the fix
+  first. The remake of gen-2b (R-task-087cf121e580, 2026-11-27) was made
+  without it, so it still waits. The exact fix: in standard/methods/display.pattern.yaml, statement
+  3 (lines 23 and 24), the example
+  `9.52 under "( XX.X)" is "(  9.5)".` becomes
+  `9.52 under "(XX.X)" is "( 9.5)".` (the padding is still shown, and the
+  one blank survives the joining in src/specfirst/machine/registry.py, line
+  162); then `specfirst methods --write` regenerates
+  standard/methods/registry.json. Nothing else changes: the implementation
+  and the vectors pad already. It changes `registry_sha256` in every
+  generated kit.yaml and the registry.json of every reader task folder.
+- F1, in part: the shells of the demographics and of the table by organ
+  class and term are RTF files (`Demog_Table_Shell.rtf`,
+  `AE_SOC_PT_Table_Shell.rtf`): not pinned, not read; their grids follow
+  them by issue #31's reading only. Titles, footnotes, the header of the row
+  labels and indents are held against nothing (a shell writes them with
+  placeholders or in its own words); the AE summary keeps the ARS file's
+  first title "Table 14.3.1.<x>.<y>" (the shell: "Table 14.3.1.1"). A
+  placeholder of a shell fits any text.
+- F2 stays as decided: no number without its ARD row; a data-driven column
+  grouping with a group an analysis has no record in stops the build, and
+  says to list the groups before the engines run (ADR-007).
+
+From real-3 (docs/reports/real-3.md, "For the owner"):
+
+- The four medians of the change of temperature at a half (each one
+  record's change of 0.05, held as 0.04999999999999716 in the public ADVS as
+  in ours; the example shows " 0.1", gold " 0.0"): the owner's answer A
+  (2026-11-23), `formats`, proof `half_in_floating_error`, class
+  `rule_choice`; per recommendation, pending SME review
+  (docs/state/sme-review.md, SME-26, real-3/vs-medians-at-half).
+- The 119 minima and maxima of temperature that the example shows with the
+  decimals of the data are classed `reference_error` (`formats`, proof
+  `not_its_own_pattern`): the example's own shells show no decimals; per
+  recommendation, pending SME review (SME-33, real-3/vs-minmax-decimals).
+- The layout of the AE summary has its section "Number of subjects with at
+  least one event" and the count's mask `XX` of the shell (no cell text
+  changed).
 
 The review could not read the source of tfrmt (no network at the time):
 every row of the table "tfrmt, read" in ADR-003 rests on the author's
@@ -288,13 +306,13 @@ reading.
 
 Other open points:
 
-- Layout spec v0 has three kinds of block (`header`, `analyses` and, since
-  real-5a, `statistics`). The other four outputs of the example need more
-  (see "Next").
-- A difference of display has no class yet. The exceptions file has no
-  section for cells: a cell that differs takes the class of the result it
-  shows, and any other difference blocks the gate until a proof kind
-  exists (ADR-003, decision 5).
+- Layout spec v0 has seven kinds of block (`header`, `analyses`,
+  `statistics`, `groups`, `terms`, `by_groups`, and the columns per group
+  `columns.within`). A total column and threshold rules are not built.
+- A difference of display is an entry of `formats` in the exceptions file,
+  with the proof `not_its_own_pattern` or `half_in_floating_error`; a cell
+  that differs otherwise takes the class of the result it shows, and any
+  other difference blocks the gate.
 - The method registry and the layout are checked by code, not by schemas in
   standard/schemas/ (section 12 lists one for the registry). Each needs an
   ADR the owner approves.
@@ -326,46 +344,63 @@ Other open points:
 
 ## Next
 
-- The slice `efficacy-first` (ADR-012) is done with real-5b. What comes
-  next on this track is the owner's call (PLAN.md, real-5: the other CSR
-  tables).
-- The findings F1 to F9 of the review of real-3a ("Open" above), as one
-  commit with a gate run.
-- The rest of real-3 Grid, trace, viewer, with the gate PLAN.md gives it.
-  Issue #31 built two of the other four outputs of the example as grids
-  (Out14-1-1 and Out14-3-2-1), the citations through the ARS
-  `documentRefs`, and the viewer (`specfirst view`). Left: the two outputs
-  of the vital signs, and the gate real-3 itself. It runs the code of
-  real-3a on more outputs: add each to `outputs` in kit.yaml with a layout
-  in `kits/cdiscpilot01/gold/layout/`, and to `PILOT_GRIDS` in gates.py.
-- Then real-4 (D1, node N2), real-5 (D2, node N2), in order.
+- real-4 (D1, node N2), then real-5 (D2, node N2), in order. The slice
+  `efficacy-first` (ADR-012) is done with real-5b; what comes next on this
+  track is the owner's call.
+- What real-4 meets of the grids (measured over all 3,734 formatted values
+  of CDISC's example): none is left. 24 differ by a classified result, 120
+  by display only with the proof `not_its_own_pattern` (the 119 minima and
+  maxima of the vital signs, the Fisher p-value of 1), 4 by floating error
+  at a half; the 6 minima and maxima of height follow the SAP's template
+  (custom:demog-decimals).
+- Layout kinds not built yet: a total column, threshold rules; the sort of
+  rows other than A to Z. Display rules that are not registry entries yet:
+  p-value formats and the truncation of long terms (E25).
 
-What the rest of real-3 will meet (measured in real-3a, on all 3,734
-formatted values of the example; the display rule gives the example's text
-for 3,580 of them):
+## Handed over by real-3
 
-- 24 differ because the result itself has a classified difference: their
-  cells take that class without a new entry.
-- 130 differ by display only, none of them in the adverse event summary:
-  125 minima and maxima that the example shows with the decimals of the data
-  under the pattern `XX`; 4 medians of the vital signs where our value is a
-  half only up to floating error (0.05 computed as 0.04999...), shown as
-  " 0.0" where the example has " 0.1"; and one p-value of 1 that the example
-  shows as "1" under `X.XXXX`. Each needs a rule in the registry or a proof
-  kind for a difference of display.
-- Layout kinds that do not exist yet: one row per group of a row grouping
-  (defined groups for demographics; data-driven and nested for organ class
-  and term), a total column, sort and threshold rules (a row per statistic
-  and columns that compare two groups exist since real-5a: the block kind
-  `statistics`). The plan of a grid
-  (`grid.plan`) is the place: the builder, the comparison and the trace all
-  read the plan. For organ class and term the results are ready since the
-  fix of issue #27 (ADR-011): the analysis by term gives arms x the pairs
-  that occur, each result identified by its values
-  (`.../Grp_TRT01A_1/=<organ class>/=<term>`), so the rows of the grid are
-  read from the ARD; the rows themselves are still layout work.
-- Display rules that are not registry entries yet: p-value formats and the
-  truncation of long terms (E25).
+- `specfirst.machine.shells` holds a mock shell against an example's table
+  shell, a PDF that kit.yaml pins and names as `shell` of an output: the
+  header masks, every row with cells (label and masks, in order within a
+  run, each cell in its column where the shell's fullest rows have one cell
+  per column), sections and rows without cells against a text or a
+  placeholder, every row of the shell shown, every heading of the shell in
+  its own words shown. The CSR parser of real-4 can take the same approach
+  for the CSR's shells.
+- Layout spec v0 has `columns.within` (columns per group; the group is the
+  spanner, the count under the headers stands in its first column) and the
+  block kind `by_groups` (two row groupings with defined groups: the first
+  the section, the second a row without cells; analyses side by side with
+  `within`, one after the other under their `heading` without it; `skip`
+  groups an analysis has no rows for). A part of an analyses block names
+  only an analysis its row is computed from; an analysis stands in one block
+  of the body; a cell shows only analyses the reference lists for the
+  output.
+- `graph.check_cells(folder, grids, events)` holds every computes and reads
+  edge of a cell's path and coverage.json's reads against the ARS file;
+  `build.trace` gives it the events. gen's P3 calls it without events, as
+  before.
+- `results`: `between_equal_values` and `same_under_every` ask that the n,
+  the minimum and the maximum of the cell are reproduced. `formats` has a
+  second proof kind, `half_in_floating_error` (class `rule_choice`: our value
+  rounded to 12 significant digits first gives the reference's text).
+- `render.projection_problems` reads a page back as a table and allows
+  only the elements and attributes the renderer writes; `colspan` only on a
+  spanner of the header, a section heading and a footnote (each the whole
+  table wide). `viewer.check.page_problems` allows only the elements and
+  attributes page.py writes (`ELEMENTS`, `ATTRIBUTES`): no style attribute,
+  no backslash in the style sheet. A new element or attribute of either
+  writer goes into its list (ADR-003, point 16).
+- The gate real-3 (`gates.GATES["real-3"]`): the checks of real-3a with
+  "trace of the grids", "recompute", "review" and "decisions", and D13 and
+  D14. `gates.PILOT_GRIDS` holds the five outputs (an output added there
+  changes the gates real-3, real-3a, real-5a and issue-31 together);
+  `REAL2_METHOD_TESTS` requires `fisher-limit`.
+- The review page with five outputs is about 5.6 MB (3,815 printed numbers
+  of the example, 213 of the CSR tables).
+- On this machine the shared lock is the slow part: a clean-clone gate takes
+  about 15 minutes once it has the lock, and other sessions' gates (gen-1a
+  with CORE, clean-clone gates) can hold it for half an hour.
 
 ## Handed over by issue #31
 

@@ -14,7 +14,7 @@ assembled on demand:
 
 ```bash
 specfirst fetch                      # Pilot 7, Pilot 6 and the ARS repository, into the cache
-specfirst kit assemble cdiscpilot01  # copy 67 files, checking the SHA-256 of each
+specfirst kit assemble cdiscpilot01  # copy 70 files, checking the SHA-256 of each
 specfirst build cdiscpilot01         # resolved specs, ADaM, results (needs R), grids, graph
 specfirst check cdiscpilot01         # P2 for ADaM, the trace, P2 for results, the engines, the grids
 specfirst check cdiscpilot01 --twice # first two fresh builds, each in its own folder (P1)

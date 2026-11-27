@@ -61,8 +61,13 @@ def _number_text(value: float) -> str:
 
     Zero is "0"; any other whole number has all its digits and neither a
     decimal point nor an exponent; any other number is the shortest decimal
-    that reads back as the same number.
+    that reads back as the same number. A number that is not finite cannot be
+    a group value: it is refused, as the R engine refuses it (the review of
+    real-3a, F8).
     """
+    if not math.isfinite(value):
+        raise EngineError(f"the number {value!r} is not finite and cannot be a group value "
+                          "(rule I9)")
     return str(int(value)) if value.is_integer() else repr(value)
 
 
@@ -223,7 +228,11 @@ class Engine:
             values, kind = self.column(dataset, name)
             if kind == "number":
                 texts = np.empty(len(values), dtype=object)
-                texts[:] = ["" if math.isnan(v) else _number_text(v) for v in values.tolist()]
+                try:
+                    texts[:] = ["" if math.isnan(v) else _number_text(v)
+                                for v in values.tolist()]
+                except EngineError as error:
+                    raise EngineError(f"{dataset}.{name}: {error}") from error
                 values = texts
             self._texts[(dataset, name)] = values
         return self._texts[(dataset, name)]
