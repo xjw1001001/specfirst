@@ -1,6 +1,6 @@
 # real-3 Grid, trace, viewer: report
 
-Date: 2026-11-23. Branch: `track/real`. Work package real-3 of PLAN.md
+Date: 2026-11-23 to 2026-11-27. Branch: `track/real`. Work package real-3 of PLAN.md
 section 13.3, on top of real-3a (the adverse event summary) and issue #31
 (the demographics, the table by organ class and term, the review page).
 Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
@@ -16,7 +16,8 @@ Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
   new proof `half_in_floating_error`, class `rule_choice`: the owner's
   answer A). Both classifications are per recommendation, pending SME
   review.
-- The gate real-3 passes on a clean clone of `b71c200`, 19 of 19 checks.
+- The gate real-3 passes on a clean clone of `f4ebb00`, the merge of main
+  (with gen-2b) into the work, 19 of 19 checks.
   Every numeric cell of the five grids, 3,815 in all, has a complete path
   to SDTM columns. Two builds give the same 72 files. The review page shows
   the five outputs, loads and runs nothing, and opens a panel for each of
@@ -26,13 +27,18 @@ Decisions: docs/decisions/ADR-003.md, the amendment of real-3 (points 1 to
   except F7, which needs a new dry run of read-2a (a model call): open, for
   the owner. The mock shells of three outputs are held against the
   example's own table shells.
-- @@OTHERGATESHORT@@
+- The ten other gates the change can reach (read-2a, real-3a, issue-31,
+  real-2, real-5a, real-5b, issue-29, read-1a, gen-2b, gen-3a) pass on
+  clean clones of `f4ebb00` too (section "The other gates").
 - The layout format stays version 0, with one new kind of block
   (`by_groups`) and columns per group (`columns.within`); PLAN.md,
   `standard/` and `env/` are unchanged.
 - The fresh-context review: pass 1 NOT SIGNED (F1 blocking: the facts of
   the four medians as first given to the owner were wrong); its six
-  findings are carried out (section "Review"). @@PASS2@@
+  findings are carried out (section "Review"). Pass 2, of `900978e`:
+  SIGNED; its four points G1 to G4, none blocking, are carried out.
+  Pass 3 reviews the gated merge `f4ebb00`, its gate logs and this
+  report (docs/reports/real-3.review.md).
 
 ## What real-3 asks for, and where it stands
 
@@ -217,43 +223,49 @@ one of the 4 medians. Every other cell equals the example's text.
 
 ## The gate
 
-`scripts/clean_clone_gate.sh real-3` on commit `b71c200`: a fresh clone
-under `/tmp`, a fresh install of the Python environment, the R library and
-CDISC CORE, a fresh fetch of the pinned sources, then the gate with
-`--clean`; run under the shared lock on four processors. Its log is
-docs/reports/real-3.clean-clone.gate.log (881 lines). The commands and the
-lines of the log that say what the gate text asks; `[...]` marks where
+`scripts/clean_clone_gate.sh real-3` on commit `f4ebb00`, the merge of
+main (with gen-2b) into the work: a fresh clone under `/tmp`, a fresh
+install of the Python environment, the R library and CDISC CORE, a fresh
+fetch of the pinned sources, then the gate with `--clean`; run under the
+shared lock on four processors. Its log is
+docs/reports/real-3.merged.real-3.gate.log (889 lines). The same gate
+passed on a clean clone of `b71c200`, before the review, 19 of 19
+(docs/reports/real-3.clean-clone.gate.log, 881 lines). Since then the
+review's findings and gen-2b's tests took the unit tests from 1,454 to
+1,521; D14 gained the plants on the statistic rows; the vertical grid has
+its title "Safety Population" (new SHA-256 of its four files). The commands and the lines of the log
+that say what the gate text asks; `[...]` marks where
 lines are left out (the install and the fetch, pytest's progress dots, the
 hash lines of P1 but those of the four new files, the lines of the outputs
 that are not of the example, the method vectors, the decisions, the pilot
 tests and the planted defects D1 to D13 but the lines of D8 on the trace):
 
 ```text
-$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 scripts/clean_clone_gate.sh real-3 /mnt/d/trial_work/specfirst/.git b71c200
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 scripts/clean_clone_gate.sh real-3 /mnt/d/trial_work/specfirst/.git f4ebb00
 clean clone gate real-3
-$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-fiKgpo/specfirst
-$ git -C /tmp/specfirst-clean-fiKgpo/specfirst checkout --quiet --detach b71c200
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-oubSUb/specfirst
+$ git -C /tmp/specfirst-clean-oubSUb/specfirst checkout --quiet --detach f4ebb00
 [...]
 $ bash env/install.sh
 [...]
 $ specfirst fetch
 [...]
 $ specfirst gate real-3 --clean
-gate real-3 at commit b71c200536b5a9686344b2760dfc6e5eb9a615ac (clean)
+gate real-3 at commit f4ebb009cfe776a50e989d3210a8539a333afc7c (clean)
 [...]
-1454 passed, 38 deselected in 431.11s (0:07:11)
+1521 passed, 38 deselected in 455.34s (0:07:35)
 [...]
 == [8/19] P1 determinism: specfirst check cdiscpilot01 --twice (its first part)
 [...]
 same      5e0dc4af97af66a7 5e0dc4af97af66a7 gold/grid/Out14-3-3-1a.json
 same      2993e727a7f6036a 2993e727a7f6036a gold/grid/Out14-3-3-1a.shell.json
-same      244261ee3dcbe1c8 244261ee3dcbe1c8 gold/grid/Out14-3-3-1b.json
-same      a6c01585a4b0dfb0 a6c01585a4b0dfb0 gold/grid/Out14-3-3-1b.shell.json
+same      add46ea61870d11e add46ea61870d11e gold/grid/Out14-3-3-1b.json
+same      9afe073bc0ad5dd4 9afe073bc0ad5dd4 gold/grid/Out14-3-3-1b.shell.json
 [...]
 same      07677ba96f9e3aae 07677ba96f9e3aae gold/out/Out14-3-3-1a.html
 same      55e8adc753417927 55e8adc753417927 gold/out/Out14-3-3-1a.shell.html
-same      a594db66ea116c5c a594db66ea116c5c gold/out/Out14-3-3-1b.html
-same      3427a2d268a5fa70 3427a2d268a5fa70 gold/out/Out14-3-3-1b.shell.html
+same      300b8b93650848ef 300b8b93650848ef gold/out/Out14-3-3-1b.html
+same      6eb0ea05d5673a10 6eb0ea05d5673a10 gold/out/Out14-3-3-1b.shell.html
 [...]
 P1 determinism: 72 of 72 files have the same SHA-256 in both builds
 [...]
@@ -282,7 +294,7 @@ Out14-3-2-1: 1178 printed numbers; 1178 open a panel; 1178 reach SDTM; 1178 reac
 Out14-3-3-1a: 1263 printed numbers; 1263 open a panel; 1263 reach SDTM; 1263 reach a citation or a house default; 1263 draw every decision behind them
 Out14-3-3-1b: 1263 printed numbers; 1263 open a panel; 1263 reach SDTM; 1263 reach a citation or a house default; 1263 draw every decision behind them
 sheet: 17 catalog entry, 1 kit binding, 10 layout, 67 record; 67 of 67 records listed
-review: build/p1/cdiscpilot01/first/viewer/index.html has 5597006 bytes, 63 panels of analyses, 4028 cells with a panel; it loads and runs nothing: True; the second build of P1 gives the same page: True
+review: build/p1/cdiscpilot01/first/viewer/index.html has 5597053 bytes, 63 panels of analyses, 4028 cells with a panel; it loads and runs nothing: True; the second build of P1 gives the same page: True
 [...]
 reads: 31 analyses; for each, the columns without a reads edge emptied and rolled (1096 changes of a column in all), then the columns it reads emptied; for 14 of them the results computed from it alone, against its own reads edges alone; 0 problems
 [...]
@@ -290,6 +302,12 @@ reads: 31 analyses; for each, the columns without a reads edge emptied and rolle
 Out14-3-3-1a, unchanged: 0 problems
 Out14-3-3-1b, unchanged: 0 problems
 Out14-3-3-1a, the observed value and the change exchanged between their columns: 20 problems, for example: row r3 ('n'): its cells stand in the columns [2, 4, 6]; on line 16 of the shell in [1, 3, 5]
+Out14-3-3-1a, Q1 and Q3 exchanged in their cell: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Q1, Q3': the parts stand in the cell in another order than the label nam
+Out14-3-3-1b, the minimum and the maximum exchanged in their cell: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Min, Max': the parts stand in the cell in another order than the label n
+Out14-3-3-1a, the mean in the row of the median: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Median': the label names 'Median', and the row does not show 'Mth02_Cont
+Out14-3-3-1b, the n and the minimum exchanged between their rows: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Min, Max': the label names 'Min', and the row does not show 'Mth02_ContV
+Out14-3-3-1b, the rows of the changes above those of the observed values: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1]: the analyses stand in another order than the reference lists them (An08_01_Ob
+Out14-3-3-1a, the sections of two parameters exchanged by labels: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1]: labels: 'AnlsGrouping_08_Param_1' is labelled 'Diastolic Blood Pressure (mmHg
 Out14-3-3-1a, the change shown at baseline: 7 problems, for example: line 16 of the shell ('n', ['XX', 'XX', 'XX']): no row of the mock shell has it
 Out14-3-3-1b, the change shown at baseline: 2 problems, for example: 96 results without a formatted value; the gate asks for none
 Out14-3-3-1a, the minimum and the maximum under XX.X: 242 problems, [...]
@@ -302,29 +320,29 @@ Out14-3-3-1a, a minimum proven to lie on a half: 1 problems, [...]
 Out14-3-3-1a, a median at a half classed reference_error: 1 problems, [...]
 Out14-3-3-1a, a median at a half without its entry: 1 problems, [...]
 not separable by the shell: Out14-3-3-1b, the change rows under the visit alone: 0 problems (the shell has a placeholder there)
-101 passed in 132.38s (0:02:12)
+101 passed in 133.98s (0:02:13)
 [...]
 PASS  environment          0.3 s
-PASS  pins                 0.9 s
+PASS  pins                 0.7 s
 PASS  lint                 0.0 s
-PASS  registry             0.1 s
-PASS  unit tests         431.7 s
+PASS  registry             0.0 s
+PASS  unit tests         456.0 s
 PASS  method vectors      10.6 s
 PASS  kit                  0.1 s
-PASS  P1 determinism      40.2 s
-PASS  P2 reproduction      0.3 s
+PASS  P1 determinism      40.9 s
+PASS  P2 reproduction      0.4 s
 PASS  trace of the grids      4.3 s
 PASS  results              3.2 s
 PASS  grids                3.1 s
-PASS  recompute            9.2 s
-PASS  review               1.5 s
+PASS  recompute            9.1 s
+PASS  review               1.6 s
 PASS  decisions            0.6 s
-PASS  pilot tests         49.9 s
-PASS  planted defects    132.8 s
+PASS  pilot tests         49.8 s
+PASS  planted defects    134.4 s
 PASS  cache untouched      0.1 s
 PASS  ASCII                0.0 s
 GATE real-3: PASS
-clean clone gate real-3: PASS (clone: /tmp/specfirst-clean-fiKgpo/specfirst)
+clean clone gate real-3: PASS (clone: /tmp/specfirst-clean-oubSUb/specfirst)
 ```
 
 The gate text, statement by statement:
@@ -345,7 +363,68 @@ The gate text, statement by statement:
 
 ## The other gates
 
-@@OTHERGATES@@
+Every gate the change can reach ran on a clean clone of `f4ebb00`, one
+after the other, by a loop of this session (not committed) that called
+`scripts/clean_clone_gate.sh` for each under the shared lock on four
+processors. Each clone had a fresh install and a fresh fetch. Each log is
+committed in full. The exit codes and seconds below are the loop's lines
+(started 2026-11-27 04:55:57); each log shows its own checks and verdict.
+
+```text
+$ flock /run/lock/specfirst-heavy.lock taskset -c 0-3 scripts/clean_clone_gate.sh <gate> /mnt/d/trial_work/specfirst/.git f4ebb00
+real-3: exit 0; 19 PASS, 0 FAIL; clean clone gate real-3: PASS (820 s)
+read-2a: exit 0; 19 PASS, 0 FAIL; clean clone gate read-2a: PASS (643 s)
+real-3a: exit 0; 16 PASS, 0 FAIL; clean clone gate real-3a: PASS (811 s)
+issue-31: exit 0; 14 PASS, 0 FAIL; clean clone gate issue-31: PASS (758 s)
+real-2: exit 0; 15 PASS, 0 FAIL; clean clone gate real-2: PASS (803 s)
+real-5a: exit 0; 18 PASS, 0 FAIL; clean clone gate real-5a: PASS (809 s)
+real-5b: exit 0; 19 PASS, 0 FAIL; clean clone gate real-5b: PASS (807 s)
+issue-29: exit 0; 12 PASS, 0 FAIL; clean clone gate issue-29: PASS (655 s)
+read-1a: exit 0; 14 PASS, 0 FAIL; clean clone gate read-1a: PASS (1250 s)
+gen-2b: exit 0; 13 PASS, 0 FAIL; clean clone gate gen-2b: PASS (842 s)
+gen-3a: exit 0; 15 PASS, 0 FAIL; clean clone gate gen-3a: PASS (603 s)
+```
+
+| Gate | Checks | Unit tests | Last lines | Log |
+| --- | --- | --- | --- | --- |
+| real-3 | 19 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE real-3: PASS`, `clean clone gate real-3: PASS` | docs/reports/real-3.merged.real-3.gate.log (889 lines) |
+| read-2a | 19 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE read-2a: PASS`, `clean clone gate read-2a: PASS` | docs/reports/real-3.merged.read-2a.gate.log (524 lines) |
+| real-3a | 16 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE real-3a: PASS`, `clean clone gate real-3a: PASS` | docs/reports/real-3.merged.real-3a.gate.log (790 lines) |
+| issue-31 | 14 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE issue-31: PASS`, `clean clone gate issue-31: PASS` | docs/reports/real-3.merged.issue-31.gate.log (696 lines) |
+| real-2 | 15 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE real-2: PASS`, `clean clone gate real-2: PASS` | docs/reports/real-3.merged.real-2.gate.log (710 lines) |
+| real-5a | 18 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE real-5a: PASS`, `clean clone gate real-5a: PASS` | docs/reports/real-3.merged.real-5a.gate.log (879 lines) |
+| real-5b | 19 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE real-5b: PASS`, `clean clone gate real-5b: PASS` | docs/reports/real-3.merged.real-5b.gate.log (813 lines) |
+| issue-29 | 12 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE issue-29: PASS`, `clean clone gate issue-29: PASS` | docs/reports/real-3.merged.issue-29.gate.log (383 lines) |
+| read-1a | 14 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE read-1a: PASS`, `clean clone gate read-1a: PASS` | docs/reports/real-3.merged.read-1a.gate.log (713 lines) |
+| gen-2b | 13 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE gen-2b: PASS`, `clean clone gate gen-2b: PASS` | docs/reports/real-3.merged.gen-2b.gate.log (435 lines) |
+| gen-3a | 15 PASS, 0 FAIL | 1,521 passed, 38 deselected | `GATE gen-3a: PASS`, `clean clone gate gen-3a: PASS` | docs/reports/real-3.merged.gen-3a.gate.log (304 lines) |
+
+Why these gates:
+
+- real-3a, issue-31, real-2, real-5a, real-5b and issue-29 build and check
+  the pilot kit with the machine that real-3 changes (`layout`, `grid`,
+  `shells`, `render`, `results`, `ard`, `ars`, `graph`, `build`), with
+  kit.yaml and with the page check of the viewer. real-1 is not run again:
+  its checks are those of real-2 (the same P1, P2 and trace, and its pilot
+  tests a part of real-2's).
+- read-1a, gen-2b and gen-3a: the gold of a generated kit is built by
+  `specfirst.gen.gold` through `ard`, `ars`, `graph`, `grid`, `render` and
+  `results`, and `specfirst.gen.display` reads `ars.display_sections`.
+  gen-2a has the checks of gen-2b (`_gen2_checks`), so one run stands for
+  both.
+- read-2a: the base session asked for it with the merge of gen-2b. Its
+  check "arm R, kept dry run" finds gen-2b's new kept run
+  (R-task-087cf121e580) "the same on every bound part (ADR-017)" as its
+  task built again now; real-3 changes no registry entry (F7 stays open).
+- Not run: base-0 and real-1 (above); std-1, catalog-2a and catalog-2b (the
+  standard and its versions: real-3 changes no file of standard/ and
+  nothing those checks import); gen-1a (the study generator and CDISC CORE:
+  `specfirst.gen.study` and `specfirst.gen.gate` import only
+  `machine.canonical`, which real-3 does not change). Every gate runs the
+  whole unit suite, so each of those modules' unit tests ran eleven times.
+
+The commits after `f4ebb00` change documents only (this report, the logs,
+ADR-003's point 7, the state file and the review).
 
 ## One cell, end to end
 
@@ -353,8 +432,9 @@ The gate text, statement by statement:
 "Mean (SD)", the column "Change from Baseline" under "Placebo". Walked from
 `nodes.jsonl`, `edges.jsonl` and `coverage.json` of the first build of a
 run of the gate in the worktree's Linux copy (the build of `b71c200`'s
-code; the grid file and the two graph files have the SHA-256 that P1 prints
-for the clean clone: `5e0dc4af97af66a7` for the grid), by the script that
+code; the grid file and the three graph files have the SHA-256 that P1
+prints for the clean clones of `b71c200` and of `f4ebb00` alike:
+`5e0dc4af97af66a7` for the grid), by the script that
 walked a cell for real-3a (it reads the three files and nothing else; not
 committed). The first rows of the grid, for the place of the cell:
 
@@ -477,8 +557,8 @@ The example's formatted values of the two results are "- 3.3" and
 2. **F7 (does not block).** Statement 3 of `display.pattern` loses a blank
    in registry.json. Any fix changes the entry's bytes, which bind read-2a's
    kept dry run (ADR-017). It waits for the next remake of the kept dry run
-   (ADR-003, point 7, has the exact fix; gen-2b remakes the run before this
-   work merges, so it is not that one).
+   (ADR-003, point 7, has the exact fix). gen-2b's remake of the kept dry
+   run (R-task-087cf121e580, 2026-11-27), now in main, was made without it.
 3. **The 119 minima and maxima (does not block).** Classed `reference_error`
    by the existing proof, because the example's own shells show no
    decimals; per recommendation, pending SME review
@@ -513,8 +593,51 @@ The four statements of the gate text held. Six findings:
 | F5 | The report and the state file were not finished; point 13 of the ADR glued to point 12 | Finished; the ADR is mended |
 | F6 | Small things: the owner's answer said recorded; the sentence on results at a half; "D13 plants each"; 1,562 and 9 not reproduced; Templates 21 and 22 do not cover temperature | Corrected; D14 plants the rounding rule half_even; test_viewer.py plants every kind the page check names; the two numbers measured again (3,323 and 4; 10) |
 
-@@PASS2TEXT@@
+Pass 2, of `900978e`, by the same reviewer: SIGNED. It ran the gate real-3
+with `--clean` on its own clone of `900978e` (19 of 19), held each of F1 to
+F6 again, and named four points, none blocking, carried out in `d1b9c6f`
+and `d81d36f`:
+
+| # | Point | Done |
+| --- | --- | --- |
+| G1 | The grid page's check passed a table inside `<template>`, `<details>`, `<noscript>` or a closed `<dialog>`, white `<font>` text, and `colspan` or `rowspan` on a cell; the review page passed CSS escapes (`= rl(`) in a style | The grid page's check allows only the elements and attributes the renderer writes (`render._ELEMENTS`, `render._ATTRIBUTES`); `colspan` only on a spanner, a section and a footnote; `rowspan` refused. The review page refuses a backslash in any style; with escapes gone, `url(`, `@import` and `image-set(` are refused as text. tests/unit/test_grid.py and test_viewer.py plant each |
+| G2 | A label the layout gives a group that is wrong but no other group's name ("Week 3" for Week 2) passes | Named as a limit (section "Not covered"); the layouts of the vital signs give no label |
+| G3 | D14's plant "a minimum proven to lie on a half" failed on its class, not on its numbers | The plant carries the class `rule_choice` and fails on its numbers ("35.33 is not on a half at 0 decimals") |
+| G4 | Two texts still said `data_difference`; the two points pending SME review were not in docs/state/sme-review.md | Corrected; the base session listed them as SME-26 (the medians) and SME-33 (the minima and maxima), cited in the exceptions file, ADR-003, this report and docs/state/real.md |
+
+The reviewer's passes 1 and 2 cite the lessons of real-3 as 74 to 79. The
+merge with main, which brought gen-2b's lessons 74 to 81, made them 82 to
+87 (docs/lessons.md); `d81d36f` also mends six lines of
+docs/state/real.md that a PowerShell string had broken (lesson 87).
+
+Pass 3, of `f4ebb00` and of the commit with this report and the gate
+logs: docs/reports/real-3.review.md.
 
 ## GitHub and CI
 
-@@CI@@
+`track/real` is pushed to the owner's repository (public since ADR-013).
+CI (`.github/workflows/ci.yml`: the ASCII check, lint, the unit tests, on
+GitHub's runner, which has no R and no fetch cache) ran on every pushed
+head of the branch. On `f4ebb00`, the commit the gates ran on:
+
+```text
+run 45977706741 on track/real at f4ebb00: completed, success
+ASCII check: 966 files checked, 0 with non-ASCII bytes
+All checks passed!
+1499 passed, 22 skipped, 38 deselected in 533.56s (0:08:53)
+```
+
+The 22 skipped tests need R; in the gates, where R is installed, the same
+selection gives 1521 passed and none skipped. The earlier runs of real-3:
+
+```text
+run 45213010792 on track/real at 70dc552: completed, success
+run 45227081991 on track/real at b71c200: completed, success
+run 45229781240 on track/real at 10805f6: completed, success
+run 45243943991 on track/real at 900978e: completed, success
+run 45248161001 on track/real at d1b9c6f: completed, success
+```
+
+The runs on the commit that holds this report and on `main` after the
+merge cannot be in it; they are in GitHub, and docs/state/real.md records
+them.

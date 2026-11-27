@@ -1,0 +1,879 @@
+clean clone gate real-5a
+repository: /mnt/d/trial_work/specfirst/.git
+commit:     f4ebb00
+clone:      /tmp/specfirst-clean-pHIUuS/specfirst
+environment and cache: /tmp/specfirst-clean-pHIUuS/env
+
+$ git clone --quiet --no-local /mnt/d/trial_work/specfirst/.git /tmp/specfirst-clean-pHIUuS/specfirst
+
+$ git -C /tmp/specfirst-clean-pHIUuS/specfirst checkout --quiet --detach f4ebb00
+
+$ git -C /tmp/specfirst-clean-pHIUuS/specfirst log -1 --format=%H %s
+f4ebb009cfe776a50e989d3210a8539a333afc7c Merge main into track/real: gen-2b (ADR-023, the kept dry run made again)
+
+$ bash env/install.sh
+python environment: /tmp/specfirst-clean-pHIUuS/env/venv-specfirst-3925338705
+R library: /tmp/specfirst-clean-pHIUuS/env/r-lib
+R packages: 99 wanted, 99 to install from https://packagemanager.posit.co/cran/__linux__/noble/2026-11-10
+R library matches the lock: 99 packages in /tmp/specfirst-clean-pHIUuS/env/r-lib
+CDISC CORE v1.0.0: /tmp/specfirst-clean-pHIUuS/env/core/f3282a0d870b-d90ef34c553d
+source: fetched f3282a0d870bbdf57e326e9992cceea3ed0d9af5
+python     3.12.3  (/tmp/specfirst-clean-pHIUuS/env/venv-specfirst-3925338705/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+
+$ specfirst fetch
+cache: /tmp/specfirst-clean-pHIUuS/env/cache
+ok   p7              fetched  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           fetched  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             fetched  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              fetched  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          fetched  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           fetched  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           fetched  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            fetched  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           fetched  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        fetched  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   fetched  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  fetched  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      fetched  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+
+$ specfirst gate real-5a --clean
+gate real-5a at commit f4ebb009cfe776a50e989d3210a8539a333afc7c (clean)
+
+== [1/18] environment: specfirst doctor
+python     3.12.3  (/tmp/specfirst-clean-pHIUuS/env/venv-specfirst-3925338705/bin/python)
+python lock: 23 packages pinned, 0 differ
+R          R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"
+R lock: 99 packages pinned, 0 differ
+pdftotext  pdftotext version 24.02.0
+git        git version 2.43.0
+CDISC CORE v1.0.0 at f3282a0d870b: 0 differ
+system lock: 32 packages recorded, 0 differ
+lock script: env/lock.sh writes 4 lock files, 0 problems
+doctor: ok
+-- PASS environment (0.4 s)
+
+== [2/18] pins: specfirst fetch --verify
+cache: /tmp/specfirst-clean-pHIUuS/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS pins (0.7 s)
+
+== [3/18] lint: ruff check .
+All checks passed!
+-- PASS lint (0.0 s)
+
+== [4/18] registry: specfirst methods
+count.subjects                     descriptive  4 statements  python+r operations: n; options: -
+display.pattern.signed             display      2 statements  python   operations: text; options: rounding=half_away_from_zero
+display.pattern                    display      8 statements  python   operations: text; options: rounding=half_away_from_zero
+display.round.half_away_from_zero  display      5 statements  python   operations: text; options: -
+display.round.half_even            display      6 statements  python   operations: text; options: -
+model.ancova.dose_response         model        6 statements  r        operations: p_value, estimate; options: covariates=[], df=residual, dose=grouping_value, factors=[], model=continuous_dose
+model.ancova.lsmeans               model        8 statements  r        operations: lsmean, se, lower_cl, upper_cl; options: confidence_level=95, covariates=[], df=residual, factors=[], weights=equal
+model.ancova.pairwise              model        7 statements  r        operations: estimate, se, lower_cl, upper_cl, p_value; options: confidence_level=95, covariates=[], df=residual, factors=[], reference=None
+model.mmrm.lsmeans                 model       11 statements  r        operations: lsmean, se, lower_cl, upper_cl; options: at=last, by_visit=[], confidence_level=95, covariance=unstructured, covariates=[], df=kenward_roger_linear, factors=[], treatment_by_visit=yes, visit=[]
+model.mmrm.pairwise                model        7 statements  r        operations: estimate, se, lower_cl, upper_cl, p_value; options: at=last, by_visit=[], confidence_level=95, covariance=unstructured, covariates=[], df=kenward_roger_linear, factors=[], reference=None, treatment_by_visit=yes, visit=[]
+percent.subjects                   descriptive  6 statements  python+r operations: pct; options: -
+summary.continuous                 descriptive 10 statements  python+r operations: n, mean, sd, median, q1, q3, min, max; options: quantile_definition=sas5, sd_denominator=n_minus_1
+test.anova.oneway                  test         5 statements  python+r operations: p_value; options: -
+test.chisq                         test         6 statements  python+r operations: p_value; options: correction=none
+test.cmh                           test         7 statements  python+r operations: p_value; options: scores=table, statistic=general_association, strata=[]
+test.fisher.exact                  test         8 statements  python+r operations: p_value; options: alternative=two_sided
+methods: 16 entries
+-- PASS registry (0.1 s)
+
+== [5/18] unit tests: pytest -m "not evidence" -q
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 14%]
+........................................................................ [ 18%]
+........................................................................ [ 23%]
+........................................................................ [ 28%]
+........................................................................ [ 33%]
+........................................................................ [ 37%]
+........................................................................ [ 42%]
+........................................................................ [ 47%]
+........................................................................ [ 52%]
+........................................................................ [ 56%]
+........................................................................ [ 61%]
+........................................................................ [ 66%]
+........................................................................ [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 80%]
+........................................................................ [ 85%]
+........................................................................ [ 89%]
+........................................................................ [ 94%]
+........................................................................ [ 99%]
+.........                                                                [100%]
+1521 passed, 38 deselected in 461.77s (0:07:41)
+-- PASS unit tests (462.4 s)
+
+== [6/18] method vectors: SPECFIRST_STRICT=1 pytest tests/methods -s -q
+
+--- python-vectors
+Python implementations: 139 cases of 11 methods, 0 differences
+.
+--- r-vectors
+R implementations: 134 cases of 12 methods, 0 differences
+.
+--- exact-arithmetic
+expected values computed again in exact arithmetic: 134 cases, 0 differences; written by hand: 63 cases (the display rules)
+.
+--- fisher-r
+2 x 3 2 x 3                                                   Python 0.13419913419913376    R 0.13419913419913415    fisher.test 0.13419913419913387
+3 x 3 3 x 3                                                   Python 0.2671753203049479     R 0.26717532030494984    fisher.test 0.26717532030494506
+3 x 3 3 x 3 of the size of a laboratory shift table           Python 0.4464490858573885     R 0.4464490858574556     fisher.test 0.44644908585743115
+3 x 3 3 x 3 with tables of equal probability                  Python 0.999999999999996      R 1                      fisher.test 0.9999999999999984
+3 x 3 rows and columns of zeros are left out                  Python 0.4857142857142849     R 0.4857142857142856     fisher.test 0.4857142857142856
+2 x 4 2 x 4                                                   Python 0.4587455887765525     R 0.45874558877654853    fisher.test 0.4587455887765442
+4 x 2 4 x 2: the same table turned                            Python 0.4587455887765526     R 0.45874558877654853    fisher.test 0.4587455887765442
+4 x 3 4 x 3                                                   Python 0.4410161267304116     R 0.4410161267304153     fisher.test 0.44101612673041296
+2 x 3 2 x 3 with one table a relative 2.7e-07 more probable:  Python 0.06040878692449231    R 0.060408786924501114   fisher.test 0.06533690837383269  (a table 2.666e-07 more probable)
+2 x 3 2 x 3 with one table a relative 3.2e-07 more probable:  Python 0.009798846806875698   R 0.009798846806877703   fisher.test 0.011455024125087577  (a table 3.209e-07 more probable)
+tables larger than 2 x 2: 10; with a table just above the observed probability, where fisher.test is looser: 2
+.
+--- fisher-limit
+R, with a limit of 50 tables: the R vectors run exited 1: Error: test.fisher.exact: more than 50 tables to sum; the method does not approximate
+.
+--- model-vectors
+model-based methods in R: 58 cases of 5 methods, 0 differences
+planted: model.ancova.dose_response always with dose = group_rank: 7 cases differ
+planted: model.ancova.lsmeans always with weights = equal: 1 cases differ
+planted: model.ancova.pairwise always with df = residual: 1 cases differ
+planted: model.mmrm.lsmeans always with at = last: 2 cases differ
+planted: model.mmrm.pairwise always with df = kenward_roger_linear: 1 cases differ
+..
+7 passed in 10.66s
+-- PASS method vectors (10.8 s)
+
+== [7/18] kit: specfirst kit assemble cdiscpilot01
+study data in git (E20): 966 maintained files checked, 0 problems
+kit cdiscpilot01: 70 files match their pinned SHA-256 (26 inputs, 44 gold) in /tmp/specfirst-clean-pHIUuS/specfirst/build/kits/cdiscpilot01
+-- PASS kit (0.1 s)
+
+== [8/18] P1 determinism: specfirst check cdiscpilot01 --twice (its first part)
+build into build/p1/cdiscpilot01/first: exit 0 (build cdiscpilot01: 10 datasets, 10181 nodes, 16428 edges, 72 files in /tmp/specfirst-clean-pHIUuS/specfirst/build/p1/cdiscpilot01/first)
+build into build/p1/cdiscpilot01/second: exit 0 (build cdiscpilot01: 10 datasets, 10181 nodes, 16428 edges, 72 files in /tmp/specfirst-clean-pHIUuS/specfirst/build/p1/cdiscpilot01/second)
+same      76c528ce523c6a13 76c528ce523c6a13 gold/ard/common-safety-displays.jsonl
+same      de20ea90cae0946d de20ea90cae0946d gold/ard/common-safety-displays.r.jsonl
+same      141d770b91a8e526 141d770b91a8e526 gold/ard/efficacy-adas.jsonl
+same      3aebe15842f649ae 3aebe15842f649ae gold/ard/efficacy-adas.r.jsonl
+same      dab855805eb11ddd dab855805eb11ddd gold/ard/efficacy-cibic.jsonl
+same      b27aedfac66ba10d b27aedfac66ba10d gold/ard/efficacy-cibic.r.jsonl
+same      a3d51da218b6839e a3d51da218b6839e gold/ars/common-safety-displays.json
+same      e0115ad0594db5d6 e0115ad0594db5d6 gold/ars/efficacy-adas.json
+same      b75667957d1af10d b75667957d1af10d gold/ars/efficacy-cibic.json
+same      98966f855b1f9a06 98966f855b1f9a06 gold/data/adam/adae.parquet
+same      87ea384e00bacdc3 87ea384e00bacdc3 gold/data/adam/adlbc.parquet
+same      d95331eea03d86b3 d95331eea03d86b3 gold/data/adam/adlbh.parquet
+same      182a39372904c356 182a39372904c356 gold/data/adam/adlbhy.parquet
+same      e16dc811e47eacc1 e16dc811e47eacc1 gold/data/adam/adqsadas.parquet
+same      d28be025f2926112 d28be025f2926112 gold/data/adam/adqscibc.parquet
+same      7c409eb6df376433 7c409eb6df376433 gold/data/adam/adqsnpix.parquet
+same      cc7e238ce918a8a7 cc7e238ce918a8a7 gold/data/adam/adsl.parquet
+same      9fc9404e60736ea5 9fc9404e60736ea5 gold/data/adam/adtte.parquet
+same      270cada0a4a60291 270cada0a4a60291 gold/data/adam/advs.parquet
+same      8183aecc041ac10d 8183aecc041ac10d gold/graph/coverage.json
+same      2112a17bd291b75f 2112a17bd291b75f gold/graph/edges.jsonl
+same      c30a7c7f62c9005d c30a7c7f62c9005d gold/graph/nodes.jsonl
+same      c41fec5b0e9045c6 c41fec5b0e9045c6 gold/grid/Out14-1-1.json
+same      01033a518df0ab68 01033a518df0ab68 gold/grid/Out14-1-1.shell.json
+same      a99694cc51ca6dda a99694cc51ca6dda gold/grid/Out14-3-01.json
+same      9d43bc35566aedb6 9d43bc35566aedb6 gold/grid/Out14-3-01.shell.json
+same      ea81056a2f7a09a7 ea81056a2f7a09a7 gold/grid/Out14-3-03.json
+same      8d05d76d044b0d4b 8d05d76d044b0d4b gold/grid/Out14-3-03.shell.json
+same      63d19de426b82af6 63d19de426b82af6 gold/grid/Out14-3-05.json
+same      9505fb8d303187c3 9505fb8d303187c3 gold/grid/Out14-3-05.shell.json
+same      d9f4fd283013d556 d9f4fd283013d556 gold/grid/Out14-3-1-1.json
+same      66cc3f41f701a880 66cc3f41f701a880 gold/grid/Out14-3-1-1.shell.json
+same      dd0359dabee17cd7 dd0359dabee17cd7 gold/grid/Out14-3-11.json
+same      7dc6971bc500481c 7dc6971bc500481c gold/grid/Out14-3-11.shell.json
+same      9499b533a7db9e45 9499b533a7db9e45 gold/grid/Out14-3-13.json
+same      bd3ab54d2deda6f9 bd3ab54d2deda6f9 gold/grid/Out14-3-13.shell.json
+same      20899fefd93792dd 20899fefd93792dd gold/grid/Out14-3-2-1.json
+same      efd66903d6a14ed4 efd66903d6a14ed4 gold/grid/Out14-3-2-1.shell.json
+same      5e0dc4af97af66a7 5e0dc4af97af66a7 gold/grid/Out14-3-3-1a.json
+same      2993e727a7f6036a 2993e727a7f6036a gold/grid/Out14-3-3-1a.shell.json
+same      add46ea61870d11e add46ea61870d11e gold/grid/Out14-3-3-1b.json
+same      9afe073bc0ad5dd4 9afe073bc0ad5dd4 gold/grid/Out14-3-3-1b.shell.json
+same      02234436394c2e76 02234436394c2e76 gold/out/Out14-1-1.html
+same      30947ad5f22a00d9 30947ad5f22a00d9 gold/out/Out14-1-1.shell.html
+same      566ee6659870e8c1 566ee6659870e8c1 gold/out/Out14-3-01.html
+same      75d30952a6da0847 75d30952a6da0847 gold/out/Out14-3-01.shell.html
+same      25d6b4b3f963f46d 25d6b4b3f963f46d gold/out/Out14-3-03.html
+same      35114b087567f9d9 35114b087567f9d9 gold/out/Out14-3-03.shell.html
+same      7bbddf23e9c7e6bd 7bbddf23e9c7e6bd gold/out/Out14-3-05.html
+same      c4fb4c09ec253ad4 c4fb4c09ec253ad4 gold/out/Out14-3-05.shell.html
+same      1f82f3853e82ded9 1f82f3853e82ded9 gold/out/Out14-3-1-1.html
+same      277bdff359f4431e 277bdff359f4431e gold/out/Out14-3-1-1.shell.html
+same      ef8fdf32d2d0cb7b ef8fdf32d2d0cb7b gold/out/Out14-3-11.html
+same      87669b13fc6a7051 87669b13fc6a7051 gold/out/Out14-3-11.shell.html
+same      047d07911ec08c11 047d07911ec08c11 gold/out/Out14-3-13.html
+same      5f5a8dddaa43277e 5f5a8dddaa43277e gold/out/Out14-3-13.shell.html
+same      89faca5f04ce14f2 89faca5f04ce14f2 gold/out/Out14-3-2-1.html
+same      be4c2c59c844fde9 be4c2c59c844fde9 gold/out/Out14-3-2-1.shell.html
+same      07677ba96f9e3aae 07677ba96f9e3aae gold/out/Out14-3-3-1a.html
+same      55e8adc753417927 55e8adc753417927 gold/out/Out14-3-3-1a.shell.html
+same      300b8b93650848ef 300b8b93650848ef gold/out/Out14-3-3-1b.html
+same      6eb0ea05d5673a10 6eb0ea05d5673a10 gold/out/Out14-3-3-1b.shell.html
+same      c219f3b1fce3ce3b c219f3b1fce3ce3b gold/resolved/adae.json
+same      0801da1da1f9b09e 0801da1da1f9b09e gold/resolved/adlbc.json
+same      c08b51b5d9edaf0a c08b51b5d9edaf0a gold/resolved/adlbh.json
+same      149e79b32a48012c 149e79b32a48012c gold/resolved/adlbhy.json
+same      c984b124c68bef94 c984b124c68bef94 gold/resolved/adqsadas.json
+same      ddcd7b62b6020aa6 ddcd7b62b6020aa6 gold/resolved/adqscibc.json
+same      5e29d4624ac55f52 5e29d4624ac55f52 gold/resolved/adqsnpix.json
+same      5b4ccf4019ca253e 5b4ccf4019ca253e gold/resolved/adsl.json
+same      2faaa1493e74c8c1 2faaa1493e74c8c1 gold/resolved/adtte.json
+same      b3c5b4f08f26ae5a b3c5b4f08f26ae5a gold/resolved/advs.json
+P1 determinism: 72 of 72 files have the same SHA-256 in both builds
+-- PASS P1 determinism (41.0 s)
+
+== [9/18] P2 reproduction: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its second part)
+ADSL      rows=   254 cols= 48 cells=   12192 mismatched=     0 storage_type_diffs=28
+ADAE      rows=  1191 cols= 55 cells=   65505 mismatched=     0 storage_type_diffs=38
+ADLBC     rows= 74264 cols= 46 cells= 3416144 mismatched=     0 storage_type_diffs=22
+ADLBH     rows= 49932 cols= 46 cells= 2296872 mismatched=     0 storage_type_diffs=22
+ADLBHY    rows=  9954 cols= 43 cells=  428022 mismatched=     0 storage_type_diffs=21
+ADQSADAS  rows= 12463 cols= 40 cells=  498520 mismatched=     0 storage_type_diffs=20
+ADQSCIBC  rows=   730 cols= 36 cells=   26280 mismatched=     0 storage_type_diffs=19
+ADQSNPIX  rows= 31140 cols= 41 cells= 1276740 mismatched=     0 storage_type_diffs=21
+ADTTE     rows=   254 cols= 26 cells=    6604 mismatched=     0 storage_type_diffs=14
+ADVS      rows= 32139 cols= 34 cells= 1092726 mismatched=     0 storage_type_diffs=16
+TOTAL cells=9119605 mismatched=0
+numbers equal within the tolerance but not exactly: 1869 cells, largest difference 4.5e-13
+storage type only, same values (reference -> built): large_string -> string in 221 columns
+P2 reproduction: 10 of 10 datasets equal their reference (numeric tolerance 1e-10)
+-- PASS P2 reproduction (0.4 s)
+
+== [10/18] trace: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its third part)
+dataset   columns to SDTM by rows literal  gaps
+ADSL           48      48       0       0     0
+ADAE           55      55       0       0     0
+ADLBC          46      46       1       0     0
+ADLBH          46      46       1       0     0
+ADLBHY         43      43       3       0     0
+ADQSADAS       40      40       1       0     0
+ADQSCIBC       36      36       5       0     0
+ADQSNPIX       41      41       3       0     0
+ADTTE          26      24       0       2     0
+ADVS           34      34       0       0     0
+TOTAL         415     413      14       2     0
+to SDTM: reaches SDTM columns through derives_from. by rows: those of them whose own rule reads no column
+and that reach SDTM only through a filter on rows (of a row template or of the specification).
+nodes: L0 287, L3 111, L4 415, L5 63, L6 4517, L7 4788
+edges: cites 750, computes 5408, derives_from 3269, reads 441, shows 6560
+cites edges: 750 imported, 40 with a verified quote, 0 approved by a person
+literal columns sit on rows of: adam:ADSL (2)
+claims ADAE       21 claims,  57 citations of kit documents ->  49 cites edges (one per column and span); 28 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBC      22 claims,  98 citations of kit documents ->  67 cites edges (one per column and span); 31 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBH      23 claims, 120 citations of kit documents ->  78 cites edges (one per column and span); 29 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADLBHY     23 claims, 102 citations of kit documents ->  74 cites edges (one per column and span); 49 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSADAS   22 claims,  92 citations of kit documents ->  83 cites edges (one per column and span); 43 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSCIBC   19 claims,  87 citations of kit documents ->  68 cites edges (one per column and span); 53 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADQSNPIX   24 claims,  89 citations of kit documents ->  74 cites edges (one per column and span); 27 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADSL       34 claims,  87 citations of kit documents ->  70 cites edges (one per column and span); 38 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADTTE      22 claims, 101 citations of kit documents ->  85 cites edges (one per column and span); 30 citations of programs or other files, not imported; 0 variables that are not output columns
+claims ADVS       12 claims,  80 citations of kit documents ->  58 cites edges (one per column and span); 20 citations of programs or other files, not imported; 0 variables that are not output columns
+grid Out14-1-1: 104 cells, 84 print a number; 84 of the 84 cells with results have a complete path to SDTM columns
+  through 147 ARD rows, 13 analyses, 12 ADaM columns, to 17 SDTM columns
+grid Out14-3-01: 51 cells, 40 print a number; 40 of the 40 cells with results have a complete path to SDTM columns
+  through 73 ARD rows, 7 analyses, 25 ADaM columns, to 18 SDTM columns
+grid Out14-3-03: 51 cells, 40 print a number; 40 of the 40 cells with results have a complete path to SDTM columns
+  through 73 ARD rows, 7 analyses, 25 ADaM columns, to 18 SDTM columns
+grid Out14-3-05: 51 cells, 40 print a number; 40 of the 40 cells with results have a complete path to SDTM columns
+  through 73 ARD rows, 7 analyses, 25 ADaM columns, to 18 SDTM columns
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+  through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
+grid Out14-3-11: 24 cells, 15 print a number; 15 of the 15 cells with results have a complete path to SDTM columns
+  through 24 ARD rows, 4 analyses, 26 ADaM columns, to 18 SDTM columns
+grid Out14-3-13: 100 cells, 78 print a number; 78 of the 78 cells with results have a complete path to SDTM columns
+  through 141 ARD rows, 10 analyses, 22 ADaM columns, to 17 SDTM columns
+grid Out14-3-2-1: 1275 cells, 1178 print a number; 1178 of the 1178 cells with results have a complete path to SDTM columns
+  through 1940 ARD rows, 10 analyses, 13 ADaM columns, to 13 SDTM columns
+grid Out14-3-3-1a: 1590 cells, 1263 print a number; 1263 of the 1263 cells with results have a complete path to SDTM columns
+  through 2019 ARD rows, 3 analyses, 14 ADaM columns, to 19 SDTM columns
+grid Out14-3-3-1b: 1515 cells, 1263 print a number; 1263 of the 1263 cells with results have a complete path to SDTM columns
+  through 2019 ARD rows, 3 analyses, 14 ADaM columns, to 19 SDTM columns
+trace: complete
+-- PASS trace (4.6 s)
+
+== [11/18] results: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its fourth part)
+ARS schema (gold/spec/ars/ars_ldm.schema.json): gold/spec/ars/common-safety-displays.json fits; gold/ars/common-safety-displays.json fits
+results common-safety-displays, Python engine: 3735 embedded results, 3711 reproduced as printed, 23 with another value, 1 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 1 (each needs a class, like the others)
+    ard:An03_01_Age_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_5_Q1/AnlsGrouping_01_Trt_3: embedded 70, ours 70.5
+  equal only at the edge of the allowance: 2
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_3_SD/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_2/AnlsGrouping_09_Visit_04: embedded 9.5960516021, ours 9.596051602049998
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_09: embedded 0.07719298250000001, ours 0.0771929824561402
+  explained:   1 reference_error, proof between_equal_values
+  explained:   1 reference_error, proof no_alternative
+  explained:   1 reference_error, proof no_records
+  explained:  22 reference_error, proof value_of_other_result
+results common-safety-displays, Python engine: 0 unexplained
+results common-safety-displays, R engine: 3735 embedded results, 3711 reproduced as printed, 23 with another value, 1 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 1 (each needs a class, like the others)
+    ard:An03_01_Age_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_5_Q1/AnlsGrouping_01_Trt_3: embedded 70, ours 70.5
+  equal only at the edge of the allowance: 2
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_3_SD/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_2/AnlsGrouping_09_Visit_04: embedded 9.5960516021, ours 9.596051602049998
+    ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_2_Mean/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_09: embedded 0.07719298250000001, ours 0.0771929824561402
+  explained:   1 reference_error, proof between_equal_values
+  explained:   1 reference_error, proof no_alternative
+  explained:   1 reference_error, proof no_records
+  explained:  22 reference_error, proof value_of_other_result
+results common-safety-displays, R engine: 0 unexplained
+results common-safety-displays: 504 results of ours that the reference does not list: An07_09_Soc_Comp_ByTrt_PlacHigh 21, An07_09_Soc_Comp_ByTrt_PlacLow 21, An07_10_SocPt_Comp_ByTrt_PlacHigh 186, An07_10_SocPt_Comp_ByTrt_PlacLow 180, An08_02_ChgBl_Summ_ByTrt 96
+results common-safety-displays: gold/ars/common-safety-displays.json carries the 4238 results of the Python ARD as raw values
+results common-safety-displays, engines: 4238 results in both, 0 disagree; largest relative difference 2.4e-13 (allowed 1e-09)
+ARS schema (gold/spec/ars/ars_ldm.schema.json): gold/events/efficacy-adas.json fits; gold/ars/efficacy-adas.json fits
+results efficacy-adas, Python engine: 0 embedded results, 0 reproduced as printed, 0 with another value, 0 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 0 (each needs a class, like the others)
+results efficacy-adas, Python engine: 0 unexplained
+results efficacy-adas, R engine: 0 embedded results, 0 reproduced as printed, 0 with another value, 0 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 0 (each needs a class, like the others)
+results efficacy-adas, R engine: 0 unexplained
+results efficacy-adas: 331 results of ours that the reference does not list: An_ADAS_MMRM_LSM 12, An_ADAS_MMRM_LSM_Avg 12, An_ADAS_MMRM_PwLow 10, An_ADAS_MMRM_PwLow_Avg 10, An_ADAS_MMRM_PwPbo 10, An_ADAS_MMRM_PwPbo_Avg 10, An_ADAS_W08_Aval 18, An_ADAS_W08_Base 18, An_ADAS_W08_Chg 18, An_ADAS_W08_Dose 2, An_ADAS_W08_LSM 12, An_ADAS_W08_PwLow 10, An_ADAS_W08_PwPbo 10, An_ADAS_W16_Aval 18, An_ADAS_W16_Base 18, An_ADAS_W16_Chg 18, An_ADAS_W16_Dose 2, An_ADAS_W16_LSM 12, An_ADAS_W16_PwLow 10, An_ADAS_W16_PwPbo 10, An_ADAS_W24_Aval 18, An_ADAS_W24_Base 18, An_ADAS_W24_Chg 18, An_ADAS_W24_Dose 2, An_ADAS_W24_LSM 12, An_ADAS_W24_PwLow 10, An_ADAS_W24_PwPbo 10, An_EFF_N 3
+results efficacy-adas: gold/ars/efficacy-adas.json carries the 331 results of the Python ARD as raw values
+results efficacy-adas: 166 results of model-based methods (R only, section 7.3): the gold ARD holds them as the R engine gave them, each stamped with the registry's hash of its options
+results efficacy-adas, engines: 165 results in both, 0 disagree; largest relative difference 2.1e-16 (allowed 1e-09)
+ARS schema (gold/spec/ars/ars_ldm.schema.json): gold/events/efficacy-cibic.json fits; gold/ars/efficacy-cibic.json fits
+results efficacy-cibic, Python engine: 0 embedded results, 0 reproduced as printed, 0 with another value, 0 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 0 (each needs a class, like the others)
+results efficacy-cibic, Python engine: 0 unexplained
+results efficacy-cibic, R engine: 0 embedded results, 0 reproduced as printed, 0 with another value, 0 without a result of ours
+  reproduced as printed, but not at the precision of the result pattern: 0 (each needs a class, like the others)
+results efficacy-cibic, R engine: 0 unexplained
+results efficacy-cibic: 141 results of ours that the reference does not list: An_CIBIC_EFF_N 3, An_CIBIC_W08_Cat 42, An_CIBIC_W08_Cmh 1, An_CIBIC_W08_N 3, An_CIBIC_W16_Cat 42, An_CIBIC_W16_Cmh 1, An_CIBIC_W16_N 3, An_CIBIC_W24_Cat 42, An_CIBIC_W24_Cmh 1, An_CIBIC_W24_N 3
+results efficacy-cibic: gold/ars/efficacy-cibic.json carries the 141 results of the Python ARD as raw values
+results efficacy-cibic, engines: 141 results in both, 0 disagree; largest relative difference 9.7e-16 (allowed 1e-09)
+results: pass
+-- PASS results (3.2 s)
+
+== [12/18] grids: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its last part), the ARS example
+grid Out14-1-1: 104 cells show 147 results; 90 cells equal the reference's formatted values, 14 differ, 14 of them with one class
+  14 cells differ by a result classed reference_error
+grid Out14-1-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-1-1: its mock shell against the table shell AE_Summary_Table_Shell.pdf: 9 rows held, 8 rows of the shell with cells
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+grid Out14-3-1-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-2-1: 1275 cells show 1940 results; 866 cells equal the reference's formatted values, 1 differ, 1 of them with one class
+  1 cells differ by a result classed reference_error
+  results the reference gives no formatted value for: 408 (their cells are not compared)
+grid Out14-3-2-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-3-1a: its mock shell against the table shell Vitals_Obs_ChgBaseline_Table_Shell.pdf: 265 rows held, 10 rows of the shell with cells
+grid Out14-3-3-1a: 1590 cells show 2019 results; 1523 cells equal the reference's formatted values, 67 differ, 67 of them with one class
+  63 cells differ by a result classed reference_error
+  4 cells differ by a result classed rule_choice
+grid Out14-3-3-1a: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-3-1b: its mock shell against the table shell Vitals_Obs_ChgBaseline_Table_Shell_vertical.pdf: 505 rows held, 15 rows of the shell with cells
+grid Out14-3-3-1b: 1515 cells show 2019 results; 1448 cells equal the reference's formatted values, 67 differ, 67 of them with one class
+  63 cells differ by a result classed reference_error
+  4 cells differ by a result classed rule_choice
+grid Out14-3-3-1b: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-01 against CSR Table 14-3.01: 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+  cell:Out14-3-01/r14/c2: ours '(-2.08;1.15)', CSR '(-2.1;1.1)' (rule_choice)
+  cell:Out14-3-01/r14/c3: ours '(-2.66;0.65)', CSR '(-2.7;0.7)' (rule_choice)
+  cell:Out14-3-01/r17/c3: ours '(-2.19;1.11)', CSR '(-2.2;1.1)' (rule_choice)
+grid Out14-3-01: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-03 against CSR Table 14-3.03: 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+  cell:Out14-3-03/r14/c2: ours '(-0.20;2.36)', CSR '(-0.2;2.4)' (rule_choice)
+  cell:Out14-3-03/r14/c3: ours '(-1.10;1.53)', CSR '(-1.1;1.5)' (rule_choice)
+  cell:Out14-3-03/r17/c3: ours '(-2.17;0.44)', CSR '(-2.2;0.4)' (rule_choice)
+grid Out14-3-03: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-05 against CSR Table 14-3.05: 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+  cell:Out14-3-05/r14/c2: ours '(-1.78;1.24)', CSR '(-1.8;1.2)' (rule_choice)
+  cell:Out14-3-05/r14/c3: ours '(-2.23;0.88)', CSR '(-2.2;0.9)' (rule_choice)
+  cell:Out14-3-05/r17/c3: ours '(-1.95;1.14)', CSR '(-1.9;1.1)' (rule_choice)
+grid Out14-3-05: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-11 against CSR Table 14-3.11: 24 cells, 15 of them printed in the CSR; 12 equal the CSR, 12 differ, 12 of them with one class and a proof that holds
+  cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)' (rule_choice)
+  cell:Out14-3-11/r2/c2: ours '1.7 (0.77)', CSR '1.5 (0.52)' (rule_choice)
+  cell:Out14-3-11/r2/c3: ours '1.5 (0.84)', CSR '1.1 (0.56)' (rule_choice)
+  cell:Out14-3-11/r3/c2: ours '0.560', CSR '0.955' (rule_choice)
+  cell:Out14-3-11/r3/c3: ours '0.440', CSR '0.556' (rule_choice)
+  cell:Out14-3-11/r4/c2: ours '-0.6 (1.02)', CSR '-0.0 (0.70)' (rule_choice)
+  cell:Out14-3-11/r4/c3: ours '-0.8 (1.07)', CSR '-0.4 (0.72)' (rule_choice)
+  cell:Out14-3-11/r5/c2: ours '(-2.60;1.41)', CSR '(-1.4;1.3)' (rule_choice)
+  cell:Out14-3-11/r5/c3: ours '(-2.94;1.29)', CSR '(-1.9;1.0)' (rule_choice)
+  cell:Out14-3-11/r6/c3: ours '0.835', CSR '0.606' (rule_choice)
+  cell:Out14-3-11/r7/c3: ours '-0.2 (1.12)', CSR '-0.4 (0.75)' (rule_choice)
+  cell:Out14-3-11/r8/c3: ours '(-2.45;1.99)', CSR '(-1.9;1.1)' (rule_choice)
+grid Out14-3-11: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-13 against CSR Table 14-3.13: 100 cells, 78 of them printed in the CSR; 76 equal the CSR, 24 differ, 24 of them with one class and a proof that holds
+  cell:Out14-3-13/r10/c4: ours '0.400', CSR '0.4003' (rule_choice)
+  cell:Out14-3-13/r11/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r11/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r11/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r12/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r16/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r17/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r17/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r17/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r18/c4: ours '0.618', CSR '0.6180' (rule_choice)
+  cell:Out14-3-13/r19/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r19/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r19/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727' (rule_choice)
+  cell:Out14-3-13/r20/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r25/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r25/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r25/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r3/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r3/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r3/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r9/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r9/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r9/c3: ours '0 (0%)', CSR '0' (rule_choice)
+grid Out14-3-13: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grids: 10 outputs, pass
+-- PASS grids (3.2 s)
+
+== [13/18] efficacy: specfirst check cdiscpilot01 --build build/p1/cdiscpilot01/first (its last part), the CSR tables
+grid Out14-1-1: 104 cells show 147 results; 90 cells equal the reference's formatted values, 14 differ, 14 of them with one class
+  14 cells differ by a result classed reference_error
+grid Out14-1-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-1-1: its mock shell against the table shell AE_Summary_Table_Shell.pdf: 9 rows held, 8 rows of the shell with cells
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+grid Out14-3-1-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-2-1: 1275 cells show 1940 results; 866 cells equal the reference's formatted values, 1 differ, 1 of them with one class
+  1 cells differ by a result classed reference_error
+  results the reference gives no formatted value for: 408 (their cells are not compared)
+grid Out14-3-2-1: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-3-1a: its mock shell against the table shell Vitals_Obs_ChgBaseline_Table_Shell.pdf: 265 rows held, 10 rows of the shell with cells
+grid Out14-3-3-1a: 1590 cells show 2019 results; 1523 cells equal the reference's formatted values, 67 differ, 67 of them with one class
+  63 cells differ by a result classed reference_error
+  4 cells differ by a result classed rule_choice
+grid Out14-3-3-1a: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-3-1b: its mock shell against the table shell Vitals_Obs_ChgBaseline_Table_Shell_vertical.pdf: 505 rows held, 15 rows of the shell with cells
+grid Out14-3-3-1b: 1515 cells show 2019 results; 1448 cells equal the reference's formatted values, 67 differ, 67 of them with one class
+  63 cells differ by a result classed reference_error
+  4 cells differ by a result classed rule_choice
+grid Out14-3-3-1b: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-01 against CSR Table 14-3.01: 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+  cell:Out14-3-01/r14/c2: ours '(-2.08;1.15)', CSR '(-2.1;1.1)' (rule_choice)
+  cell:Out14-3-01/r14/c3: ours '(-2.66;0.65)', CSR '(-2.7;0.7)' (rule_choice)
+  cell:Out14-3-01/r17/c3: ours '(-2.19;1.11)', CSR '(-2.2;1.1)' (rule_choice)
+grid Out14-3-01: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-03 against CSR Table 14-3.03: 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+  cell:Out14-3-03/r14/c2: ours '(-0.20;2.36)', CSR '(-0.2;2.4)' (rule_choice)
+  cell:Out14-3-03/r14/c3: ours '(-1.10;1.53)', CSR '(-1.1;1.5)' (rule_choice)
+  cell:Out14-3-03/r17/c3: ours '(-2.17;0.44)', CSR '(-2.2;0.4)' (rule_choice)
+grid Out14-3-03: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-05 against CSR Table 14-3.05: 51 cells, 40 of them printed in the CSR; 48 equal the CSR, 3 differ, 3 of them with one class and a proof that holds
+  cell:Out14-3-05/r14/c2: ours '(-1.78;1.24)', CSR '(-1.8;1.2)' (rule_choice)
+  cell:Out14-3-05/r14/c3: ours '(-2.23;0.88)', CSR '(-2.2;0.9)' (rule_choice)
+  cell:Out14-3-05/r17/c3: ours '(-1.95;1.14)', CSR '(-1.9;1.1)' (rule_choice)
+grid Out14-3-05: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-11 against CSR Table 14-3.11: 24 cells, 15 of them printed in the CSR; 12 equal the CSR, 12 differ, 12 of them with one class and a proof that holds
+  cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)' (rule_choice)
+  cell:Out14-3-11/r2/c2: ours '1.7 (0.77)', CSR '1.5 (0.52)' (rule_choice)
+  cell:Out14-3-11/r2/c3: ours '1.5 (0.84)', CSR '1.1 (0.56)' (rule_choice)
+  cell:Out14-3-11/r3/c2: ours '0.560', CSR '0.955' (rule_choice)
+  cell:Out14-3-11/r3/c3: ours '0.440', CSR '0.556' (rule_choice)
+  cell:Out14-3-11/r4/c2: ours '-0.6 (1.02)', CSR '-0.0 (0.70)' (rule_choice)
+  cell:Out14-3-11/r4/c3: ours '-0.8 (1.07)', CSR '-0.4 (0.72)' (rule_choice)
+  cell:Out14-3-11/r5/c2: ours '(-2.60;1.41)', CSR '(-1.4;1.3)' (rule_choice)
+  cell:Out14-3-11/r5/c3: ours '(-2.94;1.29)', CSR '(-1.9;1.0)' (rule_choice)
+  cell:Out14-3-11/r6/c3: ours '0.835', CSR '0.606' (rule_choice)
+  cell:Out14-3-11/r7/c3: ours '-0.2 (1.12)', CSR '-0.4 (0.75)' (rule_choice)
+  cell:Out14-3-11/r8/c3: ours '(-2.45;1.99)', CSR '(-1.9;1.1)' (rule_choice)
+grid Out14-3-11: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grid Out14-3-13 against CSR Table 14-3.13: 100 cells, 78 of them printed in the CSR; 76 equal the CSR, 24 differ, 24 of them with one class and a proof that holds
+  cell:Out14-3-13/r10/c4: ours '0.400', CSR '0.4003' (rule_choice)
+  cell:Out14-3-13/r11/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r11/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r11/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r12/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r16/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r17/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r17/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r17/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r18/c4: ours '0.618', CSR '0.6180' (rule_choice)
+  cell:Out14-3-13/r19/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r19/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r19/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727' (rule_choice)
+  cell:Out14-3-13/r20/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r25/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r25/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r25/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r3/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r3/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r3/c3: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r9/c1: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r9/c2: ours '0 (0%)', CSR '0' (rule_choice)
+  cell:Out14-3-13/r9/c3: ours '0 (0%)', CSR '0' (rule_choice)
+grid Out14-3-13: the R engine's rows give the same grid; the mock shell and the two pages hold; 0 problems
+grids: 10 outputs, pass
+efficacy: 3 tables, 153 cells; 144 equal the CSR; classified differences: 9 rule_choice
+-- PASS efficacy (3.2 s)
+
+== [14/18] decisions: specfirst.machine.build.decision_checks on build/p1/cdiscpilot01/first
+decisions: 67 records, 67 IDs; 99 options of analyses held against the decisions that set them; the last visit held on the model records of 3 analyses; 102 quotes held against their documents; 0 problems
+decisions: citations of sources that are no document of the kit, not checked by script: answers 5
+decisions: by class: 33 document_rule, 2 gold_quirk, 12 house_default, 17 no class (conflict), 3 study_input; by status: 3 asked, 17 conflict, 12 default, 35 stated
+decisions: pass
+-- PASS decisions (0.7 s)
+
+== [15/18] pilot tests: SPECFIRST_STRICT=1 pytest tests/pilot -s -q
+
+--- A1-resolve
+ADSL      composed specification equals Pilot 7's snapshot: True
+ADAE      composed specification equals Pilot 7's snapshot: True
+ADLBC     composed specification equals Pilot 7's snapshot: True
+ADLBH     composed specification equals Pilot 7's snapshot: True
+ADLBHY    composed specification equals Pilot 7's snapshot: True
+ADQSADAS  composed specification equals Pilot 7's snapshot: True
+ADQSCIBC  composed specification equals Pilot 7's snapshot: True
+ADQSNPIX  composed specification equals Pilot 7's snapshot: True
+ADTTE     composed specification equals Pilot 7's snapshot: True
+ADVS      composed specification equals Pilot 7's snapshot: True
+Pilot 7 pins yamaa at git revision c039509082b545fe913c00d1686426c3d245778c (cdiscpilot01/program/adam/python/requirements.txt)
+snapshots were made with yamaa 0.7.0 built from git revision c039509082b545fe913c00d1686426c3d245778c
+installed: yamaa 0.7.0 (wheel)
+.
+--- A2-runner
+ADSL         254 rows x  48 columns: runner equals yamaa's project run: True
+ADAE        1191 rows x  55 columns: runner equals yamaa's project run: True
+ADLBC      74264 rows x  46 columns: runner equals yamaa's project run: True
+ADLBH      49932 rows x  46 columns: runner equals yamaa's project run: True
+ADLBHY      9954 rows x  43 columns: runner equals yamaa's project run: True
+ADQSADAS   12463 rows x  40 columns: runner equals yamaa's project run: True
+ADQSCIBC     730 rows x  36 columns: runner equals yamaa's project run: True
+ADQSNPIX   31140 rows x  41 columns: runner equals yamaa's project run: True
+ADTTE        254 rows x  26 columns: runner equals yamaa's project run: True
+ADVS       32139 rows x  34 columns: runner equals yamaa's project run: True
+.
+--- A3-lineage
+ADSL       305 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADAE       167 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBC      182 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBH      184 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADLBHY     347 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSADAS   119 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSCIBC   102 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADQSNPIX   652 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADTTE      110 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+ADVS       152 elements: dependencies equal Pilot 7's: True; unresolved ours [] theirs []
+.
+--- A4-unread
+SDTM columns with a node in the graph: 111; without one: 202, every one of them changed (1 all missing, filled, 70 constant, emptied, 131 rolled)
+ADaM datasets that changed: none
+.
+--- A5-adapted
+recorded as adapted: src/specfirst/machine/lineage.py shares 73 lines with cached sources
+recorded as adapted: src/specfirst/machine/runner.py shares 3 lines with cached sources
+compared 197 Python files of ours with 673 of p7, yamaa, p6, ars; the most lines a file that is not recorded shares: 2 (allowed: 2)
+compared 6 R files of ours with 827 of 13 cached sources; the most lines a file that is not recorded shares: 2 (allowed: 2)
+.
+--- A6-engine
+Python engine: 31 analyses on 23 columns of ADAE, ADSL, ADVS: 4238 rows in 0.34 s (the spike: about 3 minutes; the target: under 10 seconds)
+embedded results: 3735; reproduced as printed: 3711
+rows per analysis: 31 analyses, 4238 rows; expected 31 analyses, 4238 rows
+.
+6 passed in 51.38s
+-- PASS pilot tests (51.6 s)
+
+== [16/18] planted defects: SPECFIRST_STRICT=1 pytest tests/defects -s -q
+............
+--- D1-arms
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+low and high dose exchanged: check passes: False; 1836 of 3735 reproduced; 1898 other values, of which 1896 are our value of the other arm
+entries with the proof value_of_other_result that are reproduced now: 22 of 22
+low and high dose exchanged in An03_03_Sex_Summ_ByTrt only: 8 values change; check passes: False; unexplained 8, of which stale entries 0; against the other engine 8 disagree
+low and high dose exchanged in An03_01_Age_Summ_ByTrt only: 12 values change; check passes: False; unexplained 12, of which stale entries 0; against the other engine 12 disagree
+low and high dose exchanged in An07_03_SerTEAE_Summ_ByTrt only: 4 values change; check passes: False; unexplained 4, of which stale entries 0; against the other engine 4 disagree
+low and high dose exchanged in An08_01_Obs_Summ_ByTrt only: 600 values change; check passes: False; unexplained 31, of which stale entries 0; against the other engine 600 disagree
+low and high dose exchanged in An03_04_Ethnic_Summ_ByTrt only: 8 values change; check passes: False; unexplained 8, of which stale entries 8; against the other engine 8 disagree
+.
+--- D2-set
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+safety set read from EFFFL: check passes: False; 2754 of 3735 reproduced; differences in 28 analyses
+intent-to-treat set in place of the safety set: 0 results change (both sets hold the same subjects in the pilot: not separable on these data)
+.
+--- D3-quantile
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+quantile definition r7: check passes: False; 3662 of 3735 reproduced as printed, 49 fewer (E4: 49); at the precision of the result pattern 97 new differences: {'Q1': 45, 'Q3': 52}
+.
+--- D4-subset
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+An07_01_TEAE_Summ_ByTrt without its data subset: check passes: False; new differences 4
+each of the 18 analyses with a data subset, one at a time:
+  caught: 15
+  changes no result: 1 (An08_01_Obs_Summ_ByTrt)
+  changes only results the reference does not list: 2 (An07_09_Soc_Comp_ByTrt_PlacLow, An08_02_ChgBl_Summ_ByTrt)
+.
+--- D5-engines
+unchanged: engines: 4238 results in both, 0 disagree; largest relative difference 2.4e-13 (allowed 1e-09)
+R engine alone, low and high dose exchanged: 1930 results disagree
+R engine alone, safety set read from EFFFL: 1287 results disagree
+R engine alone, quantile definition r7: 2160 results disagree
+R engine alone, An07_01_TEAE_Summ_ByTrt without its data subset: 4 results disagree
+.
+--- D6-proofs
+unchanged: 3711 of 3735 reproduced, 25 explained, check passes: True
+A3 an exchanged count, proven by the placebo arm, which has the same value: check passes: False; the proof (value_of_other_result) does not hold: the reference's value of ard:An03_04_Ethnic_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/AnlsGrouping_05_Ethnic_1 (3) is not our value of this result (6): the two are not exchanged
+A8 the quartile of age, by an option with one value: check passes: False; the proof (no_alternative) does not hold: no value of sd_denominator changes a result of the operation Mth02_ContVar_Summ_ByGrp_5_Q1: the option says nothing about this result
+A9 an exchanged mean, as the same under every quantile definition: check passes: False; the proof (same_under_every) does not hold: no value of quantile_definition changes a result of the operation Mth02_ContVar_Summ_ByGrp_2_Mean: the option says nothing about this result
+A10 the same mean, as given by no quantile definition: check passes: False; the proof (no_alternative) does not hold: no value of quantile_definition changes a result of the operation Mth02_ContVar_Summ_ByGrp_2_Mean: the option says nothing about this result
+A11 no records, by a count of 0 of another analysis: check passes: False; the proof (no_records) does not hold: ard:An03_05_Race_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/AnlsGrouping_04_Race_1 is not a count of the cell's own groups in one group of AnlsGrouping_01_Trt
+no records, by the count of one of the two compared arms: check passes: False; the proof (no_records) does not hold: the counts are for the groups AnlsGrouping_01_Trt_1 of AnlsGrouping_01_Trt; the test compares AnlsGrouping_01_Trt_1, AnlsGrouping_01_Trt_2: one count per compared group is needed
+the median of height, as the same under every quantile definition: check passes: False; the proof (same_under_every) does not hold: no value of quantile_definition changes a result of the operation Mth02_ContVar_Summ_ByGrp_4_Median: the option says nothing about this result
+An08_01_Obs_Summ_ByTrt with its population read from EFFFL: 243 differences, 45 of them quartiles and medians of the analysis; proven errors of the reference: {'between_equal_values': 0, 'same_under_every': 0}; without the question of the n, the minimum and the maximum: {'between_equal_values': 16, 'same_under_every': 20}
+.
+--- D7-display
+grid Out14-3-1-1: 27 cells show 51 results; 27 cells equal the reference's formatted values, 0 differ, 0 of them with one class
+the mock shell against AE_Summary_Table_Shell.pdf: 9 rows held, 8 rows of the shell with cells, 0 problems
+layout, the percent under the pattern (XX.X), without the blank: 24 cells differ, 40 problems
+layout, the percent with two decimals: 24 cells differ, 40 problems
+layout, the count with one decimal: 24 cells differ, 40 problems
+layout, the header count without its brackets: 3 cells differ, 4 problems
+layout, the percent in place of the count: 24 cells differ, 64 problems
+layout, the last row left out: 0 cells differ, 7 problems
+layout, the header left out: 0 cells differ, 3 problems
+layout, the first two rows in the other order: 0 cells differ, 5 problems
+layout, the percent before the count: 0 cells differ, 16 problems
+layout, another text between the count and the percent: 0 cells differ, 16 problems
+layout, the header as N={N}: 0 cells differ, 1 problems
+layout, the count under the mask XXX (the same texts, another shell): 0 cells differ, 16 problems
+layout, another label of a row: 0 cells differ, 2 problems
+layout, the rows without the line above them: 0 cells differ, 1 problems
+layout, the percent of the second row in the first: 0 cells differ, 1 problems
+results, low and high dose exchanged in An07_01_TEAE_Summ_ByTrt: 2 cells differ, 2 problems
+results, every percent of the first row with the placebo arm as its denominator: 2 cells differ, 2 problems
+grid file, a text changed: 1 problems, for example: cell:Out14-3-1-1/r2/c1: the text '66 ( 76.7)' is not what the layout and the ARD give
+grid file, the texts of two cells of a row exchanged: 2 problems, for example: cell:Out14-3-1-1/r2/c1: the text '76 ( 90.5)' is not what the layout and the ARD give
+grid file, the cells of a row in another order: 1 problems, for example: row r2: its cells are not one per column, in order
+grid file, the ARD rows of a cell taken from the next row: 1 problems, for example: cell:Out14-3-1-1/r2/c1: its ARD rows are not those the layout shows there
+not separable on these data: the rounding rule; results of the output that lie on a half at their displayed decimals: 0 of 51
+.
+--- D8-trace
+grid Out14-1-1: 104 cells, 84 print a number; 84 of the 84 cells with results have a complete path to SDTM columns
+  through 147 ARD rows, 13 analyses, 12 ADaM columns, to 17 SDTM columns
+grid Out14-3-01: 51 cells, 40 print a number; 40 of the 40 cells with results have a complete path to SDTM columns
+  through 73 ARD rows, 7 analyses, 25 ADaM columns, to 18 SDTM columns
+grid Out14-3-03: 51 cells, 40 print a number; 40 of the 40 cells with results have a complete path to SDTM columns
+  through 73 ARD rows, 7 analyses, 25 ADaM columns, to 18 SDTM columns
+grid Out14-3-05: 51 cells, 40 print a number; 40 of the 40 cells with results have a complete path to SDTM columns
+  through 73 ARD rows, 7 analyses, 25 ADaM columns, to 18 SDTM columns
+grid Out14-3-1-1: 27 cells, 27 print a number; 27 of the 27 cells with results have a complete path to SDTM columns
+  through 51 ARD rows, 9 analyses, 15 ADaM columns, to 15 SDTM columns
+grid Out14-3-11: 24 cells, 15 print a number; 15 of the 15 cells with results have a complete path to SDTM columns
+  through 24 ARD rows, 4 analyses, 26 ADaM columns, to 18 SDTM columns
+grid Out14-3-13: 100 cells, 78 print a number; 78 of the 78 cells with results have a complete path to SDTM columns
+  through 141 ARD rows, 10 analyses, 22 ADaM columns, to 17 SDTM columns
+grid Out14-3-2-1: 1275 cells, 1178 print a number; 1178 of the 1178 cells with results have a complete path to SDTM columns
+  through 1940 ARD rows, 10 analyses, 13 ADaM columns, to 13 SDTM columns
+grid Out14-3-3-1a: 1590 cells, 1263 print a number; 1263 of the 1263 cells with results have a complete path to SDTM columns
+  through 2019 ARD rows, 3 analyses, 14 ADaM columns, to 19 SDTM columns
+grid Out14-3-3-1b: 1515 cells, 1263 print a number; 1263 of the 1263 cells with results have a complete path to SDTM columns
+  through 2019 ARD rows, 3 analyses, 14 ADaM columns, to 19 SDTM columns
+shows: 51 results changed one at a time, 4187 results without a shows edge changed at once; 0 problems
+reads: 31 analyses; for each, the columns without a reads edge emptied and rolled (1096 changes of a column in all), then the columns it reads emptied; for 14 of them the results computed from it alone, against its own reads edges alone; 0 problems
+reads: 31 analyses; for each, the columns without a reads edge emptied and rolled (1098 changes of a column in all), then the columns it reads emptied; for 14 of them the results computed from it alone, against its own reads edges alone; 4 problems
+planted, the reads edge from An07_01_TEAE_Summ_ByTrt to ADAE.TRTEMFL left out (1 edges): 4 problems, for example: ars:An07_01_TEAE_Summ_ByTrt: with the 19 columns it has no reads edge to emptied, 6 of its 6 results change, for example ard:An07_01_TEAE_Summ_ByTrt/M
+reads: 31 analyses; for each, the columns without a reads edge emptied and rolled (1096 changes of a column in all), then the columns it reads emptied; for 14 of them the results computed from it alone, against its own reads edges alone; 1 problems
+planted, the reads edge from An07_01_TEAE_Summ_ByTrt to ADSL.SAFFL left out (1 edges): 1 problems, for example: ars:An07_01_TEAE_Summ_ByTrt: with the 19 columns it has no reads edge to emptied, 3 of its 3 results computed from it alone change, for example ard:An
+shows: 51 results changed one at a time, 4189 results without a shows edge changed at once; 3 problems
+planted, the shows edges of cell:Out14-3-1-1/r2/c1 left out (2 edges): 3 problems, for example: ard:An07_01_TEAE_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1: changing it changes the cells ['cell:Out14-3-1-1/r2/c1']; its shows edg
+planted in the files, a result node left out (1 records): 2 problems of Out14-3-1-1, for example: cell:Out14-3-1-1/r2/c1: ard:An07_01_TEAE_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1 has no node
+planted in the files, every computes edge left out (5408 records): 103 problems of Out14-3-1-1, for example: cell:Out14-3-1-1/r1/c1: ard:An01_05_SAF_Summ_ByTrt/Mth01_CatVar_Count_ByGrp_1_n/AnlsGrouping_01_Trt_1 has no computes edge
+planted in the files, every reads edge left out (441 records): 205 problems of Out14-3-1-1, for example: cell:Out14-3-1-1/r1/c1: ars:An01_05_SAF_Summ_ByTrt has no node or no reads edge
+planted in the files, the reads edge from An07_01_TEAE_Summ_ByTrt to ADSL.SAFFL left out (1 records): 7 problems of Out14-3-1-1, for example: cell:Out14-3-1-1/r2/c1: ars:An07_01_TEAE_Summ_ByTrt: coverage.json records the reads ['adam:ADAE.TRTEMFL', 'adam:ADAE.USUBJID', 'adam:ADSL.SAFFL', 'ad
+planted in the files, the computes edge of one percent to the analysis of its denominator left out (1 records): 2 problems of Out14-3-1-1, for example: cell:Out14-3-1-1/r2/c1: ard:An07_01_TEAE_Summ_ByTrt/Mth01_CatVar_Summ_ByGrp_2_pct/AnlsGrouping_01_Trt_1: its computes edges go to ['ars:An07_01_TEAE_S
+planted in the files, coverage.json: An07_01_TEAE_Summ_ByTrt reads one column only (0 records): 4 problems of Out14-3-1-1, for example: cell:Out14-3-1-1/r2/c1: ars:An07_01_TEAE_Summ_ByTrt: coverage.json records the reads ['adam:ADAE.TRTEMFL'], the edges are ['adam:ADAE.TRTEMFL', 'adam:
+.
+--- D9-efficacy
+unchanged: 0 problems
+planted, the ANCOVA without the baseline covariate: 19 problems, for example: Out14-3-01: cell:Out14-3-01/r11/c3: ours '0.253', CSR '0.245': a difference with no class
+planted, the dose as the rank of the group: 3 problems, for example: Out14-3-01: cell:Out14-3-01/r11/c3: ours '0.232', CSR '0.245': a difference with no class
+planted, the site in place of the pooled site group: 26 problems, for example: Out14-3-01: cell:Out14-3-01/r11/c3: ours '0.283', CSR '0.245': a difference with no class
+planted, the comparisons with asymptotic degrees of freedom: 8 problems, for example: Out14-3-01: cell:Out14-3-01/r12/c2: ours '0.568', CSR '0.569': a difference with no class
+planted, the comparison with placebo made against the low dose: 3 problems, for example: Out14-3-01: the grid cannot be built: 5 results of the layout are not in the ARD, for example ard:An_ADAS_W24_PwPbo/Mth_AncovaPw_1_diff/Grp_Low
+planted, the intent-to-treat set in place of the efficacy set: 122 problems, for example: Out14-3-01: cell:Out14-3-01/r1/c1: ours '(N=86)', CSR '(N=79)': a difference with no class
+planted, week 16 in place of week 24: 22 problems, for example: Out14-3-01: cell:Out14-3-01/r10/c1: ours '2.0 (-17;23)', CSR '2.0 (-11;16)': a difference with no class
+decision records, unchanged: 0 problems
+decision records, the ANCOVA without the baseline covariate: 9 problems, for example: custom:eff-model-terms: ars:An_ADAS_W24_Dose has covariates = [], the decision covariates = ['BASE']
+what the CSR cannot show: the LS means with equal weights change 36 results of the LS means and 0 cells (the tables print no LS mean)
+planted, a cell of the CSR changed (0.245 to 0.254): 1 problems, for example: Out14-3-01: cell:Out14-3-01/r11/c3: ours '0.245', CSR '0.254': a difference with no class
+planted, the confidence limits shown with the CSR's 1 decimal (the 9 exceptions are stale): 9 problems, for example: Out14-3-01: cell:Out14-3-01/r14/c2: an exception for a cell that does not differ from the CSR
+planted, an exception whose other pattern proves nothing (3 decimals): 1 problems, for example: Out14-3-01: cell:Out14-3-01/r14/c2: ours '(-2.08;1.15)', CSR '(-2.1;1.1)': the proof does not hold: with the other patterns the cell is '(-2.079;1.145)'
+planted, an exception left out: 1 problems, for example: Out14-3-01: cell:Out14-3-01/r14/c2: ours '(-2.08;1.15)', CSR '(-2.1;1.1)': a difference with no class
+planted, an exception with the class reference_error: 1 problems, for example: Out14-3-01: cell:Out14-3-01/r14/c2: ours '(-2.08;1.15)', CSR '(-2.1;1.1)': the proof does not hold: other_pattern proves a rule_choice
+planted, an exception that names no decision record: 1 problems, for example: Out14-3-01: cell:Out14-3-01/r14/c2: ours '(-2.08;1.15)', CSR '(-2.1;1.1)': the proof does not hold: no decision record custom:none
+.
+--- D10-trace-model
+  unchanged: the 3 columns without a reads edge emptied: 0 of 66 results change
+  unchanged: the 3 columns without a reads edge rolled: 0 of 66 results change
+  planted: the 4 columns without a reads edge emptied: 66 of 66 results change
+  planted: the 4 columns without a reads edge rolled: 0 of 66 results change
+planted, the reads edges to ADQSADAS.BASE left out (15 edges): 1 problems, for example: with the 4 columns they have no reads edge to emptied, 66 results change, for example ard:An_ADAS_W08_Dose/Mth_AncovaDose_1_pval/*
+.
+--- D11-efficacy-5b
+unchanged, efficacy-adas: 0 problems
+unchanged, efficacy-cibic: 0 problems
+planted, gold's analyses alone at 90% confidence: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the optio
+planted, gold's analyses alone on the records LOCF adds: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.60)', CSR '1.6 (0.49)': the proof does not hold: An_ADAS_MMRM_LSM_Avg differs from An_ADAS_MMRM_LSM in more than the optio
+planted, the mixed model with the records LOCF adds: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.60)', CSR '1.6 (0.49)': the proof does not hold: with the other build the cell is '1.5 (0.48)'
+planted, Satterthwaite in place of Kenward-Roger: 2 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c3: ours '1.5 (0.83)', CSR '1.1 (0.56)': the proof does not hold: with the other build the cell is '1.1 (0.55)'
+planted, a Toeplitz covariance: 12 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.60)', CSR '1.6 (0.49)': the proof does not hold: with the other build the cell is '1.6 (0.47)'
+planted, no baseline by week: 5 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c3: ours '1.5 (0.83)', CSR '1.1 (0.56)': the proof does not hold: with the other build the cell is '1.1 (0.55)'
+planted, the site in place of the pooled site group: 10 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.2 (0.75)', CSR '1.6 (0.49)': the proof does not hold: with the other build the cell is '1.5 (0.58)'
+planted, gold takes the LS means averaged over the weeks, as the CSR does: 8 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: an exception for a cell that does not differ from the CSR
+planted, the CMH test of general association: 3 problems, for example: Out14-3-13: cell:Out14-3-13/r10/c4: ours '0.770', CSR '0.4003': the proof does not hold: with the other patterns the cell is '0.7699'
+planted, the CMH test without strata: 3 problems, for example: Out14-3-13: cell:Out14-3-13/r10/c4: ours '0.334', CSR '0.4003': the proof does not hold: with the other patterns the cell is '0.3341'
+planted, the CMH test with rank scores: 3 problems, for example: Out14-3-13: cell:Out14-3-13/r10/c4: ours '0.559', CSR '0.4003': the proof does not hold: with the other patterns the cell is '0.5592'
+planted, week 24 with the observed records only, without LOCF: 18 problems, for example: Out14-3-13: cell:Out14-3-13/r18/c1: ours '66', CSR '79': a difference with no class
+planted, the percent of the efficacy population in place of the subjects of the week: 3 problems, for example: Out14-3-13: cell:Out14-3-13/r5/c1: ours '19 (24%)', CSR '19 ( 25%)': a difference with no class
+decision records, unchanged: 0 problems
+decision records, gold takes the LS means averaged over the weeks: 3 problems, for example: custom:eff-mmrm-visit: ars:An_ADAS_MMRM_LSM has at = 'average', the decision rule = 'last'
+decision records, the CMH test of general association: 3 problems, for example: custom:eff-cmh: ars:An_CIBIC_W08_Cmh has statistic = 'general_association', the decision rule = 'row_mean_scores'
+decision records, the visits by AVISIT, in custom:eff-mmrm-terms and the six analyses alike (G2): 3 problems, for example: custom:eff-mmrm-visit: the last visit of the model records of ars:An_ADAS_MMRM_LSM is AVISIT = 'Week 8', where AVISIT is ['Week 8']; the decision names AVISIT =
+decision records, custom:eff-mmrm-visit names Week 16 as the last week (G2): 3 problems, for example: custom:eff-mmrm-visit: the last visit of the model records of ars:An_ADAS_MMRM_LSM is AVISITN = '24', where AVISIT is ['Week 24']; the decision names AVISIT = '
+planted, a p-value of the CSR changed (0.2727 to 0.2737): 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2737': the proof does not hold: the entry says the CSR prints '0.2727'; with the other patterns the cell is '0.272
+planted, an other_build proof that names the analysis at Week 24 itself: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: with the other build the cell is '2.3 (0.69)'; the other build changes no
+planted, the proof of '-0.0' without the sign kept: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r4/c2: ours '-0.6 (1.02)', CSR '-0.0 (0.70)': the proof does not hold: with the other build the cell is '0.0 (0.70)'
+planted, a count of 0 proved by another pattern, not by the template: 1 problems, for example: Out14-3-13: cell:Out14-3-13/r3/c1: ours '0 (0%)', CSR '0': the proof does not hold: with the other patterns the cell is '0 (0%)'; the other patterns change nothing
+planted, an exception of 14-3.13 left out: 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727': a difference with no class
+planted, a proof whose template is the CSR's text: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other template must show parts of the cell and add no text the cell's
+planted, a proof whose template adds text ('{lsm} (0.49)'): 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other template must show parts of the cell and add no text the cell's
+planted, an entry that names an unrelated decision (custom:eff-cmh): 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: custom:eff-cmh binds no analysis of the cell nor its method; An_ADAS_MMRM
+planted, a proof whose pattern carries the CSR's text ('X.2727', other_pattern): 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727': the proof does not hold: the other pattern 'X.2727' of p changes more than the mask of 'X.XXX'
+planted, a proof whose pattern carries the CSR's text ('X.2727', other_build): 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.273', CSR '0.2727': the proof does not hold: the other pattern 'X.2727' of p changes more than the mask of 'X.XXX'
+planted, gold's week 8 p-value is week 16's, proved by a pattern that carries the CSR's text: 1 problems, for example: Out14-3-13: the grid cannot be built: the layout does not fit the reporting event: rows[3]: the analysis 'An_CIBIC_W16_Cmh' stands in rows[1] already; an analysis stands 
+planted, a proof of 14-3.11 whose pattern carries the CSR's text ('X.X (0.49)'): 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other pattern 'X.X (0.49)' of lsm changes more than the mask of 'X.X'
+planted, gold's week 8 p-value is week 16's, proved by a template whose format specs spell the CSR's text: 1 problems, for example: Out14-3-13: the grid cannot be built: the layout does not fit the reporting event: rows[3]: the analysis 'An_CIBIC_W16_Cmh' stands in rows[1] already; an analysis stands 
+planted, a proof of 14-3.11 whose template's format specs spell the CSR's text: 1 problems, for example: Out14-3-11: cell:Out14-3-11/r2/c1: ours '2.3 (0.69)', CSR '1.6 (0.49)': the proof does not hold: the other template is no cell template: cell template '{lsm:1<1.0}{lsm:.<
+planted, gold's week 8 CMH without its strata, proved by the analysis with them (K1): 1 problems, for example: Out14-3-13: cell:Out14-3-13/r2/c4: ours '0.264', CSR '0.2727': the proof does not hold: An_CIBIC_W08_Cmh_Site differs from An_CIBIC_W08_Cmh in an option whose values are 
+.
+--- D12-cmh-engines
+unchanged: engines: 141 results in both, 0 disagree; largest relative difference 9.7e-16 (allowed 1e-09)
+R engine alone, general association: 3 CMH results disagree
+R engine alone, no strata: 3 CMH results disagree
+R engine alone, rank scores: 3 CMH results disagree
+R engine alone, week 24 with the observed records only, without LOCF: 1 CMH results disagree
+.
+--- D13-review
+Out14-1-1: 84 printed numbers; 84 open a panel; 84 reach SDTM; 84 reach a citation or a house default; 84 draw every decision behind them
+Out14-3-1-1: 27 printed numbers; 27 open a panel; 27 reach SDTM; 27 reach a citation or a house default; 27 draw every decision behind them
+Out14-3-2-1: 1178 printed numbers; 1178 open a panel; 1178 reach SDTM; 1178 reach a citation or a house default; 1178 draw every decision behind them
+sheet: 17 catalog entry, 1 kit binding, 10 layout, 67 record; 67 of 67 records listed
+planted, a cell without a panel: 1 problems, for example: cell:Out14-3-2-1/r1/c1: prints '(N=86)' and opens no panel
+planted, a script: 1 problems, for example: the page has a <script>
+planted, a handler: 1 problems, for example: the page has the handler 'onmouseover'
+planted, a link that leaves the page: 1 problems, for example: the link 'https://example.org/' leaves the page
+planted, a judged edge drawn as proven: 1 problems, for example: citation 1 is drawn executed, not judged
+planted, an unseparated decision drawn as proven: 4 problems, for example: the decision ae.related.values (mod-ae-emergence) is unseparated and not drawn so
+planted, a decision left off the sheet: 2 problems, for example: the sheet does not list the decision ae.related.values (mod-ae-emergence)
+planted, an entry of the catalog left off the sheet: 1 problems, for example: the sheet does not list the entry pop.efficacy.rule (mod-populations) of the catalog
+planted, the decision ae.start.imputation (mod-ae-emergence) left off the panels: 1199 problems, for example: cell:Out14-3-1-1/r2/c1: its panel does not draw the decision ae.start.imputation (mod-ae-emergence)
+planted, no SDTM column named in the panels: 1289 problems, for example: cell:Out14-1-1/r1/c1: its panel reaches no SDTM column through every column it reads
+planted in the graph files, the derives_from edges of ADSL.AGEGR1 left out: 7 cells seen
+planted in the exceptions, a difference of display no cell shows: passes False
+planted in the exceptions, a difference of display under common-safety-display: passes False
+.
+--- D14-vital-signs
+Out14-3-3-1a, unchanged: 0 problems
+Out14-3-3-1b, unchanged: 0 problems
+Out14-3-3-1a, the observed value and the change exchanged between their columns: 20 problems, for example: row r3 ('n'): its cells stand in the columns [2, 4, 6]; on line 16 of the shell in [1, 3, 5]
+Out14-3-3-1a, Q1 and Q3 exchanged in their cell: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Q1, Q3': the parts stand in the cell in another order than the label nam
+Out14-3-3-1b, the minimum and the maximum exchanged in their cell: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Min, Max': the parts stand in the cell in another order than the label n
+Out14-3-3-1a, the mean in the row of the median: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Median': the label names 'Median', and the row does not show 'Mth02_Cont
+Out14-3-3-1b, the n and the minimum exchanged between their rows: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1], row 'Min, Max': the label names 'Min', and the row does not show 'Mth02_ContV
+Out14-3-3-1b, the rows of the changes above those of the observed values: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1]: the analyses stand in another order than the reference lists them (An08_01_Ob
+Out14-3-3-1a, the sections of two parameters exchanged by labels: 1 problems, for example: refused: the layout does not fit the reporting event: rows[1]: labels: 'AnlsGrouping_08_Param_1' is labelled 'Diastolic Blood Pressure (mmHg
+Out14-3-3-1a, the change shown at baseline: 7 problems, for example: line 16 of the shell ('n', ['XX', 'XX', 'XX']): no row of the mock shell has it
+Out14-3-3-1b, the change shown at baseline: 2 problems, for example: 96 results without a formatted value; the gate asks for none
+Out14-3-3-1a, the minimum and the maximum under XX.X: 242 problems, for example: cell:Out14-3-3-1a/r7/c1: text '80.0, 184.0', reference '80, 184': a difference with no class: ard:An08_01_Obs_Summ_ByTrt/Mth02_ContVar_Summ_
+Out14-3-3-1b, the minimum and the maximum under XX.X: 283 problems, for example: cell:Out14-3-3-1b/r7/c1: text '80.0, 184.0', reference '80, 184': a difference with no class: ard:An08_01_Obs_Summ_ByTrt/Mth02_ContVar_Summ_
+Out14-3-3-1a, the median above the mean: 138 problems, for example: row r4 ('Median'): in the shell it does not follow the row before it
+Out14-3-3-1b, the median above the mean: 261 problems, for example: row r4 ('Median'): in the shell it does not follow the row before it
+Out14-3-3-1a, Week 2 left out: 193 problems, for example: ard:An08_01_Obs_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_1/AnlsGrouping_09_Visit_02: the referenc
+Out14-3-3-1b, Week 2 left out: 193 problems, for example: ard:An08_01_Obs_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_1_n/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_1/AnlsGrouping_09_Visit_02: the referenc
+Out14-3-3-1a, a minimum proven to lie on a half: 1 problems, for example: cell:Out14-3-3-1a/r205/c1: text '35, 37', reference '35.33, 37.17': a difference with no class: ard:An08_01_Obs_Summ_ByTrt/Mth02_ContVar_Sum
+Out14-3-3-1a, a median at a half classed reference_error: 1 problems, for example: cell:Out14-3-3-1a/r233/c2: text ' 0.0', reference ' 0.1': a difference with no class: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_
+Out14-3-3-1a, a median at a half without its entry: 1 problems, for example: cell:Out14-3-3-1a/r233/c2: text ' 0.0', reference ' 0.1': a difference with no class: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_
+Out14-3-3-1a: results that lie exactly on a half at their displayed decimals: 5; with the rounding rule half_even: 5 problems, for example: cell:Out14-3-3-1a/r209/c6: text ' 0.0', reference ' 0.1': a difference with no class: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_
+not separable by the shell: Out14-3-3-1b, the change rows under the visit alone: 0 problems (the shell has a placeholder there)
+............................................................................
+101 passed in 135.76s (0:02:15)
+-- PASS planted defects (136.2 s)
+
+== [17/18] cache untouched: specfirst fetch --verify
+cache: /tmp/specfirst-clean-pHIUuS/env/cache
+ok   p7              present  213cb6ab3adc51abe4295cbbc546c0e6d46c3df8  (RConsortium/submissions-pilot7-synthetic-data)
+ok   yamaa           present  93a6757594988fddc9b05d220d5f53deb5085d50  (elong0527/yamaa)
+ok   ars             present  2c9b4b68724386e8f91dc576724855af7fafac65  (cdisc-org/analysis-results-standard)
+ok   p6              present  a4f85c95cfef1f6aa27795362630f8ae43210185  (RConsortium/submissions-pilot6-adams-tlfs)
+ok   atorus          present  fc8d658d7709aac0cccd753d0ca9ae6726090a61  (atorus-research/CDISC_pilot_replication)
+ok   phuse           present  398a6d33ced9359ffb58c46650a6d488811176b1  (phuse-org/phuse-scripts)
+ok   c360i           present  24bd98bdcea3db3046436e6a749bbbc92196fe12  (cdisc-org/360i)
+ok   acdc            present  739344ca31203bb502efeee2b855286e17977be6  (cdisc-org/analysis-concepts)
+ok   siera           present  9208a9b6a00876f13d2b17f01aa318290c066674  (clymbclinical/siera)
+ok   cardinal        present  b1fe03a760a1ca3b4610830ba64be5bd3e6ff4a5  (pharmaverse/cardinal)
+ok   pharma-skills   present  e5db96d54ef5a79cbfd06e2339a3351e4583f8da  (RConsortium/pharma-skills)
+ok   pharmaverseraw  present  e0771afea8bead7e64bc7cf2ff53ef8b638c6c1b  (pharmaverse/pharmaverseraw)
+ok   c360i-pocs      present  9f6de449cbff0c3f16fb10a93e4e79c7cd6ad43e  (lexjansen/cdisc360i-pocs)
+ok   ars:workfiles/examples/ARS v1/Common Safety Displays.json  sha256 90358dd60d687332f2138aa50435b4050fa91be3f52958169229daa269fe31b3
+ok   p6:documents/CSR.pdf  sha256 0cab016c76abb3dcaef31110611c95dbd9cd00df083b35e6d28fd69fca0d842d
+ok   p6:documents/SAP.pdf  sha256 210b7f1fdb0fd95e1b00b64fe1c7527d0000bd4e66b6ae31fdc08e2741af1bc7
+fetch: every pin verified
+-- PASS cache untouched (0.1 s)
+
+== [18/18] ASCII: python -m specfirst.asciicheck
+ASCII check: 966 files checked, 0 with non-ASCII bytes
+-- PASS ASCII (0.0 s)
+
+PASS  environment          0.4 s
+PASS  pins                 0.7 s
+PASS  lint                 0.0 s
+PASS  registry             0.1 s
+PASS  unit tests         462.4 s
+PASS  method vectors      10.8 s
+PASS  kit                  0.1 s
+PASS  P1 determinism      41.0 s
+PASS  P2 reproduction      0.4 s
+PASS  trace                4.6 s
+PASS  results              3.2 s
+PASS  grids                3.2 s
+PASS  efficacy             3.2 s
+PASS  decisions            0.7 s
+PASS  pilot tests         51.6 s
+PASS  planted defects    136.2 s
+PASS  cache untouched      0.1 s
+PASS  ASCII                0.0 s
+GATE real-5a: PASS
+
+clean clone gate real-5a: PASS (clone: /tmp/specfirst-clean-pHIUuS/specfirst)
+The log is in build/gates/real-5a/ here; the clone is deleted now unless
+SPECFIRST_KEEP_CLONE=1 (docs/lessons.md, lesson 73).
+copied: the clone's build/gates/real-5a/ to build/gates/real-5a/clone/ here
+clone deleted: /tmp/specfirst-clean-pHIUuS

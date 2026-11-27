@@ -105,6 +105,28 @@ viewer, the 30 CSR tables (PLAN.md section 13.3).
   17 conflicts and 2 asked records (section "Handed over by issue #31").
   Decisions: docs/decisions/ADR-022.md, and the amendment of issue #31 at
   the end of ADR-003.md.
+- real-3 Grid, trace, viewer (PLAN.md 13.3; 2026-11-23 to 2026-11-27): the
+  five outputs of CDISC's ARS example are grids, the two of the vital signs
+  added here (block kind `by_groups`, `columns.within`; ADR-003, amendment
+  of real-3, points 10 to 15). The findings F1 to F9 of the review of
+  real-3a are the first commit, `70dc552`, with the gate real-3a passing on
+  a clone of it (16 of 16); F7 is left open (it needs a new dry run of
+  read-2a). Gates: `scripts/clean_clone_gate.sh real-3` exited 0 on a clean
+  clone of `b71c200` and again on a clean clone of `f4ebb00`, which is that
+  work with the review's findings and `main` (gen-2b) merged in, 19 of 19
+  checks: every one of the 3,815 numeric cells of the five grids has a
+  complete path to SDTM columns; P1 72 of 72 files; the review page shows
+  the five and loads and runs nothing. read-2a, real-3a, issue-31, real-2,
+  real-5a, real-5b, issue-29, read-1a, gen-2b and gen-3a exited 0 on clean
+  clones of `f4ebb00` (2026-11-27). Evidence: docs/reports/real-3.md,
+  real-3.clean-clone.gate.log, real-3.first-commit.gate.log and
+  real-3.merged.<gate>.gate.log. Review: docs/reports/real-3.review.md
+  (pass 1 NOT SIGNED, its blocking F1 fixed; pass 2 SIGNED of `900978e`;
+  pass 3 of `f4ebb00`). Decisions: docs/decisions/ADR-003.md, the amendment of
+  real-3; the owner's answer on the four medians at a half: A, keep gold's
+  display rule and record the four (2026-11-23). Per recommendation,
+  pending SME review: SME-26 (the medians) and SME-33 (the 119 minima and
+  maxima). Lessons 82 to 87.
 
 ## Open
 
