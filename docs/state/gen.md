@@ -46,6 +46,28 @@ section 13.5), first for the slice "adverse event summary first" (ADR-005).
   docs/reports/issue-30.md. Review: docs/reports/issue-30.review.md
   (signed, six findings, none blocking). Generated kits do not change.
   See "P4 on a reference study".
+- gen-2b (2026-11-27), gates passed, review signed, merged into `main`:
+  the probes follow the decisions of a kit (the rework that the owner's
+  answer of 2026-11-17 on finding G1 of the gen-2a review booked; ADR-023,
+  the executor's choices; PLAN.md and the schemas unchanged; ADR-007
+  points to it). The decision vector is drawn first and the data are
+  generated for it; the calibrated counts follow the kit's analysis set
+  and grouping; the planted subjects stand in its analysis set;
+  `probes.REACHES` keeps only conditions under which another decision
+  makes two alternatives equal on any data of the design that follow
+  SDTMIG v3.4 and the premise its row names; a kit that leaves unseparated
+  a read decision that data could separate is not written, and the gate
+  gen-2b fails on one (three plants). The owner lifted the three
+  exclusions of gen-2a (2026-11-23); (c) per recommendation, pending SME
+  review. Generator `gen-2b.2`. Gates on clean clones of `4de3db2`:
+  gen-2b 13 of 13, gen-1a 8 of 8 (CORE on 20 datasets, no unexplained
+  finding), gen-2a 13 of 13, gen-3a 15 of 15, read-1a 14 of 14, issue-29
+  12 of 12; gen-2b again on `95ac45a`; read-2a on `77c33a4`, with the kept
+  dry run of arm R made again (`R-task-087cf121e580`, kit 4 of the gate
+  seed, USD 0.7395). Report: docs/reports/gen-2b.md. Review:
+  docs/reports/gen-2b.review.md (pass 1 not signed, pass 2 signed; H8 not
+  blocking: two texts in the bytes of every kit wait for the next
+  GENERATOR, see "Open").
 
 ## A kit: what the folder holds
 

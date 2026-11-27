@@ -8,7 +8,20 @@ docs/decisions/ADR-023.md.
 
 ## Verdict
 
-GATE_VERDICT
+GATE gen-2b: PASS on a clean clone of `4de3db2` and again of `95ac45a`
+(13 of 13 checks). The gates of every consumer of the kits pass on clean
+clones: gen-1a (with CORE), gen-2a, gen-3a, read-1a and issue-29 of
+`4de3db2`, read-2a of `77c33a4` with the kept dry run of arm R made again
+(`R-task-087cf121e580`, USD 0.7395). The review (docs/reports/gen-2b.review.md)
+was not signed in pass 1 (`29bc57a`, H1 to H7) and was signed in pass 2
+(`4de3db2`; H8 not blocking). Model spend: about USD 1.03 (1.39 without any
+cache) of the USD 2.2 the owner approved.
+
+For the owner, none blocking (ADR-023, "For the owner"): the added subjects
+of the placebo arm (up to 31 at two decimals); exclusion (c) and the premise
+of the row of `pop.safety.rule` (H2), both per recommendation, pending SME
+review; the two texts of H8 in the bytes of every kit, which wait for the
+next GENERATOR.
 
 ## What changed
 
@@ -167,7 +180,145 @@ The store grew by 5 lines of `paragraphs.jsonl` and 2 of `calls.jsonl`; no
 line changed (`git diff --stat`: 7 insertions, 0 deletions). The final
 messages were written with LF.
 
-GATES_AND_EVIDENCE
+## Gates on clean clones
+
+The gates of every consumer of the kits, each on a fresh clone with a
+fresh install and fetch (`scripts/clean_clone_gate.sh`), one after another
+inside the shared lock:
+
+```text
+$ for wp in gen-2b gen-1a gen-2a gen-3a read-1a issue-29; do
+>   flock /run/lock/specfirst-heavy.lock taskset -c 0-3 scripts/clean_clone_gate.sh $wp
+> done
+```
+
+| Gate | Commit | Unit tests | Checks | Result | Log |
+| --- | --- | --- | --- | --- | --- |
+| gen-2b | 4de3db2 | 1434 passed, 37 deselected | 13 of 13 | GATE gen-2b: PASS | docs/reports/gen-2b.gen-2b.gate.log |
+| gen-1a | 4de3db2 | 1434 passed, 37 deselected | 8 of 8 | GATE gen-1a: PASS | docs/reports/gen-2b.gen-1a.gate.log |
+| gen-2a | 4de3db2 | 1434 passed, 37 deselected | 13 of 13 | GATE gen-2a: PASS | docs/reports/gen-2b.gen-2a.gate.log |
+| gen-3a | 4de3db2 | 1434 passed, 37 deselected | 15 of 15 | GATE gen-3a: PASS | docs/reports/gen-2b.gen-3a.gate.log |
+| read-1a | 4de3db2 | 1434 passed, 37 deselected | 14 of 14 | GATE read-1a: PASS | docs/reports/gen-2b.read-1a.gate.log |
+| issue-29 | 4de3db2 | 1434 passed, 37 deselected | 12 of 12 | GATE issue-29: PASS | docs/reports/gen-2b.issue-29.gate.log |
+
+After the second pass of the review, `95ac45a` changed the wording of H8:
+docstrings, and two lines that the checks "kits" and "separation" print
+(`kits.check`, `gate2.separation_check`); their only callers are the checks
+of the gates gen-2a and gen-2b (one list of checks) and `specfirst gen
+verify`. No byte of a kit changes. So gen-2b was run again on a clean clone
+of `95ac45a`, and no other gate:
+
+| Gate | Commit | Unit tests | Checks | Result | Log |
+| --- | --- | --- | --- | --- | --- |
+| gen-2b | 95ac45a | 1434 passed, 37 deselected | 13 of 13 | GATE gen-2b: PASS | docs/reports/gen-2b.gen-2b.95ac45a.gate.log |
+
+From the logs:
+
+- gen-2b, the plants of the failure (lines 194, 272 and 273 of its log):
+
+  ```text
+  planted defect: kit 9 built with the probes of gen-2a, which do not follow its decisions: not written: ...
+  planted defect: the twin of kit 9 (table on the efficacy set, window 30) made with the probes of gen-2a, which do not follow its decisions: 2 pairs that the output reads and data could separate are not separated, so the kit is unfit; applicable and unseparated: ...
+  planted defect: every AEREL of the twin of kit 2 set to 'PROBABLE': the stated lists give one table, and the kit is unfit: ae.related.values: ...
+  ```
+
+  Every kit: "applicable and unseparated: none"; the matrix of the ten
+  kits has 0 holes; `ae.related.values` is in 10 kits, read in 9,
+  applicable in 7 and separated in 7 (`29bc57a`: applicable in 0);
+  `pop.safety.rule` is applicable in kits 1 and 10 (by actual treatment)
+  and read, unseparated on its premise, in kits 4, 6, 7 and 9. P1: "129
+  files of two builds by two processes, the manifest included: 0 differ"
+  for every kit.
+- gen-1a, CDISC CORE on the data of the decisions of scenario n
+  (`gate.values_for`), which hold the new shapes of the recipes (a first
+  dose without a time; a treatment and a study disposition record; a
+  subject without a study-level disposition record):
+
+  ```text
+  CORE on 20 datasets (10 seeds, visible and twin): no unexplained finding; the pinned source is unchanged
+  ```
+
+- gen-3a: the documents of the ten kits keep the tokens of their
+  statements, 0 problems; the store holds a text for every statement (no
+  new model call after the review: the vectors did not change).
+- read-1a: the ten kits of the gate seed written again and scored; issue-29:
+  P1 "64 of 64 files have the same SHA-256 in both builds".
+
+## read-2a and the kept dry run of arm R
+
+The kept dry run of arm R is bound by bytes to the data of kit 4 of the
+gate seed (ADR-017), and the data of kit 4 changed (ADR-023, decision 6),
+so the check "arm R, kept dry run" of the gate read-2a failed on the old
+run `R-task-6e527ae6baab`. The owner approved making it again once, after
+gen-2b passed, with a cap of USD 0.9 (2026-11-23), and confirmed the run
+in this session on 2026-11-27. Kit 4 was written as the gate writes it,
+from the worktree at generator `gen-2b.2` (`sfrrl2uh`, train, the ask demo,
+nine natural paragraphs, all from the store); the task and run folders lie
+on a Windows drive outside every checkout:
+
+```text
+$ specfirst run arm <kit-004> --arm R --seed gen-2a/kit-4 --tasks <scratch>/tasks --runs <scratch>/runs --keep
+run R-task-087cf121e580: arm R, stage C, condition notes, kit sfrrl2uh (train), task task-087cf121e580 (22 decisions)
+  reader: claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  cost: 23 turns, 99.3 s wall, 87.1 s API, tokens in 20 out 7932 cache write 63092 cache read 380053, USD 0.7395 (CLI: 0.7394666)
+  budget: {'turns': 100, 'seconds': 2700, 'usd': 10.0}: within
+  outputs: decisions.jsonl 22 lines, questions.jsonl 2 lines, unmapped.jsonl 0 lines
+  asks: 2, answered 2; pop.efficacy.rule (mod-populations); ae.related.values (mod-ae-emergence)
+  output files: valid
+  task folder: holds only what a reader may see
+  canary scan: 30767 canaries from 97 files; clean
+  permission denials: 1
+  RUN R-task-087cf121e580: PASS
+kept in <checkout>/src/specfirst/harness/kept/R-task-087cf121e580
+```
+
+The old kept run is deleted (`77c33a4`). The kept files are ASCII and hold
+`<home>`, `<checkout>` and `<run>` for the local folders and no account
+name; the deny list names the folder of the checkouts, the kit's folder
+under WSL, and the run folder in the scratchpad of this session under
+`<home>` (its path holds a session ID, no account name). Checked again as
+the gate does, with its scores (report only; they decide nothing):
+
+```text
+$ specfirst run check src/specfirst/harness/kept/R-task-087cf121e580 --kit <kit-004> --tasks <scratch>/tasks --seed gen-2a/kit-4 --score
+kept run R-task-087cf121e580: PASS
+...
+  asks: 2 given, 2 in gold (decisions with the status asked), 2 of them right; precision 1.00, recall 1.00
+  decisions a reviewer would have to change: 1
+    disp.status.record (mod-populations), house_default: gold {"rule": "disposition_event"}; the candidate (given) has {"rule": "disposition_event_by_subcategory", "subcategory": "STUDY PARTICIPATION"}
+    disp.status.record (mod-populations): wrong in status, span: cites protocol#4.3/p1; gold cites house#disp.status.record
+  unseparated in gold, compared by value only: 6 trt.actual.source (right), date.studyday.origin (right), pop.randomized.rule (right), pop.safety.rule (right), pop.safety.grouping (right), disp.status.record (wrong)
+...
+  visible: cells correct: 21 of 21 gold cells (an output that was not produced counts as wrong)
+  twin: cells correct: 21 of 21 gold cells (an output that was not produced counts as wrong)
+wrong by value, and these data cannot show it (alone, on gold, it changes no cell and no axis of any dataset): disp.status.record (mod-populations)
+```
+
+21 of 22 values right; the one wrong value is the one both runs of
+catalog-2c had wrong, with the same citation (protocol 4.3/p1, where gold
+takes the house default), and these data cannot show it. `pop.safety.rule`
+stands among the decisions unseparated in gold: in kit 4 it is read and
+unseparated on the premise of its row of `REACHES` (H2 above). One run
+of a model says nothing about a difference from the old run.
+
+Then the gate read-2a on a clean clone of `77c33a4`, the commit of the new
+kept run, inside the shared lock as above:
+
+| Gate | Commit | Unit tests | Checks | Result | Log |
+| --- | --- | --- | --- | --- | --- |
+| read-2a | 77c33a4 | 1434 passed, 37 deselected | 19 of 19 | GATE read-2a: PASS | docs/reports/gen-2b.read-2a.gate.log |
+
+```text
+== [16/19] arm R, kept dry run: specfirst run check src/specfirst/harness/kept/R-... --kit KIT --score
+kept run R-task-087cf121e580: arm R, reader claude-code, model claude-opus-5-5, used ['claude-opus-5-5'], CLI 2.1.327
+  task task-087cf121e580, built again now: task-087cf121e580, the same on every bound part (ADR-017)
+...
+-- PASS arm R, kept dry run (2.5 s)
+```
+
+`77c33a4` changed against `95ac45a` only the kept run, ADR-023, the state
+file of read and the log of gen-2b: no input of the other gates, which the
+check "arm R, kept dry run" alone reads (the kept folder).
 
 ## Model use and spend
 
@@ -175,6 +326,7 @@ GATES_AND_EVIDENCE
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | gen-2b-rewrite-1 | rewriter | Sonnet 5.5 subagent | 5 paragraphs | 53,339 | 2 | 7.6 s | 5 of 5 slots ok |
 | gen-2b-readback-1 | verifier, a new fresh context | Sonnet 5.5 subagent | 5 items | 54,659 | 2 | 6.8 s | 5 of 5 accepted |
+| R-task-087cf121e580 (kept) | reader, arm R | claude-opus-5-5, CLI 2.1.327 | 22 decisions | in 20, out 7,932, cache write 63,092, cache read 380,053 | 23 turns | 99.3 s | PASS; USD 0.7395 |
 
 The subagent calls report tokens only, 107,998 in all; their USD is computed
 as in docs/reports/catalog-2c.md ("Model use") from the list prices of
@@ -182,4 +334,7 @@ Sonnet 5.5: with the context written to the cache once and read twice,
 107,998 x (2.50 + 2 x 0.10) / 1e6 = USD 0.29; without any cache,
 107,998 x 3 x 2 / 1e6 = USD 0.65. Approved: up to USD 1.3 and four calls.
 
-DRYRUN_SPEND
+The run of arm R reports its cost (the CLI's USD): USD 0.7395 (CLI:
+0.7394666), one run, within the owner's cap of USD 0.9 for it. In all,
+gen-2b spent about USD 1.03 (1.39 without any cache) of the USD 2.2 the
+owner approved.
