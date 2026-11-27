@@ -206,10 +206,31 @@ track left alone meanwhile. Report: docs/reports/catalog-2c.md.
 - The reader's skills render the house defaults of open-default@2 (a
   default by design names its cases); TASK.md and the core-reader skill
   describe the anchors by entry ID, the cases and the fixed rules.
-- The kept dry run of arm R is `R-task-6e527ae6baab` (kit 4 of the gate
-  seed, generator `catalog-2c.2`), in place of `R-task-04119188ff71`.
+- The kept dry run of arm R was `R-task-6e527ae6baab` (kit 4 of the gate
+  seed, generator `catalog-2c.2`), in place of `R-task-04119188ff71`;
+  gen-2b made it again (see "From gen-2b").
 - The pilot task of ADR-016 takes catalog@2: the real kit names no catalog
   version (BACKLOG i28.real-kit-pins waits for real-4).
+
+## From gen-2b (gen track, 2026-11-27)
+
+The probes of a kit follow its decisions (ADR-023); the gen track changed
+the files of read that this needs. Report: docs/reports/gen-2b.md.
+
+- The kept dry run of arm R is `R-task-087cf121e580` (kit 4 of the gate
+  seed, generator `gen-2b.2`), in place of `R-task-6e527ae6baab`: the
+  data of kit 4 changed, and the old run was bound to them by bytes
+  (ADR-017). Its scores: 21 of 22 values (`disp.status.record` wrong, the
+  same value and citation as the two runs of catalog-2c), 21 of 21 cells
+  on the visible data and on the twin.
+- `score.kit` reads the parameters of a kit from its log of probes, as the
+  matrix does, not from its design.
+- The decision vectors of 5 of the 10 kits of the gate seed changed
+  (ADR-023, decision 6). A matrix lists as `unseparated` and read only
+  decisions that another decision makes equal on any data of the design
+  that follow SDTMIG v3.4 (and the premise its row of `probes.REACHES`
+  names); every other read decision is separated, or the kit is not
+  written.
 
 ## Open
 

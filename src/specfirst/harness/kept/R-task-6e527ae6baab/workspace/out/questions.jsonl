@@ -1,2 +1,0 @@
-{"decision": "pop.efficacy.rule", "question": "Which subjects form the efficacy-evaluable set (for example: safety-set subjects with baseline and post-baseline values of a named vital sign, or who attended a named visit)?", "unit": "mod-populations"}
-{"decision": "ae.related.values", "question": "Which collected causality values (scale NOT RELATED, UNLIKELY RELATED, POSSIBLY RELATED, PROBABLY RELATED, RELATED) count as related to study treatment?", "unit": "mod-ae-emergence"}

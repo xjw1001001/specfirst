@@ -1,0 +1,2 @@
+{"decision": "pop.efficacy.rule", "question": "How is the efficacy-evaluable set defined: which vital sign must have a baseline and a post-baseline value, or which visit must the subject have attended?", "unit": "mod-populations"}
+{"decision": "ae.related.values", "question": "Which collected causality values (AEREL) count as related to study treatment? The scale is NOT RELATED, UNLIKELY RELATED, POSSIBLY RELATED, PROBABLY RELATED, RELATED.", "unit": "mod-ae-emergence"}
