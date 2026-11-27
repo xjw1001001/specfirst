@@ -303,7 +303,7 @@ results:
 # pattern. (The SAP's Templates 21 and 22, "for example only", show the minimum and the
 # maximum of blood pressure and heart rate without decimals; they do not list
 # temperature.) Per recommendation, pending SME review (docs/state/sme-review.md,
-# real-3/vs-minmax-decimals). The other 385 of the 504
+# SME-33, real-3/vs-minmax-decimals). The other 385 of the 504
 # minima and maxima of the vital signs are whole numbers and agree. Each result stands
 # once, though both grids show it. The entries were written by a script from the build, which
 # kept every result whose formatted value is not its raw value under the pattern while
@@ -800,7 +800,7 @@ formats:
     # way that absorbs the floating error (most likely SAS's ROUND fuzz), another
     # alternative of the rounding than gold's (rule_choice). The owner's answer of
     # 2026-11-23 (A): keep gold's display rule and record the four here. Per
-    # recommendation, pending SME review (docs/state/sme-review.md,
+    # recommendation, pending SME review (docs/state/sme-review.md, SME-26,
     # real-3/vs-medians-at-half).
     - result: ard:An08_02_ChgBl_Summ_ByTrt/Mth02_ContVar_Summ_ByGrp_4_Median/AnlsGrouping_01_Trt_1/AnlsGrouping_08_Param_4/AnlsGrouping_09_Visit_06
       formatted: " 0.1"

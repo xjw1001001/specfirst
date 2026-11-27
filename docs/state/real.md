@@ -264,12 +264,11 @@ From real-3 (docs/reports/real-3.md, "For the owner"):
   in ours; the example shows " 0.1", gold " 0.0"): the owner's answer A
   (2026-11-23), `formats`, proof `half_in_floating_error`, class
   `rule_choice`; per recommendation, pending SME review
-  (real-3/vs-medians-at-half).
+  (docs/state/sme-review.md, SME-26, real-3/vs-medians-at-half).
 - The 119 minima and maxima of temperature that the example shows with the
   decimals of the data are classed `reference_error` (`formats`, proof
-  
-ot_its_own_pattern`): the example's own shells show no decimals; per
-  recommendation, pending SME review (real-3/vs-minmax-decimals).
+  `not_its_own_pattern`): the example's own shells show no decimals; per
+  recommendation, pending SME review (SME-33, real-3/vs-minmax-decimals).
 - The layout of the AE summary has its section "Number of subjects with at
   least one event" and the count's mask `XX` of the shell (no cell text
   changed).
@@ -284,8 +283,7 @@ Other open points:
   `statistics`, `groups`, `terms`, `by_groups`, and the columns per group
   `columns.within`). A total column and threshold rules are not built.
 - A difference of display is an entry of `formats` in the exceptions file,
-  with the proof 
-ot_its_own_pattern` or `half_in_floating_error`; a cell
+  with the proof `not_its_own_pattern` or `half_in_floating_error`; a cell
   that differs otherwise takes the class of the result it shows, and any
   other difference blocks the gate.
 - The method registry and the layout are checked by code, not by schemas in
@@ -324,8 +322,7 @@ ot_its_own_pattern` or `half_in_floating_error`; a cell
   track is the owner's call.
 - What real-4 meets of the grids (measured over all 3,734 formatted values
   of CDISC's example): none is left. 24 differ by a classified result, 120
-  by display only with the proof 
-ot_its_own_pattern` (the 119 minima and
+  by display only with the proof `not_its_own_pattern` (the 119 minima and
   maxima of the vital signs, the Fisher p-value of 1), 4 by floating error
   at a half; the 6 minima and maxima of height follow the SAP's template
   (custom:demog-decimals).
@@ -387,8 +384,7 @@ ot_its_own_pattern` (the 119 minima and
   the gates real-3a, real-5a and issue-31 together. D7 and D8 plant in the AE summary
   (`SUMMARY_OUTPUT`).
 - gold/exceptions.yaml has a section `formats` (a difference of display only, proof
-  
-ot_its_own_pattern`); one entry, the Fisher p-value of 1 shown "1".
+  `not_its_own_pattern`); one entry, the Fisher p-value of 1 shown "1".
 - The page references of an ARS file become judged, imported `cites` edges from analyses to
   SAP pages (`graph.add_citations`), or to the SAP as a whole where a reference gives no
   page; a kit names an ARS reference document in a document's `cited_as`.
@@ -420,8 +416,7 @@ ot_its_own_pattern`); one entry, the Fisher p-value of 1 shown "1".
   class holds at the value it was found at (the matrix's `value`): a record with another
   value is "not tested", and its panel and sheet line name what the run tried. A class drawn
   names the run's vector (every other decision at the house's value, not the kit's), and
-  
-o_alternative` is drawn "not tested" (review pass 3, P3-F1 and P3-F2). On the pilot:
+  `no_alternative` is drawn "not tested" (review pass 3, P3-F1 and P3-F2). On the pilot:
   21 records have a decision of the matrix, 14 at its value. A P4 run on the kit's own
   values needs a vector of the kit's records in gen/separate.py (not done; gen's file).
 
@@ -460,8 +455,7 @@ For the owner, from issue #31 (none blocks; docs/reports/issue-31.md has each):
   (`specfirst.recompute.pywrite`) for count, percent, continuous summary,
   chi-square and one-way ANOVA; R (`rwrite`) for Fisher, CMH, ANCOVA and
   the mixed model. An analysis whose method or shape no template covers is
-  
-ot covered`, with the reason: a new registry method, a new kind of
+  `not covered`, with the reason: a new registry method, a new kind of
   grouping or a new comparator needs a template first. The templates cite
   registry statements by number (`common.statement` finds an option's
   statement by its first words): add statements at the end, as before.

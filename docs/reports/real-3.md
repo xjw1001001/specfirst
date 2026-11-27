@@ -193,7 +193,7 @@ issue #31 did for the one Fisher p-value of 1. (The SAP's Templates 21 and
 and heart rate without decimals; they do not list temperature.) The
 demographics follow the other way, because their SAP template shows the
 minimum and the maximum of height with one decimal (custom:demog-decimals).
-Per recommendation, pending SME review (real-3/vs-minmax-decimals).
+Per recommendation, pending SME review (SME-33, real-3/vs-minmax-decimals).
 
 The 4 medians: each is one record's change of 0.05, such as AVAL 36.94 -
 BASE 36.89, which binary floating point holds as 0.04999999999999716 (three
@@ -206,7 +206,7 @@ likely SAS's ROUND fuzz; not verified here), another alternative of the
 rounding than gold's. They are entries of `formats` with the proof kind
 `half_in_floating_error` and the class `rule_choice` (ADR-003, point 13):
 the owner's answer A, per recommendation, pending SME review
-(real-3/vs-medians-at-half). The first version of this report described
+(SME-26, real-3/vs-medians-at-half). The first version of this report described
 them as the half of the changes 0.0 and 0.1 and proposed the class
 `data_difference`; the review found that wrong (pass 1, F1), and the owner
 was told.
@@ -467,7 +467,7 @@ The example's formatted values of the two results are "- 3.3" and
    of their own and a planted defect; spend nothing. Class `rule_choice`
    (the base session's reading, which the review's pass 1 supports with the
    data). Per recommendation, pending SME review (docs/state/sme-review.md,
-   real-3/vs-medians-at-half). The question first went out with wrong
+   SME-26, real-3/vs-medians-at-half). The question first went out with wrong
    facts (the half of 0.0 and 0.1); the correction went to the owner the
    same day. The other answer (B), a display rule that rounds to 12
    significant digits first, changes 4 texts of the 3,323 results held as
@@ -482,7 +482,7 @@ The example's formatted values of the two results are "- 3.3" and
 3. **The 119 minima and maxima (does not block).** Classed `reference_error`
    by the existing proof, because the example's own shells show no
    decimals; per recommendation, pending SME review
-   (real-3/vs-minmax-decimals). The alternative, a pattern with the decimals
+   (SME-33, real-3/vs-minmax-decimals). The alternative, a pattern with the decimals
    of the data (`XX.XX` for the observed values, `X.XX` for the changes),
    would print "35.33" in 63 cells of each grid and leave 10 of the 126
    minima and maxima of temperature different, where the example drops
